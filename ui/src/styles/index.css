@@ -1,0 +1,221 @@
+:root {
+    /* ---------- 基础色板 ---------- */
+    --fc-blue-50:  #EBF4FD;
+    --fc-blue-100: #C8E0F8;
+    --fc-blue-200: #93C2F0;
+    --fc-blue-300: #5DA4E8;
+    --fc-blue-400: #2E8AE5;
+    --fc-blue-500: #378ADD;
+    --fc-blue-600: #185FA5;
+    --fc-blue-700: #0C447C;
+    --fc-blue-800: #072D54;
+    --fc-blue-900: #031A33;
+
+    --fc-gray-50:  #FAFAF9;
+    --fc-gray-100: #F1EFE8;
+    --fc-gray-150: #E0DDD4;
+    --fc-gray-200: #D3D1C7;
+    --fc-gray-400: #B5B2A6;
+    --fc-gray-600: #5F5E5A;
+    --fc-gray-700: #3D3D3A;
+    --fc-gray-800: #2C2C2A;
+    --fc-gray-900: #1A1A19;
+
+    --fc-red-50:   #FDEDED;
+    --fc-red-100:  #FAD0D0;
+    --fc-red-500:  #E24B4A;
+    --fc-red-700:  #A83232;
+
+    --fc-green-50:  #EFF6E6;
+    --fc-green-100: #D2EBBA;
+    --fc-green-500: #639922;
+    --fc-green-700: #426815;
+
+    --fc-yellow-50:  #FFF4E0;
+    --fc-yellow-100: #FFE4A8;
+    --fc-yellow-500: #D68000;
+    --fc-yellow-700: #9A5C00;
+
+    --fc-purple-50:  #EEE9FD;
+    --fc-purple-500: #7C5CE8;
+    --fc-purple-700: #5038B0;
+
+    --fc-orange-50:  #FEF0E6;
+    --fc-orange-500: #E8711A;
+    --fc-orange-700: #AA4E0C;
+
+    --fc-teal-50:  #E0F5F5;
+    --fc-teal-500: #00A3A3;
+    --fc-teal-700: #007070;
+
+    --fc-pink-50:  #FDECF3;
+    --fc-pink-500: #D4306A;
+    --fc-pink-700: #9C1E4C;
+
+    /* ---------- 语义令牌 ---------- */
+    --fc-color-primary:           var(--fc-blue-500);
+    --fc-color-primary-hover:     var(--fc-blue-600);
+    --fc-color-primary-active:    var(--fc-blue-700);
+    --fc-color-primary-subtle:    var(--fc-blue-50);
+
+    --fc-color-bg:                #FFFFFF;
+    --fc-color-bg-secondary:      var(--fc-gray-50);
+    --fc-color-bg-tertiary:       var(--fc-gray-100);
+    --fc-color-bg-elevated:       #FFFFFF;
+    --fc-color-bg-overlay:        rgba(0, 0, 0, 0.4);
+
+    --fc-color-text:              var(--fc-gray-900);
+    --fc-color-text-secondary:    var(--fc-gray-600);
+    --fc-color-text-tertiary:     var(--fc-gray-400);
+    --fc-color-text-disabled:     var(--fc-gray-400);
+    --fc-color-text-on-primary:   #FFFFFF;
+    --fc-color-text-link:         var(--fc-blue-600);
+    --fc-color-text-link-hover:   var(--fc-blue-700);
+
+    --fc-color-border:            var(--fc-gray-200);
+    --fc-color-border-light:      var(--fc-gray-150);
+    --fc-color-border-hover:      var(--fc-gray-600);
+    --fc-color-border-focus:      var(--fc-blue-500);
+
+    --fc-color-danger:            var(--fc-red-500);
+    --fc-color-danger-hover:      var(--fc-red-700);
+    --fc-color-danger-bg:         var(--fc-red-50);
+    --fc-color-danger-border:     var(--fc-red-100);
+
+    --fc-color-success:           var(--fc-green-500);
+    --fc-color-success-hover:     var(--fc-green-700);
+    --fc-color-success-bg:        var(--fc-green-50);
+    --fc-color-success-border:    var(--fc-green-100);
+
+    --fc-color-warning:           var(--fc-yellow-500);
+    --fc-color-warning-hover:     var(--fc-yellow-700);
+    --fc-color-warning-bg:        var(--fc-yellow-50);
+    --fc-color-warning-border:    var(--fc-yellow-100);
+
+    --fc-color-info:              var(--fc-blue-500);
+    --fc-color-info-bg:           var(--fc-blue-50);
+    --fc-color-info-border:       var(--fc-blue-100);
+
+    --fc-color-purple:            var(--fc-purple-500);
+    --fc-color-purple-bg:         var(--fc-purple-50);
+    --fc-color-orange:            var(--fc-orange-500);
+    --fc-color-orange-bg:         var(--fc-orange-50);
+    --fc-color-teal:              var(--fc-teal-500);
+    --fc-color-teal-bg:           var(--fc-teal-50);
+    --fc-color-pink:              var(--fc-pink-500);
+    --fc-color-pink-bg:           var(--fc-pink-50);
+
+    /* ---------- 间距 ---------- */
+    --fc-space-xs:  0.25rem;  /* 4px */
+    --fc-space-sm:  0.5rem;   /* 8px */
+    --fc-space-md:  0.75rem;  /* 12px */
+    --fc-space-lg:  1rem;     /* 16px */
+    --fc-space-xl:  1.5rem;   /* 24px */
+    --fc-space-2xl: 2rem;     /* 32px */
+    --fc-space-3xl: 3rem;     /* 48px */
+
+    /* ---------- 圆角 ---------- */
+    --fc-radius-xs:   0.125rem;   /* 2px */
+    --fc-radius-sm:   0.25rem;    /* 4px */
+    --fc-radius-md:   0.5rem;     /* 8px */
+    --fc-radius-lg:   0.75rem;    /* 12px */
+    --fc-radius-xl:   1rem;       /* 16px */
+    --fc-radius-full: 9999px;
+
+    /* ---------- 字体 ---------- */
+    --fc-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --fc-font-size-xs:  0.6875rem; /* 11px */
+    --fc-font-size-sm:  0.8125rem; /* 13px */
+    --fc-font-size-md:  0.9375rem; /* 15px */
+    --fc-font-size-lg:  1.125rem;  /* 18px */
+    --fc-font-size-xl:  1.375rem;  /* 22px */
+    --fc-font-weight-normal: 400;
+    --fc-font-weight-medium: 500;
+    --fc-font-weight-bold:   600;
+    --fc-line-height-tight:  1.3;
+    --fc-line-height-normal: 1.6;
+
+    /* ---------- 阴影 ---------- */
+    --fc-shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+    --fc-shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --fc-shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --fc-shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.06);
+
+    /* ---------- 过渡 ---------- */
+    --fc-transition:       150ms ease;
+    --fc-transition-slow:  250ms ease;
+    --fc-transition-fast:  100ms ease;
+
+    /* ---------- z-index ---------- */
+    --fc-z-dropdown: 100;
+    --fc-z-sticky:   200;
+    --fc-z-modal:    300;
+    --fc-z-toast:    400;
+    --fc-z-tooltip:  500;
+}
+
+body {
+    font-family: "Microsoft YaHei UI", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--fc-color-bg);
+    color: var(--fc-color-text);
+}
+
+/* ===== Dark 主题 ===== */
+[data-theme="dark"] {
+    --fc-color-primary:           var(--fc-blue-300);
+    --fc-color-primary-hover:     var(--fc-blue-200);
+    --fc-color-primary-active:    var(--fc-blue-100);
+    --fc-color-primary-subtle:    rgba(55, 138, 221, 0.12);
+
+    --fc-color-bg:                #0F0F0F;
+    --fc-color-bg-secondary:      #1A1A1A;
+    --fc-color-bg-tertiary:       #222222;
+    --fc-color-bg-elevated:       #242424;
+    --fc-color-bg-overlay:        rgba(0, 0, 0, 0.6);
+
+    --fc-color-text:              #E8E8E6;
+    --fc-color-text-secondary:    #9C9A92;
+    --fc-color-text-tertiary:     #636158;
+    --fc-color-text-disabled:     #4A4845;
+    --fc-color-text-on-primary:   #FFFFFF;
+    --fc-color-text-link:         var(--fc-blue-300);
+    --fc-color-text-link-hover:   var(--fc-blue-200);
+
+    --fc-color-border:            #333330;
+    --fc-color-border-light:      #2A2A28;
+    --fc-color-border-hover:      #555550;
+    --fc-color-border-focus:      var(--fc-blue-400);
+
+    --fc-color-danger:            #F06060;
+    --fc-color-danger-hover:      #F58080;
+    --fc-color-danger-bg:         rgba(226, 75, 74, 0.12);
+    --fc-color-danger-border:     rgba(226, 75, 74, 0.25);
+
+    --fc-color-success:           #7EBB38;
+    --fc-color-success-hover:     #9FD058;
+    --fc-color-success-bg:        rgba(99, 153, 34, 0.12);
+    --fc-color-success-border:    rgba(99, 153, 34, 0.25);
+
+    --fc-color-warning:           #F0A030;
+    --fc-color-warning-hover:     #F5BC60;
+    --fc-color-warning-bg:        rgba(214, 128, 0, 0.12);
+    --fc-color-warning-border:    rgba(214, 128, 0, 0.25);
+
+    --fc-color-info:              var(--fc-blue-300);
+    --fc-color-info-bg:           rgba(55, 138, 221, 0.12);
+    --fc-color-info-border:       rgba(55, 138, 221, 0.25);
+
+    --fc-color-purple:            #A080F0;
+    --fc-color-purple-bg:         rgba(124, 92, 232, 0.12);
+    --fc-color-orange:            #F08840;
+    --fc-color-orange-bg:         rgba(232, 113, 26, 0.12);
+    --fc-color-teal:              #20C8C8;
+    --fc-color-teal-bg:           rgba(0, 163, 163, 0.12);
+    --fc-color-pink:              #E860A0;
+    --fc-color-pink-bg:           rgba(212, 48, 106, 0.12);
+
+    --fc-shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+    --fc-shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+    --fc-shadow-md: 0 4px 12px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+    --fc-shadow-lg: 0 8px 24px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.4);
+}

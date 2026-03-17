@@ -1,0 +1,220 @@
+/* ========================================
+   Button.css - 基于 FC Design System
+   ======================================== */
+
+.fc-btn {
+    /* 组件局部变量 - 各变体只覆写这里 */
+    --btn-bg:           transparent;
+    --btn-bg-hover:     var(--fc-color-bg-secondary);
+    --btn-bg-active:    var(--fc-color-bg-tertiary);
+    --btn-color:        var(--fc-color-text);
+    --btn-color-active: var(--fc-color-text-secondary);
+    --btn-border:       transparent;
+    --btn-border-hover: transparent;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fc-space-sm);
+    padding: var(--fc-space-md) var(--fc-space-lg);
+    font-family: var(--fc-font-family), serif;
+    font-size: var(--fc-font-size-md);
+    font-weight: var(--fc-font-weight-medium);
+    line-height: var(--fc-line-height-tight);
+    border-radius: var(--fc-radius-md);
+    border: 1px solid var(--btn-border);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    user-select: none;
+    background-color: var(--btn-bg);
+    color: var(--btn-color);
+    transition: none;
+}
+
+.fc-btn:hover:not(:disabled):not(.is-disabled) {
+    background-color: var(--btn-bg-hover);
+    border-color: var(--btn-border-hover);
+}
+
+.fc-btn:active:not(:disabled):not(.is-disabled) {
+    background-color: var(--btn-bg-active);
+    color: var(--btn-color-active);
+}
+
+.fc-btn:disabled,
+.fc-btn.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ---------- 样式变体 ---------- */
+.fc-btn--primary {
+    --btn-bg:           var(--fc-color-primary);
+    --btn-bg-hover:     var(--fc-color-primary-hover);
+    --btn-bg-active:    var(--fc-color-primary-active);
+    --btn-color:        var(--fc-color-text-on-primary);
+    --btn-color-active: var(--fc-color-text-on-primary);
+    --btn-border:       var(--fc-color-primary);
+    --btn-border-hover: var(--fc-color-primary-hover);
+}
+
+.fc-btn--secondary {
+    --btn-bg:           var(--fc-color-bg-secondary);
+    --btn-bg-hover:     var(--fc-color-bg-tertiary);
+    --btn-bg-active:    var(--fc-color-bg-tertiary);
+    --btn-border:       var(--fc-color-border);
+    --btn-border-hover: var(--fc-color-border-hover);
+}
+
+.fc-btn--outline {
+    --btn-bg:           transparent;
+    --btn-bg-hover:     var(--fc-color-primary-subtle);
+    --btn-bg-active:    var(--fc-color-primary-subtle);
+    --btn-color:        var(--fc-color-primary);
+    --btn-color-active: var(--fc-color-primary-hover);
+    --btn-border:       var(--fc-color-primary);
+    --btn-border-hover: var(--fc-color-primary-hover);
+}
+
+/* ghost 使用基础默认值，无需额外声明 */
+
+/* ---------- 语义变体 ---------- */
+.fc-btn--danger {
+    --btn-bg:           var(--fc-color-danger);
+    --btn-bg-hover:     var(--fc-color-danger-hover);
+    --btn-bg-active:    var(--fc-color-danger-hover);
+    --btn-color:        var(--fc-color-text-on-primary);
+    --btn-color-active: var(--fc-color-text-on-primary);
+    --btn-border:       var(--fc-color-danger);
+    --btn-border-hover: var(--fc-color-danger-hover);
+}
+
+.fc-btn--danger.fc-btn--outline,
+.fc-btn--danger.fc-btn--ghost {
+    --btn-bg:           transparent;
+    --btn-bg-hover:     var(--fc-color-danger-bg);
+    --btn-bg-active:    var(--fc-color-danger-bg);
+    --btn-color:        var(--fc-color-danger);
+    --btn-color-active: var(--fc-color-danger);
+    --btn-border:       var(--fc-color-danger);
+    --btn-border-hover: var(--fc-color-danger);
+}
+
+.fc-btn--danger.fc-btn--ghost {
+    --btn-border: transparent;
+}
+
+.fc-btn--success {
+    --btn-bg:           var(--fc-color-success);
+    --btn-bg-hover:     var(--fc-color-success-hover);
+    --btn-bg-active:    var(--fc-color-success-hover);
+    --btn-color:        var(--fc-color-text-on-primary);
+    --btn-color-active: var(--fc-color-text-on-primary);
+    --btn-border:       var(--fc-color-success);
+    --btn-border-hover: var(--fc-color-success-hover);
+}
+
+.fc-btn--success.fc-btn--outline {
+    --btn-bg:           transparent;
+    --btn-bg-hover:     var(--fc-color-success-bg);
+    --btn-bg-active:    var(--fc-color-success-bg);
+    --btn-color:        var(--fc-color-success);
+    --btn-color-active: var(--fc-color-success);
+    --btn-border:       var(--fc-color-success);
+    --btn-border-hover: var(--fc-color-success);
+}
+
+.fc-btn--warning {
+    --btn-bg:           var(--fc-color-warning);
+    --btn-bg-hover:     var(--fc-color-warning-hover);
+    --btn-bg-active:    var(--fc-color-warning-hover);
+    --btn-color:        var(--fc-color-text-on-primary);
+    --btn-color-active: var(--fc-color-text-on-primary);
+    --btn-border:       var(--fc-color-warning);
+    --btn-border-hover: var(--fc-color-warning-hover);
+}
+
+.fc-btn--warning.fc-btn--outline {
+    --btn-bg:           transparent;
+    --btn-bg-hover:     var(--fc-color-warning-bg);
+    --btn-bg-active:    var(--fc-color-warning-bg);
+    --btn-color:        var(--fc-color-warning);
+    --btn-color-active: var(--fc-color-warning);
+    --btn-border:       var(--fc-color-warning);
+    --btn-border-hover: var(--fc-color-warning);
+}
+
+/* ---------- 尺寸变体 ---------- */
+.fc-btn--xs {
+    padding: var(--fc-space-xs) var(--fc-space-sm);
+    font-size: var(--fc-font-size-xs);
+    border-radius: var(--fc-radius-sm);
+}
+
+.fc-btn--sm {
+    padding: var(--fc-space-sm) var(--fc-space-md);
+    font-size: var(--fc-font-size-sm);
+    border-radius: var(--fc-radius-sm);
+}
+
+.fc-btn--lg {
+    padding: var(--fc-space-lg) var(--fc-space-xl);
+    font-size: var(--fc-font-size-lg);
+    border-radius: var(--fc-radius-lg);
+}
+
+.fc-btn--xl {
+    padding: var(--fc-space-xl) var(--fc-space-2xl);
+    font-size: var(--fc-font-size-xl);
+    border-radius: var(--fc-radius-lg);
+}
+
+/* ---------- 形状与宽度 ---------- */
+.fc-btn--square,
+.fc-btn--circle,
+.fc-btn--icon-only {
+    aspect-ratio: 1;
+    padding: var(--fc-space-md);
+}
+
+.fc-btn--circle { border-radius: var(--fc-radius-full); }
+.fc-btn--block  { display: flex; width: 100%; }
+
+.fc-btn--icon-only.fc-btn--xs { padding: var(--fc-space-xs); }
+.fc-btn--icon-only.fc-btn--sm { padding: var(--fc-space-sm); }
+.fc-btn--icon-only.fc-btn--lg { padding: var(--fc-space-lg); }
+.fc-btn--icon-only.fc-btn--xl { padding: var(--fc-space-xl); }
+
+.fc-btn__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
+}
+
+/* ---------- 按钮组 ---------- */
+.fc-btn-group {
+    display: inline-flex;
+}
+
+.fc-btn-group .fc-btn             { border-radius: 0; }
+.fc-btn-group .fc-btn:first-child { border-radius: var(--fc-radius-md) 0 0 var(--fc-radius-md); }
+.fc-btn-group .fc-btn:last-child  { border-radius: 0 var(--fc-radius-md) var(--fc-radius-md) 0; }
+.fc-btn-group .fc-btn:not(:last-child) { border-right-width: 0; }
+.fc-btn-group .fc-btn:hover       { z-index: 1; }
+
+/* ---------- 工具栏 ---------- */
+.fc-btn-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fc-space-sm);
+    align-items: center;
+}
+
+.fc-btn-toolbar--right   { justify-content: flex-end; }
+.fc-btn-toolbar--center  { justify-content: center; }
+.fc-btn-toolbar--between { justify-content: space-between; }

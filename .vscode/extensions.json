@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "TypeScript.tsserverlibrary",
+    "bradlc.vscode-tailwindcss",
+    "Gruntfuggly.todo-tree",
+    "eamodio.gitlens",
+    "ms-vscode.vscode-typescript-next",
+    "dsznajder.es7-react-js-snippets",
+    "xabikos.ReactSnippets",
+    "msjsdiag.debugger-for-chrome"
+  ]
+}

@@ -1,0 +1,105 @@
+/* RollingBox.css */
+
+/* ---------- 基础容器 ---------- */
+.fc-roll {
+    /* 组件级变量 */
+    --roll-thumb: transparent;
+    --roll-thumb-hover: var(--fc-color-text-tertiary);
+    --roll-thumb-active: var(--fc-color-text-secondary);
+    --roll-track: transparent;
+    --roll-size: 10px;
+
+    position: relative;
+    width: 100%;
+    height: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: var(--roll-thumb) var(--roll-track);
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- 内容包装 ---------- */
+.fc-roll__content {
+    min-width: 100%;
+    min-height: 100%;
+}
+
+/* ---------- 滚动方向 ---------- */
+.fc-roll--vertical {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.fc-roll--horizontal {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.fc-roll--horizontal .fc-roll__content {
+    display: inline-block;
+    min-width: max-content;
+}
+
+/* ---------- 滚动条尺寸（仅 Webkit 生效，Firefox 统一 thin） ---------- */
+.fc-roll--size-thin  { --roll-size: 0.5rem; }
+.fc-roll--size-thick { --roll-size: 0.6rem; }
+
+/* ---------- Webkit 滚动条 ---------- */
+.fc-roll::-webkit-scrollbar {
+    width: var(--roll-size);
+    height: var(--roll-size);
+    background: transparent;
+}
+
+.fc-roll::-webkit-scrollbar-track {
+    background: var(--roll-track);
+    border-radius: var(--fc-radius-full);
+}
+
+.fc-roll::-webkit-scrollbar-thumb {
+    background: var(--roll-thumb);
+    border-radius: var(--fc-radius-full);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+/* ---------- 显示模式：show ---------- */
+.fc-roll--thumb-show {
+    --roll-thumb: var(--fc-color-text-tertiary);
+}
+
+.fc-roll--thumb-show:hover {
+    --roll-thumb: var(--fc-color-text-secondary);
+}
+
+/* ---------- 显示模式：hide ---------- */
+.fc-roll--thumb-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.fc-roll--thumb-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* ---------- 显示模式：auto（悬停/滚动时显示） ---------- */
+.fc-roll--thumb-auto:hover {
+    --roll-thumb: var(--roll-thumb-hover);
+}
+
+.fc-roll--thumb-auto.fc-roll--scrolling {
+    --roll-thumb: var(--roll-thumb-active);
+}
+
+/* ---------- 显示轨道 ---------- */
+.fc-roll--track {
+    --roll-track: var(--fc-color-bg-tertiary);
+}
+
+.fc-roll--track.fc-roll--thumb-auto {
+    --roll-track: transparent;
+}
+
+.fc-roll--track.fc-roll--thumb-auto:hover,
+.fc-roll--track.fc-roll--thumb-auto.fc-roll--scrolling {
+    --roll-track: var(--fc-color-bg-tertiary);
+}

@@ -1,0 +1,106 @@
+/* CheckButton.css */
+
+.fc-check {
+    --track-w:   2.75rem;
+    --track-h:   1.5rem;
+    --label-size: var(--fc-font-size-md);
+
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-sm);
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+}
+
+.fc-check--sm { --track-w: 2.25rem;  --track-h: 1.25rem;  --label-size: var(--fc-font-size-sm); }
+.fc-check--lg { --track-w: 3.5rem;   --track-h: 1.875rem; --label-size: var(--fc-font-size-lg); }
+
+/* ---------- 轨道 ---------- */
+.fc-check__track {
+    position: relative;
+    flex-shrink: 0;
+    width: var(--track-w);
+    height: var(--track-h);
+    background-color: var(--fc-color-bg-tertiary);
+    border-radius: var(--fc-radius-full);
+    transition: background-color var(--fc-transition);
+}
+
+.fc-check--checked .fc-check__track {
+    background-color: var(--fc-color-primary);
+}
+
+.fc-check:focus-visible .fc-check__track {
+    box-shadow: 0 0 0 2px var(--fc-color-bg), 0 0 0 4px var(--fc-color-border-focus);
+}
+
+/* ---------- 滑块 ---------- */
+.fc-check__thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: calc(var(--track-h) - 4px);
+    height: calc(var(--track-h) - 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--fc-color-bg-elevated);
+    border-radius: var(--fc-radius-full);
+    box-shadow: var(--fc-shadow-sm);
+    transition: transform var(--fc-transition-slow) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fc-check--checked .fc-check__thumb {
+    transform: translateX(calc(var(--track-w) - var(--track-h)));
+}
+
+.fc-check__track:active .fc-check__thumb         { transform: scale(0.95); }
+.fc-check--checked .fc-check__track:active .fc-check__thumb {
+    transform: translateX(calc(var(--track-w) - var(--track-h))) scale(0.95);
+}
+
+/* ---------- 滑块内装饰 ---------- */
+.fc-check__thumb-inner {
+    width: 40%;
+    height: 40%;
+    background-color: var(--fc-color-text-tertiary);
+    border-radius: var(--fc-radius-full);
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity var(--fc-transition), transform var(--fc-transition), background-color var(--fc-transition);
+}
+
+.fc-check--checked .fc-check__thumb-inner {
+    opacity: 1;
+    transform: scale(1);
+    background-color: var(--fc-color-primary);
+}
+
+/* ---------- 标签 ---------- */
+.fc-check__label {
+    font-size: var(--label-size);
+    font-weight: var(--fc-font-weight-medium);
+    line-height: var(--fc-line-height-tight);
+    color: var(--fc-color-text);
+}
+
+/* ---------- 禁用 ---------- */
+.fc-check--disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.fc-check--disabled .fc-check__track {
+    cursor: not-allowed;
+    background-color: var(--fc-color-bg-secondary);
+}
+
+.fc-check--disabled.fc-check--checked .fc-check__track {
+    background-color: var(--fc-color-primary);
+    opacity: 0.5;
+}
+
+.fc-check--disabled .fc-check__label {
+    color: var(--fc-color-text-disabled);
+}
