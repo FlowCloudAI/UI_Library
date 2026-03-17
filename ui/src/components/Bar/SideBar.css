@@ -1,0 +1,188 @@
+/* SideBar.css */
+
+/* ---------- 基础容器 ---------- */
+.fc-sidebar {
+    --sidebar-width: 240px;
+    --sidebar-collapsed-width: 64px;
+    --sidebar-item-bg: transparent;
+    --sidebar-item-color: var(--fc-color-text-secondary);
+    --sidebar-item-indent: 0px;
+
+    display: flex;
+    flex-direction: column;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--fc-color-bg-secondary);
+    border-right: 1px solid var(--fc-color-border);
+    overflow: hidden;
+    transition: width var(--fc-transition-slow);
+}
+
+/* ---------- Header ---------- */
+.fc-sidebar__header {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--fc-space-md);
+    border-bottom: 1px solid var(--fc-color-border);
+}
+
+.fc-sidebar__collapse-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--fc-color-text-secondary);
+    cursor: pointer;
+    border-radius: var(--fc-radius-md);
+    transition: background var(--fc-transition), color var(--fc-transition);
+}
+
+.fc-sidebar__collapse-btn:hover {
+    background: var(--fc-color-bg-tertiary);
+    color: var(--fc-color-text);
+}
+
+.fc-sidebar__collapse-btn:focus-visible {
+    outline: 2px solid var(--fc-color-primary);
+    outline-offset: -2px;
+}
+
+/* ---------- Menu ---------- */
+.fc-sidebar__menu {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--fc-space-sm) 0;
+}
+
+/* ---------- Menu Item ---------- */
+.fc-sidebar__item {
+    --sidebar-item-bg: transparent;
+    --sidebar-item-color: var(--fc-color-text-secondary);
+
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-md);
+    padding: var(--fc-space-md) var(--fc-space-lg);
+    padding-left: calc(var(--fc-space-lg) + var(--sidebar-item-indent));
+    margin: 0 var(--fc-space-sm);
+    border-radius: var(--fc-radius-md);
+    cursor: pointer;
+    background: var(--sidebar-item-bg);
+    color: var(--sidebar-item-color);
+    position: relative;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: none;
+    width: calc(100% - var(--fc-space-sm) * 2);
+    font: inherit;
+    text-align: start;
+    text-decoration: none;
+    transition: background var(--fc-transition), color var(--fc-transition);
+}
+
+.fc-sidebar__item:hover:not(.fc-sidebar__item--disabled) {
+    --sidebar-item-bg: var(--fc-color-bg-tertiary);
+    --sidebar-item-color: var(--fc-color-text);
+}
+
+.fc-sidebar__item:focus-visible {
+    outline: 2px solid var(--fc-color-primary);
+    outline-offset: -2px;
+}
+
+/* selected */
+.fc-sidebar__item--selected {
+    --sidebar-item-bg: var(--fc-color-primary-subtle);
+    --sidebar-item-color: var(--fc-color-primary);
+}
+
+.fc-sidebar__item--selected::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    background: var(--fc-color-primary);
+    border-radius: 0 var(--fc-radius-sm) var(--fc-radius-sm) 0;
+}
+
+/* disabled */
+.fc-sidebar__item--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ---------- 缩进层级 ---------- */
+.fc-sidebar__item--level-1 { --sidebar-item-indent: 28px; }
+.fc-sidebar__item--level-2 { --sidebar-item-indent: 56px; }
+
+/* ---------- Icon ---------- */
+.fc-sidebar__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    font-size: var(--fc-font-size-lg);
+}
+
+/* ---------- Label ---------- */
+.fc-sidebar__label {
+    flex: 1;
+    font-size: var(--fc-font-size-md);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- Arrow ---------- */
+.fc-sidebar__arrow {
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: transform var(--fc-transition);
+}
+
+.fc-sidebar__item--open > .fc-sidebar__arrow {
+    transform: rotate(90deg);
+}
+
+/* ---------- Submenu ---------- */
+.fc-sidebar__submenu {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--fc-transition-slow);
+}
+
+.fc-sidebar__submenu--open {
+    grid-template-rows: 1fr;
+}
+
+.fc-sidebar__submenu-inner {
+    overflow: hidden;
+}
+
+/* ---------- Collapsed ---------- */
+.fc-sidebar--collapsed {
+    --sidebar-width: var(--sidebar-collapsed-width);
+}
+
+.fc-sidebar--collapsed .fc-sidebar__label,
+.fc-sidebar--collapsed .fc-sidebar__arrow {
+    display: none;
+}
+
+.fc-sidebar--collapsed .fc-sidebar__item {
+    justify-content: center;
+    padding: var(--fc-space-md);
+}
+
+.fc-sidebar--collapsed .fc-sidebar__submenu {
+    display: none;
+}

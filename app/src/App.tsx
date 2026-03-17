@@ -1,9 +1,13 @@
 import { Button, ButtonGroup, ButtonToolbar } from "flowcloudai-ui";
-import { CheckButton, RollingBox } from "flowcloudai-ui";
-import {useState} from "react";
+import { CheckButton, RollingBox, Input, Select, Slider, SideBar, Tree } from "flowcloudai-ui";
+import {useEffect, useState} from "react";
 
 export default function App() {
     const [enabled, setEnabled] = useState(false);
+
+    useEffect(() => {
+        console.log('enabled', enabled);
+    }, [enabled]);
 
     return (
         <div style={
@@ -142,6 +146,58 @@ export default function App() {
                     内容...
                 </div>
             </RollingBox>
+
+            // Input
+            <Input
+                size="lg"
+                prefix="@"
+                suffix=".com"
+                passwordToggle
+                allowClear
+                status="success"
+                helperText="格式正确"
+            />
+
+            // Slider
+            <Slider range min={0} max={100} defaultValue={[20, 80]} tooltip marks={{0:'0%',50:'50%',100:'100%'}} />
+            <Slider orientation="vertical" />
+
+            // Select
+            <Select
+                options={[
+                    { value: '1', label: '选项1', group: '分组A' },
+                    { value: '2', label: '选项2', group: '分组A' },
+                    { value: '3', label: '选项3', group: '分组B' }
+                ]}
+                searchable
+                multiple
+                virtualScroll
+            />
+
+            // SideBar
+            <SideBar
+                items={[
+                    { key: '1', label: '首页', icon: '🏠' },
+                    { key: '2', label: '设置', icon: '⚙️', children: [
+                            { key: '2-1', label: '个人' },
+                            { key: '2-2', label: '系统' }
+                        ]}
+                ]}
+                collapsed
+            />
+
+            // Tree
+            <Tree
+                treeData={[
+                    { key: '1', title: '父节点', children: [
+                            { key: '1-1', title: '子节点1', isLeaf: true },
+                            { key: '1-2', title: '子节点2', isLeaf: true }
+                        ]}
+                ]}
+                loadData={async (node) => { /* 异步加载 */ }}
+                searchable
+                showLine
+            />
         </div>
     );
 }

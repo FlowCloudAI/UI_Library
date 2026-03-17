@@ -1,0 +1,159 @@
+/* Input.css */
+.fc-input {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
+    font-family: var(--fc-font-family), serif;
+}
+
+.fc-input__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    background: var(--fc-color-bg);
+    border: 1px solid var(--fc-color-border);
+    border-radius: var(--fc-radius-md);
+    transition: border-color var(--fc-transition), box-shadow var(--fc-transition);
+}
+
+.fc-input__field {
+    width: 100%;
+    padding: 0 var(--fc-space-md);
+    border: none;
+    background: transparent;
+    color: var(--fc-color-text);
+    font-size: var(--fc-font-size-md);
+    line-height: var(--fc-line-height-tight);
+    outline: none;
+}
+
+.fc-input__field::placeholder {
+    color: var(--fc-color-text-tertiary);
+}
+
+/* 尺寸 */
+.fc-input--xs .fc-input__wrapper { height: 1.75rem; }
+.fc-input--xs .fc-input__field { font-size: var(--fc-font-size-xs); padding: 0 var(--fc-space-sm); }
+.fc-input--sm .fc-input__wrapper { height: 2rem; }
+.fc-input--sm .fc-input__field { font-size: var(--fc-font-size-sm); }
+.fc-input--md .fc-input__wrapper { height: 2.5rem; }
+.fc-input--lg .fc-input__wrapper { height: 3rem; }
+.fc-input--lg .fc-input__field { font-size: var(--fc-font-size-lg); }
+.fc-input--xl .fc-input__wrapper { height: 3.5rem; }
+.fc-input--xl .fc-input__field { font-size: var(--fc-font-size-xl); }
+
+/* 状态 */
+.fc-input--error .fc-input__wrapper {
+    border-color: var(--fc-color-danger);
+    background: var(--fc-color-danger-bg);
+}
+.fc-input--warning .fc-input__wrapper {
+    border-color: var(--fc-color-warning);
+    background: var(--fc-color-warning-bg);
+}
+.fc-input--success .fc-input__wrapper {
+    border-color: var(--fc-color-success);
+    background: var(--fc-color-success-bg);
+}
+
+.fc-input:not(.fc-input--disabled):hover .fc-input__wrapper {
+    border-color: var(--fc-color-border-hover);
+}
+.fc-input:not(.fc-input--disabled) .fc-input__field:focus ~ .fc-input__wrapper,
+.fc-input__wrapper:focus-within {
+    border-color: var(--fc-color-border-focus);
+    box-shadow: 0 0 0 3px var(--fc-color-primary-subtle);
+}
+
+/* 前缀后缀 */
+.fc-input__prefix,
+.fc-input__suffix,
+.fc-input__addon {
+    display: flex;
+    align-items: center;
+    color: var(--fc-color-text-secondary);
+    font-size: inherit;
+    white-space: nowrap;
+}
+
+.fc-input__prefix { margin-left: var(--fc-space-md); margin-right: var(--fc-space-sm); }
+.fc-input__suffix { margin-right: var(--fc-space-md); margin-left: var(--fc-space-sm); }
+
+.fc-input__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-xs);
+    margin-right: var(--fc-space-sm);
+}
+
+.fc-input__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--fc-color-text-tertiary);
+    cursor: pointer;
+    border-radius: var(--fc-radius-sm);
+    transition: color var(--fc-transition), background var(--fc-transition);
+}
+
+.fc-input__action:hover {
+    color: var(--fc-color-text);
+    background: var(--fc-color-bg-tertiary);
+}
+
+/* Addon */
+.fc-input__addon {
+    padding: 0 var(--fc-space-md);
+    background: var(--fc-color-bg-secondary);
+    border: 1px solid var(--fc-color-border);
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.fc-input__addon--before {
+    border-radius: var(--fc-radius-md) 0 0 var(--fc-radius-md);
+    border-right: none;
+}
+.fc-input__addon--after {
+    border-radius: 0 var(--fc-radius-md) var(--fc-radius-md) 0;
+    border-left: none;
+}
+
+.fc-input--addon-before .fc-input__wrapper {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+.fc-input--addon-after .fc-input__wrapper {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* Helper text */
+.fc-input__helper {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: var(--fc-space-xs);
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-color-text-secondary);
+}
+.fc-input__helper--error { color: var(--fc-color-danger); }
+.fc-input__helper--warning { color: var(--fc-color-warning); }
+.fc-input__helper--success { color: var(--fc-color-success); }
+
+/* Disabled */
+.fc-input--disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.fc-input--disabled .fc-input__field {
+    cursor: not-allowed;
+}

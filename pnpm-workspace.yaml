@@ -1,0 +1,5 @@
+packages:
+  - 'ui'
+  - 'app'
+allowBuilds:
+  esbuild: false
