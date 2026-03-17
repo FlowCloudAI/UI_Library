@@ -8,6 +8,7 @@
 
 .fc-select__trigger {
     display: flex;
+
     align-items: center;
     justify-content: space-between;
     padding: var(--fc-space-md) var(--fc-space-lg);
