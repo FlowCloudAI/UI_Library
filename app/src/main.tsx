@@ -6,7 +6,7 @@ import "flowcloudai-ui/style";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-        <ThemeProvider defaultTheme={"dark"}>
+        <ThemeProvider defaultTheme={"light"}>
             <App/>
         </ThemeProvider>
     </React.StrictMode>

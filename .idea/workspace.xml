@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="d122d401-e428-4e4a-85ad-bbc9f4d645ab" name="更改" comment="first">
+      <change beforePath="$PROJECT_DIR$/.npmrc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/.npmrc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/pnpm-lock.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pnpm-workspace.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/.npmrc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/flowcloudai-ui-0.1.0.tgz" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/ui/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/pnpm-lock.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/pnpm-workspace.yaml" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_E:/Projects/flowcloudai-ui-monorepo" value="3B1PRZTQBj6ijT9sbvN38jTQY3T" />
+    </persistenceIdMap>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+        <option value="TypeScript File" />
+        <option value="TypeScript JSX File" />
+        <option value="CSS File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;CURED-FSZ&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:FlowCloudAI/UI_Library.git&quot;,
+    &quot;accountId&quot;: &quot;193f8815-2e2a-407e-aa12-eb4e6684d846&quot;
+  }
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="3B1PRZTQBj6ijT9sbvN38jTQY3T" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "Shell Script.link.executor": "Run",
+    "Shell Script.open borswer.executor": "Run",
+    "git-widget-placeholder": "main",
+    "javascript.preferred.runtime.type.id": "node",
+    "last_opened_file_path": "E:/Projects/flowcloudai-ui-monorepo/ui/src/assets/fonts",
+    "list.type.of.created.stylesheet": "CSS",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_interpreter_path": "node",
+    "nodejs_package_manager_path": "npm",
+    "npm.build ui.executor": "Run",
+    "npm.install.executor": "Run",
+    "npm.install:tool.executor": "Run",
+    "npm.run app.executor": "Run",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "terminal",
+    "ts.external.directory.path": "E:\\Projects\\flowcloudai-ui-monorepo\\ui\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src\assets\fonts" />
+      <recent name="E:\Projects\flowcloudai-ui-monorepo\app" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\Projects\flowcloudai-ui-monorepo\.vscode" />
+      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src\assets\fonts" />
+      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src\components\Button" />
+      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src\components" />
+      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src" />
+    </key>
+  </component>
+  <component name="RunManager" selected="复合.运行">
+    <configuration name="运行" type="CompoundRunConfigurationType">
+      <toRun name="build ui" type="js.build_tools.npm" />
+      <toRun name="install:tool" type="js.build_tools.npm" />
+      <toRun name="run app" type="js.build_tools.npm" />
+      <toRun name="open borswer" type="ShConfigurationType" />
+      <method v="2" />
+    </configuration>
+    <configuration name="login" type="ShConfigurationType">
+      <option name="SCRIPT_TEXT" value="npm login" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="false" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$/ui" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="powershell.exe" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="false" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="open borswer" type="ShConfigurationType">
+      <option name="SCRIPT_TEXT" value="start http://localhost:5173" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="powershell.exe" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="false" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="build ui" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/ui/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="build" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="install:tool" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/app/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="install:local" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="pack" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/ui/package.json" />
+      <command value="pack" />
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="run app" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/app/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="npm.install:tool" />
+      <item itemvalue="npm.pack" />
+      <item itemvalue="npm.build ui" />
+      <item itemvalue="npm.run app" />
+      <item itemvalue="Shell Script.login" />
+      <item itemvalue="Shell Script.open borswer" />
+      <item itemvalue="复合.运行" />
+    </list>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-WS-253.31033.133" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="d122d401-e428-4e4a-85ad-bbc9f4d645ab" name="更改" comment="" />
+      <created>1773653596449</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1773653596449</updated>
+      <workItem from="1773653597259" duration="822000" />
+      <workItem from="1773654456315" duration="5493000" />
+      <workItem from="1773671969999" duration="3081000" />
+      <workItem from="1773705373502" duration="897000" />
+      <workItem from="1773735766258" duration="6468000" />
+      <workItem from="1773746666649" duration="6874000" />
+      <workItem from="1773755405529" duration="506000" />
+      <workItem from="1773755933339" duration="2599000" />
+      <workItem from="1773797134768" duration="1997000" />
+    </task>
+    <task id="LOCAL-00001" summary="first">
+      <option name="closed" value="true" />
+      <created>1773747778460</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1773747778460</updated>
+    </task>
+    <task id="LOCAL-00002" summary="first">
+      <option name="closed" value="true" />
+      <created>1773758172913</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1773758172913</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="main" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="first" />
+    <option name="LAST_COMMIT_MESSAGE" value="first" />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>
