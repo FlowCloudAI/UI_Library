@@ -1,0 +1,115 @@
+/* CSS变量定义 */
+:root {
+    --ui-avatar-bg: #6366f1;
+    --ui-avatar-color: #ffffff;
+    --ui-avatar-empty-bg: #f0f0f0;
+    --ui-avatar-radius-square: 8px;
+    --ui-avatar-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --ui-avatar-focus-ring: 0 0 0 2px #fff, 0 0 0 4px #1890ff;
+}
+
+/* 基础样式 */
+.ui-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: var(--ui-avatar-bg);
+    color: var(--ui-avatar-color);
+    font-weight: 600;
+    line-height: 1;
+    user-select: none;
+    overflow: hidden;
+    transition: var(--ui-avatar-transition);
+    position: relative;
+}
+
+/* 图片 */
+.ui-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 文本内容 */
+.ui-avatar-text,
+.ui-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    text-transform: uppercase;
+}
+
+/* 尺寸 */
+.ui-avatar-xs { width: 20px; height: 20px; font-size: 10px; }
+.ui-avatar-sm { width: 28px; height: 28px; font-size: 12px; }
+.ui-avatar-md { width: 40px; height: 40px; font-size: 16px; }
+.ui-avatar-lg { width: 56px; height: 56px; font-size: 20px; }
+.ui-avatar-xl { width: 72px; height: 72px; font-size: 28px; }
+
+/* 形状 */
+.ui-avatar-circle { border-radius: 50%; }
+.ui-avatar-square { border-radius: var(--ui-avatar-radius-square); }
+.ui-avatar-square.ui-avatar-xs { border-radius: 4px; }
+.ui-avatar-square.ui-avatar-sm { border-radius: 6px; }
+.ui-avatar-square.ui-avatar-lg { border-radius: 10px; }
+.ui-avatar-square.ui-avatar-xl { border-radius: 12px; }
+
+/* 边框 */
+.ui-avatar-bordered {
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 可点击状态 */
+.ui-avatar-clickable {
+    cursor: pointer;
+}
+
+.ui-avatar-clickable:hover {
+    filter: brightness(0.95);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ui-avatar-clickable:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
+}
+
+.ui-avatar-clickable:focus-visible {
+    outline: none;
+    box-shadow: var(--ui-avatar-focus-ring);
+}
+
+/* 空状态 */
+.ui-avatar-empty {
+    background-color: var(--ui-avatar-empty-bg);
+    color: #999;
+}
+
+/* 加载状态 */
+.ui-avatar-loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: ui-avatar-shimmer 1.5s infinite;
+}
+
+@keyframes ui-avatar-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* 深色模式 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --ui-avatar-empty-bg: #2a2a2a;
+    }
+    .ui-avatar-bordered {
+        border-color: #1a1a1a;
+    }
+}

@@ -1,0 +1,68 @@
+.ui-list-group {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.ui-list-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 12px;
+}
+
+.ui-list-item:last-child {
+    border-bottom: none;
+}
+
+.ui-list-item:hover:not(.ui-list-item-disabled):not(.ui-list-item-active) {
+    background-color: #f9fafb;
+}
+
+.ui-list-item-active {
+    background-color: #eff6ff;
+    border-color: #dbeafe;
+    color: #1d4ed8;
+    z-index: 1; /* 确保边框覆盖 */
+}
+
+.ui-list-item-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #f9fafb;
+}
+
+/* 内部布局辅助类 (可选，方便用户排列) */
+.ui-list-item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0; /* 防止文本溢出 */
+}
+
+.ui-list-item-title {
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ui-list-item-subtitle {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.ui-list-item-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
