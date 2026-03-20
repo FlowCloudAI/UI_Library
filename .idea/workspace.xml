@@ -4,13 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d122d401-e428-4e4a-85ad-bbc9f4d645ab" name="更改" comment="first">
+    <list default="true" id="d122d401-e428-4e4a-85ad-bbc9f4d645ab" name="更改" comment="Avatar、LinkGroup">
+      <change afterPath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/ui/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ui/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/ui/tsconfig.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,8 +26,8 @@
       <list>
         <option value="HTML File" />
         <option value="TypeScript File" />
-        <option value="TypeScript JSX File" />
         <option value="CSS File" />
+        <option value="TypeScript JSX File" />
       </list>
     </option>
   </component>
@@ -219,6 +218,8 @@
       <workItem from="1773920457743" duration="551000" />
       <workItem from="1773921372982" duration="1502000" />
       <workItem from="1773924259786" duration="2439000" />
+      <workItem from="1773984873064" duration="3084000" />
+      <workItem from="1773992108276" duration="944000" />
     </task>
     <task id="LOCAL-00001" summary="first">
       <option name="closed" value="true" />
@@ -236,7 +237,23 @@
       <option name="project" value="LOCAL" />
       <updated>1773758172913</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Avatar、LinkGroup">
+      <option name="closed" value="true" />
+      <created>1773984992057</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1773984992057</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Avatar、LinkGroup">
+      <option name="closed" value="true" />
+      <created>1773985428156</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1773985428156</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -267,7 +284,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="first" />
-    <option name="LAST_COMMIT_MESSAGE" value="first" />
+    <MESSAGE value="Avatar、LinkGroup" />
+    <option name="LAST_COMMIT_MESSAGE" value="Avatar、LinkGroup" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
