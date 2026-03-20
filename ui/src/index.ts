@@ -8,5 +8,7 @@ export * from "./components/Input/Input"
 export * from "./components/Slider/Slider"
 export * from "./components/Select/Select"
 export * from "./components/Tree/Tree"
+export * from "./components/Avatar/Avatar"
+export * from "./components/ListGroup/ListGroup"
 
 import "./styles/index.css"
