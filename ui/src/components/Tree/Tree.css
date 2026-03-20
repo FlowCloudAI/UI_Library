@@ -1,87 +1,165 @@
-/* Tree.css */
+/* Tree.css — World-building category tree */
+
+/* ── Base ────────────────────────────────────────────────────────────────────── */
+
 .fc-tree {
-    font-family: var(--fc-font-family), serif;
+    font-family: var(--fc-font-family), sans-serif;
     color: var(--fc-color-text);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
 }
 
+/* ── Search ──────────────────────────────────────────────────────────────────── */
+
 .fc-tree__search {
+    position: relative;
     padding: var(--fc-space-sm) var(--fc-space-md);
     border-bottom: 1px solid var(--fc-color-border);
 }
 
 .fc-tree__search-input {
     width: 100%;
-    padding: var(--fc-space-sm) var(--fc-space-md);
+    padding: var(--fc-space-sm) 2rem var(--fc-space-sm) var(--fc-space-md);
     border: 1px solid var(--fc-color-border);
     border-radius: var(--fc-radius-md);
     font-size: var(--fc-font-size-sm);
-    outline: none;
     background: var(--fc-color-bg);
     color: var(--fc-color-text);
+    outline: none;
+    transition: border-color var(--fc-transition);
+    box-sizing: border-box;
 }
 
 .fc-tree__search-input:focus {
     border-color: var(--fc-color-border-focus);
 }
 
+.fc-tree__search-clear {
+    position: absolute;
+    right: calc(var(--fc-space-md) + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--fc-color-text-tertiary);
+    font-size: var(--fc-font-size-sm);
+    padding: 2px 4px;
+    line-height: 1;
+    border-radius: var(--fc-radius-sm);
+    transition: color var(--fc-transition);
+}
+
+.fc-tree__search-clear:hover {
+    color: var(--fc-color-text);
+}
+
+/* ── List ────────────────────────────────────────────────────────────────────── */
+
 .fc-tree__list {
     padding: var(--fc-space-sm) 0;
 }
 
-/* Node */
+.fc-tree__empty {
+    padding: var(--fc-space-md);
+    text-align: center;
+    color: var(--fc-color-text-tertiary);
+    font-size: var(--fc-font-size-sm);
+}
+
+/* ── Node ────────────────────────────────────────────────────────────────────── */
+
 .fc-tree__node {
     position: relative;
 }
 
-/* Item */
+.fc-tree__node.is-dragging > .fc-tree__item {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+/* ── Item (row) ──────────────────────────────────────────────────────────────── */
+
 .fc-tree__item {
     display: flex;
     align-items: center;
     gap: var(--fc-space-sm);
-    padding: var(--fc-space-sm) var(--fc-space-md);
-    cursor: pointer;
-    transition: background var(--fc-transition);
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-right: var(--fc-space-md);
     border-radius: var(--fc-radius-sm);
-    margin: 0 var(--fc-space-sm);
+    margin: 1px var(--fc-space-sm);
+    min-height: 32px;
+    cursor: default;
+    transition: background var(--fc-transition);
+    position: relative;
+    user-select: none;
 }
 
-.fc-tree__item:hover:not(.fc-tree__item--disabled) {
+.fc-tree__item:hover {
     background: var(--fc-color-bg-secondary);
 }
 
+/* Selected item (when onSelect fires) */
 .fc-tree__item--selected {
     background: var(--fc-color-primary-subtle);
-    color: var(--fc-color-primary);
 }
 
-.fc-tree__item--disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+/* Ghost — the node being dragged */
+.fc-tree__item--drag-source {
+    background: var(--fc-color-bg-secondary);
+    opacity: 0.4;
 }
 
-/* Line connector */
-.fc-tree__item--line::before {
-    content: '';
-    position: absolute;
-    left: calc(var(--fc-space-md) + 8px);
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--fc-color-border);
+/* Drop-into highlight */
+.fc-tree__item--drop-into {
+    background: var(--fc-color-primary-subtle) !important;
+    outline: 1.5px solid var(--fc-color-primary);
+    outline-offset: -1px;
 }
 
-/* Switcher */
+/* ── Drag handle ─────────────────────────────────────────────────────────────── */
+
+.fc-tree__drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    flex-shrink: 0;
+    cursor: grab;
+    color: var(--fc-color-text-tertiary);
+    opacity: 0;
+    font-size: 14px;
+    line-height: 1;
+    transition: opacity var(--fc-transition), color var(--fc-transition);
+}
+
+.fc-tree__drag-handle:active {
+    cursor: grabbing;
+}
+
+.fc-tree__item:hover .fc-tree__drag-handle {
+    opacity: 1;
+}
+
+.fc-tree__drag-handle:hover {
+    color: var(--fc-color-text);
+}
+
+/* ── Expand switcher ─────────────────────────────────────────────────────────── */
+
 .fc-tree__switcher {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 16px;
     height: 16px;
-    font-size: 10px;
+    flex-shrink: 0;
+    font-size: 9px;
     color: var(--fc-color-text-tertiary);
     cursor: pointer;
     transition: transform var(--fc-transition), color var(--fc-transition);
-    flex-shrink: 0;
 }
 
 .fc-tree__switcher:hover {
@@ -94,49 +172,398 @@
 
 .fc-tree__switcher--hidden {
     visibility: hidden;
+    pointer-events: none;
 }
 
-.fc-tree__switcher--loading {
-    animation: fc-tree-spin 1s linear infinite;
-}
+/* ── Title ───────────────────────────────────────────────────────────────────── */
 
-@keyframes fc-tree-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* Icon */
-.fc-tree__icon {
-    display: flex;
-    align-items: center;
-    font-size: var(--fc-font-size-md);
-    flex-shrink: 0;
-}
-
-/* Title */
 .fc-tree__title {
     flex: 1;
     font-size: var(--fc-font-size-md);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: pointer;
 }
 
-/* Highlight */
-.fc-tree__highlight {
-    background: var(--fc-color-warning-bg);
-    color: var(--fc-color-warning);
-    padding: 0 2px;
-    border-radius: var(--fc-radius-xs);
+/* ── Inline edit input ───────────────────────────────────────────────────────── */
+
+.fc-tree__edit-input {
+    flex: 1;
+    font-size: var(--fc-font-size-md);
+    font-family: var(--fc-font-family), sans-serif;
+    color: var(--fc-color-text);
+    background: var(--fc-color-bg);
+    border: 1px solid var(--fc-color-border-focus);
+    border-radius: var(--fc-radius-sm);
+    padding: 2px 6px;
+    outline: none;
+    min-width: 0;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fc-color-primary) 15%, transparent);
+}
+
+/* ── Hover action buttons ────────────────────────────────────────────────────── */
+
+.fc-tree__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity var(--fc-transition);
+}
+
+.fc-tree__item:hover .fc-tree__actions {
+    opacity: 1;
+}
+
+.fc-tree__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: none;
+    border: none;
+    border-radius: var(--fc-radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--fc-color-text-tertiary);
+    padding: 0;
+    transition: background var(--fc-transition), color var(--fc-transition);
+    line-height: 1;
+}
+
+.fc-tree__action:hover {
+    background: var(--fc-color-border);
+    color: var(--fc-color-text);
+}
+
+.fc-tree__action--danger:hover {
+    background: color-mix(in srgb, #ef4444 15%, transparent);
+    color: #ef4444;
+}
+
+/* ── Drop indicator line ─────────────────────────────────────────────────────── */
+
+.fc-tree__drop-line {
+    height: 2px;
+    background: var(--fc-color-primary);
+    border-radius: 1px;
+    margin-right: var(--fc-space-md);
+    position: relative;
+    pointer-events: none;
+}
+
+.fc-tree__drop-line::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--fc-color-primary);
+}
+
+/* ── Collapse animation wrapper ──────────────────────────────────────────────── */
+
+.fc-tree__collapse {
+    /* height and transition set inline via JS (ResizeObserver) */
+}
+
+/* ── Add root button ─────────────────────────────────────────────────────────── */
+
+.fc-tree__add-root {
+    padding: var(--fc-space-sm) var(--fc-space-md);
+    border-top: 1px solid var(--fc-color-border);
+    margin-top: 2px;
+}
+
+.fc-tree__add-root-btn {
+    width: 100%;
+    padding: 6px var(--fc-space-md);
+    background: none;
+    border: 1px dashed var(--fc-color-border);
+    border-radius: var(--fc-radius-md);
+    color: var(--fc-color-text-tertiary);
+    font-size: var(--fc-font-size-sm);
+    font-family: var(--fc-font-family), sans-serif;
+    cursor: pointer;
+    transition: border-color var(--fc-transition), color var(--fc-transition),
+    background var(--fc-transition);
+    text-align: center;
+}
+
+.fc-tree__add-root-btn:hover {
+    border-color: var(--fc-color-primary);
+    color: var(--fc-color-primary);
+    background: var(--fc-color-primary-subtle);
+}
+
+/* ── Dialog overlay ──────────────────────────────────────────────────────────── */
+
+.fc-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--fc-space-md);
+}
+
+.fc-dialog {
+    background: var(--fc-color-bg);
+    border: 1px solid var(--fc-color-border);
+    border-radius: var(--fc-radius-md);
+    padding: var(--fc-space-md) calc(var(--fc-space-md) * 1.5);
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-md);
+}
+
+.fc-dialog--wide {
+    max-width: 520px;
+}
+
+.fc-dialog__header {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-sm);
+}
+
+.fc-dialog__icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.fc-dialog__title {
+    margin: 0;
+    font-size: 1rem;
     font-weight: var(--fc-font-weight-medium);
+    color: var(--fc-color-text);
 }
 
-/* Children */
-.fc-tree__children {
-    transition: all var(--fc-transition-slow);
+.fc-dialog__title--danger {
+    color: #ef4444;
 }
 
-/* Dark theme */
-[data-theme="dark"] .fc-tree__search-input {
+.fc-dialog__title--warning {
+    color: var(--fc-color-warning, #f59e0b);
+}
+
+.fc-dialog__desc {
+    margin: 0;
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-tertiary);
+    line-height: 1.6;
+}
+
+/* ── Dialog option buttons ───────────────────────────────────────────────────── */
+
+.fc-dialog__options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-sm);
+}
+
+.fc-dialog__option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--fc-space-sm);
+    padding: var(--fc-space-sm) var(--fc-space-md);
+    border: 1px solid var(--fc-color-border);
+    border-radius: var(--fc-radius-md);
     background: var(--fc-color-bg-secondary);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color var(--fc-transition), background var(--fc-transition);
+    width: 100%;
+}
+
+.fc-dialog__option:hover:not(:disabled) {
+    border-color: var(--fc-color-primary);
+    background: var(--fc-color-primary-subtle);
+}
+
+.fc-dialog__option--danger:hover:not(:disabled) {
+    border-color: #ef4444;
+    background: color-mix(in srgb, #ef4444 8%, transparent);
+}
+
+.fc-dialog__option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.fc-dialog__option-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.fc-dialog__option-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fc-dialog__option-title {
+    font-size: var(--fc-font-size-md);
+    font-weight: var(--fc-font-weight-medium);
+    color: var(--fc-color-text);
+}
+
+.fc-dialog__option-desc {
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-tertiary);
+    line-height: 1.5;
+}
+
+/* ── Dialog footer ───────────────────────────────────────────────────────────── */
+
+.fc-dialog__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--fc-space-sm);
+}
+
+.fc-dialog__btn {
+    padding: 6px 16px;
+    border-radius: var(--fc-radius-md);
+    font-size: var(--fc-font-size-sm);
+    font-family: var(--fc-font-family), sans-serif;
+    cursor: pointer;
+    border: 1px solid var(--fc-color-border);
+    background: var(--fc-color-bg-secondary);
+    color: var(--fc-color-text);
+    transition: background var(--fc-transition), border-color var(--fc-transition);
+}
+
+.fc-dialog__btn:hover:not(:disabled) {
+    background: var(--fc-color-border);
+}
+
+.fc-dialog__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.fc-dialog__btn--primary {
+    background: var(--fc-color-primary);
+    border-color: var(--fc-color-primary);
+    color: #fff;
+}
+
+.fc-dialog__btn--primary:hover:not(:disabled) {
+    opacity: 0.9;
+    background: var(--fc-color-primary);
+}
+
+.fc-dialog__btn--danger {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+}
+
+.fc-dialog__btn--danger:hover:not(:disabled) {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+/* ── Orphan dialog list ──────────────────────────────────────────────────────── */
+
+.fc-orphan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.fc-orphan-item {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-sm);
+    padding: 6px var(--fc-space-md);
+    border: 1px solid var(--fc-color-border);
+    border-radius: var(--fc-radius-sm);
+    background: var(--fc-color-bg-secondary);
+}
+
+.fc-orphan-name {
+    flex: 1;
+    font-size: var(--fc-font-size-md);
+    font-weight: var(--fc-font-weight-medium);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fc-orphan-id {
+    font-size: 0.7rem;
+    color: var(--fc-color-text-tertiary);
+    flex-shrink: 0;
+    font-family: monospace;
+}
+
+.fc-orphan-radios {
+    display: flex;
+    gap: var(--fc-space-sm);
+    flex-shrink: 0;
+}
+
+.fc-orphan-radio {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-tertiary);
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: var(--fc-radius-sm);
+    border: 1px solid transparent;
+    transition: all var(--fc-transition);
+}
+
+.fc-orphan-radio input[type='radio'] {
+    display: none;
+}
+
+.fc-orphan-radio.is-active {
+    border-color: var(--fc-color-primary);
+    color: var(--fc-color-primary);
+    background: var(--fc-color-primary-subtle);
+}
+
+.fc-orphan-radio--danger.is-active {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: color-mix(in srgb, #ef4444 8%, transparent);
+}
+
+.fc-orphan-radio:hover:not(.is-active) {
+    background: var(--fc-color-bg);
+    border-color: var(--fc-color-border);
+}
+
+/* ── Dark theme ──────────────────────────────────────────────────────────────── */
+
+[data-theme='dark'] .fc-tree__search-input {
+    background: var(--fc-color-bg-secondary);
+}
+
+[data-theme='dark'] .fc-tree__edit-input {
+    background: var(--fc-color-bg-secondary);
+}
+
+[data-theme='dark'] .fc-dialog {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }

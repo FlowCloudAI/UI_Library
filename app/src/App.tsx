@@ -1,9 +1,10 @@
 import { Button, ButtonGroup, ButtonToolbar } from "flowcloudai-ui";
 import {
-    CheckButton, RollingBox, Input, Select, Slider, SideBar, Tree,
+    CheckButton, RollingBox, Input, Select, Slider, SideBar,
     Avatar, ListGroup, ListGroupItem
 } from "flowcloudai-ui";
 import {useEffect, useState} from "react";
+import { TreeDemo } from './TreeDemo'
 
 export default function App() {
     const [enabled, setEnabled] = useState(false);
@@ -142,7 +143,7 @@ export default function App() {
 
             {/* Slider */}
             <Slider range min={0} max={100} defaultValue={[20, 80]} tooltip marks={{0:'0%',50:'50%',100:'100%'}} />
-            <Slider orientation="vertical" />
+            <Slider orientation="vertical" tooltip/>
 
             {/* Select */}
             <Select
@@ -169,17 +170,10 @@ export default function App() {
             />
 
             {/* Tree */}
-            <Tree
-                treeData={[
-                    { key: '1', title: '父节点', children: [
-                            { key: '1-1', title: '子节点1', isLeaf: true },
-                            { key: '1-2', title: '子节点2', isLeaf: true }
-                        ]}
-                ]}
-                loadData={async (node) => { /* 异步加载 */ }}
-                searchable
-                showLine
-            />
+            <div style={{ borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0' }}>
+                <h3 style={{ marginBottom: 20 }}>Tree 分类树组件测试</h3>
+                <TreeDemo />
+            </div>
 
             {/* Avatar组件测试 */}
             <div style={{ borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0' }}>

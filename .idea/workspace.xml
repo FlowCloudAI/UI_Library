@@ -5,12 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d122d401-e428-4e4a-85ad-bbc9f4d645ab" name="更改" comment="first">
+      <change afterPath="$PROJECT_DIR$/app/src/TreeDemo.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/src/components/Tree/DeleteDialog.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/src/components/Tree/OrphanDialog.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/src/components/Tree/flatToTree.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ui/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/ui/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/ui/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/components/Tree/Tree.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Tree/Tree.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/components/Tree/Tree.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Tree/Tree.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ui/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/ui/tsconfig.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,9 +33,9 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="HTML File" />
+        <option value="CSS File" />
         <option value="TypeScript File" />
         <option value="TypeScript JSX File" />
-        <option value="CSS File" />
       </list>
     </option>
   </component>
@@ -64,37 +71,37 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;Shell Script.link.executor&quot;: &quot;Run&quot;,
-    &quot;Shell Script.open borswer.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;javascript.preferred.runtime.type.id&quot;: &quot;node&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/Projects/flowcloudai-ui-monorepo/ui/src/assets/fonts&quot;,
-    &quot;list.type.of.created.stylesheet&quot;: &quot;CSS&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_interpreter_path&quot;: &quot;node&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;npm.build ui.executor&quot;: &quot;Run&quot;,
-    &quot;npm.install.executor&quot;: &quot;Run&quot;,
-    &quot;npm.install:tool.executor&quot;: &quot;Run&quot;,
-    &quot;npm.run app.executor&quot;: &quot;Run&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;terminal&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;D:\\流云AI\\UI_Library\\ui\\node_modules\\typescript\\lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "Shell Script.link.executor": "Run",
+    "Shell Script.open borswer.executor": "Run",
+    "git-widget-placeholder": "main",
+    "javascript.preferred.runtime.type.id": "node",
+    "last_opened_file_path": "E:/Projects/flowcloudai-ui-monorepo/ui/src/assets/fonts",
+    "list.type.of.created.stylesheet": "CSS",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_interpreter_path": "node",
+    "nodejs_package_manager_path": "npm",
+    "npm.build ui.executor": "Run",
+    "npm.install.executor": "Run",
+    "npm.install:tool.executor": "Run",
+    "npm.run app.executor": "Run",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "terminal",
+    "ts.external.directory.path": "E:\\Projects\\flowcloudai-ui-monorepo\\ui\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src\assets\fonts" />
@@ -108,7 +115,7 @@
       <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src" />
     </key>
   </component>
-  <component name="RunManager" selected="复合.运行">
+  <component name="RunManager" selected="npm.run app">
     <configuration name="运行" type="CompoundRunConfigurationType">
       <toRun name="build ui" type="js.build_tools.npm" />
       <toRun name="install:tool" type="js.build_tools.npm" />
