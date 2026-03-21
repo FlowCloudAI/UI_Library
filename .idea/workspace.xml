@@ -1,46 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="AutoImportSettings">
-    <option name="autoReloadType" value="SELECTIVE" />
+    <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d122d401-e428-4e4a-85ad-bbc9f4d645ab" name="更改" comment="first">
-      <change afterPath="$PROJECT_DIR$/app/src/TreeDemo.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui/src/components/Tree/DeleteDialog.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui/src/components/Tree/OrphanDialog.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui/src/components/Tree/flatToTree.ts" afterDir="false" />
-    <list default="true" id="d122d401-e428-4e4a-85ad-bbc9f4d645ab" name="更改" comment="添加虚拟列表功能">
+    <list default="true" id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/copilot.data.migration.ask2agent.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/flowcloudai-ui.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/App.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/ui/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/ui/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/components/Tree/Tree.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Tree/Tree.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/components/Tree/Tree.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Tree/Tree.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/components/Avatar/Avatar.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Avatar/Avatar.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/components/Avatar/Avatar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Avatar/Avatar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/components/Button/Button.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Button/Button.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
-  </component>
-  <component name="CopilotPersistence">
-    <persistenceIdMap>
-      <entry key="_E:/Projects/flowcloudai-ui-monorepo" value="3B1PRZTQBj6ijT9sbvN38jTQY3T" />
-    </persistenceIdMap>
-  </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="HTML File" />
-        <option value="CSS File" />
-        <option value="TypeScript File" />
-        <option value="TypeScript JSX File" />
-        <option value="CSS File" />
-        <option value="TypeScript JSX File" />
-      </list>
-    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -48,7 +31,7 @@
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
     &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;CURED-FSZ&quot;
+    &quot;assignee&quot;: &quot;by25594264426&quot;
   }
 }</component>
   <component name="GithubPullRequestsUISettings">{
@@ -58,105 +41,38 @@
   }
 }</component>
   <component name="MacroExpansionManager">
-    <option name="directoryName" value="LZeUGbSC" />
-  </component>
-  <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="directoryName" value="IneCsIdD" />
   </component>
   <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 0
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 1
 }</component>
-  <component name="ProjectId" id="3B1PRZTQBj6ijT9sbvN38jTQY3T" />
-  <component name="ProjectLevelVcsManager">
-    <ConfirmationsSetting value="2" id="Add" />
-  </component>
+  <component name="ProjectId" id="3BCgn3J4S6aj1aDgBu7W8dpP4FN" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.rust.reset.selective.auto.import": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "Shell Script.link.executor": "Run",
-    "Shell Script.open borswer.executor": "Run",
-    "git-widget-placeholder": "main",
-    "javascript.preferred.runtime.type.id": "node",
-    "last_opened_file_path": "E:/Projects/flowcloudai-ui-monorepo/ui/src/assets/fonts",
-    "list.type.of.created.stylesheet": "CSS",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_interpreter_path": "node",
-    "nodejs_package_manager_path": "npm",
-    "npm.build ui.executor": "Run",
-    "npm.install.executor": "Run",
-    "npm.install:tool.executor": "Run",
-    "npm.run app.executor": "Run",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "terminal",
-    "ts.external.directory.path": "E:\\Projects\\flowcloudai-ui-monorepo\\ui\\node_modules\\typescript\\lib",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;npm.build.executor&quot;: &quot;Run&quot;,
+    &quot;npm.dev.executor&quot;: &quot;Run&quot;,
+    &quot;npm.install:local.executor&quot;: &quot;Run&quot;,
+    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.language.and.region&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;D:\\流云AI\\UI_Library\\ui\\node_modules\\typescript\\lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
-  <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src\assets\fonts" />
-      <recent name="E:\Projects\flowcloudai-ui-monorepo\app" />
-    </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="E:\Projects\flowcloudai-ui-monorepo\.vscode" />
-      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src\assets\fonts" />
-      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src\components\Button" />
-      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src\components" />
-      <recent name="E:\Projects\flowcloudai-ui-monorepo\ui\src" />
-    </key>
-  </component>
-  <component name="RunManager" selected="npm.run app">
-    <configuration name="运行" type="CompoundRunConfigurationType">
-      <toRun name="build ui" type="js.build_tools.npm" />
-      <toRun name="install:tool" type="js.build_tools.npm" />
-      <toRun name="run app" type="js.build_tools.npm" />
-      <toRun name="open borswer" type="ShConfigurationType" />
-      <method v="2" />
-    </configuration>
-    <configuration name="login" type="ShConfigurationType">
-      <option name="SCRIPT_TEXT" value="npm login" />
-      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
-      <option name="SCRIPT_PATH" value="" />
-      <option name="SCRIPT_OPTIONS" value="" />
-      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="false" />
-      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$/ui" />
-      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
-      <option name="INTERPRETER_PATH" value="powershell.exe" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="EXECUTE_IN_TERMINAL" value="true" />
-      <option name="EXECUTE_SCRIPT_FILE" value="false" />
-      <envs />
-      <method v="2" />
-    </configuration>
-    <configuration name="open borswer" type="ShConfigurationType">
-      <option name="SCRIPT_TEXT" value="start http://localhost:5173" />
-      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
-      <option name="SCRIPT_PATH" value="" />
-      <option name="SCRIPT_OPTIONS" value="" />
-      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
-      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
-      <option name="INTERPRETER_PATH" value="powershell.exe" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="EXECUTE_IN_TERMINAL" value="true" />
-      <option name="EXECUTE_SCRIPT_FILE" value="false" />
-      <envs />
-      <method v="2" />
-    </configuration>
-    <configuration name="build ui" type="js.build_tools.npm">
+}</component>
+  <component name="RunManager" selected="npm.dev">
+    <configuration name="build" type="js.build_tools.npm">
       <package-json value="$PROJECT_DIR$/ui/package.json" />
       <command value="run" />
       <scripts>
@@ -166,24 +82,7 @@
       <envs />
       <method v="2" />
     </configuration>
-    <configuration name="install:tool" type="js.build_tools.npm">
-      <package-json value="$PROJECT_DIR$/app/package.json" />
-      <command value="run" />
-      <scripts>
-        <script value="install:local" />
-      </scripts>
-      <node-interpreter value="project" />
-      <envs />
-      <method v="2" />
-    </configuration>
-    <configuration name="pack" type="js.build_tools.npm">
-      <package-json value="$PROJECT_DIR$/ui/package.json" />
-      <command value="pack" />
-      <node-interpreter value="project" />
-      <envs />
-      <method v="2" />
-    </configuration>
-    <configuration name="run app" type="js.build_tools.npm">
+    <configuration name="dev" type="js.build_tools.npm">
       <package-json value="$PROJECT_DIR$/app/package.json" />
       <command value="run" />
       <scripts>
@@ -193,86 +92,34 @@
       <envs />
       <method v="2" />
     </configuration>
+    <configuration name="install:local" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/app/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="install:local" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
     <list>
-      <item itemvalue="npm.install:tool" />
-      <item itemvalue="npm.pack" />
-      <item itemvalue="npm.build ui" />
-      <item itemvalue="npm.run app" />
-      <item itemvalue="Shell Script.login" />
-      <item itemvalue="Shell Script.open borswer" />
-      <item itemvalue="复合.运行" />
+      <item itemvalue="npm.build" />
+      <item itemvalue="npm.install:local" />
+      <item itemvalue="npm.dev" />
     </list>
-  </component>
-  <component name="SharedIndexes">
-    <attachedChunks>
-      <set>
-        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-WS-253.31033.133" />
-      </set>
-    </attachedChunks>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="默认任务">
-      <changelist id="d122d401-e428-4e4a-85ad-bbc9f4d645ab" name="更改" comment="" />
-      <created>1773653596449</created>
+      <changelist id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="" />
+      <created>1773998630469</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1773653596449</updated>
-      <workItem from="1773653597259" duration="822000" />
-      <workItem from="1773654456315" duration="5493000" />
-      <workItem from="1773671969999" duration="3081000" />
-      <workItem from="1773705373502" duration="897000" />
-      <workItem from="1773735766258" duration="6468000" />
-      <workItem from="1773746666649" duration="6874000" />
-      <workItem from="1773755405529" duration="506000" />
-      <workItem from="1773755933339" duration="2599000" />
-      <workItem from="1773797134768" duration="1997000" />
-      <workItem from="1773920457743" duration="551000" />
-      <workItem from="1773921372982" duration="1502000" />
-      <workItem from="1773924259786" duration="2439000" />
-      <workItem from="1773984873064" duration="3084000" />
-      <workItem from="1773992108276" duration="2302000" />
+      <updated>1773998630469</updated>
+      <workItem from="1773998632072" duration="169000" />
+      <workItem from="1774069029361" duration="9903000" />
+      <workItem from="1774082883941" duration="3985000" />
+      <workItem from="1774091820392" duration="1463000" />
     </task>
-    <task id="LOCAL-00001" summary="first">
-      <option name="closed" value="true" />
-      <created>1773747778460</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1773747778460</updated>
-    </task>
-    <task id="LOCAL-00002" summary="first">
-      <option name="closed" value="true" />
-      <created>1773758172913</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1773758172913</updated>
-    </task>
-    <task id="LOCAL-00003" summary="Avatar、LinkGroup">
-      <option name="closed" value="true" />
-      <created>1773984992057</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1773984992057</updated>
-    </task>
-    <task id="LOCAL-00004" summary="Avatar、LinkGroup">
-      <option name="closed" value="true" />
-      <created>1773985428156</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1773985428156</updated>
-    </task>
-    <task id="LOCAL-00005" summary="添加虚拟列表功能">
-      <option name="closed" value="true" />
-      <created>1773993176347</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1773993176347</updated>
-    </task>
-    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -283,36 +130,10 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="FILTERS">
-                <map>
-                  <entry key="branch">
-                    <value>
-                      <list>
-                        <option value="main" />
-                      </list>
-                    </value>
-                  </entry>
-                </map>
-              </option>
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
-  </component>
-  <component name="VcsManagerConfiguration">
-    <MESSAGE value="first" />
-    <MESSAGE value="Avatar、LinkGroup" />
-    <MESSAGE value="添加虚拟列表功能" />
-    <option name="LAST_COMMIT_MESSAGE" value="添加虚拟列表功能" />
-  </component>
-  <component name="github-copilot-workspace">
-    <instructionFileLocations>
-      <option value=".github/instructions" />
-    </instructionFileLocations>
-    <promptFileLocations>
-      <option value=".github/prompts" />
-    </promptFileLocations>
   </component>
 </project>

@@ -1,68 +1,92 @@
-.ui-list-group {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #fff;
+/* src/components/ListGroup/ListGroup.css */
+
+/* 1. 容器样式 */
+.fc-list-group {
+    width: 100%;
+    background-color: var(--fc-color-bg); /* ✅ 使用变量 */
+    border: 1px solid var(--fc-color-border); /* ✅ 使用变量 */
+    border-radius: var(--fc-radius-md);
+    overflow: hidden; /* 确保子元素的圆角不被溢出遮挡 */
+    box-sizing: border-box;
 }
 
-.ui-list-item {
+/* 2. 列表项基础样式 */
+.fc-list-item {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #f3f4f6;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    gap: 12px;
+    padding: var(--fc-space-md) var(--fc-space-lg);
+
+    /* ✅ 核心修复：背景色完全由变量控制 */
+    background-color: var(--fc-color-bg);
+    color: var(--fc-color-text);
+
+    border-bottom: 1px solid var(--fc-color-border);
+    transition: background-color var(--fc-transition), color var(--fc-transition);
+    cursor: default;
 }
 
-.ui-list-item:last-child {
+/* 去掉最后一项的边框，避免双重边框 */
+.fc-list-item:last-child {
     border-bottom: none;
 }
 
-.ui-list-item:hover:not(.ui-list-item-disabled):not(.ui-list-item-active) {
-    background-color: #f9fafb;
+/* 3. 交互状态：悬停 */
+.fc-list-item:hover:not(.fc-list-item-disabled):not(.fc-list-item-active) {
+    background-color: var(--fc-color-bg-secondary); /* ✅ 悬停变色 */
+    cursor: pointer;
 }
 
-.ui-list-item-active {
-    background-color: #eff6ff;
-    border-color: #dbeafe;
-    color: #1d4ed8;
-    z-index: 1; /* 确保边框覆盖 */
+/* 4. 激活状态 */
+.fc-list-item-active {
+    background-color: var(--fc-color-primary-subtle); /* ✅ 激活背景 */
+    color: var(--fc-color-primary); /* ✅ 激活文字 */
+    font-weight: 500;
 }
 
-.ui-list-item-disabled {
+/* 5. 禁用状态 */
+.fc-list-item-disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    background-color: #f9fafb;
+    background-color: var(--fc-color-bg); /* 禁用时也保持背景一致 */
+    color: var(--fc-color-text-disabled);
 }
 
-/* 内部布局辅助类 (可选，方便用户排列) */
-.ui-list-item-content {
+/* 6. 内容布局 */
+.fc-list-item-content {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 0; /* 防止文本溢出 */
+    gap: var(--fc-space-xs);
+    min-width: 0; /* 防止文本溢出破坏布局 */
 }
 
-.ui-list-item-title {
+.fc-list-item-title {
+    font-size: var(--fc-font-size-base, 16px); /*  fallback 以防未定义 */
     font-weight: 500;
-    font-size: 14px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.ui-list-item-subtitle {
-    font-size: 12px;
-    color: #6b7280;
-    margin-top: 2px;
+.fc-list-item-subtitle {
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-color-text-secondary); /* ✅ 副标题颜色随主题变 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.ui-list-item-action {
+/* 7. 右侧动作区 (箭头等) */
+.fc-list-item-action {
     display: flex;
     align-items: center;
-    gap: 8px;
+    margin-left: var(--fc-space-sm);
+    color: var(--fc-color-text-secondary);
+    opacity: 0.5;
+    transition: opacity var(--fc-transition);
+}
+
+.fc-list-item:hover:not(.fc-list-item-disabled) .fc-list-item-action {
+    opacity: 1;
 }

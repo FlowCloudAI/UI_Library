@@ -1,37 +1,37 @@
-/* CSS变量定义 */
-:root {
-    --ui-avatar-bg: #6366f1;
-    --ui-avatar-color: #ffffff;
-    --ui-avatar-empty-bg: #f0f0f0;
-    --ui-avatar-radius-square: 8px;
-    --ui-avatar-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --ui-avatar-focus-ring: 0 0 0 2px #fff, 0 0 0 4px #1890ff;
-}
+/* Avatar.css - 基于 FC Design System */
 
-/* 基础样式 */
 .ui-avatar {
+    /* 组件局部变量 */
+    --avatar-bg: var(--fc-color-primary, #6366f1);
+    --avatar-color: var(--fc-color-text-on-primary, #ffffff);
+    --avatar-empty-bg: var(--fc-color-bg-secondary, #f3f4f6);
+    --avatar-empty-color: var(--fc-color-text-tertiary, #9ca3af);
+    --avatar-border: var(--fc-color-bg, #ffffff);
+    --avatar-shadow: var(--fc-shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+    --avatar-hover-filter: brightness(0.95);
+    --avatar-active-filter: brightness(0.9);
+    --avatar-focus-ring: 0 0 0 2px var(--fc-color-bg, #fff), 0 0 0 4px var(--fc-color-primary, #6366f1);
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background-color: var(--ui-avatar-bg);
-    color: var(--ui-avatar-color);
+    background-color: var(--avatar-bg);
+    color: var(--avatar-color);
     font-weight: 600;
     line-height: 1;
     user-select: none;
     overflow: hidden;
-    transition: var(--ui-avatar-transition);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
 }
 
-/* 图片 */
 .ui-avatar-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-/* 文本内容 */
 .ui-avatar-text,
 .ui-avatar-placeholder {
     display: flex;
@@ -40,6 +40,10 @@
     width: 100%;
     height: 100%;
     text-transform: uppercase;
+}
+
+.ui-avatar-placeholder svg {
+    color: var(--avatar-empty-color);
 }
 
 /* 尺寸 */
@@ -51,43 +55,43 @@
 
 /* 形状 */
 .ui-avatar-circle { border-radius: 50%; }
-.ui-avatar-square { border-radius: var(--ui-avatar-radius-square); }
-.ui-avatar-square.ui-avatar-xs { border-radius: 4px; }
-.ui-avatar-square.ui-avatar-sm { border-radius: 6px; }
-.ui-avatar-square.ui-avatar-lg { border-radius: 10px; }
-.ui-avatar-square.ui-avatar-xl { border-radius: 12px; }
+.ui-avatar-square { border-radius: var(--fc-radius-md, 8px); }
+.ui-avatar-square.ui-avatar-xs { border-radius: var(--fc-radius-sm, 4px); }
+.ui-avatar-square.ui-avatar-sm { border-radius: var(--fc-radius-sm, 6px); }
+.ui-avatar-square.ui-avatar-lg { border-radius: var(--fc-radius-lg, 10px); }
+.ui-avatar-square.ui-avatar-xl { border-radius: var(--fc-radius-lg, 12px); }
 
 /* 边框 */
 .ui-avatar-bordered {
-    border: 2px solid #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 2px solid var(--avatar-border);
+    box-shadow: var(--avatar-shadow);
 }
 
-/* 可点击状态 */
+/* 交互状态 */
 .ui-avatar-clickable {
     cursor: pointer;
 }
 
-.ui-avatar-clickable:hover {
-    filter: brightness(0.95);
+.ui-avatar-clickable:hover:not(:disabled) {
+    filter: var(--avatar-hover-filter);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--fc-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
 }
 
-.ui-avatar-clickable:active {
+.ui-avatar-clickable:active:not(:disabled) {
     transform: scale(0.95);
-    filter: brightness(0.9);
+    filter: var(--avatar-active-filter);
 }
 
 .ui-avatar-clickable:focus-visible {
     outline: none;
-    box-shadow: var(--ui-avatar-focus-ring);
+    box-shadow: var(--avatar-focus-ring);
 }
 
-/* 空状态 */
+/* 状态 */
 .ui-avatar-empty {
-    background-color: var(--ui-avatar-empty-bg);
-    color: #999;
+    background-color: var(--avatar-empty-bg);
+    color: var(--avatar-empty-color);
 }
 
 /* 加载状态 */
@@ -96,20 +100,36 @@
     position: absolute;
     inset: 0;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: ui-avatar-shimmer 1.5s infinite;
+    animation: avatar-shimmer 1.5s infinite;
 }
 
-@keyframes ui-avatar-shimmer {
+@keyframes avatar-shimmer {
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
 }
 
-/* 深色模式 */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --ui-avatar-empty-bg: #2a2a2a;
-    }
-    .ui-avatar-bordered {
-        border-color: #1a1a1a;
-    }
+/* 颜色变体 */
+.ui-avatar--primary {
+    --avatar-bg: var(--fc-color-primary);
+    --avatar-color: var(--fc-color-text-on-primary);
+}
+
+.ui-avatar--secondary {
+    --avatar-bg: var(--fc-color-bg-secondary);
+    --avatar-color: var(--fc-color-text-secondary);
+}
+
+.ui-avatar--success {
+    --avatar-bg: var(--fc-color-success);
+    --avatar-color: var(--fc-color-text-on-primary);
+}
+
+.ui-avatar--warning {
+    --avatar-bg: var(--fc-color-warning);
+    --avatar-color: var(--fc-color-text-on-primary);
+}
+
+.ui-avatar--danger {
+    --avatar-bg: var(--fc-color-danger);
+    --avatar-color: var(--fc-color-text-on-primary);
 }
