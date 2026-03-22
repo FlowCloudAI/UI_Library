@@ -34,10 +34,27 @@ export function ThemeProvider({ children, defaultTheme = 'system', target }: Pro
 
     const resolvedTheme = theme === 'system' ? systemTheme : theme
 
-    // 同步 data-theme 到 DOM（system 模式主动设置，不再依赖 @media）
+    // 同步 data-theme 到 DOM，并同时设置 class 作为后备
     useEffect(() => {
         const el = target ?? document.documentElement
+
+        // 移除旧的类
+        el.classList.remove('theme-light', 'theme-dark')
+
+        // 添加新的类作为后备方案
+        el.classList.add(`theme-${resolvedTheme}`)
+
+        // 设置 data-theme 属性（原有逻辑保持不变）
         el.setAttribute('data-theme', resolvedTheme)
+
+        // 额外：强制设置 body 背景色（确保立即生效）
+        if (resolvedTheme === 'dark') {
+            document.body.style.backgroundColor = '#0F0F0F'
+            document.body.style.color = '#E8E8E6'
+        } else {
+            document.body.style.backgroundColor = ''
+            document.body.style.color = ''
+        }
     }, [resolvedTheme, target])
 
     // 监听系统主题变化

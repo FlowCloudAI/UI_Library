@@ -4,21 +4,14 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/copilot.data.migration.ask2agent.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/flowcloudai-ui.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="暗色头像，先备个份，别的功能准备大改">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/components/Avatar/Avatar.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Avatar/Avatar.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/components/Avatar/Avatar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Avatar/Avatar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/components/Button/Button.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/Button/Button.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/ThemeProvider.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/ThemeProvider.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/styles/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/styles/index.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -104,8 +97,8 @@
     </configuration>
     <list>
       <item itemvalue="npm.build" />
-      <item itemvalue="npm.install:local" />
       <item itemvalue="npm.dev" />
+      <item itemvalue="npm.install:local" />
     </list>
   </component>
   <component name="TaskManager">
@@ -118,8 +111,20 @@
       <workItem from="1773998632072" duration="169000" />
       <workItem from="1774069029361" duration="9903000" />
       <workItem from="1774082883941" duration="3985000" />
-      <workItem from="1774091820392" duration="1463000" />
+      <workItem from="1774091820392" duration="1657000" />
+      <workItem from="1774097829157" duration="1945000" />
+      <workItem from="1774157823853" duration="923000" />
+      <workItem from="1774159352756" duration="2224000" />
     </task>
+    <task id="LOCAL-00001" summary="暗色头像，先备个份，别的功能准备大改">
+      <option name="closed" value="true" />
+      <created>1774093465342</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1774093465342</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -135,5 +140,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="暗色头像，先备个份，别的功能准备大改" />
+    <option name="LAST_COMMIT_MESSAGE" value="暗色头像，先备个份，别的功能准备大改" />
   </component>
 </project>

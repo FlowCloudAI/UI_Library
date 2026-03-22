@@ -1,92 +1,123 @@
-/* src/components/ListGroup/ListGroup.css */
-
-/* 1. 容器样式 */
+/* ListGroup.css */
 .fc-list-group {
-    width: 100%;
-    background-color: var(--fc-color-bg); /* ✅ 使用变量 */
-    border: 1px solid var(--fc-color-border); /* ✅ 使用变量 */
-    border-radius: var(--fc-radius-md);
-    overflow: hidden; /* 确保子元素的圆角不被溢出遮挡 */
-    box-sizing: border-box;
-}
-
-/* 2. 列表项基础样式 */
-.fc-list-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--fc-space-md) var(--fc-space-lg);
-
-    /* ✅ 核心修复：背景色完全由变量控制 */
-    background-color: var(--fc-color-bg);
-    color: var(--fc-color-text);
-
-    border-bottom: 1px solid var(--fc-color-border);
-    transition: background-color var(--fc-transition), color var(--fc-transition);
-    cursor: default;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background-color: var(--fc-color-bg, #ffffff);
+    border-radius: var(--fc-radius-md, 8px);
 }
 
-/* 去掉最后一项的边框，避免双重边框 */
-.fc-list-item:last-child {
-    border-bottom: none;
+.fc-list-group--bordered {
+    border: 1px solid var(--fc-color-border, #e5e7eb);
 }
 
-/* 3. 交互状态：悬停 */
-.fc-list-item:hover:not(.fc-list-item-disabled):not(.fc-list-item-active) {
-    background-color: var(--fc-color-bg-secondary); /* ✅ 悬停变色 */
+.fc-list-group--flush {
+    border-radius: 0;
+}
+
+.fc-list-group--flush .fc-list-group-item:first-child {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.fc-list-group--flush .fc-list-group-item:last-child {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.fc-list-group-item {
+    position: relative;
+    display: block;
+    padding: var(--fc-space-md, 12px) var(--fc-space-lg, 16px);
+    color: var(--fc-color-text, #111827);
+    background-color: var(--fc-color-bg, #ffffff);
+    border-bottom: 1px solid var(--fc-color-border-light, #f0f0f0);
+    transition: all var(--fc-transition, 150ms ease);
     cursor: pointer;
 }
 
-/* 4. 激活状态 */
-.fc-list-item-active {
-    background-color: var(--fc-color-primary-subtle); /* ✅ 激活背景 */
-    color: var(--fc-color-primary); /* ✅ 激活文字 */
-    font-weight: 500;
+.fc-list-group--bordered .fc-list-group-item {
+    border-bottom: 1px solid var(--fc-color-border, #e5e7eb);
 }
 
-/* 5. 禁用状态 */
-.fc-list-item-disabled {
-    opacity: 0.6;
+.fc-list-group-item:last-child {
+    border-bottom: none;
+}
+
+.fc-list-group-item:first-child {
+    border-top-left-radius: var(--fc-radius-md, 8px);
+    border-top-right-radius: var(--fc-radius-md, 8px);
+}
+
+.fc-list-group-item:last-child {
+    border-bottom-left-radius: var(--fc-radius-md, 8px);
+    border-bottom-right-radius: var(--fc-radius-md, 8px);
+}
+
+.fc-list-group-item:hover:not(.fc-list-group-item--disabled) {
+    background-color: var(--fc-color-bg-secondary, #f9fafb);
+}
+
+.fc-list-group-item--active {
+    background-color: var(--fc-color-primary-subtle, #eff6ff);
+    color: var(--fc-color-primary, #6366f1);
+    border-left: 3px solid var(--fc-color-primary, #6366f1);
+    padding-left: calc(var(--fc-space-lg, 16px) - 3px);
+}
+
+.fc-list-group-item--active:hover {
+    background-color: var(--fc-color-primary-subtle, #eff6ff);
+}
+
+.fc-list-group-item--disabled {
+    color: var(--fc-color-text-disabled, #9ca3af);
     cursor: not-allowed;
-    background-color: var(--fc-color-bg); /* 禁用时也保持背景一致 */
-    color: var(--fc-color-text-disabled);
+    pointer-events: none;
+    opacity: 0.6;
 }
 
-/* 6. 内容布局 */
-.fc-list-item-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: var(--fc-space-xs);
-    min-width: 0; /* 防止文本溢出破坏布局 */
+/* ========== 暗色主题样式 ========== */
+
+/* 暗色主题下的列表组容器背景 */
+[data-theme="dark"] .fc-list-group {
+    background-color: var(--fc-color-bg, #0F0F0F);
 }
 
-.fc-list-item-title {
-    font-size: var(--fc-font-size-base, 16px); /*  fallback 以防未定义 */
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* 暗色主题下的列表项基础背景色和文字颜色 */
+[data-theme="dark"] .fc-list-group-item {
+    background-color: var(--fc-color-bg, #0F0F0F);
+    color: var(--fc-color-text, #E8E8E6);
+    border-bottom-color: var(--fc-color-border-light, #2A2A28);
 }
 
-.fc-list-item-subtitle {
-    font-size: var(--fc-font-size-xs);
-    color: var(--fc-color-text-secondary); /* ✅ 副标题颜色随主题变 */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* 暗色主题下的带边框列表组 */
+[data-theme="dark"] .fc-list-group--bordered {
+    border-color: var(--fc-color-border, #333330);
 }
 
-/* 7. 右侧动作区 (箭头等) */
-.fc-list-item-action {
-    display: flex;
-    align-items: center;
-    margin-left: var(--fc-space-sm);
-    color: var(--fc-color-text-secondary);
-    opacity: 0.5;
-    transition: opacity var(--fc-transition);
+[data-theme="dark"] .fc-list-group--bordered .fc-list-group-item {
+    border-bottom-color: var(--fc-color-border, #333330);
 }
 
-.fc-list-item:hover:not(.fc-list-item-disabled) .fc-list-item-action {
-    opacity: 1;
+/* 暗色主题下的悬停效果 */
+[data-theme="dark"] .fc-list-group-item:hover:not(.fc-list-group-item--disabled) {
+    background-color: var(--fc-color-bg-secondary, #1A1A1A);
+}
+
+/* 暗色主题下的激活状态 */
+[data-theme="dark"] .fc-list-group-item--active {
+    background-color: var(--fc-color-primary-subtle, rgba(55, 138, 221, 0.12));
+    color: var(--fc-color-primary, #5DA4E8);
+    border-left-color: var(--fc-color-primary, #5DA4E8);
+}
+
+[data-theme="dark"] .fc-list-group-item--active:hover {
+    background-color: var(--fc-color-primary-subtle, rgba(55, 138, 221, 0.12));
+}
+
+/* 暗色主题下的禁用状态 */
+[data-theme="dark"] .fc-list-group-item--disabled {
+    color: var(--fc-color-text-disabled, #4A4845);
 }
