@@ -1,4 +1,8 @@
-/* ListGroup.css */
+/* ListGroup.css - 优化版 v2.0 */
+
+/* ============================================
+   基础样式
+   ============================================ */
 .fc-list-group {
     display: flex;
     flex-direction: column;
@@ -9,24 +13,36 @@
     border-radius: var(--fc-radius-md, 8px);
 }
 
+/* ============================================
+   暗色主题支持 - 使用 data-theme 属性
+   ============================================ */
+[data-theme="dark"] .fc-list-group {
+    background-color: var(--fc-color-bg, #0F0F0F);
+}
+
+/* ============================================
+   变体样式
+   ============================================ */
 .fc-list-group--bordered {
     border: 1px solid var(--fc-color-border, #e5e7eb);
 }
 
-.fc-list-group--flush {
+[data-theme="dark"] .fc-list-group--bordered {
+    border-color: var(--fc-color-border, #333330);
+}
+
+.fc-list-group--no-radius {
     border-radius: 0;
 }
 
-.fc-list-group--flush .fc-list-group-item:first-child {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+.fc-list-group--no-radius .fc-list-group-item:first-child,
+.fc-list-group--no-radius .fc-list-group-item:last-child {
+    border-radius: 0;
 }
 
-.fc-list-group--flush .fc-list-group-item:last-child {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
+/* ============================================
+   列表项基础样式
+   ============================================ */
 .fc-list-group-item {
     position: relative;
     display: block;
@@ -34,18 +50,19 @@
     color: var(--fc-color-text, #111827);
     background-color: var(--fc-color-bg, #ffffff);
     border-bottom: 1px solid var(--fc-color-border-light, #f0f0f0);
-    transition: all var(--fc-transition, 150ms ease);
+    transition: background-color var(--fc-transition, 150ms ease),
+    border-color var(--fc-transition, 150ms ease),
+    color var(--fc-transition, 150ms ease);
     cursor: pointer;
 }
 
-.fc-list-group--bordered .fc-list-group-item {
-    border-bottom: 1px solid var(--fc-color-border, #e5e7eb);
+[data-theme="dark"] .fc-list-group-item {
+    background-color: var(--fc-color-bg, #0F0F0F);
+    color: var(--fc-color-text, #E8E8E6);
+    border-bottom-color: var(--fc-color-border-light, #2A2A28);
 }
 
-.fc-list-group-item:last-child {
-    border-bottom: none;
-}
-
+/* 圆角处理 */
 .fc-list-group-item:first-child {
     border-top-left-radius: var(--fc-radius-md, 8px);
     border-top-right-radius: var(--fc-radius-md, 8px);
@@ -54,12 +71,47 @@
 .fc-list-group-item:last-child {
     border-bottom-left-radius: var(--fc-radius-md, 8px);
     border-bottom-right-radius: var(--fc-radius-md, 8px);
+    border-bottom: none;
 }
 
+/* 带边框列表组的特殊处理 */
+.fc-list-group--bordered .fc-list-group-item {
+    border-bottom-color: var(--fc-color-border, #e5e7eb);
+}
+
+[data-theme="dark"] .fc-list-group--bordered .fc-list-group-item {
+    border-bottom-color: var(--fc-color-border, #333330);
+}
+
+.fc-list-group--bordered .fc-list-group-item:last-child {
+    border-bottom: none;
+}
+
+/* ============================================
+   交互状态
+   ============================================ */
 .fc-list-group-item:hover:not(.fc-list-group-item--disabled) {
     background-color: var(--fc-color-bg-secondary, #f9fafb);
 }
 
+[data-theme="dark"] .fc-list-group-item:hover:not(.fc-list-group-item--disabled) {
+    background-color: var(--fc-color-bg-secondary, #1A1A1A);
+}
+
+/* 焦点样式 - 提升可访问性 */
+.fc-list-group-item:focus-visible:not(.fc-list-group-item--disabled) {
+    outline: none;
+    background-color: var(--fc-color-bg-secondary, #f9fafb);
+    box-shadow: inset 0 0 0 2px var(--fc-color-primary, #6366f1);
+    z-index: 1;
+}
+
+[data-theme="dark"] .fc-list-group-item:focus-visible:not(.fc-list-group-item--disabled) {
+    background-color: var(--fc-color-bg-secondary, #1A1A1A);
+    box-shadow: inset 0 0 0 2px var(--fc-color-primary, #5DA4E8);
+}
+
+/* 激活状态 */
 .fc-list-group-item--active {
     background-color: var(--fc-color-primary-subtle, #eff6ff);
     color: var(--fc-color-primary, #6366f1);
@@ -67,10 +119,21 @@
     padding-left: calc(var(--fc-space-lg, 16px) - 3px);
 }
 
+[data-theme="dark"] .fc-list-group-item--active {
+    background-color: var(--fc-color-primary-subtle, rgba(55, 138, 221, 0.12));
+    color: var(--fc-color-primary, #5DA4E8);
+    border-left-color: var(--fc-color-primary, #5DA4E8);
+}
+
 .fc-list-group-item--active:hover {
     background-color: var(--fc-color-primary-subtle, #eff6ff);
 }
 
+[data-theme="dark"] .fc-list-group-item--active:hover {
+    background-color: var(--fc-color-primary-subtle, rgba(55, 138, 221, 0.12));
+}
+
+/* 禁用状态 */
 .fc-list-group-item--disabled {
     color: var(--fc-color-text-disabled, #9ca3af);
     cursor: not-allowed;
@@ -78,46 +141,116 @@
     opacity: 0.6;
 }
 
-/* ========== 暗色主题样式 ========== */
-
-/* 暗色主题下的列表组容器背景 */
-[data-theme="dark"] .fc-list-group {
-    background-color: var(--fc-color-bg, #0F0F0F);
-}
-
-/* 暗色主题下的列表项基础背景色和文字颜色 */
-[data-theme="dark"] .fc-list-group-item {
-    background-color: var(--fc-color-bg, #0F0F0F);
-    color: var(--fc-color-text, #E8E8E6);
-    border-bottom-color: var(--fc-color-border-light, #2A2A28);
-}
-
-/* 暗色主题下的带边框列表组 */
-[data-theme="dark"] .fc-list-group--bordered {
-    border-color: var(--fc-color-border, #333330);
-}
-
-[data-theme="dark"] .fc-list-group--bordered .fc-list-group-item {
-    border-bottom-color: var(--fc-color-border, #333330);
-}
-
-/* 暗色主题下的悬停效果 */
-[data-theme="dark"] .fc-list-group-item:hover:not(.fc-list-group-item--disabled) {
-    background-color: var(--fc-color-bg-secondary, #1A1A1A);
-}
-
-/* 暗色主题下的激活状态 */
-[data-theme="dark"] .fc-list-group-item--active {
-    background-color: var(--fc-color-primary-subtle, rgba(55, 138, 221, 0.12));
-    color: var(--fc-color-primary, #5DA4E8);
-    border-left-color: var(--fc-color-primary, #5DA4E8);
-}
-
-[data-theme="dark"] .fc-list-group-item--active:hover {
-    background-color: var(--fc-color-primary-subtle, rgba(55, 138, 221, 0.12));
-}
-
-/* 暗色主题下的禁用状态 */
 [data-theme="dark"] .fc-list-group-item--disabled {
     color: var(--fc-color-text-disabled, #4A4845);
+}
+
+/* ============================================
+   响应式设计 - 移动端适配
+   ============================================ */
+@media (max-width: 640px) {
+    .fc-list-group-item {
+        padding: var(--fc-space-sm, 8px) var(--fc-space-md, 12px);
+    }
+
+    .fc-list-group-item--active {
+        padding-left: calc(var(--fc-space-md, 12px) - 3px);
+    }
+}
+
+/* ============================================
+   紧凑模式
+   ============================================ */
+.fc-list-group--compact .fc-list-group-item {
+    padding: var(--fc-space-sm, 8px) var(--fc-space-md, 12px);
+}
+
+.fc-list-group--compact .fc-list-group-item--active {
+    padding-left: calc(var(--fc-space-md, 12px) - 3px);
+}
+
+/* ============================================
+   宽松模式
+   ============================================ */
+.fc-list-group--relaxed .fc-list-group-item {
+    padding: var(--fc-space-lg, 16px) var(--fc-space-xl, 20px);
+}
+
+.fc-list-group--relaxed .fc-list-group-item--active {
+    padding-left: calc(var(--fc-space-xl, 20px) - 3px);
+}
+
+/* ============================================
+   无分割线模式
+   ============================================ */
+.fc-list-group--no-divided .fc-list-group-item {
+    border-bottom: none;
+}
+
+/* ============================================
+   分割线样式 - 默认都有分割线，无需额外类
+   ============================================ */
+
+/* ============================================
+   无障碍优化 - 减少动画
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    .fc-list-group-item {
+        transition: none;
+    }
+}
+
+/* ============================================
+   高对比度模式支持
+   ============================================ */
+@media (prefers-contrast: more) {
+    .fc-list-group--bordered {
+        border-width: 2px;
+    }
+
+    .fc-list-group-item {
+        border-bottom-width: 2px;
+    }
+
+    .fc-list-group-item--active {
+        border-left-width: 4px;
+        font-weight: 700;
+    }
+
+    .fc-list-group-item:focus-visible:not(.fc-list-group-item--disabled) {
+        outline: 2px solid currentColor;
+        box-shadow: none;
+    }
+}
+
+/* ============================================
+   嵌套列表组
+   ============================================ */
+.fc-list-group-nested {
+    margin-left: var(--fc-space-lg, 16px);
+    margin-top: var(--fc-space-sm, 8px);
+    margin-bottom: var(--fc-space-sm, 8px);
+}
+
+/* ============================================
+   带图标和辅助内容的列表项
+   ============================================ */
+.fc-list-group-item-icon {
+    margin-right: var(--fc-space-sm, 8px);
+    flex-shrink: 0;
+}
+
+.fc-list-group-item-content {
+    flex: 1;
+}
+
+.fc-list-group-item-actions {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.fc-list-group-item-with-icon,
+.fc-list-group-item-with-actions {
+    display: flex;
+    align-items: center;
 }
