@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="暗色功能完成，在写懒加载">
-      <change afterPath="$PROJECT_DIR$/ui/src/components/LazyLoad/LazyLoad.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui/src/components/LazyLoad/LazyLoad.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/index.ts" afterDir="false" />
-    </list>
+    <list default="true" id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="添加懒加载，LazyContent文件是用来测试功能的" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -122,7 +116,7 @@
       <workItem from="1774097829157" duration="1945000" />
       <workItem from="1774157823853" duration="923000" />
       <workItem from="1774159352756" duration="4242000" />
-      <workItem from="1774175053888" duration="1834000" />
+      <workItem from="1774175053888" duration="2181000" />
     </task>
     <task id="LOCAL-00001" summary="暗色头像，先备个份，别的功能准备大改">
       <option name="closed" value="true" />
@@ -140,7 +134,15 @@
       <option name="project" value="LOCAL" />
       <updated>1774161852942</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="添加懒加载，LazyContent文件是用来测试功能的">
+      <option name="closed" value="true" />
+      <created>1774177217293</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1774177217293</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -160,6 +162,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="暗色头像，先备个份，别的功能准备大改" />
     <MESSAGE value="暗色功能完成，在写懒加载" />
-    <option name="LAST_COMMIT_MESSAGE" value="暗色功能完成，在写懒加载" />
+    <MESSAGE value="添加懒加载，LazyContent文件是用来测试功能的" />
+    <option name="LAST_COMMIT_MESSAGE" value="添加懒加载，LazyContent文件是用来测试功能的" />
   </component>
 </project>
