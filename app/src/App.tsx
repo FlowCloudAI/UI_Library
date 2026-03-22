@@ -1,14 +1,21 @@
 import { Button, ButtonGroup, ButtonToolbar } from "flowcloudai-ui";
 import {
     CheckButton, RollingBox, Input, Select, Slider, SideBar, Tree,
-    Avatar, ListGroup, ListGroupItem, VirtualList
+    Avatar, ListGroup, ListGroupItem, VirtualList, lazyLoad
 } from "flowcloudai-ui";
 import { useState } from "react";
 import { TreeDemo } from './TreeDemo'
 
+// 懒加载组件示例
+const LazyContent = lazyLoad(
+    () => import('./LazyContent'),
+    { fallback: <div style={{ padding: 20, textAlign: 'center' }}>加载中...</div> }
+);
+
 export default function App() {
     const [enabled, setEnabled] = useState(false);
     const [selectedItem, setSelectedItem] = useState('1');
+    const [showLazy, setShowLazy] = useState(false);
 
     // 生成测试数据
     const generateData = (count: number) => {
@@ -216,6 +223,19 @@ export default function App() {
                 <TreeDemo />
             </div>
 
+            {/* 懒加载演示 */}
+            <div style={{
+                borderTop: '2px solid var(--fc-color-border, #eee)',
+                margin: '20px 0',
+                padding: '20px 0'
+            }}>
+                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>懒加载演示</h3>
+                <Button onClick={() => setShowLazy(!showLazy)}>
+                    {showLazy ? '隐藏' : '加载'}懒加载内容
+                </Button>
+                {showLazy && <LazyContent />}
+            </div>
+
             {/* Avatar组件测试 */}
             <div style={{
                 borderTop: '2px solid var(--fc-color-border, #eee)',
@@ -326,7 +346,7 @@ export default function App() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '12px',
-                                    backgroundColor: 'transparent'  // 改为透明，让父级背景透出
+                                    backgroundColor: 'transparent'
                                 }}>
                                     <Avatar src={item.avatar} size="sm" />
                                     <div>
@@ -356,7 +376,7 @@ export default function App() {
                                     padding: '0 15px',
                                     borderBottom: '1px solid var(--fc-color-border-light, #eee)',
                                     fontSize: '14px',
-                                    backgroundColor: 'transparent',  // 透明背景
+                                    backgroundColor: 'transparent',
                                     color: 'var(--fc-color-text)'
                                 }}>
                                     {index}: {item.title}
@@ -378,7 +398,7 @@ export default function App() {
                                 height: 70,
                                 margin: '5px 10px',
                                 padding: '10px 15px',
-                                backgroundColor: 'var(--fc-color-bg-elevated, #fff)',  // 使用 CSS 变量
+                                backgroundColor: 'var(--fc-color-bg-elevated, #fff)',
                                 border: '1px solid var(--fc-color-border, #e0e0e0)',
                                 borderRadius: 'var(--fc-radius-md, 8px)',
                                 boxShadow: 'var(--fc-shadow-sm, 0 2px 4px rgba(0,0,0,0.05))',

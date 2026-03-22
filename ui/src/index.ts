@@ -15,5 +15,6 @@ export * from "./components/Tree/flatToTree"
 export * from "./components/Avatar/Avatar"
 export * from "./components/ListGroup/ListGroup"
 export * from "./components/VirtualList/VirtualList"
+export * from "./components/LazyLoad/LazyLoad"
 
 import "./styles/index.css"

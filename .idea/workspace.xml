@@ -4,19 +4,25 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="暗色头像，先备个份，别的功能准备大改">
+    <list default="true" id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="暗色功能完成，在写懒加载">
+      <change afterPath="$PROJECT_DIR$/ui/src/components/LazyLoad/LazyLoad.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/src/components/LazyLoad/LazyLoad.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/ThemeProvider.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/ThemeProvider.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/ListGroup/ListGroup.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/components/VirtualList/VirtualList.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/styles/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/styles/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/index.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="CSS File" />
+        <option value="TypeScript JSX File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -54,6 +60,7 @@
     &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;list.type.of.created.stylesheet&quot;: &quot;CSS&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;npm.build.executor&quot;: &quot;Run&quot;,
     &quot;npm.dev.executor&quot;: &quot;Run&quot;,
@@ -114,7 +121,8 @@
       <workItem from="1774091820392" duration="1657000" />
       <workItem from="1774097829157" duration="1945000" />
       <workItem from="1774157823853" duration="923000" />
-      <workItem from="1774159352756" duration="2224000" />
+      <workItem from="1774159352756" duration="4242000" />
+      <workItem from="1774175053888" duration="1834000" />
     </task>
     <task id="LOCAL-00001" summary="暗色头像，先备个份，别的功能准备大改">
       <option name="closed" value="true" />
@@ -124,7 +132,15 @@
       <option name="project" value="LOCAL" />
       <updated>1774093465342</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="暗色功能完成，在写懒加载">
+      <option name="closed" value="true" />
+      <created>1774161852942</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1774161852942</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -143,6 +159,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="暗色头像，先备个份，别的功能准备大改" />
-    <option name="LAST_COMMIT_MESSAGE" value="暗色头像，先备个份，别的功能准备大改" />
+    <MESSAGE value="暗色功能完成，在写懒加载" />
+    <option name="LAST_COMMIT_MESSAGE" value="暗色功能完成，在写懒加载" />
   </component>
 </project>
