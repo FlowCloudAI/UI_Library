@@ -44,7 +44,7 @@ export default function App() {
     };
 
     // 删除标签
-    const handleClose = (key) => {
+    const handleClose = (key: string) => {
         const newTabs = tabs.filter(tab => tab.key !== key);
         setTabs(newTabs);
 
