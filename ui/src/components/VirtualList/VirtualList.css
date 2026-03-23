@@ -1,27 +1,87 @@
-/* src/components/VirtualList/VirtualList.css */
-.virtual-list {
+/* VirtualList.css */
+.fc-virtual-list {
     position: relative;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    background-color: #fff;
+    overflow-x: hidden;
+    background-color: var(--fc-color-bg, #ffffff);
+    border-radius: var(--fc-radius-md, 8px);
 }
 
-.virtual-list::-webkit-scrollbar {
-    width: 8px;
+.fc-virtual-list--hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-.virtual-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
+.fc-virtual-list--hide-scrollbar::-webkit-scrollbar {
+    display: none;
 }
 
-.virtual-list::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
+.fc-virtual-list__container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
 }
 
-.virtual-list::-webkit-scrollbar-thumb:hover {
-    background: #999;
+.fc-virtual-list__content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    will-change: transform;
+}
+
+.fc-virtual-list__item {
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* 滚动条样式 */
+.fc-virtual-list::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.fc-virtual-list::-webkit-scrollbar-track {
+    background: var(--fc-color-bg-tertiary, #f3f4f6);
+    border-radius: var(--fc-radius-full, 9999px);
+}
+
+.fc-virtual-list::-webkit-scrollbar-thumb {
+    background: var(--fc-color-border, #d1d5db);
+    border-radius: var(--fc-radius-full, 9999px);
+}
+
+.fc-virtual-list::-webkit-scrollbar-thumb:hover {
+    background: var(--fc-color-border-hover, #9ca3af);
+}
+
+/* ========== 暗色主题样式 ========== */
+
+/* 暗色主题下的容器背景 */
+[data-theme="dark"] .fc-virtual-list,
+.theme-dark .fc-virtual-list {
+    background-color: #0F0F0F !important;
+}
+
+/* 暗色主题下的列表项基础背景色 */
+[data-theme="dark"] .fc-virtual-list__item,
+.theme-dark .fc-virtual-list__item {
+    background-color: #0F0F0F !important;
+}
+
+/* 暗色主题下的滚动条 */
+[data-theme="dark"] .fc-virtual-list::-webkit-scrollbar-track,
+.theme-dark .fc-virtual-list::-webkit-scrollbar-track {
+    background: #222222 !important;
+}
+
+[data-theme="dark"] .fc-virtual-list::-webkit-scrollbar-thumb,
+.theme-dark .fc-virtual-list::-webkit-scrollbar-thumb {
+    background: #333330 !important;
+}
+
+[data-theme="dark"] .fc-virtual-list::-webkit-scrollbar-thumb:hover,
+.theme-dark .fc-virtual-list::-webkit-scrollbar-thumb:hover {
+    background: #555550 !important;
 }

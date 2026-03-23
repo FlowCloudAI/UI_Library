@@ -1,0 +1,178 @@
+/* src/components/Card/Card.css */
+
+/* ========== 基础样式 ========== */
+.fc-card {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--fc-color-bg);
+    border-radius: var(--fc-radius-md);
+    overflow: hidden;
+    transition: all var(--fc-transition);
+    cursor: default;
+}
+
+/* ========== 变体样式 ========== */
+.fc-card--default {
+    background-color: var(--fc-color-bg);
+}
+
+.fc-card--bordered {
+    border: 1px solid var(--fc-color-border);
+}
+
+.fc-card--shadow {
+    box-shadow: var(--fc-shadow-sm);
+}
+
+.fc-card--outline {
+    border: 1px solid var(--fc-color-primary);
+}
+
+/* ========== 交互样式 ========== */
+.fc-card--hoverable:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--fc-shadow-md);
+    cursor: pointer;
+}
+
+.fc-card--clickable {
+    cursor: pointer;
+}
+
+.fc-card--disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.fc-card--disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* ========== 图片区域 ========== */
+.fc-card__image-wrapper {
+    flex-shrink: 0;
+    overflow: hidden;
+    background-color: var(--fc-color-bg-tertiary);
+    position: relative;
+}
+
+.fc-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--fc-transition);
+    display: block;
+}
+
+.fc-card--hoverable:hover .fc-card__image {
+    transform: scale(1.05);
+}
+
+/* ========== 内容区域 ========== */
+.fc-card__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: var(--fc-space-lg);
+    gap: var(--fc-space-sm);
+    background-color: var(--fc-color-bg);
+}
+
+/* 标题 */
+.fc-card__title {
+    font-size: var(--fc-font-size-lg);
+    font-weight: var(--fc-font-weight-bold);
+    color: var(--fc-color-text);
+    line-height: var(--fc-line-height-tight);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* 描述文字 */
+.fc-card__description {
+    font-size: var(--fc-font-size-sm);
+    color: var(--fc-color-text-secondary);
+    line-height: var(--fc-line-height-normal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+/* 额外信息（价格、评分等） */
+.fc-card__extra-info {
+    font-size: var(--fc-font-size-md);
+    color: var(--fc-color-primary);
+    font-weight: var(--fc-font-weight-medium);
+    margin-top: var(--fc-space-xs);
+}
+
+/* 操作区域 */
+.fc-card__actions {
+    margin-top: var(--fc-space-sm);
+    padding-top: var(--fc-space-sm);
+    border-top: 1px solid var(--fc-color-border-light);
+    display: flex;
+    gap: var(--fc-space-sm);
+    align-items: center;
+}
+
+/* 操作区域内的按钮样式调整 */
+.fc-card__actions .fc-button {
+    flex: 1;
+}
+
+/* ========== 暗色主题自动适配 ========== */
+/* 所有颜色都使用 CSS 变量，暗色主题会自动切换 */
+/* 无需额外编写暗色主题样式，因为 CSS 变量已在 ThemeProvider 中定义 */
+
+/* ========== 响应式设计 ========== */
+@media (max-width: 640px) {
+    .fc-card__content {
+        padding: var(--fc-space-md);
+    }
+
+    .fc-card__title {
+        font-size: var(--fc-font-size-md);
+    }
+
+    .fc-card__description {
+        font-size: var(--fc-font-size-xs);
+    }
+
+    .fc-card__extra-info {
+        font-size: var(--fc-font-size-sm);
+    }
+}
+
+/* ========== 可选：图片加载失败时的占位样式 ========== */
+.fc-card__image {
+    background-color: var(--fc-color-bg-tertiary);
+    position: relative;
+}
+
+.fc-card__image::after {
+    content: '📷';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 32px;
+    color: var(--fc-color-text-tertiary);
+    display: none;
+}
+
+.fc-card__image[src=""],
+.fc-card__image:not([src]) {
+    opacity: 0;
+}
+
+.fc-card__image[src=""] + .fc-card__image::after,
+.fc-card__image:not([src]) + .fc-card__image::after {
+    display: block;
+}
