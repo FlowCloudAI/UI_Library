@@ -19,5 +19,6 @@ export * from "./components/Alert/AlertContext"
 export * from "./components/LazyLoad/LazyLoad"
 export * from "./components/Card/Card"
 export * from "./components/Tabs/Tabs"
+export * from "./components/Chat/Chat"
 
 import "./styles/index.css"
