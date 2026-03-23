@@ -2,7 +2,7 @@ import {Button, ButtonGroup, ButtonToolbar} from "flowcloudai-ui";
 import {
     CheckButton, RollingBox, Input, Select, Slider, SideBar,
     Avatar, ListGroup, ListGroupItem, VirtualList, useAlert,
-    lazyLoad, Card, Tabs
+    lazyLoad, Card, Tabs, Chat
 } from "flowcloudai-ui";
 import { useTheme } from 'flowcloudai-ui';
 import {useEffect, useState} from "react";
@@ -13,6 +13,15 @@ const LazyContent = lazyLoad(
     () => import('./LazyContent'),
     {fallback: <div style={{padding: 20, textAlign: 'center'}}>加载中...</div>}
 );
+
+// 定义消息类型
+interface Message {
+    id: string;
+    content: string;
+    type: 'user' | 'assistant' | 'system';
+    timestamp: Date;
+    status?: 'sending' | 'sent' | 'error';
+}
 
 export default function App() {
     const [enabled, setEnabled] = useState(true);
@@ -30,6 +39,99 @@ export default function App() {
         }
     }, [enabled]);
 
+    // Chat 组件相关状态
+    const [chatMessages, setChatMessages] = useState<Message[]>([
+        {
+            id: '1',
+            content: '你好！我是 AI 助手，有什么可以帮助你的吗？',
+            type: 'assistant',
+            timestamp: new Date(),
+        },
+    ]);
+    const [chatLoading, setChatLoading] = useState(false);
+
+    // 处理发送消息
+    const handleSendMessage = async (content: string) => {
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            content,
+            type: 'user',
+            timestamp: new Date(),
+            status: 'sending',
+        };
+
+        setChatMessages(prev => [...prev, userMessage]);
+        setChatLoading(true);
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        setChatMessages(prev =>
+            prev.map(msg =>
+                msg.id === userMessage.id
+                    ? { ...msg, status: 'sent' }
+                    : msg
+            )
+        );
+
+        const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: `收到你的消息："${content}"。这是一个智能回复示例。`,
+            type: 'assistant',
+            timestamp: new Date(),
+        };
+
+        setChatMessages(prev => [...prev, assistantMessage]);
+        setChatLoading(false);
+
+        await showAlert("消息已发送", "success");
+    };
+
+    // 清空聊天记录
+    const clearChat = async () => {
+        const result = await showAlert("确定要清空所有聊天记录吗？", "warning", true);
+        if (result === "yes") {
+            setChatMessages([
+                {
+                    id: Date.now().toString(),
+                    content: '聊天记录已清空。有什么我可以帮助你的吗？',
+                    type: 'assistant',
+                    timestamp: new Date(),
+                },
+            ]);
+            await showAlert("聊天记录已清空", "success");
+        }
+    };
+
+    // 生成测试数据
+    const generateData = (count: number) => {
+        return Array.from({length: count}, (_, i) => ({
+            id: i,
+            title: `Item ${i + 1}`,
+            description: `这是第 ${i + 1} 个项目的描述信息`,
+            avatar: `https://i.pravatar.cc/40?u=${i}`
+        }));
+    };
+
+    // 普通提示，只有"确定"
+    const handleInfo = async () => {
+        await showAlert("操作已完成", "success");
+    };
+
+    // 确认框，返回 "yes" | "no"
+    const handleDelete = async () => {
+        const res = await showAlert("确定要删除这条记录吗？", "warning", true);
+        if (res === "yes") {
+            await showAlert("已删除", "success");
+        }
+    };
+
+    const handleError = async () => {
+        await showAlert("网络请求失败，请稍后重试", "error");
+    };
+
+    const [listData] = useState(() => generateData(10000));
+
+    // Tabs 相关状态
     const [tabs, setTabs] = useState([
         {key: '1', label: '标签1', content: <div>内容1</div>},
         {key: '2', label: '标签2', content: <div>内容2</div>},
@@ -59,7 +161,6 @@ export default function App() {
         const newTabs = tabs.filter(tab => tab.key !== key);
         setTabs(newTabs);
 
-        // 如果删除的是当前活跃标签，切换到其他标签
         if (activeKey === key) {
             const closedIndex = tabs.findIndex(tab => tab.key === key);
             const nextTab = newTabs[closedIndex] || newTabs[closedIndex - 1];
@@ -69,34 +170,8 @@ export default function App() {
         }
     };
 
-    // 生成测试数据
-    const generateData = (count: number) => {
-        return Array.from({length: count}, (_, i) => ({
-            id: i,
-            title: `Item ${i + 1}`,
-            description: `这是第 ${i + 1} 个项目的描述信息`,
-            avatar: `https://i.pravatar.cc/40?u=${i}`
-        }));
-    };
-
-    // 普通提示，只有"确定"
-    const handleInfo = async () => {
-        await showAlert("操作已完成", "success");
-    };
-
-    // 确认框，返回 "yes" | "no"
-    const handleDelete = async () => {
-        const res = await showAlert("确定要删除这条记录吗？", "warning", true);
-        if (res === "yes") {
-            // 执行删除...
-        }
-    };
-
-    const handleError = async () => {
-        await showAlert("网络请求失败，请稍后重试", "error");
-    };
-
-    const [listData] = useState(() => generateData(10000));
+    // 半径选项
+    const radiusOptions = ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const;
 
     return (
         <div style={{
@@ -175,7 +250,6 @@ export default function App() {
             <Button onClick={handleError}>错误提示</Button>
 
             {/* RollingBox */}
-            {/* RollingBox - 修复硬编码边框 */}
             <RollingBox style={{
                 height: '300px',
                 border: '1px solid var(--fc-color-border, #ccc)',
@@ -303,6 +377,33 @@ export default function App() {
                 <TreeDemo/>
             </div>
 
+            {/* Chat 组件 */}
+            <div style={{
+                borderTop: '2px solid var(--fc-color-border, #eee)',
+                margin: '20px 0',
+                padding: '20px 0'
+            }}>
+                <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>AI 智能助手</h3>
+                <div style={{height: '600px', maxWidth: '800px', margin: '0 auto'}}>
+                    <Chat
+                        messages={chatMessages}
+                        onSendMessage={handleSendMessage}
+                        title="AI 智能助手"
+                        placeholder="输入你的问题，按 Enter 发送..."
+                        loading={chatLoading}
+                        userName="我"
+                        assistantName="AI助手"
+                        maxInputLength={2000}
+                        autoFocus={true}
+                        showHeader={true}
+                        showFooter={true}
+                    />
+                </div>
+                <div style={{marginTop: 10, display: 'flex', justifyContent: 'center', gap: 10}}>
+                    <Button size="sm" onClick={clearChat}>清空聊天记录</Button>
+                </div>
+            </div>
+
             {/* 懒加载演示 */}
             <div style={{
                 borderTop: '2px solid var(--fc-color-border, #eee)',
@@ -323,8 +424,6 @@ export default function App() {
                 padding: '20px 0'
             }}>
                 <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>Avatar 头像组件测试</h3>
-
-                {/* 尺寸变体 */}
                 <div style={{marginBottom: 20}}>
                     <h4 style={{color: 'var(--fc-color-text-secondary)'}}>尺寸变体</h4>
                     <div style={{display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap'}}>
@@ -335,8 +434,6 @@ export default function App() {
                         <Avatar size="xl"/>
                     </div>
                 </div>
-
-                {/* 形状 */}
                 <div style={{marginBottom: 20}}>
                     <h4 style={{color: 'var(--fc-color-text-secondary)'}}>形状</h4>
                     <div style={{display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap'}}>
@@ -353,8 +450,6 @@ export default function App() {
                 padding: '20px 0'
             }}>
                 <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>ListGroup 列表组组件测试</h3>
-
-                {/* 基础列表组 */}
                 <div style={{marginBottom: 30, maxWidth: 300}}>
                     <h4 style={{color: 'var(--fc-color-text-secondary)'}}>基础列表组</h4>
                     <ListGroup>
@@ -363,8 +458,6 @@ export default function App() {
                         <ListGroupItem>列表项 3</ListGroupItem>
                     </ListGroup>
                 </div>
-
-                {/* 带激活状态 */}
                 <div style={{marginBottom: 30, maxWidth: 300}}>
                     <h4 style={{color: 'var(--fc-color-text-secondary)'}}>带激活状态</h4>
                     <ListGroup>
@@ -389,7 +482,6 @@ export default function App() {
                     </ListGroup>
                     <p style={{color: 'var(--fc-color-text-secondary)'}}>当前选中: {selectedItem}</p>
                 </div>
-
                 <div style={{marginBottom: 30, maxWidth: 300}}>
                     <h4 style={{color: 'var(--fc-color-text-secondary)'}}>禁用状态</h4>
                     <ListGroup>
@@ -400,7 +492,7 @@ export default function App() {
                 </div>
             </div>
 
-            {/* VirtualList 虚拟列表测试 - 修复硬编码颜色 */}
+            {/* VirtualList 虚拟列表测试 */}
             <div style={{
                 borderTop: '2px solid var(--fc-color-border, #eee)',
                 margin: '20px 0',
@@ -409,9 +501,7 @@ export default function App() {
                 <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>
                     VirtualList 虚拟列表组件测试 (10000条数据)
                 </h3>
-
                 <div style={{display: 'flex', gap: 20, flexWrap: 'wrap'}}>
-                    {/* 基础虚拟列表 - 修复硬编码背景色 */}
                     <div style={{flex: 1, minWidth: 300}}>
                         <h4 style={{color: 'var(--fc-color-text-secondary)'}}>基础样式</h4>
                         <VirtualList
@@ -442,8 +532,6 @@ export default function App() {
                             )}
                         />
                     </div>
-
-                    {/* 简洁样式 - 修复硬编码边框 */}
                     <div style={{flex: 1, minWidth: 300}}>
                         <h4 style={{color: 'var(--fc-color-text-secondary)'}}>简洁样式</h4>
                         <VirtualList
@@ -466,8 +554,6 @@ export default function App() {
                         />
                     </div>
                 </div>
-
-                {/* 卡片样式 - 修复硬编码颜色 */}
                 <div style={{marginTop: 30}}>
                     <h4 style={{color: 'var(--fc-color-text-secondary)'}}>卡片样式</h4>
                     <VirtualList
@@ -513,7 +599,6 @@ export default function App() {
                 padding: '20px 0'
             }}>
                 <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>Card 图文卡片组件测试</h3>
-
                 <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
@@ -526,7 +611,6 @@ export default function App() {
                         variant="shadow"
                         hoverable
                     />
-
                     <Card
                         title="纯文字卡片"
                         description="即使没有图片，卡片也能正常显示。"
@@ -536,157 +620,129 @@ export default function App() {
                 </div>
             </div>
 
-            {/* 1️⃣ 完整功能：选择 + 关闭 + 新增 + 圆角 */}
-            <div style={{marginBottom: 30}}>
-                <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
-                    完整功能（可选择、可关闭、可新增、圆角）
-                </h4>
-                <div style={{marginBottom: 10, fontSize: 12, color: 'var(--fc-color-text-tertiary)'}}>
-                    标签总数: {tabs.length} | 当前活跃: {activeKey}
-                </div>
-                <Tabs
-                    radius="md"
-                    closable
-                    addable
-                    activeKey={activeKey}
-                    items={tabs}
-                    onChange={(key) => {
-                        console.log('切换到:', key);
-                        setActiveKey(key);
-                    }}
-                    onClose={(key) => {
-                        console.log('关闭:', key);
-                        handleClose(key);
-                    }}
-                    onAdd={() => {
-                        console.log('新增标签页');
-                        handleAdd();
-                    }}
-                />
-            </div>
-            {/* 2️⃣ 禁用状态演示 */}
-            <div style={{marginBottom: 30}}>
-                <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
-                    禁用状态
-                </h4>
-                <Tabs
-                    radius="lg"
-                    items={[
-                        {key: '1', label: '可用', content: <div>正常内容</div>},
-                        {key: '2', label: '禁用', disabled: true, content: <div>无法点击</div>},
-                        {key: '3', label: '可用', content: <div>内容3</div>},
-                    ]}
-                    defaultActiveKey="1"
-                />
-            </div>
+            {/* Tabs 组件测试 */}
+            <div style={{
+                borderTop: '2px solid var(--fc-color-border, #eee)',
+                margin: '20px 0',
+                padding: '20px 0'
+            }}>
+                <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>Tabs 标签页组件</h3>
 
-            {/* 3️⃣ 不同圆角展示 */}
-            <div style={{marginBottom: 30}}>
-                <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
-                    圆角变化（none → sm → md → lg → xl → full）
-                </h4>
-                {['none', 'sm', 'md', 'lg', 'xl', 'full'].map(r => (
-                    <div key={r} style={{marginBottom: 15}}>
-                        <small style={{color: 'var(--fc-color-text-tertiary)'}}>{r}</small>
-                        <Tabs
-                            radius={r}
-                            items={[
-                                {key: '1', label: 'Tab1', content: <div>内容</div>},
-                                {key: '2', label: 'Tab2', content: <div>内容</div>},
-                            ]}
-                            defaultActiveKey="1"
-                        />
+                {/* 完整功能 */}
+                <div style={{marginBottom: 30}}>
+                    <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
+                        完整功能（可选择、可关闭、可新增、圆角）
+                    </h4>
+                    <div style={{marginBottom: 10, fontSize: 12, color: 'var(--fc-color-text-tertiary)'}}>
+                        标签总数: {tabs.length} | 当前活跃: {activeKey}
                     </div>
-                ))}
-            </div>
+                    <Tabs
+                        radius="md"
+                        closable
+                        addable
+                        activeKey={activeKey}
+                        items={tabs}
+                        onChange={(key) => {
+                            console.log('切换到:', key);
+                            setActiveKey(key);
+                        }}
+                        onClose={(key) => {
+                            console.log('关闭:', key);
+                            handleClose(key);
+                        }}
+                        onAdd={() => {
+                            console.log('新增标签页');
+                            handleAdd();
+                        }}
+                    />
+                </div>
 
-            {/* 4️⃣ 受控模式 + 外部控制 */}
-            <div style={{marginBottom: 30}}>
-                <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
-                    受控模式（可从外部按钮切换）
-                </h4>
-                <div style={{
-                    marginBottom: 15,
-                    display: 'flex',
-                    gap: 10,
-                    flexWrap: 'wrap'
-                }}>
-                    {['1', '2', '3'].map(key => (
-                        <button
-                            key={key}
-                            onClick={() => setControlledKey(key)}
-                            style={{
-                                padding: '6px 12px',
-                                backgroundColor: controlledKey === key
-                                    ? 'var(--fc-color-primary, #1677ff)'
-                                    : 'var(--fc-color-bg-tertiary, #f5f5f5)',
-                                color: controlledKey === key ? 'white' : 'var(--fc-color-text)',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                transition: 'all 150ms ease'
-                            }}
-                        >
-                            切换到标签{key}
-                        </button>
+                {/* 禁用状态 */}
+                <div style={{marginBottom: 30}}>
+                    <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
+                        禁用状态
+                    </h4>
+                    <Tabs
+                        radius="lg"
+                        items={[
+                            {key: '1', label: '可用', content: <div>正常内容</div>},
+                            {key: '2', label: '禁用', disabled: true, content: <div>无法点击</div>},
+                            {key: '3', label: '可用', content: <div>内容3</div>},
+                        ]}
+                        defaultActiveKey="1"
+                    />
+                </div>
+
+                {/* 不同圆角展示 */}
+                <div style={{marginBottom: 30}}>
+                    <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
+                        圆角变化（none → sm → md → lg → xl → full）
+                    </h4>
+                    {radiusOptions.map(r => (
+                        <div key={r} style={{marginBottom: 15}}>
+                            <small style={{color: 'var(--fc-color-text-tertiary)'}}>{r}</small>
+                            <Tabs
+                                radius={r}
+                                items={[
+                                    {key: '1', label: 'Tab1', content: <div>内容</div>},
+                                    {key: '2', label: 'Tab2', content: <div>内容</div>},
+                                ]}
+                                defaultActiveKey="1"
+                            />
+                        </div>
                     ))}
-                    <span style={{
-                        padding: '6px 12px',
-                        color: 'var(--fc-color-text-secondary)',
-                        backgroundColor: 'var(--fc-color-bg-tertiary, #f5f5f5)',
-                        borderRadius: '4px',
-                        fontSize: 12
+                </div>
+
+                {/* 受控模式 */}
+                <div style={{marginBottom: 30}}>
+                    <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
+                        受控模式（可从外部按钮切换）
+                    </h4>
+                    <div style={{
+                        marginBottom: 15,
+                        display: 'flex',
+                        gap: 10,
+                        flexWrap: 'wrap'
                     }}>
+                        {['1', '2', '3'].map(key => (
+                            <button
+                                key={key}
+                                onClick={() => setControlledKey(key)}
+                                style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: controlledKey === key
+                                        ? 'var(--fc-color-primary, #1677ff)'
+                                        : 'var(--fc-color-bg-tertiary, #f5f5f5)',
+                                    color: controlledKey === key ? 'white' : 'var(--fc-color-text)',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    transition: 'all 150ms ease'
+                                }}
+                            >
+                                切换到标签{key}
+                            </button>
+                        ))}
+                        <span style={{
+                            padding: '6px 12px',
+                            color: 'var(--fc-color-text-secondary)',
+                            backgroundColor: 'var(--fc-color-bg-tertiary, #f5f5f5)',
+                            borderRadius: '4px',
+                            fontSize: 12
+                        }}>
                             当前: {controlledKey}
                         </span>
-                </div>
-                <Tabs
-                    radius="md"
-                    activeKey={controlledKey}
-                    items={[
-                        {key: '1', label: '标签1', content: <div>内容1 - 受控模式</div>},
-                        {key: '2', label: '标签2', content: <div>内容2 - 受控模式</div>},
-                        {key: '3', label: '标签3', content: <div>内容3 - 受控模式</div>},
-                    ]}
-                    onChange={(key) => setControlledKey(key)}
-                />
-            </div>
-
-            {/* 5️⃣ Add + Delete 完整演示 */}
-            <div style={{marginBottom: 30}}>
-                <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
-                    Add + Delete 完整演示（新增和删除真实有效）
-                </h4>
-                <div style={{
-                    marginBottom: 10,
-                    display: 'flex',
-                    gap: 10,
-                    fontSize: 12,
-                    color: 'var(--fc-color-text-tertiary)'
-                }}>
-                    <span>📊 标签总数: {tabs.length}</span>
-                    <span>📍 当前活跃: {activeKey}</span>
-                    <span>🆔 下一个ID: {tabCount + 1}</span>
-                </div>
-                <Tabs
-                    radius="md"
-                    closable
-                    addable
-                    activeKey={activeKey}
-                    items={tabs}
-                    onChange={(key) => setActiveKey(key)}
-                    onClose={handleClose}
-                    onAdd={handleAdd}
-                />
-                <div style={{
-                    marginTop: 15,
-                    padding: '10px',
-                    backgroundColor: 'var(--fc-color-bg-tertiary, #f5f5f5)',
-                    borderRadius: '4px',
-                    fontSize: 12,
-                    color: 'var(--fc-color-text-secondary)'
-                }}>
-                    💡 提示：点击 + 新增标签，点击标签上的 × 删除标签。当删除当前活跃标签时会自动切换到相邻标签。
+                    </div>
+                    <Tabs
+                        radius="md"
+                        activeKey={controlledKey}
+                        items={[
+                            {key: '1', label: '标签1', content: <div>内容1 - 受控模式</div>},
+                            {key: '2', label: '标签2', content: <div>内容2 - 受控模式</div>},
+                            {key: '3', label: '标签3', content: <div>内容3 - 受控模式</div>},
+                        ]}
+                        onChange={(key) => setControlledKey(key)}
+                    />
                 </div>
             </div>
         </div>
