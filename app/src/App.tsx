@@ -4,7 +4,8 @@ import {
     Avatar, ListGroup, ListGroupItem, VirtualList, useAlert,
     lazyLoad, Card, Tabs
 } from "flowcloudai-ui";
-import {useState} from "react";
+import { useTheme } from 'flowcloudai-ui';
+import {useEffect, useState} from "react";
 import {TreeDemo} from './TreeDemo'
 
 // 懒加载组件示例
@@ -14,10 +15,20 @@ const LazyContent = lazyLoad(
 );
 
 export default function App() {
-    const [enabled, setEnabled] = useState(false);
+    const [enabled, setEnabled] = useState(true);
     const [selectedItem, setSelectedItem] = useState('1');
     const {showAlert} = useAlert();
     const [showLazy, setShowLazy] = useState(false);
+    const { setTheme } = useTheme()
+
+    useEffect(() => {
+        if (enabled) {
+            setTheme('light')
+        }
+        else {
+            setTheme('dark');
+        }
+    }, [enabled]);
 
     const [tabs, setTabs] = useState([
         {key: '1', label: '标签1', content: <div>内容1</div>},
@@ -149,7 +160,7 @@ export default function App() {
             <CheckButton
                 checked={enabled}
                 onChange={setEnabled}
-                labelRight="启用通知"
+                labelRight="设置主题"
             />
             <CheckButton size="sm"/>
             <CheckButton size="md"/>
@@ -285,7 +296,8 @@ export default function App() {
             <div style={{
                 borderTop: '2px solid var(--fc-color-border, #eee)',
                 margin: '20px 0',
-                padding: '20px 0'
+                padding: '20px 0',
+                height: '800px'
             }}>
                 <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>Tree 分类树组件测试</h3>
                 <TreeDemo/>

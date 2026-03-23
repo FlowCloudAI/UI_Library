@@ -1,9 +1,7 @@
 import './CheckButton.css'
 import * as React from 'react'
 
-interface CheckButtonProps {
-    checked?: boolean
-    defaultChecked?: boolean
+interface CheckButtonBase {
     onChange?: (checked: boolean) => void
     disabled?: boolean
     size?: 'sm' | 'md' | 'lg'
@@ -12,6 +10,18 @@ interface CheckButtonProps {
     className?: string
     style?: React.CSSProperties
 }
+
+interface ControlledCheckButton extends CheckButtonBase {
+    checked: boolean
+    defaultChecked?: never
+}
+
+interface UncontrolledCheckButton extends CheckButtonBase {
+    checked?: never
+    defaultChecked?: boolean
+}
+
+type CheckButtonProps = ControlledCheckButton | UncontrolledCheckButton
 
 export function CheckButton({
                                 checked: controlledChecked,
