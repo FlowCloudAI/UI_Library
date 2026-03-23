@@ -100,7 +100,7 @@ function TreeNodeItem({ node, level }: { node: CategoryTreeNode; level: number }
     // Edit
     const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         e.stopPropagation()
-        if (e.key === 'Enter')  ctx.commitEdit(node.key, localEdit)
+        if (e.key === 'Enter')  ctx.commitEdit(node.key, localEdit).then()
         if (e.key === 'Escape') ctx.cancelEdit()
     }
 
@@ -163,7 +163,7 @@ function TreeNodeItem({ node, level }: { node: CategoryTreeNode; level: number }
                         <button
                             className="fc-tree__action"
                             title="新建子分类"
-                            onClick={e => { e.stopPropagation(); ctx.requestCreate(node.key) }}
+                            onClick={e => { e.stopPropagation(); ctx.requestCreate(node.key).then() }}
                         >+</button>
                         <button
                             className="fc-tree__action"
