@@ -4,13 +4,13 @@ import {
     Avatar, ListGroup, ListGroupItem, VirtualList, useAlert,
     lazyLoad, Card, Tabs
 } from "flowcloudai-ui";
-import { useState } from "react";
-import { TreeDemo } from './TreeDemo'
+import {useState} from "react";
+import {TreeDemo} from './TreeDemo'
 
 // 懒加载组件示例
 const LazyContent = lazyLoad(
     () => import('./LazyContent'),
-    { fallback: <div style={{ padding: 20, textAlign: 'center' }}>加载中...</div> }
+    {fallback: <div style={{padding: 20, textAlign: 'center'}}>加载中...</div>}
 );
 
 export default function App() {
@@ -127,387 +127,398 @@ export default function App() {
             {/* RollingBox */}
             <RollingBox style={{height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
                 <div style={{height: '1000px'}}>
-            {/* RollingBox - 修复硬编码边框 */}
-            <RollingBox style={{
-                height: '300px',
-                border: '1px solid var(--fc-color-border, #ccc)',
-                padding: '10px',
-                borderRadius: 'var(--fc-radius-md, 5px)'
-            }}>
-                <div style={{ height: '1000px', color: 'var(--fc-color-text)' }}>
-                    内容...
-                </div>
-            </RollingBox>
+                    {/* RollingBox - 修复硬编码边框 */}
+                    <RollingBox style={{
+                        height: '300px',
+                        border: '1px solid var(--fc-color-border, #ccc)',
+                        padding: '10px',
+                        borderRadius: 'var(--fc-radius-md, 5px)'
+                    }}>
+                        <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
+                            内容...
+                        </div>
+                    </RollingBox>
 
-            <RollingBox showThumb="show" style={{
-                height: '300px',
-                border: '1px solid var(--fc-color-border, #ccc)',
-                padding: '10px',
-                borderRadius: 'var(--fc-radius-md, 5px)'
-            }}>
-                <div style={{ height: '1000px', color: 'var(--fc-color-text)' }}>
-                    内容...
-                </div>
-            </RollingBox>
+                    <RollingBox showThumb="show" style={{
+                        height: '300px',
+                        border: '1px solid var(--fc-color-border, #ccc)',
+                        padding: '10px',
+                        borderRadius: 'var(--fc-radius-md, 5px)'
+                    }}>
+                        <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
+                            内容...
+                        </div>
+                    </RollingBox>
 
-            <RollingBox showThumb="hide" style={{
-                height: '300px',
-                border: '1px solid var(--fc-color-border, #ccc)',
-                padding: '10px',
-                borderRadius: 'var(--fc-radius-md, 5px)'
-            }}>
-                <div style={{ height: '1000px', color: 'var(--fc-color-text)' }}>
-                    内容...
-                </div>
-            </RollingBox>
+                    <RollingBox showThumb="hide" style={{
+                        height: '300px',
+                        border: '1px solid var(--fc-color-border, #ccc)',
+                        padding: '10px',
+                        borderRadius: 'var(--fc-radius-md, 5px)'
+                    }}>
+                        <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
+                            内容...
+                        </div>
+                    </RollingBox>
 
-            <RollingBox horizontal showThumb="show" style={{
-                height: '300px',
-                border: '1px solid var(--fc-color-border, #ccc)',
-                padding: '10px',
-                borderRadius: 'var(--fc-radius-md, 5px)'
-            }}>
-                <div style={{ width: '2000px', display: 'flex', color: 'var(--fc-color-text)' }}>
-                    <div>内容1</div>
-                    <div>内容2</div>
-                    <div>内容3</div>
-                    <div>内容4</div>
-                </div>
-            </RollingBox>
+                    <RollingBox horizontal showThumb="show" style={{
+                        height: '300px',
+                        border: '1px solid var(--fc-color-border, #ccc)',
+                        padding: '10px',
+                        borderRadius: 'var(--fc-radius-md, 5px)'
+                    }}>
+                        <div style={{width: '2000px', display: 'flex', color: 'var(--fc-color-text)'}}>
+                            <div>内容1</div>
+                            <div>内容2</div>
+                            <div>内容3</div>
+                            <div>内容4</div>
+                        </div>
+                    </RollingBox>
 
-            <RollingBox
-                showThumb="show"
-                thumbSize="thin"
-                showTrack
-                style={{
-                    height: '300px',
-                    border: '1px solid var(--fc-color-border, #ccc)',
-                    padding: '10px',
-                    borderRadius: 'var(--fc-radius-md, 5px)'
-                }}
-            >
-                <div style={{ height: '1000px', color: 'var(--fc-color-text)' }}>
-                    内容...
-                </div>
-            </RollingBox>
+                    <RollingBox
+                        showThumb="show"
+                        thumbSize="thin"
+                        showTrack
+                        style={{
+                            height: '300px',
+                            border: '1px solid var(--fc-color-border, #ccc)',
+                            padding: '10px',
+                            borderRadius: 'var(--fc-radius-md, 5px)'
+                        }}
+                    >
+                        <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
+                            内容...
+                        </div>
+                    </RollingBox>
 
-            <RollingBox thumbSize="thick" style={{
-                height: '300px',
-                border: '1px solid var(--fc-color-border, #ccc)',
-                padding: '10px',
-                borderRadius: 'var(--fc-radius-md, 5px)'
-            }}>
-                <div style={{ height: '1000px', color: 'var(--fc-color-text)' }}>
-                    内容...
-                </div>
-            </RollingBox>
+                    <RollingBox thumbSize="thick" style={{
+                        height: '300px',
+                        border: '1px solid var(--fc-color-border, #ccc)',
+                        padding: '10px',
+                        borderRadius: 'var(--fc-radius-md, 5px)'
+                    }}>
+                        <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
+                            内容...
+                        </div>
+                    </RollingBox>
 
-            {/* Input */}
-            <Input
-                size="lg"
-                prefix="@"
-                suffix=".com"
-                passwordToggle
-                allowClear
-                status="success"
-                helperText="格式正确"
-            />
-
-            {/* Slider */}
-            <Slider range min={0} max={100} defaultValue={[20, 80]} tooltip marks={{0: '0%', 50: '50%', 100: '100%'}}/>
-            <Slider orientation="vertical"/>
-
-            {/* Select */}
-            <Select
-                options={[
-                    {value: '1', label: '选项1', group: '分组A'},
-                    {value: '2', label: '选项2', group: '分组A'},
-                    {value: '3', label: '选项3', group: '分组B'}
-                ]}
-                searchable
-                multiple
-                virtualScroll
-            />
-
-            {/* SideBar */}
-            <SideBar
-                items={[
-                    {key: '1', label: '首页', icon: '🏠'},
-                    {
-                        key: '2', label: '设置', icon: '⚙️', children: [
-                            {key: '2-1', label: '个人'},
-                            {key: '2-2', label: '系统'}
-                        ]
-                    }
-                ]}
-                collapsed
-            />
-
-            {/* Tree */}
-            <div style={{
-                borderTop: '2px solid var(--fc-color-border, #eee)',
-                margin: '20px 0',
-                padding: '20px 0'
-            }}>
-                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>Tree 分类树组件测试</h3>
-                <TreeDemo />
-            </div>
-
-            {/* 懒加载演示 */}
-            <div style={{
-                borderTop: '2px solid var(--fc-color-border, #eee)',
-                margin: '20px 0',
-                padding: '20px 0'
-            }}>
-                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>懒加载演示</h3>
-                <Button onClick={() => setShowLazy(!showLazy)}>
-                    {showLazy ? '隐藏' : '加载'}懒加载内容
-                </Button>
-                {showLazy && <LazyContent />}
-            </div>
-
-            {/* Avatar组件测试 */}
-            <div style={{
-                borderTop: '2px solid var(--fc-color-border, #eee)',
-                margin: '20px 0',
-                padding: '20px 0'
-            }}>
-                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>Avatar 头像组件测试</h3>
-
-                {/* 尺寸变体 */}
-                <div style={{ marginBottom: 20 }}>
-                    <h4 style={{ color: 'var(--fc-color-text-secondary)' }}>尺寸变体</h4>
-                    <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Avatar size="xs" />
-                        <Avatar size="sm" />
-                        <Avatar size="md" />
-                        <Avatar size="lg" />
-                        <Avatar size="xl" />
-                    </div>
-                </div>
-
-                {/* 形状 */}
-                <div style={{ marginBottom: 20 }}>
-                    <h4 style={{ color: 'var(--fc-color-text-secondary)' }}>形状</h4>
-                    <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Avatar shape="circle" />
-                        <Avatar shape="square" />
-                    </div>
-                </div>
-            </div>
-
-            {/* ListGroup组件测试 */}
-            <div style={{
-                borderTop: '2px solid var(--fc-color-border, #eee)',
-                margin: '20px 0',
-                padding: '20px 0'
-            }}>
-                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>ListGroup 列表组组件测试</h3>
-
-                {/* 基础列表组 */}
-                <div style={{ marginBottom: 30, maxWidth: 300 }}>
-                    <h4 style={{ color: 'var(--fc-color-text-secondary)' }}>基础列表组</h4>
-                    <ListGroup>
-                        <ListGroupItem>列表项 1</ListGroupItem>
-                        <ListGroupItem>列表项 2</ListGroupItem>
-                        <ListGroupItem>列表项 3</ListGroupItem>
-                    </ListGroup>
-                </div>
-
-                {/* 带激活状态 */}
-                <div style={{ marginBottom: 30, maxWidth: 300 }}>
-                    <h4 style={{ color: 'var(--fc-color-text-secondary)' }}>带激活状态</h4>
-                    <ListGroup>
-                        <ListGroupItem
-                            active={selectedItem === '1'}
-                            onClick={() => setSelectedItem('1')}
-                        >
-                            首页
-                        </ListGroupItem>
-                        <ListGroupItem
-                            active={selectedItem === '2'}
-                            onClick={() => setSelectedItem('2')}
-                        >
-                            个人中心
-                        </ListGroupItem>
-                        <ListGroupItem
-                            active={selectedItem === '3'}
-                            onClick={() => setSelectedItem('3')}
-                        >
-                            设置
-                        </ListGroupItem>
-                    </ListGroup>
-                    <p style={{ color: 'var(--fc-color-text-secondary)' }}>当前选中: {selectedItem}</p>
-                </div>
-
-                <div style={{ marginBottom: 30, maxWidth: 300 }}>
-                    <h4 style={{ color: 'var(--fc-color-text-secondary)' }}>禁用状态</h4>
-                    <ListGroup>
-                        <ListGroupItem>可用选项</ListGroupItem>
-                        <ListGroupItem disabled>禁用选项</ListGroupItem>
-                        <ListGroupItem>另一个可用选项</ListGroupItem>
-                    </ListGroup>
-                </div>
-            </div>
-
-            {/* VirtualList 虚拟列表测试 - 修复硬编码颜色 */}
-            <div style={{
-                borderTop: '2px solid var(--fc-color-border, #eee)',
-                margin: '20px 0',
-                padding: '20px 0'
-            }}>
-                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>
-                    VirtualList 虚拟列表组件测试 (10000条数据)
-                </h3>
-
-                <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                    {/* 基础虚拟列表 - 修复硬编码背景色 */}
-                    <div style={{ flex: 1, minWidth: 300 }}>
-                        <h4 style={{ color: 'var(--fc-color-text-secondary)' }}>基础样式</h4>
-                        <VirtualList
-                            data={listData}
-                            height={400}
-                            itemHeight={60}
-                            renderItem={(item, index) => (
-                                <div style={{
-                                    height: 60,
-                                    padding: '10px 15px',
-                                    borderBottom: '1px solid var(--fc-color-border-light, #f0f0f0)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    backgroundColor: 'transparent'
-                                }}>
-                                    <Avatar src={item.avatar} size="sm"/>
-                                    <div>
-                                        <div style={{ fontWeight: 'bold', color: 'var(--fc-color-text)' }}>
-                                            {item.title}
-                                        </div>
-                                        <div style={{ fontSize: '12px', color: 'var(--fc-color-text-secondary)' }}>
-                                            {item.description}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        />
-                    </div>
-
-                    {/* 简洁样式 - 修复硬编码边框 */}
-                    <div style={{ flex: 1, minWidth: 300 }}>
-                        <h4 style={{ color: 'var(--fc-color-text-secondary)' }}>简洁样式</h4>
-                        <VirtualList
-                            data={listData}
-                            height={400}
-                            itemHeight={40}
-                            renderItem={(item, index) => (
-                                <div style={{
-                                    height: 40,
-                                    lineHeight: '40px',
-                                    padding: '0 15px',
-                                    borderBottom: '1px solid var(--fc-color-border-light, #eee)',
-                                    fontSize: '14px',
-                                    backgroundColor: 'transparent',
-                                    color: 'var(--fc-color-text)'
-                                }}>
-                                    {index}: {item.title}
-                                </div>
-                            )}
-                        />
-                    </div>
-                </div>
-
-                {/* 卡片样式 - 修复硬编码颜色 */}
-                <div style={{ marginTop: 30 }}>
-                    <h4 style={{ color: 'var(--fc-color-text-secondary)' }}>卡片样式</h4>
-                    <VirtualList
-                        data={listData.slice(0, 5000)}
-                        height={400}
-                        itemHeight={80}
-                        renderItem={(item) => (
-                            <div style={{
-                                height: 70,
-                                margin: '5px 10px',
-                                padding: '10px 15px',
-                                backgroundColor: 'var(--fc-color-bg-elevated, #fff)',
-                                border: '1px solid var(--fc-color-border, #e0e0e0)',
-                                borderRadius: 'var(--fc-radius-md, 8px)',
-                                boxShadow: 'var(--fc-shadow-sm, 0 2px 4px rgba(0,0,0,0.05))',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px'
-                            }}>
-                                <Avatar src={item.avatar} size="md"/>
-                                <div>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--fc-color-text)' }}>
-                                        {item.title}
-                                    </div>
-                                    <div style={{ fontSize: '12px', color: 'var(--fc-color-text-secondary)' }}>
-                                        {item.description}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    />
-                </div>
-            </div>
-
-            {/* Card 图文卡片组件测试 */}
-            <div style={{
-                borderTop: '2px solid var(--fc-color-border, #eee)',
-                margin: '20px 0',
-                padding: '20px 0'
-            }}>
-                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>Card 图文卡片组件测试</h3>
-
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: 24
-                }}>
-                    <Card
-                        image="https://picsum.photos/id/1015/400/300"
-                        title="秋日山林"
-                        description="金秋时节，山林被染成了金黄色，漫步其中感受大自然的馈赠。"
-                        variant="shadow"
-                        hoverable
+                    {/* Input */}
+                    <Input
+                        size="lg"
+                        prefix="@"
+                        suffix=".com"
+                        passwordToggle
+                        allowClear
+                        status="success"
+                        helperText="格式正确"
                     />
 
-                    <Card
-                        title="纯文字卡片"
-                        description="即使没有图片，卡片也能正常显示。"
-                        extraInfo="📝 发布于 2024-01-01"
-                        variant="bordered"
-                    />
-                </div>
-            </div>
+                    {/* Slider */}
+                    <Slider range min={0} max={100} defaultValue={[20, 80]} tooltip
+                            marks={{0: '0%', 50: '50%', 100: '100%'}}/>
+                    <Slider orientation="vertical"/>
 
-            {/* Tabs 标签页组件测试 */}
-            <div style={{
-                borderTop: '2px solid var(--fc-color-border, #eee)',
-                margin: '20px 0',
-                padding: '20px 0'
-            }}>
-                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>Tabs 标签页组件</h3>
-
-                {/* 完整功能：选择 + 关闭 + 新增 + 圆角 */}
-                <div style={{ marginBottom: 30 }}>
-                    <h4 style={{ color: 'var(--fc-color-text-secondary)', marginBottom: 12 }}>完整功能（可选择、可关闭、可新增、圆角）</h4>
-                    <Tabs
-                        radius="md"
-                        closable
-                        addable
-                        items={[
-                            { key: '1', label: '标签1', content: <div>内容1</div> },
-                            { key: '2', label: '标签2', content: <div>内容2</div> },
-                            { key: '3', label: '标签3', content: <div>内容3</div> },
+                    {/* Select */}
+                    <Select
+                        options={[
+                            {value: '1', label: '选项1', group: '分组A'},
+                            {value: '2', label: '选项2', group: '分组A'},
+                            {value: '3', label: '选项3', group: '分组B'}
                         ]}
-                        defaultActiveKey="1"
-                        onChange={(key) => console.log('切换到:', key)}
-                        onClose={(key) => console.log('关闭:', key)}
-                        onAdd={() => console.log('新增标签页')}
+                        searchable
+                        multiple
+                        virtualScroll
                     />
+
+                    {/* SideBar */}
+                    <SideBar
+                        items={[
+                            {key: '1', label: '首页', icon: '🏠'},
+                            {
+                                key: '2', label: '设置', icon: '⚙️', children: [
+                                    {key: '2-1', label: '个人'},
+                                    {key: '2-2', label: '系统'}
+                                ]
+                            }
+                        ]}
+                        collapsed
+                    />
+
+                    {/* Tree */}
+                    <div style={{
+                        borderTop: '2px solid var(--fc-color-border, #eee)',
+                        margin: '20px 0',
+                        padding: '20px 0'
+                    }}>
+                        <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>Tree 分类树组件测试</h3>
+                        <TreeDemo/>
+                    </div>
+
+                    {/* 懒加载演示 */}
+                    <div style={{
+                        borderTop: '2px solid var(--fc-color-border, #eee)',
+                        margin: '20px 0',
+                        padding: '20px 0'
+                    }}>
+                        <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>懒加载演示</h3>
+                        <Button onClick={() => setShowLazy(!showLazy)}>
+                            {showLazy ? '隐藏' : '加载'}懒加载内容
+                        </Button>
+                        {showLazy && <LazyContent/>}
+                    </div>
+
+                    {/* Avatar组件测试 */}
+                    <div style={{
+                        borderTop: '2px solid var(--fc-color-border, #eee)',
+                        margin: '20px 0',
+                        padding: '20px 0'
+                    }}>
+                        <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>Avatar 头像组件测试</h3>
+
+                        {/* 尺寸变体 */}
+                        <div style={{marginBottom: 20}}>
+                            <h4 style={{color: 'var(--fc-color-text-secondary)'}}>尺寸变体</h4>
+                            <div style={{display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap'}}>
+                                <Avatar size="xs"/>
+                                <Avatar size="sm"/>
+                                <Avatar size="md"/>
+                                <Avatar size="lg"/>
+                                <Avatar size="xl"/>
+                            </div>
+                        </div>
+
+                        {/* 形状 */}
+                        <div style={{marginBottom: 20}}>
+                            <h4 style={{color: 'var(--fc-color-text-secondary)'}}>形状</h4>
+                            <div style={{display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap'}}>
+                                <Avatar shape="circle"/>
+                                <Avatar shape="square"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ListGroup组件测试 */}
+                    <div style={{
+                        borderTop: '2px solid var(--fc-color-border, #eee)',
+                        margin: '20px 0',
+                        padding: '20px 0'
+                    }}>
+                        <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>ListGroup 列表组组件测试</h3>
+
+                        {/* 基础列表组 */}
+                        <div style={{marginBottom: 30, maxWidth: 300}}>
+                            <h4 style={{color: 'var(--fc-color-text-secondary)'}}>基础列表组</h4>
+                            <ListGroup>
+                                <ListGroupItem>列表项 1</ListGroupItem>
+                                <ListGroupItem>列表项 2</ListGroupItem>
+                                <ListGroupItem>列表项 3</ListGroupItem>
+                            </ListGroup>
+                        </div>
+
+                        {/* 带激活状态 */}
+                        <div style={{marginBottom: 30, maxWidth: 300}}>
+                            <h4 style={{color: 'var(--fc-color-text-secondary)'}}>带激活状态</h4>
+                            <ListGroup>
+                                <ListGroupItem
+                                    active={selectedItem === '1'}
+                                    onClick={() => setSelectedItem('1')}
+                                >
+                                    首页
+                                </ListGroupItem>
+                                <ListGroupItem
+                                    active={selectedItem === '2'}
+                                    onClick={() => setSelectedItem('2')}
+                                >
+                                    个人中心
+                                </ListGroupItem>
+                                <ListGroupItem
+                                    active={selectedItem === '3'}
+                                    onClick={() => setSelectedItem('3')}
+                                >
+                                    设置
+                                </ListGroupItem>
+                            </ListGroup>
+                            <p style={{color: 'var(--fc-color-text-secondary)'}}>当前选中: {selectedItem}</p>
+                        </div>
+
+                        <div style={{marginBottom: 30, maxWidth: 300}}>
+                            <h4 style={{color: 'var(--fc-color-text-secondary)'}}>禁用状态</h4>
+                            <ListGroup>
+                                <ListGroupItem>可用选项</ListGroupItem>
+                                <ListGroupItem disabled>禁用选项</ListGroupItem>
+                                <ListGroupItem>另一个可用选项</ListGroupItem>
+                            </ListGroup>
+                        </div>
+                    </div>
+
+                    {/* VirtualList 虚拟列表测试 - 修复硬编码颜色 */}
+                    <div style={{
+                        borderTop: '2px solid var(--fc-color-border, #eee)',
+                        margin: '20px 0',
+                        padding: '20px 0'
+                    }}>
+                        <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>
+                            VirtualList 虚拟列表组件测试 (10000条数据)
+                        </h3>
+
+                        <div style={{display: 'flex', gap: 20, flexWrap: 'wrap'}}>
+                            {/* 基础虚拟列表 - 修复硬编码背景色 */}
+                            <div style={{flex: 1, minWidth: 300}}>
+                                <h4 style={{color: 'var(--fc-color-text-secondary)'}}>基础样式</h4>
+                                <VirtualList
+                                    data={listData}
+                                    height={400}
+                                    itemHeight={60}
+                                    renderItem={(item, index) => (
+                                        <div style={{
+                                            height: 60,
+                                            padding: '10px 15px',
+                                            borderBottom: '1px solid var(--fc-color-border-light, #f0f0f0)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            backgroundColor: 'transparent'
+                                        }}>
+                                            <Avatar src={item.avatar} size="sm"/>
+                                            <div>
+                                                <div style={{fontWeight: 'bold', color: 'var(--fc-color-text)'}}>
+                                                    {item.title}
+                                                </div>
+                                                <div
+                                                    style={{fontSize: '12px', color: 'var(--fc-color-text-secondary)'}}>
+                                                    {item.description}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                />
+                            </div>
+
+                            {/* 简洁样式 - 修复硬编码边框 */}
+                            <div style={{flex: 1, minWidth: 300}}>
+                                <h4 style={{color: 'var(--fc-color-text-secondary)'}}>简洁样式</h4>
+                                <VirtualList
+                                    data={listData}
+                                    height={400}
+                                    itemHeight={40}
+                                    renderItem={(item, index) => (
+                                        <div style={{
+                                            height: 40,
+                                            lineHeight: '40px',
+                                            padding: '0 15px',
+                                            borderBottom: '1px solid var(--fc-color-border-light, #eee)',
+                                            fontSize: '14px',
+                                            backgroundColor: 'transparent',
+                                            color: 'var(--fc-color-text)'
+                                        }}>
+                                            {index}: {item.title}
+                                        </div>
+                                    )}
+                                />
+                            </div>
+                        </div>
+
+                        {/* 卡片样式 - 修复硬编码颜色 */}
+                        <div style={{marginTop: 30}}>
+                            <h4 style={{color: 'var(--fc-color-text-secondary)'}}>卡片样式</h4>
+                            <VirtualList
+                                data={listData.slice(0, 5000)}
+                                height={400}
+                                itemHeight={80}
+                                renderItem={(item) => (
+                                    <div style={{
+                                        height: 70,
+                                        margin: '5px 10px',
+                                        padding: '10px 15px',
+                                        backgroundColor: 'var(--fc-color-bg-elevated, #fff)',
+                                        border: '1px solid var(--fc-color-border, #e0e0e0)',
+                                        borderRadius: 'var(--fc-radius-md, 8px)',
+                                        boxShadow: 'var(--fc-shadow-sm, 0 2px 4px rgba(0,0,0,0.05))',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px'
+                                    }}>
+                                        <Avatar src={item.avatar} size="md"/>
+                                        <div>
+                                            <div style={{
+                                                fontWeight: 'bold',
+                                                marginBottom: '4px',
+                                                color: 'var(--fc-color-text)'
+                                            }}>
+                                                {item.title}
+                                            </div>
+                                            <div style={{fontSize: '12px', color: 'var(--fc-color-text-secondary)'}}>
+                                                {item.description}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Card 图文卡片组件测试 */}
+                    <div style={{
+                        borderTop: '2px solid var(--fc-color-border, #eee)',
+                        margin: '20px 0',
+                        padding: '20px 0'
+                    }}>
+                        <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>Card 图文卡片组件测试</h3>
+
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                            gap: 24
+                        }}>
+                            <Card
+                                image="https://picsum.photos/id/1015/400/300"
+                                title="秋日山林"
+                                description="金秋时节，山林被染成了金黄色，漫步其中感受大自然的馈赠。"
+                                variant="shadow"
+                                hoverable
+                            />
+
+                            <Card
+                                title="纯文字卡片"
+                                description="即使没有图片，卡片也能正常显示。"
+                                extraInfo="📝 发布于 2024-01-01"
+                                variant="bordered"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Tabs 标签页组件测试 */}
+                    <div style={{
+                        borderTop: '2px solid var(--fc-color-border, #eee)',
+                        margin: '20px 0',
+                        padding: '20px 0'
+                    }}>
+                        <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>Tabs 标签页组件</h3>
+
+                        {/* 完整功能：选择 + 关闭 + 新增 + 圆角 */}
+                        <div style={{marginBottom: 30}}>
+                            <h4 style={{
+                                color: 'var(--fc-color-text-secondary)',
+                                marginBottom: 12
+                            }}>完整功能（可选择、可关闭、可新增、圆角）</h4>
+                            <Tabs
+                                radius="md"
+                                closable
+                                addable
+                                items={[
+                                    {key: '1', label: '标签1', content: <div>内容1</div>},
+                                    {key: '2', label: '标签2', content: <div>内容2</div>},
+                                    {key: '3', label: '标签3', content: <div>内容3</div>},
+                                ]}
+                                defaultActiveKey="1"
+                                onChange={(key) => console.log('切换到:', key)}
+                                onClose={(key) => console.log('关闭:', key)}
+                                onAdd={() => console.log('新增标签页')}
+                            />
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </RollingBox>
         </div>
     );
 }
