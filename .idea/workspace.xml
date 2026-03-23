@@ -4,15 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="部分代码优化">
-      <change afterPath="$PROJECT_DIR$/ui/src/components/Card/Card.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui/src/components/Card/Card.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui/src/components/Tabs/Tabs.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ui/src/components/Tabs/Tabs.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/ui/src/index.ts" afterDir="false" />
-    </list>
+    <list default="true" id="04850cdc-9e98-4e92-9a97-9927e92f02dc" name="更改" comment="卡片，导航栏预设" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -127,7 +119,7 @@
       <workItem from="1774159352756" duration="4242000" />
       <workItem from="1774175053888" duration="7927000" />
       <workItem from="1774224297751" duration="25000" />
-      <workItem from="1774224789388" duration="6009000" />
+      <workItem from="1774224789388" duration="6376000" />
     </task>
     <task id="LOCAL-00001" summary="暗色头像，先备个份，别的功能准备大改">
       <option name="closed" value="true" />
@@ -169,7 +161,15 @@
       <option name="project" value="LOCAL" />
       <updated>1774183962559</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="卡片，导航栏预设">
+      <option name="closed" value="true" />
+      <created>1774236430378</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1774236430378</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -191,6 +191,7 @@
     <MESSAGE value="暗色功能完成，在写懒加载" />
     <MESSAGE value="添加懒加载，LazyContent文件是用来测试功能的" />
     <MESSAGE value="部分代码优化" />
-    <option name="LAST_COMMIT_MESSAGE" value="部分代码优化" />
+    <MESSAGE value="卡片，导航栏预设" />
+    <option name="LAST_COMMIT_MESSAGE" value="卡片，导航栏预设" />
   </component>
 </project>
