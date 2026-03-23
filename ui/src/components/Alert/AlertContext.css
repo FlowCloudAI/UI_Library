@@ -1,0 +1,88 @@
+/* ========================================
+   AlertContext.css - 基于 FC Design System
+   ======================================== */
+
+/* ---------- 遮罩层 ---------- */
+.fc-alert-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--fc-color-bg-overlay);
+    z-index: var(--fc-z-modal);
+}
+
+/* ---------- 弹窗容器 ---------- */
+.fc-alert {
+    /* 组件局部变量 */
+    --alert-bg:         var(--fc-color-bg-elevated);
+    --alert-border:     var(--fc-color-border);
+    --alert-shadow:     var(--fc-shadow-lg);
+    --alert-min-width:  20rem;
+    --alert-max-width:  80%;
+    --alert-max-height: 80vh;
+
+    background: var(--alert-bg);
+    border: 1px solid var(--alert-border);
+    border-radius: var(--fc-radius-lg);
+    box-shadow: var(--alert-shadow);
+    padding: var(--fc-space-lg);
+    min-width: var(--alert-min-width);
+    max-width: var(--alert-max-width);
+    max-height: var(--alert-max-height);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: var(--fc-font-family), serif;
+    color: var(--fc-color-text);
+}
+
+/* ---------- 标题行 ---------- */
+.fc-alert__header {
+    display: flex;
+    align-items: center;
+    gap: var(--fc-space-sm);
+    margin-bottom: var(--fc-space-md);
+}
+
+.fc-alert__icon {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.fc-alert__title {
+    font-size: var(--fc-font-size-md);
+    font-weight: var(--fc-font-weight-bold);
+    line-height: var(--fc-line-height-tight);
+}
+
+/* ---------- 消息体 ---------- */
+.fc-alert__msg {
+    flex: 1;
+    min-height: 0;
+    max-height: 10rem;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: var(--fc-font-size-sm);
+    line-height: var(--fc-line-height-normal);
+    color: var(--fc-color-text-secondary);
+    padding: 0 var(--fc-space-xs);
+    margin-bottom: var(--fc-space-lg);
+}
+
+/* ---------- 按钮行 ---------- */
+.fc-alert__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--fc-space-sm);
+}
+
+/* ---------- 语义色 / 图标色 ---------- */
+.fc-alert--success .fc-alert__icon { color: var(--fc-color-success); }
+.fc-alert--error   .fc-alert__icon { color: var(--fc-color-danger); }
+.fc-alert--warning .fc-alert__icon { color: var(--fc-color-warning); }
+.fc-alert--info    .fc-alert__icon { color: var(--fc-color-info); }

@@ -1,23 +1,41 @@
-import { Button, ButtonGroup, ButtonToolbar } from "flowcloudai-ui";
+import {Button, ButtonGroup, ButtonToolbar} from "flowcloudai-ui";
 import {
-    CheckButton, RollingBox, Input, Select, Slider, SideBar, Tree,
-    Avatar, ListGroup, ListGroupItem, VirtualList  // 导入 VirtualList
+    CheckButton, RollingBox, Input, Select, Slider, SideBar,
+    Avatar, ListGroup, ListGroupItem, VirtualList, useAlert
 } from "flowcloudai-ui";
-import {useEffect, useState} from "react";
-import { TreeDemo } from './TreeDemo'
+import {useState} from "react";
+import {TreeDemo} from './TreeDemo'
 
 export default function App() {
     const [enabled, setEnabled] = useState(false);
     const [selectedItem, setSelectedItem] = useState('1');
+    const {showAlert} = useAlert();
 
     // 生成测试数据
     const generateData = (count: number) => {
-        return Array.from({ length: count }, (_, i) => ({
+        return Array.from({length: count}, (_, i) => ({
             id: i,
             title: `Item ${i + 1}`,
             description: `这是第 ${i + 1} 个项目的描述信息`,
             avatar: `https://i.pravatar.cc/40?u=${i}`
         }));
+    };
+
+    // 普通提示，只有"确定"
+    const handleInfo = async () => {
+        await showAlert("操作已完成", "success");
+    };
+
+    // 确认框，返回 "yes" | "no"
+    const handleDelete = async () => {
+        const res = await showAlert("确定要删除这条记录吗？", "warning", true);
+        if (res === "yes") {
+            // 执行删除...
+        }
+    };
+
+    const handleError = async () => {
+        await showAlert("网络请求失败，请稍后重试", "error");
     };
 
     const [listData] = useState(() => generateData(10000));
@@ -80,40 +98,49 @@ export default function App() {
             </ButtonToolbar>
 
             {/* CheckButton */}
-            <CheckButton />
-            <CheckButton labelLeft="关" labelRight="开" />
+            <CheckButton/>
+            <CheckButton labelLeft="关" labelRight="开"/>
             <CheckButton
                 checked={enabled}
                 onChange={setEnabled}
                 labelRight="启用通知"
             />
-            <CheckButton size="sm" />
-            <CheckButton size="md" />
-            <CheckButton size="lg" />
-            <CheckButton disabled />
-            <CheckButton disabled checked labelRight="已锁定" />
+            <CheckButton size="sm"/>
+            <CheckButton size="md"/>
+            <CheckButton size="lg"/>
+            <CheckButton disabled/>
+            <CheckButton disabled checked labelRight="已锁定"/>
+
+            {/* Alert */}
+            Alert 组件
+            <Button onClick={handleInfo}>成功提示</Button>
+            <Button onClick={handleDelete}>删除确认</Button>
+            <Button onClick={handleError}>错误提示</Button>
 
             {/* RollingBox */}
-            <RollingBox style={{ height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
-                <div style={{ height: '1000px' }}>
+            <RollingBox style={{height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
+                <div style={{height: '1000px'}}>
                     内容...
                 </div>
             </RollingBox>
 
-            <RollingBox showThumb="show" style={{ height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
-                <div style={{ height: '1000px' }}>
+            <RollingBox showThumb="show"
+                        style={{height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
+                <div style={{height: '1000px'}}>
                     内容...
                 </div>
             </RollingBox>
 
-            <RollingBox showThumb="hide" style={{ height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
-                <div style={{ height: '1000px' }}>
+            <RollingBox showThumb="hide"
+                        style={{height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
+                <div style={{height: '1000px'}}>
                     内容...
                 </div>
             </RollingBox>
 
-            <RollingBox horizontal showThumb="show" style={{ height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
-                <div style={{ width: '2000px', display: 'flex' }}>
+            <RollingBox horizontal showThumb="show"
+                        style={{height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
+                <div style={{width: '2000px', display: 'flex'}}>
                     <div>内容1</div>
                     <div>内容2</div>
                     <div>内容3</div>
@@ -125,15 +152,16 @@ export default function App() {
                 showThumb="show"
                 thumbSize="thin"
                 showTrack
-                style={{ height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}
+                style={{height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}
             >
-                <div style={{ height: '1000px' }}>
+                <div style={{height: '1000px'}}>
                     内容...
                 </div>
             </RollingBox>
 
-            <RollingBox thumbSize="thick" style={{ height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
-                <div style={{ height: '1000px' }}>
+            <RollingBox thumbSize="thick"
+                        style={{height: '300px', border: '1px solid #ccc', padding: '10px', borderRadius: '5px'}}>
+                <div style={{height: '1000px'}}>
                     内容...
                 </div>
             </RollingBox>
@@ -150,15 +178,15 @@ export default function App() {
             />
 
             {/* Slider */}
-            <Slider range min={0} max={100} defaultValue={[20, 80]} tooltip marks={{0:'0%',50:'50%',100:'100%'}} />
-            <Slider orientation="vertical" />
+            <Slider range min={0} max={100} defaultValue={[20, 80]} tooltip marks={{0: '0%', 50: '50%', 100: '100%'}}/>
+            <Slider orientation="vertical"/>
 
             {/* Select */}
             <Select
                 options={[
-                    { value: '1', label: '选项1', group: '分组A' },
-                    { value: '2', label: '选项2', group: '分组A' },
-                    { value: '3', label: '选项3', group: '分组B' }
+                    {value: '1', label: '选项1', group: '分组A'},
+                    {value: '2', label: '选项2', group: '分组A'},
+                    {value: '3', label: '选项3', group: '分组B'}
                 ]}
                 searchable
                 multiple
@@ -168,53 +196,55 @@ export default function App() {
             {/* SideBar */}
             <SideBar
                 items={[
-                    { key: '1', label: '首页', icon: '🏠' },
-                    { key: '2', label: '设置', icon: '⚙️', children: [
-                            { key: '2-1', label: '个人' },
-                            { key: '2-2', label: '系统' }
-                        ]}
+                    {key: '1', label: '首页', icon: '🏠'},
+                    {
+                        key: '2', label: '设置', icon: '⚙️', children: [
+                            {key: '2-1', label: '个人'},
+                            {key: '2-2', label: '系统'}
+                        ]
+                    }
                 ]}
                 collapsed
             />
 
             {/* Tree */}
-            <div style={{ borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0' }}>
-                <h3 style={{ marginBottom: 20 }}>Tree 分类树组件测试</h3>
-                <TreeDemo />
+            <div style={{borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0'}}>
+                <h3 style={{marginBottom: 20}}>Tree 分类树组件测试</h3>
+                <TreeDemo/>
             </div>
 
             {/* Avatar组件测试 */}
-            <div style={{ borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0' }}>
-                <h3 style={{ marginBottom: 20 }}>Avatar 头像组件测试</h3>
+            <div style={{borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0'}}>
+                <h3 style={{marginBottom: 20}}>Avatar 头像组件测试</h3>
 
                 {/* 尺寸变体 */}
-                <div style={{ marginBottom: 20 }}>
+                <div style={{marginBottom: 20}}>
                     <h4>尺寸变体</h4>
-                    <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Avatar size="xs" />
-                        <Avatar size="sm" />
-                        <Avatar size="md" />
-                        <Avatar size="lg" />
-                        <Avatar size="xl" />
+                    <div style={{display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap'}}>
+                        <Avatar size="xs"/>
+                        <Avatar size="sm"/>
+                        <Avatar size="md"/>
+                        <Avatar size="lg"/>
+                        <Avatar size="xl"/>
                     </div>
                 </div>
 
                 {/* 形状 */}
-                <div style={{ marginBottom: 20 }}>
+                <div style={{marginBottom: 20}}>
                     <h4>形状</h4>
-                    <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Avatar shape="circle" />
-                        <Avatar shape="square" />
+                    <div style={{display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap'}}>
+                        <Avatar shape="circle"/>
+                        <Avatar shape="square"/>
                     </div>
                 </div>
             </div>
 
             {/* ListGroup组件测试 */}
-            <div style={{ borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0' }}>
-                <h3 style={{ marginBottom: 20 }}>ListGroup 列表组组件测试</h3>
+            <div style={{borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0'}}>
+                <h3 style={{marginBottom: 20}}>ListGroup 列表组组件测试</h3>
 
                 {/* 基础列表组 */}
-                <div style={{ marginBottom: 30, maxWidth: 300 }}>
+                <div style={{marginBottom: 30, maxWidth: 300}}>
                     <h4>基础列表组</h4>
                     <ListGroup>
                         <ListGroupItem>列表项 1</ListGroupItem>
@@ -224,7 +254,7 @@ export default function App() {
                 </div>
 
                 {/* 带激活状态 */}
-                <div style={{ marginBottom: 30, maxWidth: 300 }}>
+                <div style={{marginBottom: 30, maxWidth: 300}}>
                     <h4>带激活状态</h4>
                     <ListGroup>
                         <ListGroupItem
@@ -249,7 +279,7 @@ export default function App() {
                     <p>当前选中: {selectedItem}</p>
                 </div>
 
-                <div style={{ marginBottom: 30, maxWidth: 300 }}>
+                <div style={{marginBottom: 30, maxWidth: 300}}>
                     <h4>禁用状态</h4>
                     <ListGroup>
                         <ListGroupItem>可用选项</ListGroupItem>
@@ -260,12 +290,12 @@ export default function App() {
             </div>
 
             {/* VirtualList 虚拟列表测试 */}
-            <div style={{ borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0' }}>
-                <h3 style={{ marginBottom: 20 }}>VirtualList 虚拟列表组件测试 (10000条数据)</h3>
+            <div style={{borderTop: '2px solid #eee', margin: '20px 0', padding: '20px 0'}}>
+                <h3 style={{marginBottom: 20}}>VirtualList 虚拟列表组件测试 (10000条数据)</h3>
 
-                <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                <div style={{display: 'flex', gap: 20, flexWrap: 'wrap'}}>
                     {/* 基础虚拟列表 */}
-                    <div style={{ flex: 1, minWidth: 300 }}>
+                    <div style={{flex: 1, minWidth: 300}}>
                         <h4>基础样式</h4>
                         <VirtualList
                             data={listData}
@@ -281,10 +311,10 @@ export default function App() {
                                     gap: '12px',
                                     backgroundColor: index % 2 === 0 ? '#fafafa' : '#fff'
                                 }}>
-                                    <Avatar src={item.avatar} size="sm" />
+                                    <Avatar src={item.avatar} size="sm"/>
                                     <div>
-                                        <div style={{ fontWeight: 'bold' }}>{item.title}</div>
-                                        <div style={{ fontSize: '12px', color: '#999' }}>{item.description}</div>
+                                        <div style={{fontWeight: 'bold'}}>{item.title}</div>
+                                        <div style={{fontSize: '12px', color: '#999'}}>{item.description}</div>
                                     </div>
                                 </div>
                             )}
@@ -292,7 +322,7 @@ export default function App() {
                     </div>
 
                     {/* 简洁样式 */}
-                    <div style={{ flex: 1, minWidth: 300 }}>
+                    <div style={{flex: 1, minWidth: 300}}>
                         <h4>简洁样式</h4>
                         <VirtualList
                             data={listData}
@@ -314,7 +344,7 @@ export default function App() {
                 </div>
 
                 {/* 卡片样式 */}
-                <div style={{ marginTop: 30 }}>
+                <div style={{marginTop: 30}}>
                     <h4>卡片样式</h4>
                     <VirtualList
                         data={listData.slice(0, 5000)}
@@ -333,10 +363,10 @@ export default function App() {
                                 alignItems: 'center',
                                 gap: '12px'
                             }}>
-                                <Avatar src={item.avatar} size="md" />
+                                <Avatar src={item.avatar} size="md"/>
                                 <div>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{item.title}</div>
-                                    <div style={{ fontSize: '12px', color: '#666' }}>{item.description}</div>
+                                    <div style={{fontWeight: 'bold', marginBottom: '4px'}}>{item.title}</div>
+                                    <div style={{fontSize: '12px', color: '#666'}}>{item.description}</div>
                                 </div>
                             </div>
                         )}
