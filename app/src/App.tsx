@@ -1,7 +1,7 @@
 import { Button, ButtonGroup, ButtonToolbar } from "flowcloudai-ui";
 import {
     CheckButton, RollingBox, Input, Select, Slider, SideBar, Tree,
-    Avatar, ListGroup, ListGroupItem, VirtualList, lazyLoad
+    Avatar, ListGroup, ListGroupItem, VirtualList, lazyLoad, Card, Tabs
 } from "flowcloudai-ui";
 import { useState } from "react";
 import { TreeDemo } from './TreeDemo'
@@ -417,6 +417,64 @@ export default function App() {
                                 </div>
                             </div>
                         )}
+                    />
+                </div>
+            </div>
+
+            {/* Card 图文卡片组件测试 */}
+            <div style={{
+                borderTop: '2px solid var(--fc-color-border, #eee)',
+                margin: '20px 0',
+                padding: '20px 0'
+            }}>
+                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>Card 图文卡片组件测试</h3>
+
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: 24
+                }}>
+                    <Card
+                        image="https://picsum.photos/id/1015/400/300"
+                        title="秋日山林"
+                        description="金秋时节，山林被染成了金黄色，漫步其中感受大自然的馈赠。"
+                        variant="shadow"
+                        hoverable
+                    />
+
+                    <Card
+                        title="纯文字卡片"
+                        description="即使没有图片，卡片也能正常显示。"
+                        extraInfo="📝 发布于 2024-01-01"
+                        variant="bordered"
+                    />
+                </div>
+            </div>
+
+            {/* Tabs 标签页组件测试 */}
+            <div style={{
+                borderTop: '2px solid var(--fc-color-border, #eee)',
+                margin: '20px 0',
+                padding: '20px 0'
+            }}>
+                <h3 style={{ marginBottom: 20, color: 'var(--fc-color-text)' }}>Tabs 标签页组件</h3>
+
+                {/* 完整功能：选择 + 关闭 + 新增 + 圆角 */}
+                <div style={{ marginBottom: 30 }}>
+                    <h4 style={{ color: 'var(--fc-color-text-secondary)', marginBottom: 12 }}>完整功能（可选择、可关闭、可新增、圆角）</h4>
+                    <Tabs
+                        radius="md"
+                        closable
+                        addable
+                        items={[
+                            { key: '1', label: '标签1', content: <div>内容1</div> },
+                            { key: '2', label: '标签2', content: <div>内容2</div> },
+                            { key: '3', label: '标签3', content: <div>内容3</div> },
+                        ]}
+                        defaultActiveKey="1"
+                        onChange={(key) => console.log('切换到:', key)}
+                        onClose={(key) => console.log('关闭:', key)}
+                        onAdd={() => console.log('新增标签页')}
                     />
                 </div>
             </div>

@@ -16,5 +16,7 @@ export * from "./components/Avatar/Avatar"
 export * from "./components/ListGroup/ListGroup"
 export * from "./components/VirtualList/VirtualList"
 export * from "./components/LazyLoad/LazyLoad"
+export * from "./components/Card/Card"
+export * from "./components/Tabs/Tabs"
 
 import "./styles/index.css"
