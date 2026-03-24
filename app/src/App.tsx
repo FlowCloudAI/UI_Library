@@ -2,11 +2,11 @@ import {Button, ButtonGroup, ButtonToolbar} from "flowcloudai-ui";
 import {
     CheckButton, RollingBox, Input, Select, Slider, SideBar,
     Avatar, ListGroup, ListGroupItem, VirtualList, useAlert,
-    lazyLoad, Card, Tabs, Chat
+    lazyLoad, Card, TabBar, TabItem , Chat
 } from "flowcloudai-ui";
 import { useTheme } from 'flowcloudai-ui';
-import {useEffect, useState} from "react";
-import {TreeDemo} from './TreeDemo'
+import {useEffect, useState, useCallback} from "react";
+import { TreeDemo } from './TreeDemo'
 
 // 懒加载组件示例
 const LazyContent = lazyLoad(
@@ -132,46 +132,64 @@ export default function App() {
     const [listData] = useState(() => generateData(10000));
 
     // Tabs 相关状态
-    const [tabs, setTabs] = useState([
-        {key: '1', label: '标签1', content: <div>内容1</div>},
-        {key: '2', label: '标签2', content: <div>内容2</div>},
-        {key: '3', label: '标签3', content: <div>内容3</div>},
-    ]);
-    const [activeKey, setActiveKey] = useState('1');
-    const [controlledKey, setControlledKey] = useState('1');
-    const [tabCount, setTabCount] = useState(3);
+    const initialTabs: TabItem[] = [
+        { key: 'home', label: '首页' },
+        { key: 'profile', label: '个人中心' },
+        { key: 'settings', label: '设置' },
+        { key: 'disabled', label: '已禁用', disabled: true },
+    ];
 
-    // 新增标签
-    const handleAdd = () => {
-        const newKey = String(tabCount + 1);
-        setTabs([
-            ...tabs,
-            {
-                key: newKey,
-                label: `标签${newKey}`,
-                content: <div>新增内容{newKey}</div>
-            }
-        ]);
-        setTabCount(tabCount + 1);
+    const [tabs, setTabs] = useState<TabItem[]>(initialTabs);
+    const [activeKey, setActiveKey] = useState('home');
+    let counter = tabs.length;
+
+    /* ---- 切换 ---- */
+    const handleChange = useCallback((key: string) => {
+        setActiveKey(key);
+    }, []);
+
+    /* ---- 关闭 ---- */
+    const handleClose = useCallback((key: string) => {
+        setTabs((prev) => {
+            const next = prev.filter((t) => t.key !== key);
+            // 如果关闭的是当前激活的，切到相邻标签
+            setActiveKey((currentKey) => {
+                if (currentKey !== key) return currentKey;
+                const idx = prev.findIndex((t) => t.key === key);
+                const fallback = prev[idx + 1] || prev[idx - 1];
+                return fallback?.key ?? '';
+            });
+            return next;
+        });
+    }, []);
+
+    /* ---- 添加 ---- */
+    const handleAdd = useCallback(() => {
+        counter++;
+        const newKey = `tab-${counter}`;
+        const newTab: TabItem = { key: newKey, label: `新标签 ${counter}` };
+        setTabs((prev) => [...prev, newTab]);
         setActiveKey(newKey);
-    };
+    }, []);
 
-    // 删除标签
-    const handleClose = (key: string) => {
-        const newTabs = tabs.filter(tab => tab.key !== key);
-        setTabs(newTabs);
+    /* ---- 拖拽排序 ---- */
+    const handleReorder = useCallback((reordered: TabItem[]) => {
+        setTabs(reordered);
+    }, []);
 
-        if (activeKey === key) {
-            const closedIndex = tabs.findIndex(tab => tab.key === key);
-            const nextTab = newTabs[closedIndex] || newTabs[closedIndex - 1];
-            if (nextTab) {
-                setActiveKey(nextTab.key);
-            }
+    /* ---- 渲染内容区域（由外部自行控制） ---- */
+    const renderContent = () => {
+        switch (activeKey) {
+            case 'home':
+                return <div>首页内容</div>;
+            case 'profile':
+                return <div>个人中心内容</div>;
+            case 'settings':
+                return <div>设置内容</div>;
+            default:
+                return <div>标签 {activeKey} 的内容</div>;
         }
     };
-
-    // 半径选项
-    const radiusOptions = ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const;
 
     return (
         <div style={{
@@ -620,130 +638,108 @@ export default function App() {
                 </div>
             </div>
 
-            {/* Tabs 组件测试 */}
-            <div style={{
-                borderTop: '2px solid var(--fc-color-border, #eee)',
-                margin: '20px 0',
-                padding: '20px 0'
-            }}>
-                <h3 style={{marginBottom: 20, color: 'var(--fc-color-text)'}}>Tabs 标签页组件</h3>
+            {/* TabBar 只负责标签栏 */}
+            <div>
+                <h3>贴合模式（默认）</h3>
+                <TabBar
+                    items={tabs}
+                    activeKey={activeKey}
+                    variant="attached"
+                    closable
+                    addable
+                    draggable
+                    onChange={setActiveKey}
+                    onClose={(key) => {
+                        setTabs((prev) => prev.filter((t) => t.key !== key));
+                        if (activeKey === key) {
+                            const idx = tabs.findIndex((t) => t.key === key);
+                            setActiveKey(tabs[idx + 1]?.key || tabs[idx - 1]?.key || '');
+                        }
+                    }}
+                    onAdd={() => {
+                        const k = `tab-${Date.now()}`;
+                        setTabs((prev) => [...prev, { key: k, label: `新标签` }]);
+                        setActiveKey(k);
+                    }}
+                    onReorder={setTabs}
+                />
+                <div style={{ padding: 16 }}>当前：{activeKey}</div>
+            </div>
 
-                {/* 完整功能 */}
-                <div style={{marginBottom: 30}}>
-                    <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
-                        完整功能（可选择、可关闭、可新增、圆角）
-                    </h4>
-                    <div style={{marginBottom: 10, fontSize: 12, color: 'var(--fc-color-text-tertiary)'}}>
-                        标签总数: {tabs.length} | 当前活跃: {activeKey}
-                    </div>
-                    <Tabs
-                        radius="md"
-                        closable
-                        addable
-                        activeKey={activeKey}
-                        items={tabs}
-                        onChange={(key) => {
-                            console.log('切换到:', key);
-                            setActiveKey(key);
-                        }}
-                        onClose={(key) => {
-                            console.log('关闭:', key);
-                            handleClose(key);
-                        }}
-                        onAdd={() => {
-                            console.log('新增标签页');
-                            handleAdd();
-                        }}
-                    />
-                </div>
+            <div>
+                <h3>悬浮模式</h3>
+                <TabBar
+                    items={initialTabs}
+                    activeKey={activeKey}
+                    variant="floating"
+                    onChange={setActiveKey}
+                />
+                <div style={{ padding: 16 }}>当前：{activeKey}</div>
+            </div>
 
-                {/* 禁用状态 */}
-                <div style={{marginBottom: 30}}>
-                    <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
-                        禁用状态
-                    </h4>
-                    <Tabs
-                        radius="lg"
-                        items={[
-                            {key: '1', label: '可用', content: <div>正常内容</div>},
-                            {key: '2', label: '禁用', disabled: true, content: <div>无法点击</div>},
-                            {key: '3', label: '可用', content: <div>内容3</div>},
-                        ]}
-                        defaultActiveKey="1"
-                    />
-                </div>
+            <div>
+                <h3>方式一：CSS Variables 覆盖</h3>
+                <TabBar
+                    items={initialTabs}
+                    activeKey={activeKey}
+                    variant="floating"
+                    onChange={setActiveKey}
+                    style={{
+                        // 直接在 style 中设置 CSS 变量即可覆盖所有 tab 的颜色
+                        '--fc-tab-hover-color': '#e65100',
+                        '--fc-tab-hover-bg': '#fff3e0',
+                        '--fc-tab-active-color': '#e65100',
+                        '--fc-tab-active-bg': '#ffe0b2',
+                    } as React.CSSProperties}
+                />
+            </div>
 
-                {/* 不同圆角展示 */}
-                <div style={{marginBottom: 30}}>
-                    <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
-                        圆角变化（none → sm → md → lg → xl → full）
-                    </h4>
-                    {radiusOptions.map(r => (
-                        <div key={r} style={{marginBottom: 15}}>
-                            <small style={{color: 'var(--fc-color-text-tertiary)'}}>{r}</small>
-                            <Tabs
-                                radius={r}
-                                items={[
-                                    {key: '1', label: 'Tab1', content: <div>内容</div>},
-                                    {key: '2', label: 'Tab2', content: <div>内容</div>},
-                                ]}
-                                defaultActiveKey="1"
-                            />
-                        </div>
-                    ))}
-                </div>
+            <div>
+                <h3>方式二：className 覆盖</h3>
+                <TabBar
+                    items={initialTabs}
+                    activeKey={activeKey}
+                    variant="floating"
+                    tabClassName="my-tab"
+                    activeTabClassName="my-tab-active"
+                    onChange={setActiveKey}
+                />
+            </div>
 
-                {/* 受控模式 */}
-                <div style={{marginBottom: 30}}>
-                    <h4 style={{color: 'var(--fc-color-text-secondary)', marginBottom: 12}}>
-                        受控模式（可从外部按钮切换）
-                    </h4>
-                    <div style={{
-                        marginBottom: 15,
-                        display: 'flex',
-                        gap: 10,
-                        flexWrap: 'wrap'
-                    }}>
-                        {['1', '2', '3'].map(key => (
-                            <button
-                                key={key}
-                                onClick={() => setControlledKey(key)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: controlledKey === key
-                                        ? 'var(--fc-color-primary, #1677ff)'
-                                        : 'var(--fc-color-bg-tertiary, #f5f5f5)',
-                                    color: controlledKey === key ? 'white' : 'var(--fc-color-text)',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    transition: 'all 150ms ease'
-                                }}
-                            >
-                                切换到标签{key}
-                            </button>
-                        ))}
-                        <span style={{
-                            padding: '6px 12px',
-                            color: 'var(--fc-color-text-secondary)',
-                            backgroundColor: 'var(--fc-color-bg-tertiary, #f5f5f5)',
-                            borderRadius: '4px',
-                            fontSize: 12
-                        }}>
-                            当前: {controlledKey}
-                        </span>
-                    </div>
-                    <Tabs
-                        radius="md"
-                        activeKey={controlledKey}
-                        items={[
-                            {key: '1', label: '标签1', content: <div>内容1 - 受控模式</div>},
-                            {key: '2', label: '标签2', content: <div>内容2 - 受控模式</div>},
-                            {key: '3', label: '标签3', content: <div>内容3 - 受控模式</div>},
-                        ]}
-                        onChange={(key) => setControlledKey(key)}
-                    />
-                </div>
+            <div>
+                <h3>方式三：inline style 覆盖</h3>
+                <TabBar
+                    items={initialTabs}
+                    activeKey={activeKey}
+                    variant="floating"
+                    tabStyle={{ fontWeight: 500, letterSpacing: '0.02em' }}
+                    activeTabStyle={{
+                        background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                        color: '#fff',
+                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)',
+                    }}
+                    onChange={setActiveKey}
+                />
+            </div>
+
+            <div>
+                <h3>attached + tabRadius（四周圆角的贴合标签）</h3>
+                <TabBar
+                    items={initialTabs}
+                    activeKey={activeKey}
+                    variant="attached"
+                    tabRadius="md"
+                    onChange={setActiveKey}
+                />
+
+                <h3 style={{ marginTop: 24 }}>floating + tabRadius="lg"</h3>
+                <TabBar
+                    items={initialTabs}
+                    activeKey={activeKey}
+                    variant="floating"
+                    tabRadius="lg"
+                    onChange={setActiveKey}
+                />
             </div>
         </div>
     );

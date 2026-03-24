@@ -1,0 +1,230 @@
+/* src/components/TabBar/TabBar.css */
+
+/* ==========================================================
+   可覆盖的 CSS 变量（在 .fc-tab-bar 或父容器上设置即可）
+
+   --fc-tab-color:          标签文字颜色
+   --fc-tab-bg:             标签背景色
+   --fc-tab-hover-color:    hover 文字颜色
+   --fc-tab-hover-bg:       hover 背景色
+   --fc-tab-active-color:   激活态文字颜色
+   --fc-tab-active-bg:      激活态背景色
+   --fc-tab-active-border:  激活态指示器颜色（attached 模式下的底线）
+   ========================================================== */
+
+/* ========== 基础容器 ========== */
+.fc-tab-bar {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background-color: var(--fc-color-bg-secondary);
+    color: var(--fc-color-text);
+    overflow: hidden;
+}
+
+/* ========== 容器圆角 ========== */
+.fc-tab-bar--radius-none { border-radius: 0; }
+.fc-tab-bar--radius-sm   { border-radius: var(--fc-radius-sm, 4px) var(--fc-radius-sm, 4px) 0 0; }
+.fc-tab-bar--radius-md   { border-radius: var(--fc-radius-md, 8px) var(--fc-radius-md, 8px) 0 0; }
+.fc-tab-bar--radius-lg   { border-radius: var(--fc-radius-lg, 12px) var(--fc-radius-lg, 12px) 0 0; }
+.fc-tab-bar--radius-xl   { border-radius: var(--fc-radius-xl, 16px) var(--fc-radius-xl, 16px) 0 0; }
+.fc-tab-bar--radius-full { border-radius: var(--fc-radius-full, 9999px) var(--fc-radius-full, 9999px) 0 0; }
+
+/* ========== 导航栏 ========== */
+.fc-tab-bar__nav {
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.fc-tab-bar__nav-wrap {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+}
+
+/* ========== 标签页（基础） ========== */
+.fc-tab-bar__tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fc-space-sm, 8px);
+    padding: var(--fc-space-sm, 8px) var(--fc-space-lg, 16px);
+    font-size: var(--fc-font-size-md, 14px);
+    color: var(--fc-tab-color, var(--fc-color-text-secondary));
+    background-color: var(--fc-tab-bg, transparent);
+    cursor: pointer;
+    transition: all var(--fc-transition, 150ms ease);
+    white-space: nowrap;
+    border: none;
+    user-select: none;
+}
+
+.fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled):not(.fc-tab-bar__tab--dragging) {
+    color: var(--fc-tab-hover-color, var(--fc-color-primary));
+    background-color: var(--fc-tab-hover-bg, var(--fc-color-bg-tertiary));
+}
+
+.fc-tab-bar__tab--active {
+    color: var(--fc-tab-active-color, var(--fc-color-primary));
+    background-color: var(--fc-tab-active-bg, var(--fc-color-bg));
+}
+
+.fc-tab-bar__tab--disabled {
+    color: var(--fc-color-text-disabled);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ==========================================================
+   VARIANT: attached（贴合）
+   标签底部紧贴导航栏下边缘，底部 2px 线条作为激活指示器
+   ========================================================== */
+
+.fc-tab-bar--attached {
+    border-bottom: 2px solid var(--fc-color-border);
+}
+
+.fc-tab-bar--attached .fc-tab-bar__tab {
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    border-radius: 0;
+}
+
+.fc-tab-bar--attached .fc-tab-bar__tab--active {
+    border-bottom-color: var(--fc-tab-active-border, var(--fc-color-primary));
+}
+
+/* ==========================================================
+   VARIANT: floating（悬浮）
+   标签垂直居中悬浮在导航栏中，胶囊/圆角形态，背景填充
+   ========================================================== */
+
+.fc-tab-bar--floating {
+    border-bottom: none;
+}
+
+.fc-tab-bar--floating .fc-tab-bar__nav {
+    padding: var(--fc-space-xs, 6px) var(--fc-space-sm, 8px);
+}
+
+.fc-tab-bar--floating .fc-tab-bar__nav-wrap {
+    gap: var(--fc-space-xs, 4px);
+    align-items: center;
+}
+
+.fc-tab-bar--floating .fc-tab-bar__tab {
+    /* 默认胶囊圆角，可被 tabRadius 覆盖 */
+    border-radius: var(--fc-radius-full, 9999px);
+    padding: var(--fc-space-xs, 6px) var(--fc-space-lg, 16px);
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.fc-tab-bar--floating .fc-tab-bar__tab--active {
+    background-color: var(--fc-tab-active-bg, var(--fc-color-bg));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* ==========================================================
+   Tab 项圆角（tabRadius prop）
+   在 attached 模式下提供四周圆角；在 floating 模式下覆盖默认胶囊圆角
+   ========================================================== */
+
+.fc-tab-bar--tab-radius-none .fc-tab-bar__tab { border-radius: 0; }
+.fc-tab-bar--tab-radius-sm   .fc-tab-bar__tab { border-radius: var(--fc-radius-sm, 4px); }
+.fc-tab-bar--tab-radius-md   .fc-tab-bar__tab { border-radius: var(--fc-radius-md, 8px); }
+.fc-tab-bar--tab-radius-lg   .fc-tab-bar__tab { border-radius: var(--fc-radius-lg, 12px); }
+.fc-tab-bar--tab-radius-xl   .fc-tab-bar__tab { border-radius: var(--fc-radius-xl, 16px); }
+.fc-tab-bar--tab-radius-full .fc-tab-bar__tab { border-radius: var(--fc-radius-full, 9999px); }
+
+/* ========== 拖拽样式 ========== */
+.fc-tab-bar__tab--draggable {
+    cursor: grab;
+}
+
+.fc-tab-bar__tab--draggable:active {
+    cursor: grabbing;
+}
+
+.fc-tab-bar__tab--dragging {
+    opacity: 0.4;
+}
+
+/* ========== 关闭按钮 ========== */
+.fc-tab-bar__tab-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--fc-color-text-tertiary);
+    border-radius: var(--fc-radius-sm, 4px);
+    transition: all var(--fc-transition, 150ms ease);
+}
+
+.fc-tab-bar__tab-close:hover {
+    color: var(--fc-color-text);
+    background-color: var(--fc-color-border-light);
+}
+
+/* ========== 新增按钮 ========== */
+.fc-tab-bar__add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    margin: 0 var(--fc-space-sm, 8px);
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--fc-color-text-secondary);
+    cursor: pointer;
+    transition: all var(--fc-transition, 150ms ease);
+    border-radius: var(--fc-radius-sm, 4px);
+}
+
+.fc-tab-bar__add-btn:hover {
+    color: var(--fc-color-primary);
+    background-color: var(--fc-color-bg-tertiary);
+    transform: rotate(90deg);
+}
+
+/* floating 模式下新增按钮也居中 */
+.fc-tab-bar--floating .fc-tab-bar__add-btn {
+    border-radius: var(--fc-radius-full, 9999px);
+}
+
+/* ========== 暗色主题 ========== */
+[data-theme="dark"] .fc-tab-bar--attached {
+    border-bottom-color: var(--fc-color-border);
+}
+
+[data-theme="dark"] .fc-tab-bar__tab--active {
+    background-color: var(--fc-tab-active-bg, var(--fc-color-bg));
+}
+
+[data-theme="dark"] .fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled) {
+    background-color: var(--fc-tab-hover-bg, var(--fc-color-bg-tertiary));
+}
+
+[data-theme="dark"] .fc-tab-bar--floating .fc-tab-bar__tab--active {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .fc-tab-bar__add-btn:hover {
+    background-color: var(--fc-color-bg-tertiary);
+}
+
+[data-theme="dark"] .fc-tab-bar__tab-close:hover {
+    background-color: var(--fc-color-border-light);
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+    .fc-tab-bar__tab {
+        padding: var(--fc-space-xs, 6px) var(--fc-space-md, 12px);
+        font-size: var(--fc-font-size-sm, 13px);
+    }
+}
