@@ -1,0 +1,8 @@
+// root/tsconfig.json
+{
+  "files": [],
+  "references": [
+    { "path": "./ui" },
+    { "path": "./app" }
+  ]
+}

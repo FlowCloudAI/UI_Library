@@ -1,12 +1,20 @@
-/* SideBar.css */
+/* src/components/SideBar/SideBar.css */
 
-/* ---------- 基础容器 ---------- */
+/* ==========================================================
+   可覆盖的 CSS 变量（在 .fc-sidebar 或父容器上设置）
+
+   --sidebar-item-color            默认文字色
+   --sidebar-item-bg               默认背景色
+   --sidebar-item-hover-color      hover 文字色
+   --sidebar-item-hover-bg         hover 背景色
+   --sidebar-item-selected-color   选中文字色
+   --sidebar-item-selected-bg      选中背景色
+   ========================================================== */
+
+/* ========== 容器 ========== */
 .fc-sidebar {
     --sidebar-width: 240px;
     --sidebar-collapsed-width: 64px;
-    --sidebar-item-bg: transparent;
-    --sidebar-item-color: var(--fc-color-text-secondary);
-    --sidebar-item-indent: 0px;
 
     display: flex;
     flex-direction: column;
@@ -15,14 +23,14 @@
     background: var(--fc-color-bg-secondary);
     border-right: 1px solid var(--fc-color-border);
     overflow: hidden;
-    transition: width var(--fc-transition-slow);
+    transition: width var(--fc-transition-slow, 250ms ease);
 }
 
-/* ---------- Header ---------- */
+/* ========== Header ========== */
 .fc-sidebar__header {
     display: flex;
     justify-content: flex-end;
-    padding: var(--fc-space-md);
+    padding: var(--fc-space-md, 12px);
     border-bottom: 1px solid var(--fc-color-border);
 }
 
@@ -36,8 +44,9 @@
     background: transparent;
     color: var(--fc-color-text-secondary);
     cursor: pointer;
-    border-radius: var(--fc-radius-md);
-    transition: background var(--fc-transition), color var(--fc-transition);
+    border-radius: var(--fc-radius-md, 8px);
+    transition: background var(--fc-transition, 150ms ease),
+    color var(--fc-transition, 150ms ease);
 }
 
 .fc-sidebar__collapse-btn:hover {
@@ -45,71 +54,53 @@
     color: var(--fc-color-text);
 }
 
-.fc-sidebar__collapse-btn:focus-visible {
-    outline: 2px solid var(--fc-color-primary);
-    outline-offset: -2px;
+.fc-sidebar__collapse-icon {
+    flex-shrink: 0;
+    transition: transform var(--fc-transition, 150ms ease);
 }
 
-/* ---------- Menu ---------- */
+/* ========== Menu ========== */
 .fc-sidebar__menu {
     flex: 1;
     overflow-y: auto;
-    padding: var(--fc-space-sm) 0;
+    padding: var(--fc-space-sm, 8px) 0;
 }
 
-/* ---------- Menu Item ---------- */
+/* ========== Menu Item ========== */
 .fc-sidebar__item {
-    --sidebar-item-bg: transparent;
-    --sidebar-item-color: var(--fc-color-text-secondary);
-
     display: flex;
     align-items: center;
-    gap: var(--fc-space-md);
-    padding: var(--fc-space-md) var(--fc-space-lg);
-    padding-left: calc(var(--fc-space-lg) + var(--sidebar-item-indent));
-    margin: 0 var(--fc-space-sm);
-    border-radius: var(--fc-radius-md);
+    gap: 0;
+    /* 无水平 padding — 图标区域自带固定宽度来锚定位置 */
+    padding: var(--fc-space-md, 12px) 0;
+    margin: 2px var(--fc-space-sm, 8px);
+    border-radius: var(--fc-radius-md, 8px);
     cursor: pointer;
-    background: var(--sidebar-item-bg);
-    color: var(--sidebar-item-color);
-    position: relative;
+    background: var(--sidebar-item-bg, transparent);
+    color: var(--sidebar-item-color, var(--fc-color-text-secondary));
+    text-decoration: none;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    border: none;
-    width: calc(100% - var(--fc-space-sm) * 2);
-    font: inherit;
-    text-align: start;
-    text-decoration: none;
-    transition: background var(--fc-transition), color var(--fc-transition);
+    transition: background var(--fc-transition, 150ms ease),
+    color var(--fc-transition, 150ms ease);
 }
 
-.fc-sidebar__item:hover:not(.fc-sidebar__item--disabled) {
-    --sidebar-item-bg: var(--fc-color-bg-tertiary);
-    --sidebar-item-color: var(--fc-color-text);
+/* hover */
+.fc-sidebar__item:hover:not(.fc-sidebar__item--disabled):not(.fc-sidebar__item--selected) {
+    background: var(--sidebar-item-hover-bg, var(--fc-color-bg-tertiary));
+    color: var(--sidebar-item-hover-color, var(--fc-color-text));
 }
 
-.fc-sidebar__item:focus-visible {
-    outline: 2px solid var(--fc-color-primary);
-    outline-offset: -2px;
-}
-
-/* selected */
+/* selected — 背景色和文字色同时变化 */
 .fc-sidebar__item--selected {
-    --sidebar-item-bg: var(--fc-color-primary-subtle);
-    --sidebar-item-color: var(--fc-color-primary);
+    background: var(--sidebar-item-selected-bg, var(--fc-color-primary-subtle));
+    color: var(--sidebar-item-selected-color, var(--fc-color-primary));
 }
 
-.fc-sidebar__item--selected::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 20px;
-    background: var(--fc-color-primary);
-    border-radius: 0 var(--fc-radius-sm) var(--fc-radius-sm) 0;
+.fc-sidebar__item--selected:hover {
+    background: var(--sidebar-item-selected-bg, var(--fc-color-primary-subtle));
+    color: var(--sidebar-item-selected-color, var(--fc-color-primary));
 }
 
 /* disabled */
@@ -119,70 +110,53 @@
     pointer-events: none;
 }
 
-/* ---------- 缩进层级 ---------- */
-.fc-sidebar__item--level-1 { --sidebar-item-indent: 28px; }
-.fc-sidebar__item--level-2 { --sidebar-item-indent: 56px; }
-
-/* ---------- Icon ---------- */
+/* ========== Icon — 固定宽度锚定区域 ========== */
 .fc-sidebar__icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
+    /* 宽度 = collapsedWidth - 两侧 margin(8px×2)，图标始终居中在折叠态中心 */
+    width: calc(var(--sidebar-collapsed-width) - var(--fc-space-sm, 8px) * 2);
     height: 20px;
     flex-shrink: 0;
-    font-size: var(--fc-font-size-lg);
 }
 
-/* ---------- Label ---------- */
+/* SVG 图标自动适配尺寸和颜色 */
+.fc-sidebar__icon svg {
+    width: 20px;
+    height: 20px;
+    color: inherit;
+    fill: none;
+    stroke: currentColor;
+}
+
+/* ========== Label ========== */
 .fc-sidebar__label {
     flex: 1;
-    font-size: var(--fc-font-size-md);
+    min-width: 0;
+    font-size: var(--fc-font-size-md, 14px);
+    padding-right: var(--fc-space-lg, 16px);
     overflow: hidden;
     text-overflow: ellipsis;
+    opacity: 1;
+    transition: opacity var(--fc-transition-slow, 250ms ease);
 }
 
-/* ---------- Arrow ---------- */
-.fc-sidebar__arrow {
-    font-size: 10px;
-    flex-shrink: 0;
-    transition: transform var(--fc-transition);
+/* ========== Collapsed 折叠态 ========== */
+/* 图标区域固定宽度 = collapsedWidth - margins，折叠时自然居中 */
+/* label 始终在 DOM 中，通过 opacity 淡出 + flex 自然压缩到 0 宽度 */
+.fc-sidebar--collapsed .fc-sidebar__label {
+    opacity: 0;
+    padding-right: 0;
 }
 
-.fc-sidebar__item--open > .fc-sidebar__arrow {
-    transform: rotate(90deg);
+/* ========== 暗色主题 ========== */
+[data-theme="dark"] .fc-sidebar {
+    background: var(--fc-color-bg-secondary);
+    border-right-color: var(--fc-color-border);
 }
 
-/* ---------- Submenu ---------- */
-.fc-sidebar__submenu {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows var(--fc-transition-slow);
-}
-
-.fc-sidebar__submenu--open {
-    grid-template-rows: 1fr;
-}
-
-.fc-sidebar__submenu-inner {
-    overflow: hidden;
-}
-
-/* ---------- Collapsed ---------- */
-.fc-sidebar--collapsed {
-    --sidebar-width: var(--sidebar-collapsed-width);
-}
-
-.fc-sidebar--collapsed .fc-sidebar__label,
-.fc-sidebar--collapsed .fc-sidebar__arrow {
-    display: none;
-}
-
-.fc-sidebar--collapsed .fc-sidebar__item {
-    justify-content: center;
-    padding: var(--fc-space-md);
-}
-
-.fc-sidebar--collapsed .fc-sidebar__submenu {
-    display: none;
+[data-theme="dark"] .fc-sidebar__item--selected {
+    background: var(--sidebar-item-selected-bg, var(--fc-color-primary-subtle));
+    color: var(--sidebar-item-selected-color, var(--fc-color-primary));
 }

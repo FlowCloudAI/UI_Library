@@ -1,182 +1,169 @@
-// SideBar.tsx
+// src/components/SideBar/SideBar.tsx
 import './SideBar.css';
-import * as React from 'react';
+import React, { memo, useCallback } from 'react';
 
-interface MenuItem {
+/* ========== 类型定义 ========== */
+
+export interface SideBarItem {
+    /** 唯一标识 */
     key: string;
+    /** 显示文字（非折叠时显示，折叠时隐藏） */
     label: string;
+    /** 图标，推荐传入 SVG 元素或 ReactNode */
     icon?: React.ReactNode;
-    children?: MenuItem[];
+    /** 是否禁用 */
     disabled?: boolean;
+    /** 链接地址，有值时渲染为 <a> */
     href?: string;
 }
 
-interface SideBarProps {
-    items: MenuItem[];
-    selectedKeys?: string[];
-    defaultSelectedKeys?: string[];
-    openKeys?: string[];
-    defaultOpenKeys?: string[];
-    onSelect?: (keys: string[]) => void;
-    onOpenChange?: (keys: string[]) => void;
-    collapsed?: boolean;
-    defaultCollapsed?: boolean;
-    onCollapse?: (collapsed: boolean) => void;
-    className?: string;
+export interface SideBarProps {
+    /** 菜单项列表（受控） */
+    items: SideBarItem[];
+    /** 当前选中的 key（受控） */
+    selectedKey: string;
+    /** 是否折叠（受控） */
+    collapsed: boolean;
+
+    /** 展开时宽度，默认 240 */
     width?: number;
+    /** 折叠时宽度，默认 64 */
     collapsedWidth?: number;
+
+    /* ---- 回调 ---- */
+
+    /** 选中项变更 */
+    onSelect: (key: string) => void;
+    /** 折叠状态变更 */
+    onCollapse: (collapsed: boolean) => void;
+
+    /* ---- 样式定制 ---- */
+
+    /**
+     * 可覆盖的 CSS Variables（在 style 中设置）：
+     * --sidebar-item-color          默认文字色
+     * --sidebar-item-bg             默认背景色
+     * --sidebar-item-hover-color    hover 文字色
+     * --sidebar-item-hover-bg       hover 背景色
+     * --sidebar-item-selected-color 选中文字色
+     * --sidebar-item-selected-bg    选中背景色
+     */
+    className?: string;
+    style?: React.CSSProperties;
 }
 
-export function SideBar({
-                            items,
-                            selectedKeys: controlledSelected,
-                            defaultSelectedKeys = [],
-                            openKeys: controlledOpen,
-                            defaultOpenKeys = [],
-                            onSelect,
-                            onOpenChange,
-                            collapsed: controlledCollapsed,
-                            defaultCollapsed = false,
-                            onCollapse,
-                            className,
-                            width = 240,
-                            collapsedWidth = 64,
-                        }: SideBarProps) {
-    const [internalSelected, setInternalSelected] = React.useState(defaultSelectedKeys);
-    const [internalOpen, setInternalOpen] = React.useState(defaultOpenKeys);
-    const [internalCollapsed, setInternalCollapsed] = React.useState(defaultCollapsed);
+/* ========== 子组件：单个菜单项 ========== */
 
-    const currentSelected = controlledSelected ?? internalSelected;
-    const currentOpen = controlledOpen ?? internalOpen;
-    const currentCollapsed = controlledCollapsed ?? internalCollapsed;
+interface SideBarItemViewProps {
+    item: SideBarItem;
+    isSelected: boolean;
+    onClick: (key: string) => void;
+}
 
-    const updateOpen = React.useCallback((next: string[]) => {
-        if (controlledOpen === undefined) setInternalOpen(next);
-        onOpenChange?.(next);
-    }, [controlledOpen, onOpenChange]);
+const SideBarItemView = memo<SideBarItemViewProps>(({ item, isSelected, onClick }) => {
+    const classes = [
+        'fc-sidebar__item',
+        isSelected && 'fc-sidebar__item--selected',
+        item.disabled && 'fc-sidebar__item--disabled',
+    ].filter(Boolean).join(' ');
 
-    const toggleOpen = React.useCallback((key: string) => {
-        const next = currentOpen.includes(key)
-            ? currentOpen.filter(k => k !== key)
-            : [...currentOpen, key];
-        updateOpen(next);
-    }, [currentOpen, updateOpen]);
+    const Tag = item.href ? 'a' : 'div';
+    const linkProps = item.href ? { href: item.href } : {};
 
-    const handleSelect = React.useCallback((key: string, item: MenuItem) => {
-        if (item.disabled) return;
+    return (
+        <Tag
+            className={classes}
+            onClick={() => !item.disabled && onClick(item.key)}
+            {...linkProps}
+        >
+            {item.icon && (
+                <span className="fc-sidebar__icon">{item.icon}</span>
+            )}
+            <span className="fc-sidebar__label">{item.label}</span>
+        </Tag>
+    );
+});
 
-        const next = [key];
-        if (controlledSelected === undefined) setInternalSelected(next);
-        onSelect?.(next);
-    }, [controlledSelected, onSelect]);
+SideBarItemView.displayName = 'SideBarItemView';
 
-    const toggleCollapse = React.useCallback(() => {
-        const next = !currentCollapsed;
-        if (controlledCollapsed === undefined) setInternalCollapsed(next);
-        onCollapse?.(next);
-    }, [currentCollapsed, controlledCollapsed, onCollapse]);
+/* ========== 主组件 ========== */
 
-    const handleItemClick = React.useCallback((item: MenuItem) => {
-        if (item.children?.length) {
-            toggleOpen(item.key);
-        } else {
-            handleSelect(item.key, item);
-        }
-    }, [toggleOpen, handleSelect]);
+export const SideBar = memo<SideBarProps>(({
+                                               items,
+                                               selectedKey,
+                                               collapsed,
+                                               width = 240,
+                                               collapsedWidth = 64,
+                                               onSelect,
+                                               onCollapse,
+                                               className = '',
+                                               style,
+                                           }) => {
+    const handleClick = useCallback(
+        (key: string) => onSelect(key),
+        [onSelect],
+    );
 
-    const handleItemKeyDown = React.useCallback((e: React.KeyboardEvent, item: MenuItem) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleItemClick(item);
-        }
-    }, [handleItemClick]);
+    const toggleCollapse = useCallback(
+        () => onCollapse(!collapsed),
+        [collapsed, onCollapse],
+    );
 
-    const renderMenuItem = (item: MenuItem, level = 0) => {
-        const hasChildren = (item.children?.length ?? 0) > 0;
-        const isOpen = currentOpen.includes(item.key);
-        const isSelected = currentSelected.includes(item.key);
+    const rootClasses = [
+        'fc-sidebar',
+        collapsed && 'fc-sidebar--collapsed',
+        className,
+    ].filter(Boolean).join(' ');
 
-        const itemClassName = [
-            'fc-sidebar__item',
-            `fc-sidebar__item--level-${level}`,
-            hasChildren && 'fc-sidebar__item--parent',
-            isOpen && 'fc-sidebar__item--open',
-            isSelected && 'fc-sidebar__item--selected',
-            item.disabled && 'fc-sidebar__item--disabled',
-        ].filter(Boolean).join(' ');
-
-        const Tag = item.href ? 'a' : 'div';
-
-        const interactiveProps = {
-            role: hasChildren ? 'treeitem' as const : 'menuitem' as const,
-            tabIndex: item.disabled ? -1 : 0,
-            'aria-selected': isSelected || undefined,
-            'aria-expanded': hasChildren ? isOpen : undefined,
-            'aria-disabled': item.disabled || undefined,
-            onClick: () => handleItemClick(item),
-            onKeyDown: (e: React.KeyboardEvent) => handleItemKeyDown(e, item),
-            ...(item.href ? { href: item.href } : {}),
-        };
-
-        return (
-            <div key={item.key} className="fc-sidebar__item-wrapper">
-                <Tag className={itemClassName} {...interactiveProps}>
-                    {item.icon && (
-                        <span className="fc-sidebar__icon" aria-hidden="true">{item.icon}</span>
-                    )}
-                    <span className="fc-sidebar__label">{item.label}</span>
-                    {hasChildren && (
-                        <span className="fc-sidebar__arrow" aria-hidden="true">▶</span>
-                    )}
-                </Tag>
-
-                {hasChildren && (
-                    <div
-                        className={[
-                            'fc-sidebar__submenu',
-                            isOpen && 'fc-sidebar__submenu--open',
-                        ].filter(Boolean).join(' ')}
-                        role="group"
-                    >
-                        <div className="fc-sidebar__submenu-inner">
-                            {item.children!.map(child => renderMenuItem(child, level + 1))}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const sidebarStyle = {
-        '--sidebar-width': `${currentCollapsed ? collapsedWidth : width}px`,
+    const rootStyle: React.CSSProperties = {
+        '--sidebar-width': `${collapsed ? collapsedWidth : width}px`,
         '--sidebar-collapsed-width': `${collapsedWidth}px`,
+        ...style,
     } as React.CSSProperties;
 
     return (
-        <aside
-            className={[
-                'fc-sidebar',
-                currentCollapsed && 'fc-sidebar--collapsed',
-                className,
-            ].filter(Boolean).join(' ')}
-            style={sidebarStyle}
-            role="navigation"
-            aria-label="Sidebar"
-        >
+        <aside className={rootClasses} style={rootStyle}>
             <div className="fc-sidebar__header">
                 <button
                     className="fc-sidebar__collapse-btn"
                     onClick={toggleCollapse}
-                    aria-label={currentCollapsed ? '展开侧栏' : '收起侧栏'}
-                    aria-expanded={!currentCollapsed}
                 >
-                    {currentCollapsed ? '→' : '←'}
+                    <svg
+                        className="fc-sidebar__collapse-icon"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            d={collapsed
+                                ? 'M6 3L11 8L6 13'   /* → 展开箭头 */
+                                : 'M10 3L5 8L10 13'   /* ← 收起箭头 */
+                            }
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
                 </button>
             </div>
 
-            <nav className="fc-sidebar__menu" role="tree">
-                {items.map(item => renderMenuItem(item))}
+            <nav className="fc-sidebar__menu">
+                {items.map((item) => (
+                    <SideBarItemView
+                        key={item.key}
+                        item={item}
+                        isSelected={selectedKey === item.key}
+                        onClick={handleClick}
+                    />
+                ))}
             </nav>
         </aside>
     );
-}
+});
+
+SideBar.displayName = 'SideBar';
+
+export default SideBar;
