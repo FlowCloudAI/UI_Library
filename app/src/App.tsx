@@ -21,6 +21,7 @@ import { TreeDemoWrapper }    from './demos/TreeDemoWrapper'
 import { ContextMenuDemo }    from './demos/ContextMenuDemo'
 import { ChatDemo }           from './demos/ChatDemo'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
+import { SmartMessageDemo }   from './demos/SmartMessageDemos'
 
 /* ===== 导航注册表 ===== */
 
@@ -30,69 +31,71 @@ interface NavGroup { label: string; items: NavItem[] }
 const NAV_GROUPS: NavGroup[] = [
     {
         label: '基础', items: [
-            { key: 'button',  label: 'Button' },
-            { key: 'check',   label: 'CheckButton' },
-            { key: 'alert',   label: 'Alert' },
+            { key: 'Button',  label: 'Button' },
+            { key: 'Check',   label: 'CheckButton' },
+            { key: 'Alert',   label: 'Alert' },
         ],
     },
     {
         label: '输入', items: [
-            { key: 'input',   label: 'Input' },
-            { key: 'slider',  label: 'Slider' },
-            { key: 'select',  label: 'Select' },
-            { key: 'tagitem', label: 'TagItem' },
+            { key: 'Input',   label: 'Input' },
+            { key: 'Slider',  label: 'Slider' },
+            { key: 'Select',  label: 'Select' },
+            { key: 'TagItem', label: 'TagItem' },
         ],
     },
     {
         label: '展示', items: [
-            { key: 'rollingbox',  label: 'RollingBox' },
-            { key: 'avatar',      label: 'Avatar' },
-            { key: 'listgroup',   label: 'ListGroup' },
-            { key: 'virtuallist', label: 'VirtualList' },
-            { key: 'card',        label: 'Card' },
-            { key: 'markdown',    label: 'MarkdownEditor' },
+            { key: 'RollingBox',  label: 'RollingBox' },
+            { key: 'Avatar',      label: 'Avatar' },
+            { key: 'ListGroup',   label: 'ListGroup' },
+            { key: 'VirtualList', label: 'VirtualList' },
+            { key: 'Card',        label: 'Card' },
+            { key: 'Markdown',    label: 'MarkdownEditor' },
+            { key: 'SmartMessage', label: 'SmartMessage' },
         ],
     },
     {
         label: '导航', items: [
-            { key: 'tabbar',  label: 'TabBar' },
-            { key: 'sidebar', label: 'SideBar' },
-            { key: 'tree',    label: 'Tree' },
+            { key: 'TabBar',  label: 'TabBar' },
+            { key: 'SideBar', label: 'SideBar' },
+            { key: 'Tree',    label: 'Tree' },
         ],
     },
     {
         label: '覆盖层', items: [
-            { key: 'contextmenu', label: 'ContextMenu' },
+            { key: 'ContextMenu', label: 'ContextMenu' },
         ],
     },
     {
         label: 'AI', items: [
-            { key: 'chat',     label: 'Chat' },
-            { key: 'lazyload', label: 'LazyLoad' },
+            { key: 'Chat',     label: 'Chat' },
+            { key: 'LazyLoad', label: 'LazyLoad' },
         ],
     },
 ]
 
 const DEMO_COMPONENTS: Record<string, ComponentType> = {
-    button:      ButtonDemo,
-    check:       CheckButtonDemo,
-    alert:       AlertDemo,
-    input:       InputDemo,
-    slider:      SliderDemo,
-    select:      SelectDemo,
-    tagitem:     TagItemDemo,
-    rollingbox:  RollingBoxDemo,
-    avatar:      AvatarDemo,
-    listgroup:   ListGroupDemo,
-    virtuallist: VirtualListDemo,
-    card:        CardDemo,
-    markdown:    MarkdownEditorDemo,
-    tabbar:      TabBarDemo,
-    sidebar:     SideBarDemo,
-    tree:        TreeDemoWrapper,
-    contextmenu: ContextMenuDemo,
-    chat:        ChatDemo,
-    lazyload:    LazyLoadDemo,
+    Button:      ButtonDemo,
+    Check:       CheckButtonDemo,
+    Alert:       AlertDemo,
+    Input:       InputDemo,
+    Slider:      SliderDemo,
+    Select:      SelectDemo,
+    TagItem:     TagItemDemo,
+    RollingBox:  RollingBoxDemo,
+    Avatar:      AvatarDemo,
+    ListGroup:   ListGroupDemo,
+    VirtualList: VirtualListDemo,
+    Card:        CardDemo,
+    Markdown:    MarkdownEditorDemo,
+    TabBar:      TabBarDemo,
+    SideBar:     SideBarDemo,
+    Tree:        TreeDemoWrapper,
+    ContextMenu: ContextMenuDemo,
+    Chat:        ChatDemo,
+    LazyLoad:    LazyLoadDemo,
+    SmartMessage: SmartMessageDemo,
 }
 
 const ALL_ITEMS = NAV_GROUPS.flatMap(g => g.items)
@@ -142,7 +145,7 @@ export default function App() {
                 {/* 内容区 */}
                 <main className="app-content">
                     <h2 className="app-content-title">{activeLabel}</h2>
-                    {ActiveDemo && <ActiveDemo/>}
+                    {ActiveDemo && <ActiveDemo />}
                 </main>
             </div>
         </div>

@@ -23,5 +23,6 @@ export * from "./components/Chat/Chat"
 export * from "./components/Tag/TagItem"
 export * from "./components/MarkdownEditor/MarkdownEditor"
 export * from "./components/ContextMenu/ContextMenuContext"
+export * from "./components/SmartMessage/SmartMessage"
 
 import "./style/index.css"

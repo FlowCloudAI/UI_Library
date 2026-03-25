@@ -1,0 +1,259 @@
+/* 基础容器 */
+.smart-message {
+    display: flex;
+    margin-bottom: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+/* 用户消息 - 右对齐 */
+.smart-message-user {
+    justify-content: flex-end;
+}
+
+.smart-message-user .message-header {
+    justify-content: flex-end;
+}
+
+.smart-message-user .smart-message-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+}
+
+/* AI 消息 - 左对齐 */
+.smart-message-assistant {
+    justify-content: flex-start;
+}
+
+.smart-message-assistant .smart-message-content {
+    background: var(--fc-color-bg-tertiary, #f0f0f0);
+    color: var(--fc-color-text, #333);
+    border-bottom-left-radius: 4px;
+}
+
+/* 消息内容包装器 */
+.smart-message-content {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.smart-message-content:hover {
+    transform: translateX(2px);
+}
+
+/* 消息头部 */
+.message-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.message-sender {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.message-time {
+    color: var(--fc-color-text-secondary, #999);
+    font-size: 11px;
+}
+
+/* 消息文本 */
+.message-text {
+    line-height: 1.5;
+    font-size: 14px;
+    word-break: break-word;
+    padding-right: 60px;
+}
+
+/* 复制按钮 */
+.copy-btn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.smart-message-content:hover .copy-btn {
+    opacity: 0.7;
+}
+
+.smart-message-user .copy-btn {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.smart-message-assistant .copy-btn {
+    color: var(--fc-color-text-secondary, #666);
+}
+
+.copy-btn:hover {
+    opacity: 1 !important;
+    transform: translateY(-2px);
+    background: rgba(102, 126, 234, 0.2);
+}
+
+.copy-btn.copied {
+    opacity: 1 !important;
+    background: #52c41a !important;
+    color: #ffffff !important;
+}
+
+/* 消息状态 */
+.message-status {
+    font-size: 11px;
+    margin-left: 8px;
+    display: inline-block;
+}
+
+.message-status.sending {
+    color: #faad14;
+}
+
+.message-status.error {
+    color: #f5222d;
+}
+
+/* ========== 系统消息样式 ========== */
+.smart-message-system {
+    justify-content: center;
+}
+
+.system-message-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    color: #999;
+    font-size: 12px;
+}
+
+.system-message-icon {
+    display: flex;
+    align-items: center;
+    color: #999;
+}
+
+.system-message-text {
+    line-height: 1.4;
+}
+
+.system-message-time {
+    font-size: 10px;
+    color: #bbb;
+}
+
+/* ========== 工具消息样式 ========== */
+.smart-message-tool {
+    justify-content: center;
+}
+
+.tool-message-wrapper {
+    max-width: 80%;
+    background: #f5f5f5;
+    border-left: 3px solid #667eea;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 13px;
+}
+
+.tool-message-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #e8e8e8;
+    border-bottom: 1px solid #ddd;
+}
+
+.tool-message-icon {
+    display: flex;
+    align-items: center;
+    color: #667eea;
+}
+
+.tool-message-name {
+    font-weight: 600;
+    font-size: 12px;
+    color: #333;
+}
+
+.tool-message-content {
+    padding: 12px;
+}
+
+.tool-message-params,
+.tool-message-result {
+    margin-bottom: 8px;
+}
+
+.tool-message-params strong,
+.tool-message-result strong {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.tool-message-params pre,
+.tool-message-result pre {
+    margin: 0;
+    padding: 8px;
+    background: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+}
+
+.tool-message-time {
+    padding: 4px 12px 8px;
+    font-size: 10px;
+    color: #999;
+    text-align: right;
+}
+
+/* 动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .smart-message-content {
+        max-width: 85%;
+    }
+
+    .tool-message-wrapper {
+        max-width: 90%;
+    }
+
+    .message-text {
+        padding-right: 50px;
+    }
+}
