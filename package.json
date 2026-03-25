@@ -1,0 +1,9 @@
+{
+  "name": "flowcloudai-ui",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}

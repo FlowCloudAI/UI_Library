@@ -29,5 +29,6 @@ dist-ssr
 *.sln
 *.sw?
 
+package-lock.json
 package-lock.json.backup
 pnpm-lock.yaml

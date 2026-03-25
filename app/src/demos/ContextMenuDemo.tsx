@@ -1,4 +1,4 @@
-import { useContextMenu, ContextMenuItem, useAlert } from 'flowcloudai-ui'
+import { useContextMenu, type ContextMenuItem, useAlert } from 'flowcloudai-ui'
 
 export function ContextMenuDemo() {
     const { showContextMenu } = useContextMenu()

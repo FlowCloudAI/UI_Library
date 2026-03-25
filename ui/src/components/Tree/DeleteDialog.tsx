@@ -1,5 +1,5 @@
 // DeleteDialog.tsx
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { CategoryTreeNode } from './flatToTree'
 
 export type DeleteMode = 'lift' | 'cascade'

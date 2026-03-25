@@ -8,7 +8,7 @@
 // onResolve receives a map of { [nodeKey]: 'lift' | 'remove' }
 // Parent is responsible for executing the DB operations.
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { CategoryTreeNode } from './flatToTree'
 
 export type OrphanResolution = 'lift' | 'remove'

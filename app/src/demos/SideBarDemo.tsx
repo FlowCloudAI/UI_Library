@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
-import { SideBar, SideBarItem } from 'flowcloudai-ui'
+import { SideBar, type SideBarItem } from 'flowcloudai-ui'
 
 const HomeIcon = (<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>)
 const SearchIcon = (<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" strokeWidth="1.5"/><path d="M16.5 16.5L21 21" strokeWidth="1.5" strokeLinecap="round"/></svg>)
@@ -56,8 +56,9 @@ export function SideBarDemo() {
                             '--sidebar-item-selected-color': '#2e7d32',
                             '--sidebar-item-hover-bg': '#f1f8e9',
                             '--sidebar-item-hover-color': '#33691e',
-                        } as CSSProperties}
-                    />
+                        } as CSSProperties} collapsed={false} onCollapse={function (): void {
+                        throw new Error("Function not implemented.")
+                    }}                    />
                     <main style={{ flex: 1, padding: 20, fontSize: 14, color: 'var(--fc-color-text-secondary)' }}>
                         当前选中：{selectedKey}
                     </main>

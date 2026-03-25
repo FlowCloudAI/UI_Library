@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TagItem, TagSchema, TagValue } from 'flowcloudai-ui'
+import { TagItem, type TagSchema, type TagValue } from 'flowcloudai-ui'
 
 export function TagItemDemo() {
     const [numVal, setNumVal] = useState<TagValue>(50)

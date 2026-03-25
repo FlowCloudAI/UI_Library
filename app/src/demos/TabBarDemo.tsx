@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { TabBar, TabItem } from 'flowcloudai-ui'
+import { TabBar, type TabItem } from 'flowcloudai-ui'
 
 const BASE_TABS: TabItem[] = [
     { key: 'home', label: '首页' },

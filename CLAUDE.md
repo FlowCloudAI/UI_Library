@@ -2,148 +2,147 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository Overview
+## Project Overview
 
-This is a monorepo with two independent packages:
-- **`ui/`** — `flowcloudai-ui` component library (published to npm, v0.1.0)
-- **`app/`** — Playground/demo application that consumes the component library locally
+**flowcloudai-ui-monorepo** is a React component library monorepo with an integrated playground/demo app. It's designed to build a reusable UI component library consumed both internally and as an npm package.
 
-The packages use separate `package.json` files (not npm workspaces). `app` depends on `ui` via a local symlink managed by the `install-local` tool.
+### Structure
 
-## Commands
+```
+flowcloudai-ui-monorepo/
+├── ui/                 # Component library (published to npm as flowcloudai-ui)
+│   ├── src/
+│   │   ├── components/ # All UI components organized by type (Button, Tree, etc.)
+│   │   ├── ThemeProvider.tsx
+│   │   └── style/
+│   ├── package.json    # Main library exports: ESM, CJS, types, CSS
+│   └── tsup.config.ts  # tsup build config for library
+├── app/                # Vite-based demo playground (shows all components)
+│   ├── src/
+│   │   ├── demos/      # One demo file per component
+│   │   └── App.tsx
+│   └── package.json    # Local dependency uses install-local to link ui/
+└── vite.config.ts      # Root Vite config (Tauri integration present)
+```
+
+## Key Commands
+
+### UI Library Development
+
+**Build the library** (outputs to `ui/dist/`):
+```bash
+cd ui && npm run build
+```
+
+**Develop the app** (watches ui and app together):
+```bash
+cd app && npm run dev
+```
+This starts a Vite dev server at http://localhost:5173, which automatically rebuilds components as you edit them.
+
+**Setup after cloning** (installs dependencies and links local ui package):
+```bash
+cd app && npm run install:local
+```
+
+### Testing & Quality
+
+**Lint TypeScript and React code**:
+```bash
+npx eslint . --max-warnings 0
+```
+
+### Common Workflows
+
+- **Add a new component**: Create `ui/src/components/ComponentName/ComponentName.tsx`, export it in `ui/src/index.ts`, then create a demo at `app/src/demos/ComponentNameDemo.tsx`
+- **Edit existing component**: Changes in `ui/src/components/` are picked up instantly in the dev server
+- **Update styles**: Modify CSS files in `ui/src/style/index.css` or component-specific CSS
+
+## Architecture & Important Patterns
 
 ### UI Library (`ui/`)
-```bash
-cd ui
 
-npm run build            # Build with tsup → dist/
-                         # Produces: ESM, CJS, TypeScript declarations, CSS bundle
-                         # Output: dist/index.js, dist/index.cjs, dist/index.d.ts, dist/index.css
-```
+**Export Strategy**: All components are exported from `ui/src/index.ts` for public consumption. This is the single entry point for the library.
 
-To develop and test UI changes locally, edit components then run `npm run build` in `ui/`. Changes are immediately available to `app/`.
+**Build Output**: Uses tsup to generate:
+- ESM (`dist/index.js`) — modern bundlers
+- CJS (`dist/index.cjs`) — CommonJS for compatibility
+- Types (`dist/index.d.ts`) — TypeScript definitions
+- Styles (`dist/index.css`) — consumers must manually import styles
 
-### App / Playground (`app/`)
-```bash
-cd app
+**Styling**: CSS is NOT injected into components; consumers must import `flowcloudai-ui/style` or `flowcloudai-ui/dist/index.css`.
 
-npm run dev              # Start dev server on port 5173
-                         # Loads components from ../ui/dist (must rebuild ui after changes)
+**ThemeProvider**: Wraps components to provide theme context (light/dark modes). Check `ThemeProvider.tsx` for usage.
 
-npm run install:local    # Re-link the local ui package after cloning or major ui changes
-                         # Runs: npm install && install-local --save ../ui
-```
+### Demo App (`app/`)
 
-## Development Workflow
+**Purpose**: Showcases all library components and serves as development playground. Each demo demonstrates a component's API and usage patterns.
 
-**When working on components in `ui/`:**
-1. Edit component files in `ui/src/components/`
-2. Run `npm run build` in `ui/` to rebuild the distribution
-3. Changes are automatically available to `app/` (no restart needed due to Vite HMR)
+**Local Linking**: Uses `install-local` npm package to link the local `ui/` package. This is transparent to development—editing `ui/src/` instantly reflects in the app.
 
-**When starting fresh (after cloning or dependency changes):**
-```bash
-cd app
-npm run install:local    # This sets up the symlink to ../ui
-npm run dev              # Start the playground
-```
+### Key Dependencies
 
-## Architecture
+- **React 19** — Modern React with hooks
+- **@dnd-kit/core** — Drag-and-drop for Tree and other components
+- **@uiw/react-md-editor** — Markdown editor component (used in MarkdownEditor)
+- **Vite 8** — Fast dev server and build tool
+- **tsup 8** — Zero-config library bundler (ESM + CJS)
+- **TypeScript ~5.9** — Type safety across library and app
 
-### Package Relationship
-`app` imports from `ui` using the symlinked `node_modules/flowcloudai-ui`, which points to `ui/dist/`. After editing `ui/` source files, rebuild with `npm run build` to apply changes in `app/`.
+### Tauri Integration
 
-Examples:
-```ts
-import { Button, ThemeProvider } from 'flowcloudai-ui'
-import 'flowcloudai-ui/style'
-```
+The vite.config.ts includes Tauri-specific configuration:
+- Detects `TAURI_ENV_PLATFORM` and sets appropriate build targets (Chrome 105 for Windows, Safari 13 for macOS/Linux)
+- Handles HMR (Hot Module Replacement) over WebSocket when running in Tauri context
+- Supports environment prefix for Tauri variables (`VITE_*` and `TAURI_ENV_*`)
 
-### UI Library Build (tsup)
-`ui/` uses **tsup** (not Vite) to build TypeScript components. Configuration is in `ui/tsup.config.ts`:
-- **Entry point:** `ui/src/index.ts`
-- **Output formats:**
-  - `dist/index.js` (ESM) — used by modern bundlers
-  - `dist/index.cjs` (CommonJS) — for Node.js compatibility
-  - `dist/index.d.ts` (TypeScript declarations)
-  - `dist/index.css` (standalone CSS bundle)
+This suggests the project may be packaged as a Tauri desktop app in production, though the web app works standalone.
 
-**Important:** CSS is **not auto-injected** into bundles. Consumers must explicitly import:
-```ts
-import 'flowcloudai-ui/style'
-```
+## Component Library Tour
 
-### Component Structure
-Each component lives in `ui/src/components/{ComponentName}/` with:
-- `{ComponentName}.tsx` — component implementation
-- `{ComponentName}.css` — scoped styles (can import from `../style/index.css` for design tokens)
+Components in `ui/src/components/`:
 
-All components must be re-exported from `ui/src/index.ts` to appear in the public API. Examples:
-- `Button/Button.tsx` + `Button/Button.css`
-- `Tree/Tree.tsx` + utilities like `flatToTree`
-- `Bar/TabBar.tsx` + `Bar/SideBar.tsx`
+- **Button** — Basic button + CheckButton (toggle button)
+- **Input** — Text input with theming
+- **Slider** — Range slider
+- **Select** — Dropdown select
+- **Tree** — Hierarchical tree view with drag-and-drop (includes DeleteDialog, OrphanDialog helpers)
+- **Avatar** — User avatar display
+- **ListGroup** — Vertical list of items
+- **VirtualList** — High-performance scrolling list (for large data)
+- **Card** — Content container
+- **Alert** — Alert notifications (context-based)
+- **LazyLoad** — Lazy-loads content on scroll
+- **Chat** — Chat interface
+- **TabBar** — Tab navigation
+- **SideBar** — Side navigation panel
+- **RollingBox** — Animated box component
+- **TagItem** — Tag/label display
+- **MarkdownEditor** — Markdown content editor
+- **ContextMenu** — Context menu (right-click menu, context-based)
 
-To add a new component:
-1. Create `ui/src/components/{ComponentName}/{ComponentName}.tsx`
-2. Add CSS to `ui/src/components/{ComponentName}/{ComponentName}.css`
-3. Export from `ui/src/index.ts`: `export * from "./components/{ComponentName}/{ComponentName}"`
-4. Run `npm run build` in `ui/`
+Each component should have:
+1. A `.tsx` implementation file
+2. An export in `ui/src/index.ts`
+3. A demo in `app/src/demos/ComponentNameDemo.tsx`
 
-### Design System
-**CSS Tokens:** Defined in `ui/src/style/index.css` using CSS custom properties with the `--fc-` prefix (FC Design System).
+## ESLint Configuration
 
-**Token categories:**
-- Colors: 12 color families (each with multiple shades), accessible via `var(--fc-color-{family}-{shade})`
-- Spacing: `--fc-space-*` (consistent margins/padding)
-- Typography: `--fc-font-*`, `--fc-text-*`
-- Radius: `--fc-radius-*` (border radius presets)
-- Shadows: `--fc-shadow-*`
+Flat config in `eslint.config.js` covers:
+- JavaScript best practices
+- TypeScript type checking (recommended level)
+- React hooks rules
+- React Refresh plugin for Vite HMR
 
-All components should use these tokens instead of hardcoded values.
+Run linter before committing code.
 
-### Theme System
-**ThemeProvider** (`ui/src/ThemeProvider.tsx`) manages theme switching via React context:
-- Supports: `"light"`, `"dark"`, `"system"` (follows OS preference)
-- Sets `data-theme="light"|"dark"` attribute on `document.documentElement`
-- Must wrap the entire app (see `app/src/main.tsx`)
+## Notes for Development
 
-**useTheme hook** returns `{ theme: Theme, setTheme: (theme: Theme) => void }` for components that need to detect or change the current theme.
+- **Monorepo management**: The `app/` uses a local npm link (via install-local) to depend on `ui/`. This is fully transparent—no manual linking steps needed after `npm run install:local`.
+- **CSS distribution**: Styles are separate from component JS. Consumers must explicitly import the CSS file. This allows for CSS-in-JS alternatives or custom styling.
+- **TypeScript strict mode**: Project uses TypeScript ~5.9 with strict settings. Type all component props and returns.
+- **No build step for app in development**: Vite handles everything transparently.
 
-### Context Providers
-Two providers from `ui/src/index.ts`:
+## Git Notes
 
-1. **ThemeProvider** — Wraps app for theme support
-   ```tsx
-   <ThemeProvider defaultTheme="system">
-     {/* rest of app */}
-   </ThemeProvider>
-   ```
-
-2. **AlertProvider** — Provides imperative alert/modal API
-   ```tsx
-   <AlertProvider>
-     {/* rest of app */}
-   </AlertProvider>
-   ```
-
-Both are used in `app/src/main.tsx`.
-
-### Vite Configuration
-Root `vite.config.ts` is shared by both packages:
-- **React plugin:** `@vitejs/plugin-react` with Oxc transformation
-- **Tauri support:** Detects `TAURI_ENV_*` environment variables and adjusts build targets:
-  - Windows: `chrome105` (Chromium in Tauri)
-  - macOS/Linux: `safari13` (WebKit in Tauri)
-- **Minification:** Disabled when `TAURI_ENV_DEBUG` is set
-- **Source maps:** Enabled when `TAURI_ENV_DEBUG` is set
-- **Watch exclusion:** Ignores `**/src-tauri/**` to avoid rebuilds on Rust changes
-
-Used by: `app/` (Vite dev server) and potentially for library demos.
-
-### TypeScript Setup
-**Project references** configured in root `tsconfig.json`:
-- Root references both `ui/` and `app/` as sub-projects
-- `ui/tsconfig.json`: Sets `emitDeclarationOnly: true` (tsup handles JS compilation)
-- `app/tsconfig.json`: Standard React + Vite config
-
-This allows both packages to type-check independently while sharing ESLint config and Vite config.
+Current branch is `main`. Recent commits show component refactoring and demo restructuring activity.

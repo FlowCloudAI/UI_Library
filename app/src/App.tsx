@@ -17,7 +17,7 @@ import { CardDemo }           from './demos/CardDemo'
 import { MarkdownEditorDemo } from './demos/MarkdownEditorDemo'
 import { TabBarDemo }         from './demos/TabBarDemo'
 import { SideBarDemo }        from './demos/SideBarDemo'
-import { TreeDemoWrapper }    from './demos/TreeDemoWrapper'
+import { TreeDemo }           from './demos/TreeDemo'
 import { ContextMenuDemo }    from './demos/ContextMenuDemo'
 import { ChatDemo }           from './demos/ChatDemo'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
@@ -91,7 +91,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Markdown:    MarkdownEditorDemo,
     TabBar:      TabBarDemo,
     SideBar:     SideBarDemo,
-    Tree:        TreeDemoWrapper,
+    Tree:        TreeDemo,
     ContextMenu: ContextMenuDemo,
     Chat:        ChatDemo,
     LazyLoad:    LazyLoadDemo,
