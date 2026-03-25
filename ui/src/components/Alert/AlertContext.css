@@ -73,6 +73,11 @@
     margin-bottom: var(--fc-space-lg);
 }
 
+/* ---------- toast 模式（无按钮，消息底部无间距） ---------- */
+.fc-alert--toast .fc-alert__msg {
+    margin-bottom: 0;
+}
+
 /* ---------- 按钮行 ---------- */
 .fc-alert__footer {
     display: flex;

@@ -1,0 +1,88 @@
+/* ========================================
+   ContextMenuContext.css - 基于 FC Design System
+   ======================================== */
+
+.fc-context-menu {
+    /* 组件局部变量 */
+    --ctx-bg:            var(--fc-color-bg-elevated);
+    --ctx-border:        var(--fc-color-border);
+    --ctx-item-hover-bg: var(--fc-color-bg-secondary);
+    --ctx-danger-color:  var(--fc-color-danger);
+
+    position:     fixed;
+    z-index:      var(--fc-z-dropdown, 9000);
+    background:   var(--ctx-bg);
+    border:       1px solid var(--ctx-border);
+    border-radius: var(--fc-radius-md);
+    box-shadow:   var(--fc-shadow-lg);
+    padding:      var(--fc-space-xs) 0;
+    min-width:    160px;
+    list-style:   none;
+    font-family:  var(--fc-font-family), serif;
+    user-select:  none;
+    /* 动画 */
+    animation:    fc-ctx-in 0.1s ease;
+}
+
+@keyframes fc-ctx-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- 普通菜单项 ---------- */
+.fc-context-menu__item {
+    display:     flex;
+    align-items: center;
+    gap:         var(--fc-space-sm);
+    padding:     var(--fc-space-xs) var(--fc-space-md);
+    font-size:   var(--fc-font-size-sm);
+    color:       var(--fc-color-text);
+    cursor:      pointer;
+    transition:  background 0.1s;
+    line-height: var(--fc-line-height-tight);
+}
+
+.fc-context-menu__item:hover {
+    background: var(--ctx-item-hover-bg);
+}
+
+/* ---------- danger 项 ---------- */
+.fc-context-menu__item--danger {
+    color: var(--ctx-danger-color);
+}
+
+.fc-context-menu__item--danger:hover {
+    background: color-mix(in srgb, var(--ctx-danger-color) 8%, transparent);
+}
+
+/* ---------- 禁用项 ---------- */
+.fc-context-menu__item--disabled {
+    opacity: 0.38;
+    cursor:  not-allowed;
+}
+
+.fc-context-menu__item--disabled:hover {
+    background: transparent;
+}
+
+/* ---------- 图标 ---------- */
+.fc-context-menu__icon {
+    display:     flex;
+    align-items: center;
+    font-size:   var(--fc-font-size-md);
+    flex-shrink: 0;
+    width:       1.1em;
+    color:       var(--fc-color-text-tertiary);
+}
+
+.fc-context-menu__item--danger .fc-context-menu__icon {
+    color: var(--ctx-danger-color);
+}
+
+/* ---------- 分隔线 ---------- */
+.fc-context-menu__divider {
+    height:     1px;
+    background: var(--ctx-border);
+    margin:     var(--fc-space-xs) 0;
+    list-style: none;
+}

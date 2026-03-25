@@ -20,5 +20,8 @@ export * from "./components/LazyLoad/LazyLoad"
 export * from "./components/Card/Card"
 export * from "./components/Bar/TabBar"
 export * from "./components/Chat/Chat"
+export * from "./components/Tag/TagItem"
+export * from "./components/MarkdownEditor/MarkdownEditor"
+export * from "./components/ContextMenu/ContextMenuContext"
 
 import "./style/index.css"

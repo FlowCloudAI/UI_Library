@@ -1,7 +1,7 @@
 // VirtualList.tsx
 import './VirtualList.css';
 import * as React from "react";
-import { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import { useState, useRef, useCallback, useMemo, memo } from "react";
 
 interface VirtualListProps<T = any> {
     /** 数据源 */
@@ -23,6 +23,14 @@ interface VirtualListProps<T = any> {
     /** 容器样式 */
     style?: React.CSSProperties;
 }
+
+// 单项包装，避免滚动时整个列表重渲染
+const VirtualItem = memo(({ children, height }: { children: React.ReactNode; height: number }) => (
+    <div className="fc-virtual-list__item" style={{ height: `${height}px` }}>
+        {children}
+    </div>
+));
+VirtualItem.displayName = 'VirtualItem';
 
 export function VirtualList<T>({
                                    data,
@@ -72,13 +80,6 @@ export function VirtualList<T>({
     // 偏移量
     const offsetY = visibleRange.startIndex * itemHeight;
 
-    // 滚动条样式控制
-    useEffect(() => {
-        if (!showScrollbar && containerRef.current) {
-            containerRef.current.style.scrollbarWidth = 'none';
-        }
-    }, [showScrollbar]);
-
     const classNames = [
         'fc-virtual-list',
         !showScrollbar && 'fc-virtual-list--hide-scrollbar',
@@ -103,13 +104,9 @@ export function VirtualList<T>({
                     {visibleData.map((item, idx) => {
                         const actualIndex = visibleRange.startIndex + idx;
                         return (
-                            <div
-                                key={actualIndex}
-                                className="fc-virtual-list__item"
-                                style={{ height: `${itemHeight}px` }}
-                            >
+                            <VirtualItem key={actualIndex} height={itemHeight}>
                                 {renderItem(item, actualIndex)}
-                            </div>
+                            </VirtualItem>
                         );
                     })}
                 </div>

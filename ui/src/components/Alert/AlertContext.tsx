@@ -1,20 +1,22 @@
 import "./AlertContext.css"
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { RollingBox } from "../Box/RollingBox";
 import { Button } from "../Button/Button";
 
 export type AlertType = "success" | "error" | "warning" | "info";
+export type AlertMode = "alert" | "confirm" | "toast";
 
 export type AlertProps = {
     msg: string;
     type: AlertType;
+    mode: AlertMode;
     visible: boolean;
-    confirm?: boolean;
+    duration?: number;
     choice: (res: string) => void;
 };
 
 const AlertContext = createContext<{
-    showAlert: (msg: string, type: AlertType, confirm?: boolean) => Promise<string>;
+    showAlert: (msg: string, type: AlertType, mode?: AlertMode, duration?: number) => Promise<string>;
 }>(null!);
 
 const ICONS: Record<AlertType, ReactNode> = {
@@ -51,45 +53,67 @@ const ICONS: Record<AlertType, ReactNode> = {
     ),
 };
 
-export function AlertProvider({ children }: { children: ReactNode }) {
-    const [props, setProps] = useState<AlertProps>({
-        msg: "", type: "info", visible: false, choice: () => {},
+export interface AlertProviderProps {
+    children: ReactNode;
+    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    background?: string;
+    borderColor?: string;
+}
+
+export function AlertProvider({ children, background, borderColor }: AlertProviderProps) {
+    const [alert, setAlert] = useState<AlertProps>({
+        msg: "", type: "info", mode: "alert", visible: false, choice: () => {},
     });
 
-    const showAlert = (msg: string, type: AlertType, confirm = false) =>
+    const showAlert = (msg: string, type: AlertType, mode: AlertMode = "alert", duration?: number) =>
         new Promise<string>((resolve) => {
-            setProps({
-                msg, type, visible: true, confirm,
+            setAlert({
+                msg, type, mode, visible: true, duration,
                 choice: (res) => {
-                    setProps(p => ({ ...p, visible: false }));
+                    setAlert(p => ({ ...p, visible: false }));
                     resolve(res);
                 },
             });
         });
 
+    useEffect(() => {
+        if (!alert.visible || !alert.duration) return;
+        const timer = setTimeout(() => alert.choice("auto"), alert.duration);
+        return () => clearTimeout(timer);
+    }, [alert.visible, alert.duration]);
+
+    const overrideStyle: React.CSSProperties = {};
+    if (background !== undefined)  (overrideStyle as any)["--alert-bg"]     = background;
+    if (borderColor !== undefined) (overrideStyle as any)["--alert-border"] = borderColor;
+
     return (
         <AlertContext.Provider value={{ showAlert }}>
             {children}
-            {props.visible && (
+            {alert.visible && (
                 <div className="fc-alert-overlay">
-                    <div className={`fc-alert fc-alert--${props.type}`}>
+                    <div
+                        className={`fc-alert fc-alert--${alert.type} fc-alert--${alert.mode}`}
+                        style={overrideStyle}
+                    >
                         <div className="fc-alert__header">
-                            {ICONS[props.type]}
+                            {ICONS[alert.type]}
                             <span className="fc-alert__title">提示</span>
                         </div>
-                        <RollingBox className="fc-alert__msg">{props.msg}</RollingBox>
-                        <div className="fc-alert__footer">
-                            {props.confirm && (
-                                <Button variant="secondary" size="sm"
-                                        onClick={() => props.choice("no")}>
-                                    取消
+                        <RollingBox className="fc-alert__msg">{alert.msg}</RollingBox>
+                        {alert.mode !== "toast" && (
+                            <div className="fc-alert__footer">
+                                {alert.mode === "confirm" && (
+                                    <Button variant="secondary" size="sm"
+                                            onClick={() => alert.choice("no")}>
+                                        取消
+                                    </Button>
+                                )}
+                                <Button variant="primary" size="sm"
+                                        onClick={() => alert.choice("yes")}>
+                                    确定
                                 </Button>
-                            )}
-                            <Button variant="primary" size="sm"
-                                    onClick={() => props.choice("yes")}>
-                                确定
-                            </Button>
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

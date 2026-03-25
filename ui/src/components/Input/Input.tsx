@@ -51,7 +51,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
         if (!isControlled) setInternalValue('');
         onClear?.();
         // 触发空值的change事件
-        const event = { target: { value: '' } } as React.ChangeEvent<HTMLInputElement>;
+        const event = {target: {value: ''}} as React.ChangeEvent<HTMLInputElement>;
         onChange?.(event);
     };
 

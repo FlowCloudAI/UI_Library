@@ -1,0 +1,94 @@
+/* ========================================
+   TagItem.css - 基于 FC Design System
+   ======================================== */
+
+.fc-tag-item {
+    /* 组件局部变量 */
+    --tag-bg:          var(--fc-color-bg-secondary);
+    --tag-color:       var(--fc-color-text-secondary);
+    --tag-border:      var(--fc-color-border);
+
+    display:     inline-flex;
+    align-items: center;
+    gap:         var(--fc-space-xs);
+    padding:     2px var(--fc-space-sm);
+    border-radius: var(--fc-radius-sm);
+    border:      1px solid var(--tag-border);
+    background:  var(--tag-bg);
+    color:       var(--tag-color);
+    font-size:   var(--fc-font-size-xs);
+    font-family: var(--fc-font-family), serif;
+    user-select: none;
+    white-space: nowrap;
+    transition:  background 0.15s, border-color 0.15s;
+}
+
+/* ---------- show 模式 ---------- */
+.fc-tag-item--show {
+    cursor: default;
+}
+
+.fc-tag-item--show:hover {
+    border-color: var(--fc-color-border-hover, var(--tag-border));
+}
+
+/* ---------- 编辑态（内联展开） ---------- */
+.fc-tag-item--editing {
+    padding: 1px var(--fc-space-xs);
+    border-color: var(--fc-color-primary, var(--tag-border));
+}
+
+/* ---------- 子元素 ---------- */
+.fc-tag-item__name {
+    color:      var(--fc-color-text-tertiary);
+    flex-shrink: 0;
+}
+
+.fc-tag-item__sep {
+    color:   var(--fc-color-text-tertiary);
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.fc-tag-item__value {
+    max-width:     100px;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    white-space:   nowrap;
+}
+
+/* ---------- 编辑输入框 ---------- */
+.fc-tag-item__input {
+    background:  transparent;
+    border:      none;
+    outline:     none;
+    color:       var(--tag-color);
+    font-size:   inherit;
+    font-family: inherit;
+    min-width:   40px;
+    width:       60px;
+    max-width:   120px;
+    padding:     0;
+}
+
+.fc-tag-item__input[type="number"] {
+    width: 50px;
+    /* 去掉数字输入框的上下箭头 */
+    -moz-appearance:    textfield;
+}
+.fc-tag-item__input[type="number"]::-webkit-outer-spin-button,
+.fc-tag-item__input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+/* ---------- boolean 点击态 ---------- */
+.fc-tag-item--boolean {
+    cursor: pointer;
+}
+
+.fc-tag-item--boolean:hover {
+    background: var(--fc-color-bg-tertiary, var(--tag-bg));
+}
+
+.fc-tag-item__bool-true  { color: var(--fc-color-success); }
+.fc-tag-item__bool-false { color: var(--fc-color-text-tertiary); }

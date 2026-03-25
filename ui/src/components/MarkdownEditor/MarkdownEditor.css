@@ -1,0 +1,118 @@
+/* ========================================
+   MarkdownEditor.css - 基于 FC Design System
+   覆盖 @uiw/react-md-editor 默认样式
+   ======================================== */
+
+.fc-md-wrap {
+    /* 组件局部变量 */
+    --md-bg:         var(--fc-color-bg-elevated);
+    --md-toolbar-bg: var(--fc-color-bg-secondary);
+    --md-border:     var(--fc-color-border);
+
+    border-radius: var(--fc-radius-md);
+    border:        1px solid var(--md-border);
+    overflow:      hidden;
+    font-family:   var(--fc-font-family), serif;
+}
+
+/* ---------- 覆盖 w-md-editor 壳 ---------- */
+.fc-md-wrap .w-md-editor {
+    background:    var(--md-bg) !important;
+    border:        none !important;
+    box-shadow:    none !important;
+    border-radius: 0 !important;
+    font-family:   var(--fc-font-family), serif;
+    /* GitHub Primer 变量映射 */
+    --color-canvas-default:  var(--md-bg);
+    --color-canvas-subtle:   var(--md-toolbar-bg);
+    --color-border-default:  var(--md-border);
+    --color-fg-default:      var(--fc-color-text);
+    --color-fg-muted:        var(--fc-color-text-secondary);
+}
+
+/* ---------- 工具栏 ---------- */
+.fc-md-wrap .w-md-editor-toolbar {
+    background:    var(--md-toolbar-bg) !important;
+    border-bottom: 1px solid var(--md-border) !important;
+    padding:       4px 8px !important;
+}
+
+.fc-md-wrap .w-md-editor-toolbar ul > li > button {
+    color:         var(--fc-color-text-tertiary) !important;
+    border-radius: var(--fc-radius-sm) !important;
+    transition:    background 0.12s, color 0.12s;
+}
+
+.fc-md-wrap .w-md-editor-toolbar ul > li > button:hover {
+    background: var(--fc-color-bg-tertiary, rgba(255,255,255,0.06)) !important;
+    color:      var(--fc-color-text) !important;
+}
+
+.fc-md-wrap .w-md-editor-toolbar ul > li > button svg {
+    fill:   currentColor;
+    stroke: currentColor;
+}
+
+/* ---------- AI 补全按钮 ---------- */
+.fc-md-ai-btn {
+    font-size:     11px;
+    font-weight:   600;
+    color:         var(--fc-color-primary, #6366f1) !important;
+    padding:       2px 6px !important;
+    letter-spacing: 0.2px;
+}
+
+.fc-md-ai-btn:hover {
+    background: var(--fc-color-primary-bg, rgba(99,102,241,0.1)) !important;
+}
+
+/* ---------- 编辑区 ---------- */
+.fc-md-wrap .w-md-editor-text {
+    font-size:   var(--fc-font-size-sm) !important;
+    line-height: var(--fc-line-height-relaxed, 1.75) !important;
+    color:       var(--fc-color-text) !important;
+    padding:     12px 14px !important;
+}
+
+.fc-md-wrap .w-md-editor-text-pre > code,
+.fc-md-wrap .w-md-editor-text-input {
+    font-family: var(--fc-font-family-mono, ui-monospace, monospace) !important;
+    font-size:   var(--fc-font-size-sm) !important;
+}
+
+/* ---------- 隐藏拖拽分隔线 ---------- */
+.fc-md-wrap .w-md-editor-bar {
+    display: none !important;
+}
+
+/* ---------- 预览区 markdown 样式 ---------- */
+.fc-md-wrap .wmde-markdown {
+    background:  transparent !important;
+    font-family: var(--fc-font-family), serif;
+    font-size:   var(--fc-font-size-sm);
+    color:       var(--fc-color-text);
+    padding:     12px 14px;
+}
+
+.fc-md-wrap .wmde-markdown h1,
+.fc-md-wrap .wmde-markdown h2,
+.fc-md-wrap .wmde-markdown h3 {
+    color:        var(--fc-color-text);
+    border-color: var(--md-border);
+}
+
+.fc-md-wrap .wmde-markdown code {
+    background:    var(--fc-color-bg-tertiary, rgba(255,255,255,0.06));
+    border-radius: 3px;
+    font-family:   var(--fc-font-family-mono, ui-monospace, monospace);
+}
+
+.fc-md-wrap .wmde-markdown pre {
+    background: var(--fc-color-bg-secondary);
+    border:     1px solid var(--md-border);
+}
+
+.fc-md-wrap .wmde-markdown blockquote {
+    border-left-color: var(--fc-color-primary, #6366f1);
+    color:             var(--fc-color-text-secondary);
+}

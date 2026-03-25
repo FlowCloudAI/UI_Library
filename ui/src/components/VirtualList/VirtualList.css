@@ -1,9 +1,15 @@
 /* VirtualList.css */
 .fc-virtual-list {
+    /* 组件局部变量 */
+    --vl-bg:            var(--fc-color-bg);
+    --vl-track-bg:      var(--fc-color-bg-tertiary);
+    --vl-thumb-bg:      var(--fc-color-border);
+    --vl-thumb-hover:   var(--fc-color-border-hover);
+
     position: relative;
     overflow-y: auto;
     overflow-x: hidden;
-    background-color: var(--fc-color-bg, #ffffff);
+    background-color: var(--vl-bg);
     border-radius: var(--fc-radius-md, 8px);
 }
 
@@ -43,45 +49,22 @@
 }
 
 .fc-virtual-list::-webkit-scrollbar-track {
-    background: var(--fc-color-bg-tertiary, #f3f4f6);
+    background: var(--vl-track-bg);
     border-radius: var(--fc-radius-full, 9999px);
 }
 
 .fc-virtual-list::-webkit-scrollbar-thumb {
-    background: var(--fc-color-border, #d1d5db);
+    background: var(--vl-thumb-bg);
     border-radius: var(--fc-radius-full, 9999px);
 }
 
 .fc-virtual-list::-webkit-scrollbar-thumb:hover {
-    background: var(--fc-color-border-hover, #9ca3af);
+    background: var(--vl-thumb-hover);
 }
 
-/* ========== 暗色主题样式 ========== */
-
-/* 暗色主题下的容器背景 */
-[data-theme="dark"] .fc-virtual-list,
-.theme-dark .fc-virtual-list {
-    background-color: #0F0F0F !important;
-}
-
-/* 暗色主题下的列表项基础背景色 */
-[data-theme="dark"] .fc-virtual-list__item,
-.theme-dark .fc-virtual-list__item {
-    background-color: #0F0F0F !important;
-}
-
-/* 暗色主题下的滚动条 */
-[data-theme="dark"] .fc-virtual-list::-webkit-scrollbar-track,
-.theme-dark .fc-virtual-list::-webkit-scrollbar-track {
-    background: #222222 !important;
-}
-
-[data-theme="dark"] .fc-virtual-list::-webkit-scrollbar-thumb,
-.theme-dark .fc-virtual-list::-webkit-scrollbar-thumb {
-    background: #333330 !important;
-}
-
-[data-theme="dark"] .fc-virtual-list::-webkit-scrollbar-thumb:hover,
-.theme-dark .fc-virtual-list::-webkit-scrollbar-thumb:hover {
-    background: #555550 !important;
+/* ========== 暗色主题 ========== */
+[data-theme="dark"] .fc-virtual-list {
+    --vl-track-bg:    #222222;
+    --vl-thumb-bg:    #333330;
+    --vl-thumb-hover: #555550;
 }
