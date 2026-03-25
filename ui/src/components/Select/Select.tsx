@@ -19,9 +19,22 @@ interface SelectProps {
     multiple?: boolean;
     disabled?: boolean;
     className?: string;
+    style?: React.CSSProperties;
     virtualScroll?: boolean;
     virtualItemHeight?: number;
     maxHeight?: number;
+
+    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    /** 触发器背景色 */
+    triggerBackground?: string;
+    /** 触发器边框色 */
+    triggerBorderColor?: string;
+    /** 已选项文字色 */
+    selectedColor?: string;
+    /** 已选项背景色 */
+    selectedBackground?: string;
+    /** hover / 键盘高亮背景色 */
+    hoverBackground?: string;
 }
 
 export function Select({
@@ -34,10 +47,33 @@ export function Select({
                            multiple = false,
                            disabled = false,
                            className = '',
+                           style,
                            virtualScroll = false,
                            virtualItemHeight = 32,
-                           maxHeight = 256
+                           maxHeight = 256,
+                           triggerBackground,
+                           triggerBorderColor,
+                           selectedColor,
+                           selectedBackground,
+                           hoverBackground,
                        }: SelectProps) {
+    const colorVars: Record<string, string | undefined> = {
+        '--select-trigger-bg':            triggerBackground,
+        '--select-trigger-border':        triggerBorderColor,
+        '--select-option-selected-color': selectedColor,
+        '--select-option-selected-bg':    selectedBackground,
+        '--select-option-hover-bg':       hoverBackground,
+    };
+
+    const overrideStyle: React.CSSProperties = {};
+    for (const [key, value] of Object.entries(colorVars)) {
+        if (value !== undefined) {
+            (overrideStyle as any)[key] = value;
+        }
+    }
+
+    const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style };
+
     const [isOpen, setIsOpen] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState('');
     const [highlightedIndex, setHighlightedIndex] = React.useState(0);
@@ -132,12 +168,12 @@ export function Select({
     ].filter(Boolean).join(' ');
 
     return (
-        <div ref={containerRef} className={classNames}>
+        <div ref={containerRef} className={classNames} style={mergedStyle}>
             <div
                 className="fc-select__trigger"
                 onClick={() => !disabled && setIsOpen(!isOpen)}
             >
-                <span className={`fc-select__value ${!currentValue && 'fc-select__value--placeholder'}`}>
+                <span className={`fc-select__value ${(currentValue === undefined || currentValue === null || (multiple && !(currentValue as any[]).length)) && 'fc-select__value--placeholder'}`}>
                     {displayLabel()}
                 </span>
                 <span className="fc-select__arrow">▼</span>
@@ -225,7 +261,8 @@ export function Select({
 
     function highlightText(text: string, highlight: string) {
         if (!highlight) return text;
-        const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+        const escaped = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
         return parts.map((part, i) =>
             part.toLowerCase() === highlight.toLowerCase()
                 ? <mark key={i} className="fc-select__highlight">{part}</mark>

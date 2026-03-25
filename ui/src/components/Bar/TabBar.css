@@ -14,21 +14,63 @@
 
 /* ========== 基础容器 ========== */
 .fc-tab-bar {
+    /* 颜色变量 */
+    --tab-bar-bg:           var(--fc-color-bg-secondary);
+    --tab-color:            var(--fc-color-text-secondary);
+    --tab-hover-color:      var(--fc-color-primary);
+    --tab-hover-bg:         var(--fc-color-bg-tertiary);
+    --tab-active-color:     var(--fc-color-primary);
+    --tab-active-bg:        var(--fc-color-bg);
+    --tab-active-indicator: var(--fc-color-primary);
+
+    /* 圆角变量 - 容器 */
+    --tab-bar-radius-tl:    var(--fc-radius-md);
+    --tab-bar-radius-tr:    var(--fc-radius-md);
+    --tab-bar-radius-br:    0px;
+    --tab-bar-radius-bl:    0px;
+
+    /* 圆角变量 - 单个 tab 项 */
+    --tab-item-radius-tl:   0px;
+    --tab-item-radius-tr:   0px;
+    --tab-item-radius-br:   0px;
+    --tab-item-radius-bl:   0px;
+
     display: flex;
     flex-direction: column;
     width: 100%;
-    background-color: var(--fc-color-bg-secondary);
+    background-color: var(--tab-bar-bg);
     color: var(--fc-color-text);
     overflow: hidden;
+    border-radius: var(--tab-bar-radius-tl) var(--tab-bar-radius-tr) var(--tab-bar-radius-br) var(--tab-bar-radius-bl);
 }
 
 /* ========== 容器圆角 ========== */
-.fc-tab-bar--radius-none { border-radius: 0; }
-.fc-tab-bar--radius-sm   { border-radius: var(--fc-radius-sm, 4px) var(--fc-radius-sm, 4px) 0 0; }
-.fc-tab-bar--radius-md   { border-radius: var(--fc-radius-md, 8px) var(--fc-radius-md, 8px) 0 0; }
-.fc-tab-bar--radius-lg   { border-radius: var(--fc-radius-lg, 12px) var(--fc-radius-lg, 12px) 0 0; }
-.fc-tab-bar--radius-xl   { border-radius: var(--fc-radius-xl, 16px) var(--fc-radius-xl, 16px) 0 0; }
-.fc-tab-bar--radius-full { border-radius: var(--fc-radius-full, 9999px) var(--fc-radius-full, 9999px) 0 0; }
+.fc-tab-bar--radius-none {
+    --tab-bar-radius-tl: 0px;
+    --tab-bar-radius-tr: 0px;
+    --tab-bar-radius-br: 0px;
+    --tab-bar-radius-bl: 0px;
+}
+.fc-tab-bar--radius-sm {
+    --tab-bar-radius-tl: var(--fc-radius-sm, 4px);
+    --tab-bar-radius-tr: var(--fc-radius-sm, 4px);
+}
+.fc-tab-bar--radius-md {
+    --tab-bar-radius-tl: var(--fc-radius-md, 8px);
+    --tab-bar-radius-tr: var(--fc-radius-md, 8px);
+}
+.fc-tab-bar--radius-lg {
+    --tab-bar-radius-tl: var(--fc-radius-lg, 12px);
+    --tab-bar-radius-tr: var(--fc-radius-lg, 12px);
+}
+.fc-tab-bar--radius-xl {
+    --tab-bar-radius-tl: var(--fc-radius-xl, 16px);
+    --tab-bar-radius-tr: var(--fc-radius-xl, 16px);
+}
+.fc-tab-bar--radius-full {
+    --tab-bar-radius-tl: var(--fc-radius-full, 9999px);
+    --tab-bar-radius-tr: var(--fc-radius-full, 9999px);
+}
 
 /* ========== 导航栏 ========== */
 .fc-tab-bar__nav {
@@ -51,8 +93,8 @@
     gap: var(--fc-space-sm, 8px);
     padding: var(--fc-space-sm, 8px) var(--fc-space-lg, 16px);
     font-size: var(--fc-font-size-md, 14px);
-    color: var(--fc-tab-color, var(--fc-color-text-secondary));
-    background-color: var(--fc-tab-bg, transparent);
+    color: var(--tab-color);
+    background-color: transparent;
     cursor: pointer;
     transition: all var(--fc-transition, 150ms ease);
     white-space: nowrap;
@@ -61,13 +103,13 @@
 }
 
 .fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled):not(.fc-tab-bar__tab--dragging) {
-    color: var(--fc-tab-hover-color, var(--fc-color-primary));
-    background-color: var(--fc-tab-hover-bg, var(--fc-color-bg-tertiary));
+    color: var(--tab-hover-color);
+    background-color: var(--tab-hover-bg);
 }
 
 .fc-tab-bar__tab--active {
-    color: var(--fc-tab-active-color, var(--fc-color-primary));
-    background-color: var(--fc-tab-active-bg, var(--fc-color-bg));
+    color: var(--tab-active-color);
+    background-color: var(--tab-active-bg);
 }
 
 .fc-tab-bar__tab--disabled {
@@ -88,11 +130,10 @@
 .fc-tab-bar--attached .fc-tab-bar__tab {
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
-    border-radius: 0;
 }
 
 .fc-tab-bar--attached .fc-tab-bar__tab--active {
-    border-bottom-color: var(--fc-tab-active-border, var(--fc-color-primary));
+    border-bottom-color: var(--tab-active-indicator);
 }
 
 /* ==========================================================
@@ -114,29 +155,65 @@
 }
 
 .fc-tab-bar--floating .fc-tab-bar__tab {
-    /* 默认胶囊圆角，可被 tabRadius 覆盖 */
-    border-radius: var(--fc-radius-full, 9999px);
     padding: var(--fc-space-xs, 6px) var(--fc-space-lg, 16px);
     border-bottom: none;
     margin-bottom: 0;
 }
 
+.fc-tab-bar--floating {
+    --tab-item-radius-tl: var(--fc-radius-full, 9999px);
+    --tab-item-radius-tr: var(--fc-radius-full, 9999px);
+    --tab-item-radius-br: var(--fc-radius-full, 9999px);
+    --tab-item-radius-bl: var(--fc-radius-full, 9999px);
+}
+
 .fc-tab-bar--floating .fc-tab-bar__tab--active {
-    background-color: var(--fc-tab-active-bg, var(--fc-color-bg));
+    background-color: var(--tab-active-bg);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 /* ==========================================================
    Tab 项圆角（tabRadius prop）
    在 attached 模式下提供四周圆角；在 floating 模式下覆盖默认胶囊圆角
+   可用 CSS 变量 --tab-item-radius-tl/tr/br/bl 精细控制
    ========================================================== */
 
-.fc-tab-bar--tab-radius-none .fc-tab-bar__tab { border-radius: 0; }
-.fc-tab-bar--tab-radius-sm   .fc-tab-bar__tab { border-radius: var(--fc-radius-sm, 4px); }
-.fc-tab-bar--tab-radius-md   .fc-tab-bar__tab { border-radius: var(--fc-radius-md, 8px); }
-.fc-tab-bar--tab-radius-lg   .fc-tab-bar__tab { border-radius: var(--fc-radius-lg, 12px); }
-.fc-tab-bar--tab-radius-xl   .fc-tab-bar__tab { border-radius: var(--fc-radius-xl, 16px); }
-.fc-tab-bar--tab-radius-full .fc-tab-bar__tab { border-radius: var(--fc-radius-full, 9999px); }
+.fc-tab-bar--tab-radius-none {
+    --tab-item-radius-tl: 0px;
+    --tab-item-radius-tr: 0px;
+    --tab-item-radius-br: 0px;
+    --tab-item-radius-bl: 0px;
+}
+.fc-tab-bar--tab-radius-sm {
+    --tab-item-radius-tl: var(--fc-radius-sm, 4px);
+    --tab-item-radius-tr: var(--fc-radius-sm, 4px);
+    --tab-item-radius-br: var(--fc-radius-sm, 4px);
+    --tab-item-radius-bl: var(--fc-radius-sm, 4px);
+}
+.fc-tab-bar--tab-radius-md {
+    --tab-item-radius-tl: var(--fc-radius-md, 8px);
+    --tab-item-radius-tr: var(--fc-radius-md, 8px);
+    --tab-item-radius-br: var(--fc-radius-md, 8px);
+    --tab-item-radius-bl: var(--fc-radius-md, 8px);
+}
+.fc-tab-bar--tab-radius-lg {
+    --tab-item-radius-tl: var(--fc-radius-lg, 12px);
+    --tab-item-radius-tr: var(--fc-radius-lg, 12px);
+    --tab-item-radius-br: var(--fc-radius-lg, 12px);
+    --tab-item-radius-bl: var(--fc-radius-lg, 12px);
+}
+.fc-tab-bar--tab-radius-xl {
+    --tab-item-radius-tl: var(--fc-radius-xl, 16px);
+    --tab-item-radius-tr: var(--fc-radius-xl, 16px);
+    --tab-item-radius-br: var(--fc-radius-xl, 16px);
+    --tab-item-radius-bl: var(--fc-radius-xl, 16px);
+}
+.fc-tab-bar--tab-radius-full {
+    --tab-item-radius-tl: var(--fc-radius-full, 9999px);
+    --tab-item-radius-tr: var(--fc-radius-full, 9999px);
+    --tab-item-radius-br: var(--fc-radius-full, 9999px);
+    --tab-item-radius-bl: var(--fc-radius-full, 9999px);
+}
 
 /* ========== 拖拽样式 ========== */
 .fc-tab-bar__tab--draggable {
@@ -202,11 +279,11 @@
 }
 
 [data-theme="dark"] .fc-tab-bar__tab--active {
-    background-color: var(--fc-tab-active-bg, var(--fc-color-bg));
+    background-color: var(--tab-active-bg);
 }
 
 [data-theme="dark"] .fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled) {
-    background-color: var(--fc-tab-hover-bg, var(--fc-color-bg-tertiary));
+    background-color: var(--tab-hover-bg);
 }
 
 [data-theme="dark"] .fc-tab-bar--floating .fc-tab-bar__tab--active {

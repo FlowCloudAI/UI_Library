@@ -17,6 +17,17 @@ interface SliderProps {
     marks?: Record<number, string>
     tooltip?: boolean
     className?: string
+    style?: React.CSSProperties
+
+    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    trackBackground?: string       // 轨道底色
+    fillBackground?: string        // 已填充进度色
+    thumbBackground?: string       // 滑块背景
+    thumbBorderColor?: string      // 滑块边框色
+    markDotColor?: string          // 刻度点颜色
+    markLabelColor?: string        // 刻度标签文字色
+    tooltipBackground?: string     // Tooltip 背景
+    tooltipColor?: string          // Tooltip 文字色
 }
 
 export function Slider({
@@ -32,6 +43,15 @@ export function Slider({
                            marks,
                            tooltip = false,
                            className = '',
+                           style,
+                           trackBackground,
+                           fillBackground,
+                           thumbBackground,
+                           thumbBorderColor,
+                           markDotColor,
+                           markLabelColor,
+                           tooltipBackground,
+                           tooltipColor,
                        }: SliderProps) {
     const trackRef = React.useRef<HTMLDivElement>(null)
     const draggingRef = React.useRef<number | null>(null)
@@ -42,6 +62,27 @@ export function Slider({
 
     const isControlled = controlledValue !== undefined
     const currentValue = isControlled ? controlledValue : internalValue
+
+    // 将 props 映射为 CSS 变量，过滤 undefined
+    const colorVars: Record<string, string | undefined> = {
+        '--slider-track-bg':      trackBackground,
+        '--slider-fill-bg':       fillBackground,
+        '--slider-thumb-bg':      thumbBackground,
+        '--slider-thumb-border':  thumbBorderColor,
+        '--slider-mark-dot-bg':   markDotColor,
+        '--slider-mark-label-color': markLabelColor,
+        '--slider-tooltip-bg':    tooltipBackground,
+        '--slider-tooltip-color': tooltipColor,
+    }
+
+    const overrideStyle: React.CSSProperties = {}
+    for (const [key, value] of Object.entries(colorVars)) {
+        if (value !== undefined) {
+            (overrideStyle as Record<string, string>)[key] = value
+        }
+    }
+
+    const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style }
 
     const getPercent = (val: number) =>
         Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100))
@@ -121,7 +162,7 @@ export function Slider({
     ].filter(Boolean).join(' ')
 
     return (
-        <div className={cls}>
+        <div className={cls} style={mergedStyle}>
             <div
                 ref={trackRef}
                 className="fc-slider__track"

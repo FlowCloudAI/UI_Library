@@ -8,6 +8,7 @@
     --btn-bg-hover: var(--fc-color-bg-secondary, #f3f4f6);
     --btn-bg-active: var(--fc-color-bg-tertiary, #e5e7eb);
     --btn-color: var(--fc-color-text, #111827);
+    --btn-color-hover: var(--btn-color);
     --btn-color-active: var(--fc-color-text-secondary, #6b7280);
     --btn-border: transparent;
     --btn-border-hover: transparent;
@@ -34,6 +35,7 @@
 
 .fc-btn:hover:not(:disabled):not(.is-disabled) {
     background-color: var(--btn-bg-hover);
+    color: var(--btn-color-hover);
     border-color: var(--btn-border-hover);
 }
 
@@ -56,6 +58,7 @@
     --btn-bg-hover: var(--fc-color-primary-hover, #4f46e5);
     --btn-bg-active: var(--fc-color-primary-active, #4338ca);
     --btn-color: var(--fc-color-text-on-primary, #ffffff);
+    --btn-color-hover: var(--fc-color-text-on-primary, #ffffff);
     --btn-color-active: var(--fc-color-text-on-primary, #ffffff);
     --btn-border: var(--fc-color-primary, #6366f1);
     --btn-border-hover: var(--fc-color-primary-hover, #4f46e5);
@@ -66,6 +69,7 @@
     --btn-bg-hover: var(--fc-color-bg-tertiary, #e5e7eb);
     --btn-bg-active: var(--fc-color-bg-tertiary, #e5e7eb);
     --btn-color: var(--fc-color-text, #111827);
+    --btn-color-hover: var(--fc-color-text, #111827);
     --btn-color-active: var(--fc-color-text-secondary, #6b7280);
     --btn-border: var(--fc-color-border, #e5e7eb);
     --btn-border-hover: var(--fc-color-border-hover, #d1d5db);
@@ -76,6 +80,7 @@
     --btn-bg-hover: var(--fc-color-primary-subtle, #eff6ff);
     --btn-bg-active: var(--fc-color-primary-subtle, #eff6ff);
     --btn-color: var(--fc-color-primary, #6366f1);
+    --btn-color-hover: var(--fc-color-primary, #6366f1);
     --btn-color-active: var(--fc-color-primary-hover, #4f46e5);
     --btn-border: var(--fc-color-primary, #6366f1);
     --btn-border-hover: var(--fc-color-primary-hover, #4f46e5);
@@ -86,6 +91,7 @@
     --btn-bg-hover: var(--fc-color-bg-secondary, #f3f4f6);
     --btn-bg-active: var(--fc-color-bg-tertiary, #e5e7eb);
     --btn-color: var(--fc-color-text, #111827);
+    --btn-color-hover: var(--fc-color-text, #111827);
     --btn-color-active: var(--fc-color-text-secondary, #6b7280);
     --btn-border: transparent;
     --btn-border-hover: transparent;
@@ -97,6 +103,7 @@
     --btn-bg-hover: var(--fc-color-danger-hover, #dc2626);
     --btn-bg-active: var(--fc-color-danger-hover, #dc2626);
     --btn-color: var(--fc-color-text-on-primary, #ffffff);
+    --btn-color-hover: var(--fc-color-text-on-primary, #ffffff);
     --btn-color-active: var(--fc-color-text-on-primary, #ffffff);
     --btn-border: var(--fc-color-danger, #ef4444);
     --btn-border-hover: var(--fc-color-danger-hover, #dc2626);
@@ -108,6 +115,7 @@
     --btn-bg-hover: var(--fc-color-danger-bg, #fee2e2);
     --btn-bg-active: var(--fc-color-danger-bg, #fee2e2);
     --btn-color: var(--fc-color-danger, #ef4444);
+    --btn-color-hover: var(--fc-color-danger, #ef4444);
     --btn-color-active: var(--fc-color-danger, #ef4444);
     --btn-border: var(--fc-color-danger, #ef4444);
     --btn-border-hover: var(--fc-color-danger, #ef4444);
@@ -122,6 +130,7 @@
     --btn-bg-hover: var(--fc-color-success-hover, #059669);
     --btn-bg-active: var(--fc-color-success-hover, #059669);
     --btn-color: var(--fc-color-text-on-primary, #ffffff);
+    --btn-color-hover: var(--fc-color-text-on-primary, #ffffff);
     --btn-color-active: var(--fc-color-text-on-primary, #ffffff);
     --btn-border: var(--fc-color-success, #10b981);
     --btn-border-hover: var(--fc-color-success-hover, #059669);
@@ -132,6 +141,7 @@
     --btn-bg-hover: var(--fc-color-success-bg, #d1fae5);
     --btn-bg-active: var(--fc-color-success-bg, #d1fae5);
     --btn-color: var(--fc-color-success, #10b981);
+    --btn-color-hover: var(--fc-color-success, #10b981);
     --btn-color-active: var(--fc-color-success, #10b981);
     --btn-border: var(--fc-color-success, #10b981);
     --btn-border-hover: var(--fc-color-success, #10b981);
@@ -142,6 +152,7 @@
     --btn-bg-hover: var(--fc-color-warning-hover, #d97706);
     --btn-bg-active: var(--fc-color-warning-hover, #d97706);
     --btn-color: var(--fc-color-text-on-primary, #ffffff);
+    --btn-color-hover: var(--fc-color-text-on-primary, #ffffff);
     --btn-color-active: var(--fc-color-text-on-primary, #ffffff);
     --btn-border: var(--fc-color-warning, #f59e0b);
     --btn-border-hover: var(--fc-color-warning-hover, #d97706);
@@ -152,6 +163,7 @@
     --btn-bg-hover: var(--fc-color-warning-bg, #fef3c7);
     --btn-bg-active: var(--fc-color-warning-bg, #fef3c7);
     --btn-color: var(--fc-color-warning, #f59e0b);
+    --btn-color-hover: var(--fc-color-warning, #f59e0b);
     --btn-color-active: var(--fc-color-warning, #f59e0b);
     --btn-border: var(--fc-color-warning, #f59e0b);
     --btn-border-hover: var(--fc-color-warning, #f59e0b);

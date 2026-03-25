@@ -305,8 +305,8 @@ export default function App() {
                 onChange={setEnabled}
                 labelRight="设置主题"
             />
-            <CheckButton size="sm"/>
-            <CheckButton size="md"/>
+            <CheckButton labelColor={'#533236'} thumbBackground={'#f1f1f1'} labelRight={"nihao"} size="sm"/>
+            <CheckButton trackBackground={'#00f'} checkedTrackBackground={'#0f0'} size="md"/>
             <CheckButton size="lg"/>
             <CheckButton disabled/>
             <CheckButton disabled checked labelRight="已锁定"/>
@@ -318,77 +318,96 @@ export default function App() {
             <Button onClick={handleError}>错误提示</Button>
 
             {/* RollingBox */}
+            {/* auto — 默认，hover/滚动时显示 */}
             <RollingBox style={{
-                height: '300px',
+                height: '200px',
                 border: '1px solid var(--fc-color-border, #ccc)',
                 padding: '10px',
                 borderRadius: 'var(--fc-radius-md, 5px)'
             }}>
                 <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
-                    内容...
+                    auto（默认）：hover 或滚动时显示滚动条
                 </div>
             </RollingBox>
 
-            <RollingBox showThumb="show" style={{
-                height: '300px',
-                border: '1px solid var(--fc-color-border, #ccc)',
-                padding: '10px',
-                borderRadius: 'var(--fc-radius-md, 5px)'
-            }}>
-                <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
-                    内容...
-                </div>
-            </RollingBox>
-
-            <RollingBox showThumb="hide" style={{
-                height: '300px',
-                border: '1px solid var(--fc-color-border, #ccc)',
-                padding: '10px',
-                borderRadius: 'var(--fc-radius-md, 5px)'
-            }}>
-                <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
-                    内容...
-                </div>
-            </RollingBox>
-
-            <RollingBox horizontal showThumb="show" style={{
-                height: '300px',
-                border: '1px solid var(--fc-color-border, #ccc)',
-                padding: '10px',
-                borderRadius: 'var(--fc-radius-md, 5px)'
-            }}>
-                <div style={{width: '2000px', display: 'flex', color: 'var(--fc-color-text)'}}>
-                    <div>内容1</div>
-                    <div>内容2</div>
-                    <div>内容3</div>
-                    <div>内容4</div>
-                </div>
-            </RollingBox>
-
+            {/* auto — 自定义 hover/滚动颜色 */}
             <RollingBox
-                showThumb="show"
-                thumbSize="thin"
-                showTrack
+                thumbHoverColor="#6366f1"
+                thumbActiveColor="#4f46e5"
                 style={{
-                    height: '300px',
+                    height: '200px',
                     border: '1px solid var(--fc-color-border, #ccc)',
                     padding: '10px',
                     borderRadius: 'var(--fc-radius-md, 5px)'
                 }}
             >
                 <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
-                    内容...
+                    auto + thumbHoverColor / thumbActiveColor：hover 时紫色，滚动中深紫色
                 </div>
             </RollingBox>
 
-            <RollingBox thumbSize="thick" style={{
-                height: '300px',
+            {/* show — 始终显示，自定义颜色 */}
+            <RollingBox
+                showThumb="show"
+                thumbColor="#10b981"
+                style={{
+                    height: '200px',
+                    border: '1px solid var(--fc-color-border, #ccc)',
+                    padding: '10px',
+                    borderRadius: 'var(--fc-radius-md, 5px)'
+                }}
+            >
+                <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
+                    show + thumbColor：始终显示绿色滚动条
+                </div>
+            </RollingBox>
+
+            {/* show + showTrack — 自定义轨道颜色 */}
+            <RollingBox
+                showThumb="show"
+                thumbSize="thin"
+                showTrack
+                thumbColor="#6366f1"
+                trackColor="var(--fc-color-bg-secondary)"
+                style={{
+                    height: '200px',
+                    border: '1px solid var(--fc-color-border, #ccc)',
+                    padding: '10px',
+                    borderRadius: 'var(--fc-radius-md, 5px)'
+                }}
+            >
+                <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
+                    show + showTrack + thumbColor + trackColor：紫色滚动条 + 自定义轨道背景
+                </div>
+            </RollingBox>
+
+            {/* hide — 隐藏滚动条 */}
+            <RollingBox showThumb="hide" style={{
+                height: '200px',
                 border: '1px solid var(--fc-color-border, #ccc)',
                 padding: '10px',
                 borderRadius: 'var(--fc-radius-md, 5px)'
             }}>
                 <div style={{height: '1000px', color: 'var(--fc-color-text)'}}>
-                    内容...
+                    hide：隐藏滚动条，内容仍可滚动
+                </div>
+            </RollingBox>
+
+            {/* horizontal — 水平滚动 */}
+            <RollingBox
+                horizontal
+                showThumb="show"
+                thumbColor="#f59e0b"
+                style={{
+                    border: '1px solid var(--fc-color-border, #ccc)',
+                    padding: '10px',
+                    borderRadius: 'var(--fc-radius-md, 5px)'
+                }}
+            >
+                <div style={{width: '2000px', display: 'flex', gap: '40px', color: 'var(--fc-color-text)'}}>
+                    {Array.from({length: 20}, (_, i) => (
+                        <div key={i}>列 {i + 1}</div>
+                    ))}
                 </div>
             </RollingBox>
 
@@ -404,20 +423,121 @@ export default function App() {
             />
 
             {/* Slider */}
-            <Slider range min={0} max={100} defaultValue={[20, 80]} tooltip
-                    marks={{0: '0%', 50: '50%', 100: '100%'}}/>
-            <Slider orientation="vertical"/>
+            {/* 基础 — 默认水平，step=1 */}
+            <Slider defaultValue={30} tooltip/>
+
+            {/* step=10，marks 标出每个步进点 */}
+            <Slider
+                min={0} max={100} step={10}
+                defaultValue={40}
+                marks={{0: '0', 10: '10', 20: '20', 30: '30', 40: '40', 50: '50', 60: '60', 70: '70', 80: '80', 90: '90', 100: '100'}}
+                tooltip
+            />
+
+            {/* range 双滑块 + marks */}
+            <Slider
+                range min={0} max={100} defaultValue={[20, 80]}
+                marks={{0: '0%', 50: '50%', 100: '100%'}}
+                tooltip
+            />
+
+            {/* 自定义颜色 */}
+            <Slider
+                defaultValue={60}
+                tooltip
+                fillBackground="#10b981"
+                thumbBackground="#fff"
+                thumbBorderColor="#10b981"
+                tooltipBackground="#10b981"
+                tooltipColor="#fff"
+            />
+
+            {/* 禁用 */}
+            <Slider defaultValue={40} disabled/>
+
+            {/* 垂直 + 自定义颜色 */}
+            <div style={{display: 'flex', gap: '32px', height: '220px', alignItems: 'center'}}>
+                <Slider orientation="vertical" defaultValue={30} tooltip/>
+                <Slider
+                    orientation="vertical" defaultValue={70}
+                    tooltip
+                    fillBackground="#6366f1"
+                    thumbBorderColor="#6366f1"
+                    tooltipBackground="#6366f1"
+                    tooltipColor="#fff"
+                />
+                <Slider
+                    orientation="vertical"
+                    min={0} max={100} step={20}
+                    defaultValue={60}
+                    marks={{0: '0', 50: '50', 100: '100'}}
+                    tooltip
+                />
+            </div>
 
             {/* Select */}
+            {/* 基础 */}
+            <Select
+                options={[
+                    {value: '1', label: '选项1'},
+                    {value: '2', label: '选项2'},
+                    {value: '3', label: '选项3'},
+                ]}
+            />
+
+            {/* 分组 + 可搜索 */}
             <Select
                 options={[
                     {value: '1', label: '选项1', group: '分组A'},
                     {value: '2', label: '选项2', group: '分组A'},
-                    {value: '3', label: '选项3', group: '分组B'}
+                    {value: '3', label: '选项3', group: '分组B'},
+                    {value: '4', label: '选项4', group: '分组B'},
+                    {value: '5', label: '选项5（禁用）', group: '分组B', disabled: true},
                 ]}
                 searchable
+            />
+
+            {/* 多选 */}
+            <Select
+                options={[
+                    {value: '1', label: '苹果'},
+                    {value: '2', label: '香蕉'},
+                    {value: '3', label: '橙子'},
+                    {value: '4', label: '葡萄'},
+                ]}
                 multiple
+                placeholder="请选择水果"
+            />
+
+            {/* 虚拟滚动（大量选项） */}
+            <Select
+                options={Array.from({length: 200}, (_, i) => ({
+                    value: String(i),
+                    label: `选项 ${i + 1}`,
+                }))}
+                searchable
                 virtualScroll
+                placeholder="从200个选项中搜索"
+            />
+
+            {/* 自定义颜色 */}
+            <Select
+                options={[
+                    {value: '1', label: '选项1'},
+                    {value: '2', label: '选项2'},
+                    {value: '3', label: '选项3'},
+                ]}
+                defaultValue="2"
+                selectedColor="#10b981"
+                selectedBackground="#d1fae5"
+                hoverBackground="#f0fdf4"
+            />
+
+            {/* 禁用 */}
+            <Select
+                options={[{value: '1', label: '选项1'}]}
+                defaultValue="1"
+                disabled
             />
 
             {/* SideBar */}
@@ -750,19 +870,33 @@ export default function App() {
             </div>
 
             <div>
-                <h3>方式一：CSS Variables 覆盖</h3>
+                <h3>自定义颜色（Props 注入）</h3>
                 <TabBar
                     items={initialTabs}
                     activeKey={activeKey}
                     variant="floating"
                     onChange={setActiveKey}
-                    style={{
-                        // 直接在 style 中设置 CSS 变量即可覆盖所有 tab 的颜色
-                        '--fc-tab-hover-color': '#e65100',
-                        '--fc-tab-hover-bg': '#fff3e0',
-                        '--fc-tab-active-color': '#e65100',
-                        '--fc-tab-active-bg': '#ffe0b2',
-                    } as React.CSSProperties}
+                    tabHoverColor="#e65100"
+                    tabHoverBackground="#fff3e0"
+                    tabActiveColor="#e65100"
+                    tabActiveBackground="#ffe0b2"
+                />
+            </div>
+
+            <div>
+                <h3>自定义背景色 + 指示器颜色（attached）</h3>
+                <TabBar
+                    items={initialTabs}
+                    activeKey={activeKey}
+                    variant="attached"
+                    onChange={setActiveKey}
+                    background="#1e1e2e"
+                    tabColor="#a0a0b0"
+                    tabHoverColor="#ffffff"
+                    tabHoverBackground="#2a2a3e"
+                    tabActiveColor="#c084fc"
+                    tabActiveBackground="#2a2a3e"
+                    activeIndicatorColor="#c084fc"
                 />
             </div>
 

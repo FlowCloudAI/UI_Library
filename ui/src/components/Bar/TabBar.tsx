@@ -65,6 +65,22 @@ export interface TabBarProps {
 
     className?: string;
     style?: React.CSSProperties;
+
+    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    /** 容器背景色 */
+    background?: string;
+    /** 标签默认文字色 */
+    tabColor?: string;
+    /** 标签 hover 文字色 */
+    tabHoverColor?: string;
+    /** 标签 hover 背景色 */
+    tabHoverBackground?: string;
+    /** 激活态文字色 */
+    tabActiveColor?: string;
+    /** 激活态背景色 */
+    tabActiveBackground?: string;
+    /** 激活态指示器颜色（attached 模式底线 / floating 模式无效） */
+    activeIndicatorColor?: string;
 }
 
 /* ========== 子组件：单个 Tab ========== */
@@ -175,7 +191,32 @@ export const TabBar = memo<TabBarProps>(({
                                              renderAddButton,
                                              className = '',
                                              style,
+                                             background,
+                                             tabColor,
+                                             tabHoverColor,
+                                             tabHoverBackground,
+                                             tabActiveColor,
+                                             tabActiveBackground,
+                                             activeIndicatorColor,
                                          }) => {
+    const colorVars: Record<string, string | undefined> = {
+        '--tab-bar-bg':           background,
+        '--tab-color':            tabColor,
+        '--tab-hover-color':      tabHoverColor,
+        '--tab-hover-bg':         tabHoverBackground,
+        '--tab-active-color':     tabActiveColor,
+        '--tab-active-bg':        tabActiveBackground,
+        '--tab-active-indicator': activeIndicatorColor,
+    };
+
+    const overrideStyle: React.CSSProperties = {};
+    for (const [key, value] of Object.entries(colorVars)) {
+        if (value !== undefined) {
+            (overrideStyle as any)[key] = value;
+        }
+    }
+
+    const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style };
     const dragKeyRef = useRef<string | null>(null);
 
     const handleClick = useCallback(
@@ -240,7 +281,7 @@ export const TabBar = memo<TabBarProps>(({
     ].filter(Boolean).join(' ');
 
     return (
-        <div className={rootClasses} style={style} role="tablist">
+        <div className={rootClasses} style={mergedStyle} role="tablist">
             <div className="fc-tab-bar__nav">
                 <div className="fc-tab-bar__nav-wrap">
                     {items.map((item) => (

@@ -18,6 +18,17 @@ interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     showTrack?: boolean;
     /** 内容 */
     children: React.ReactNode;
+
+    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+
+    /** 滚动条颜色（show 模式下生效） */
+    thumbColor?: string;
+    /** hover 时滚动条颜色（auto 模式下生效） */
+    thumbHoverColor?: string;
+    /** 滚动中滚动条颜色（auto 模式下生效） */
+    thumbActiveColor?: string;
+    /** 轨道背景色（showTrack=true 时生效） */
+    trackColor?: string;
 }
 
 export function RollingBox({
@@ -28,8 +39,29 @@ export function RollingBox({
                                showTrack = false,
                                children,
                                className,
+                               thumbColor,
+                               thumbHoverColor,
+                               thumbActiveColor,
+                               trackColor,
+                               style,
                                ...props
                            }: RollingBoxProps) {
+    const colorVars: Record<string, string | undefined> = {
+        '--roll-thumb':        thumbColor,
+        '--roll-thumb-hover':  thumbHoverColor,
+        '--roll-thumb-active': thumbActiveColor,
+        '--roll-track':        trackColor,
+    };
+
+    const overrideStyle: React.CSSProperties = {};
+    for (const [key, value] of Object.entries(colorVars)) {
+        if (value !== undefined) {
+            (overrideStyle as any)[key] = value;
+        }
+    }
+
+    const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style };
+
     const containerRef = React.useRef<HTMLDivElement>(null);
     const [isScrolling, setIsScrolling] = React.useState(false);
     const scrollTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -72,6 +104,7 @@ export function RollingBox({
         <div
             ref={containerRef}
             className={classNames}
+            style={mergedStyle}
             onScroll={handleScroll}
             {...props}
         >

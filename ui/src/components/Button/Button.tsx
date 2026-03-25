@@ -23,6 +23,25 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     iconLeft?: React.ReactNode;
     /** 右侧图标 */
     iconRight?: React.ReactNode;
+
+    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+
+    /** 默认背景色 */
+    background?: string;
+    /** hover 背景色 */
+    hoverBackground?: string;
+    /** active 背景色 */
+    activeBackground?: string;
+    /** 默认文字色 */
+    color?: string;
+    /** hover 文字色 */
+    hoverColor?: string;
+    /** active 文字色 */
+    activeColor?: string;
+    /** 默认边框色 */
+    borderColor?: string;
+    /** hover 边框色 */
+    hoverBorderColor?: string;
 }
 
 export function Button({
@@ -35,12 +54,45 @@ export function Button({
                            iconOnly = false,
                            iconLeft,
                            iconRight,
+                           background,
+                           hoverBackground,
+                           activeBackground,
+                           color,
+                           hoverColor,
+                           activeColor,
+                           borderColor,
+                           hoverBorderColor,
                            className,
+                           style,
                            children,
                            ...props
                        }: ButtonProps) {
 
-    // 构建类名
+    // 将颜色 props 映射到 CSS 变量，undefined 的不会出现在 style 中
+    const colorVars: Record<string, string | undefined> = {
+        '--btn-bg': background,
+        '--btn-bg-hover': hoverBackground,
+        '--btn-bg-active': activeBackground,
+        '--btn-color': color,
+        '--btn-color-hover': hoverColor,
+        '--btn-color-active': activeColor,
+        '--btn-border': borderColor,
+        '--btn-border-hover': hoverBorderColor,
+    };
+
+    // 过滤掉 undefined，只保留用户实际传入的
+    const overrideStyle: React.CSSProperties = {};
+    for (const [key, value] of Object.entries(colorVars)) {
+        if (value !== undefined) {
+            (overrideStyle as any)[key] = value;
+        }
+    }
+
+    const mergedStyle: React.CSSProperties = {
+        ...overrideStyle,
+        ...style,
+    };
+
     const classNames = [
         'fc-btn',
         `fc-btn--${variant}`,
@@ -57,6 +109,7 @@ export function Button({
         <button
             className={classNames}
             disabled={disabled || loading}
+            style={mergedStyle}
             {...props}
         >
             {iconLeft && !loading && (

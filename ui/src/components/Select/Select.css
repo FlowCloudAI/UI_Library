@@ -1,5 +1,12 @@
 /* Select.css */
 .fc-select {
+    /* 组件局部变量 */
+    --select-trigger-bg:             var(--fc-color-bg);
+    --select-trigger-border:         var(--fc-color-border);
+    --select-option-selected-color:  var(--fc-color-primary);
+    --select-option-selected-bg:     var(--fc-color-primary-subtle);
+    --select-option-hover-bg:        var(--fc-color-bg-secondary);
+
     position: relative;
     display: inline-block;
     width: 100%;
@@ -8,12 +15,11 @@
 
 .fc-select__trigger {
     display: flex;
-
     align-items: center;
     justify-content: space-between;
     padding: var(--fc-space-md) var(--fc-space-lg);
-    background: var(--fc-color-bg);
-    border: 1px solid var(--fc-color-border);
+    background: var(--select-trigger-bg);
+    border: 1px solid var(--select-trigger-border);
     border-radius: var(--fc-radius-md);
     cursor: pointer;
     transition: border-color var(--fc-transition), box-shadow var(--fc-transition);
@@ -109,12 +115,12 @@
 
 .fc-select__option:hover,
 .fc-select__option--highlighted {
-    background: var(--fc-color-bg-secondary);
+    background: var(--select-option-hover-bg);
 }
 
 .fc-select__option--selected {
-    color: var(--fc-color-primary);
-    background: var(--fc-color-primary-subtle);
+    color: var(--select-option-selected-color);
+    background: var(--select-option-selected-bg);
 }
 
 .fc-select__option--disabled {

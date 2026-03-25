@@ -9,6 +9,19 @@ interface CheckButtonBase {
     labelRight?: string
     className?: string
     style?: React.CSSProperties
+
+    /* ---- 颜色定制（传入即覆盖，不传走默认样式） ---- */
+
+    /** 未选中时轨道背景色 */
+    trackBackground?: string
+    /** 选中时轨道背景色 */
+    checkedTrackBackground?: string
+    /** 滑块背景色 */
+    thumbBackground?: string
+    /** 滑块内部装饰色（选中时） */
+    thumbDotColor?: string
+    /** 标签文字色 */
+    labelColor?: string
 }
 
 interface ControlledCheckButton extends CheckButtonBase {
@@ -31,6 +44,11 @@ export function CheckButton({
                                 size = 'md',
                                 labelLeft,
                                 labelRight,
+                                trackBackground,
+                                checkedTrackBackground,
+                                thumbBackground,
+                                thumbDotColor,
+                                labelColor,
                                 className = '',
                                 style,
                             }: CheckButtonProps) {
@@ -52,6 +70,26 @@ export function CheckButton({
         }
     }
 
+    const colorVars: Record<string, string | undefined> = {
+        '--check-track-bg': trackBackground,
+        '--check-track-bg-checked': checkedTrackBackground,
+        '--check-thumb-bg': thumbBackground,
+        '--check-thumb-dot-color': thumbDotColor,
+        '--check-label-color': labelColor,
+    }
+
+    const overrideStyle: React.CSSProperties = {}
+    for (const [key, value] of Object.entries(colorVars)) {
+        if (value !== undefined) {
+            (overrideStyle as any)[key] = value
+        }
+    }
+
+    const mergedStyle: React.CSSProperties = {
+        ...overrideStyle,
+        ...style,
+    }
+
     const cls = [
         'fc-check',
         `fc-check--${size}`,
@@ -63,7 +101,7 @@ export function CheckButton({
     return (
         <div
             className={cls}
-            style={style}
+            style={mergedStyle}
             role="switch"
             aria-checked={checked}
             tabIndex={disabled ? -1 : 0}

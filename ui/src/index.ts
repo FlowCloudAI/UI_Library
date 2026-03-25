@@ -21,4 +21,4 @@ export * from "./components/Card/Card"
 export * from "./components/Bar/TabBar"
 export * from "./components/Chat/Chat"
 
-import "./components/index.css"
+import "./style/index.css"

@@ -20,7 +20,7 @@
 
 .fc-slider__track {
     position: relative;
-    background: var(--fc-color-bg-tertiary);
+    background: var(--slider-track-bg, var(--fc-color-bg-tertiary));
     border-radius: var(--fc-radius-full);
     cursor: pointer;
 }
@@ -37,7 +37,7 @@
 
 .fc-slider__fill {
     position: absolute;
-    background: var(--fc-color-primary);
+    background: var(--slider-fill-bg, var(--fc-color-primary));
     border-radius: var(--fc-radius-full);
     transition: all 0.1s;
 }
@@ -50,8 +50,8 @@
     position: absolute;
     width: 16px;
     height: 16px;
-    background: var(--fc-color-bg-elevated);
-    border: 2px solid var(--fc-color-primary);
+    background: var(--slider-thumb-bg, var(--fc-color-bg-elevated));
+    border: 2px solid var(--slider-thumb-border, var(--fc-color-primary));
     border-radius: var(--fc-radius-full);
     transform: translate(-50%, -50%);
     cursor: grab;
@@ -94,8 +94,8 @@
     left: 50%;
     transform: translateX(-50%) translateY(-8px);
     padding: var(--fc-space-xs) var(--fc-space-sm);
-    background: var(--fc-color-bg-elevated);
-    color: var(--fc-color-text);
+    background: var(--slider-tooltip-bg, var(--fc-color-bg-elevated));
+    color: var(--slider-tooltip-color, var(--fc-color-text));
     font-size: var(--fc-font-size-xs);
     border-radius: var(--fc-radius-sm);
     box-shadow: var(--fc-shadow-md);
@@ -131,7 +131,7 @@
 .fc-slider__mark-dot {
     width: 4px;
     height: 4px;
-    background: var(--fc-color-text-tertiary);
+    background: var(--slider-mark-dot-bg, var(--fc-color-text-tertiary));
     border-radius: var(--fc-radius-full);
 }
 
@@ -141,7 +141,7 @@
     left: 50%;
     transform: translateX(-50%);
     font-size: var(--fc-font-size-xs);
-    color: var(--fc-color-text-secondary);
+    color: var(--slider-mark-label-color, var(--fc-color-text-secondary));
     white-space: nowrap;
 }
 
