@@ -1,6 +1,15 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './Chat.css';
 
+// 对话历史接口
+export interface Conversation {
+    id: string;
+    title: string;
+    lastMessage: string;
+    timestamp: Date;
+    messages: Message[];
+}
+
 // 消息类型定义
 export interface Message {
     id: string;
@@ -13,221 +22,106 @@ export interface Message {
 // Chat 组件 Props
 export interface ChatProps {
     messages?: Message[];
-    onSendMessage?: (message: string) => Promise<void> | void;
-    placeholder?: string;
     title?: string;
     height?: string;
-    showHeader?: boolean;
-    showFooter?: boolean;
     loading?: boolean;
-    disabled?: boolean;
-    theme?: 'light' | 'dark';
     userName?: string;
     assistantName?: string;
-    onTyping?: (isTyping: boolean) => void;
-    maxInputLength?: number;
-    autoFocus?: boolean;
     enableCopy?: boolean;
+    conversations?: Conversation[];
+    currentConversationId?: string;
+    onSwitchConversation?: (conversationId: string) => void;
+    onNewConversation?: () => void;
+    onDeleteConversation?: (conversationId: string) => void;
 }
 
 export const Chat: React.FC<ChatProps> = ({
                                               messages = [],
-                                              onSendMessage,
-                                              placeholder = "输入消息...",
                                               title = "AI 助手",
                                               height = "600px",
-                                              showHeader = true,
-                                              showFooter = true,
                                               loading = false,
-                                              disabled = false,
-                                              theme: propTheme,
                                               userName = "我",
                                               assistantName = "AI助手",
-                                              onTyping,
-                                              maxInputLength = 2000,
-                                              autoFocus = true,
-                                              enableCopy = true
+                                              enableCopy = true,
+                                              conversations = [],
+                                              currentConversationId,
+                                              onSwitchConversation,
+                                              onNewConversation,
+                                              onDeleteConversation
                                           }) => {
-    const [inputValue, setInputValue] = useState('');
-    const [isTyping, setIsTyping] = useState(false);
-    const [isSending, setIsSending] = useState(false);
-    const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [copyError, setCopyError] = useState<string | null>(null);
+    const [showHistory, setShowHistory] = useState(false);
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [isMinimized, setIsMinimized] = useState(false);
 
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const historyPanelRef = useRef<HTMLDivElement>(null);
 
-    // 检测当前主题
-    useEffect(() => {
-        if (propTheme) {
-            setCurrentTheme(propTheme);
-        } else {
-            const checkTheme = () => {
-                const dataTheme = document.documentElement.getAttribute('data-theme');
-                if (dataTheme === 'dark') {
-                    setCurrentTheme('dark');
-                } else if (dataTheme === 'light') {
-                    setCurrentTheme('light');
-                } else {
-                    const hasDarkClass = document.documentElement.classList.contains('dark') ||
-                        document.body.classList.contains('dark') ||
-                        document.documentElement.classList.contains('theme-dark') ||
-                        document.body.classList.contains('theme-dark');
-                    setCurrentTheme(hasDarkClass ? 'dark' : 'light');
-                }
-            };
-
-            checkTheme();
-
-            const observer = new MutationObserver(checkTheme);
-            observer.observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['data-theme', 'class']
-            });
-            observer.observe(document.body, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-
-            return () => observer.disconnect();
-        }
-    }, [propTheme]);
+    // 获取当前对话
+    const currentConversation = conversations.find(c => c.id === currentConversationId);
+    const currentTitle = currentConversation?.title || title;
 
     // 自动滚动到底部
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, loading]);
-
-    // 自动聚焦
-    useEffect(() => {
-        if (autoFocus && !disabled && inputRef.current) {
-            inputRef.current.focus();
+        if (messagesContainerRef.current && !showHistory && !isMinimized) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
-    }, [autoFocus, disabled]);
+    }, [messages, loading, showHistory, isMinimized]);
 
     // 清除错误提示
     useEffect(() => {
         if (copyError) {
-            const timer = setTimeout(() => {
-                setCopyError(null);
-            }, 2000);
+            const timer = setTimeout(() => setCopyError(null), 2000);
             return () => clearTimeout(timer);
         }
     }, [copyError]);
 
-    // 复制消息内容
+    // 点击外部关闭历史面板
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showHistory && historyPanelRef.current && !historyPanelRef.current.contains(event.target as Node)) {
+                setShowHistory(false);
+                setDeleteConfirmId(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showHistory]);
+
+    // 复制消息
     const handleCopyMessage = useCallback(async (messageId: string, content: string) => {
         if (!navigator.clipboard) {
             setCopyError('当前浏览器不支持复制功能');
             return;
         }
-
         try {
             await navigator.clipboard.writeText(content);
             setCopiedMessageId(messageId);
-
-            setTimeout(() => {
-                setCopiedMessageId(null);
-            }, 2000);
-        } catch (err) {
-            console.error('复制失败:', err);
-            if (err instanceof Error) {
-                if (err.name === 'NotAllowedError') {
-                    setCopyError('需要剪贴板权限，请允许后重试');
-                } else if (err.name === 'SecurityError') {
-                    setCopyError('出于安全原因，无法复制内容');
-                } else {
-                    setCopyError('复制失败，请重试');
-                }
-            } else {
-                setCopyError('复制失败，请重试');
-            }
-
-            setTimeout(() => {
-                setCopyError(null);
-            }, 3000);
+            setTimeout(() => setCopiedMessageId(null), 2000);
+        } catch {
+            setCopyError('复制失败，请重试');
         }
     }, []);
 
-    // 发送消息
-    const handleSend = useCallback(() => {
-        const trimmedMessage = inputValue.trim();
-        if (!trimmedMessage || disabled || loading || isSending) return;
+    // 处理删除确认
+    const handleDeleteClick = (e: React.MouseEvent, conversationId: string) => {
+        e.stopPropagation();
+        setDeleteConfirmId(conversationId);
+    };
 
-        if (trimmedMessage.length > maxInputLength) {
-            console.warn(`消息超过最大长度限制: ${maxInputLength}`);
-            return;
-        }
+    const handleConfirmDelete = (e: React.MouseEvent, conversationId: string) => {
+        e.stopPropagation();
+        onDeleteConversation?.(conversationId);
+        setDeleteConfirmId(null);
+    };
 
-        setIsSending(true);
-
-        const sendPromise = onSendMessage?.(trimmedMessage);
-
-        if (sendPromise) {
-            void sendPromise
-                .then(() => {
-                    setInputValue('');
-                    if (inputRef.current) {
-                        inputRef.current.style.height = 'auto';
-                    }
-                    if (isTyping) {
-                        setIsTyping(false);
-                        onTyping?.(false);
-                    }
-                })
-                .catch((error) => {
-                    console.error('发送消息失败:', error);
-                })
-                .finally(() => {
-                    setIsSending(false);
-                });
-        } else {
-            setInputValue('');
-            if (inputRef.current) {
-                inputRef.current.style.height = 'auto';
-            }
-            if (isTyping) {
-                setIsTyping(false);
-                onTyping?.(false);
-            }
-            setIsSending(false);
-        }
-    }, [inputValue, disabled, loading, isSending, onSendMessage, maxInputLength, isTyping, onTyping]);
-
-    // 处理键盘事件
-    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-            e.preventDefault();
-            handleSend();
-        }
-    }, [handleSend]);
-
-    // 处理输入变化
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const value = e.target.value;
-
-        if (value.length <= maxInputLength) {
-            setInputValue(value);
-
-            e.target.style.height = 'auto';
-            e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
-
-            const hasContent = value.length > 0;
-            if (hasContent !== isTyping) {
-                setIsTyping(hasContent);
-                onTyping?.(hasContent);
-            }
-        }
-    }, [maxInputLength, isTyping, onTyping]);
-
-    // 格式化时间
-    const formatTime = useCallback((date: Date) => {
-        return new Date(date).toLocaleTimeString('zh-CN', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }, []);
+    const handleCancelDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setDeleteConfirmId(null);
+    };
 
     // 渲染消息
     const renderMessage = (message: Message) => {
@@ -245,87 +139,100 @@ export const Chat: React.FC<ChatProps> = ({
 
         return (
             <div key={message.id} className={`chat-message ${isUser ? 'user' : 'assistant'}`}>
-                {/* 只显示 AI 助手的头像 */}
-                {!isUser && (
-                    <div className="message-avatar">
-                        {assistantName[0]}
-                    </div>
-                )}
                 <div className="message-content-wrapper">
                     <div className="message-header">
-                        <span className="message-sender">
-                            {isUser ? userName : assistantName}
-                        </span>
-                        <span className="message-time">
-                            {formatTime(message.timestamp)}
-                        </span>
+                        <span className="message-sender">{isUser ? userName : assistantName}</span>
                     </div>
                     <div className="message-bubble">
                         <div className="message-text">{message.content}</div>
-                        {message.status === 'sending' && (
-                            <span className="message-status sending">发送中...</span>
+                        {enableCopy && (
+                            <button
+                                className={`copy-btn ${isCopied ? 'copied' : ''}`}
+                                onClick={() => handleCopyMessage(message.id, message.content)}
+                                title={isCopied ? "已复制" : "复制内容"}
+                            >
+                                {isCopied ? (
+                                    <>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                            <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                        <span>已复制</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2"/>
+                                            <path d="M5 15H4C2.9 15 2 14.1 2 13V4C2 2.9 2.9 2 4 2H13C14.1 2 15 2.9 15 4V5" stroke="currentColor" strokeWidth="2"/>
+                                        </svg>
+                                        <span>复制</span>
+                                    </>
+                                )}
+                            </button>
                         )}
-                        {message.status === 'error' && (
-                            <span className="message-status error">发送失败</span>
-                        )}
+                        {message.status === 'sending' && <span className="message-status sending">发送中...</span>}
+                        {message.status === 'error' && <span className="message-status error">发送失败</span>}
                     </div>
-                    {/* 复制按钮 - 放在气泡下方 */}
-                    {enableCopy && (
-                        <button
-                            className={`copy-btn ${isCopied ? 'copied' : ''}`}
-                            onClick={() => handleCopyMessage(message.id, message.content)}
-                            title={isCopied ? "已复制" : "复制内容"}
-                            aria-label={isCopied ? "已复制" : "复制内容"}
-                        >
-                            {isCopied ? (
-                                <>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                    <span>已复制</span>
-                                </>
-                            ) : (
-                                <>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2"/>
-                                        <path d="M5 15H4C2.9 15 2 14.1 2 13V4C2 2.9 2.9 2 4 2H13C14.1 2 15 2.9 15 4V5" stroke="currentColor" strokeWidth="2"/>
-                                    </svg>
-                                    <span>复制</span>
-                                </>
-                            )}
-                        </button>
-                    )}
                 </div>
             </div>
         );
     };
 
-    return (
-        <div className={`chat-container ${currentTheme}`} style={{ height }}>
-            {showHeader && (
-                <div className="chat-header">
-                    <div className="chat-title">{title}</div>
-                    <div className="chat-status">
-                        {(loading || isSending) && <span className="status-dot"></span>}
-                        <span>{(loading || isSending) ? 'AI 正在思考...' : '在线'}</span>
-                    </div>
-                </div>
-            )}
+    // 最小化模式
+    if (isMinimized) {
+        return (
+            <div className="chat-container-minimized">
+                <button
+                    className="restore-btn-only"
+                    onClick={() => setIsMinimized(false)}
+                    title="展开"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                </button>
+            </div>
+        );
+    }
 
-            <div className="chat-messages">
+    return (
+        <div className="chat-container" style={{ height }}>
+            <div className="chat-header">
+                <div className="chat-title">{currentTitle}</div>
+                <div className="chat-header-actions">
+                    <button
+                        className="history-btn"
+                        onClick={() => setShowHistory(!showHistory)}
+                        title="历史对话"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 8V12L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M12 4V2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </button>
+                    <button
+                        className="minimize-btn"
+                        onClick={() => setIsMinimized(true)}
+                        title="最小化"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div className="chat-messages" ref={messagesContainerRef}>
                 {messages.map(renderMessage)}
-                {(loading || isSending) && (
+                {loading && (
                     <div className="chat-message assistant">
-                        <div className="message-avatar">{assistantName[0]}</div>
                         <div className="message-content-wrapper">
                             <div className="message-header">
                                 <span className="message-sender">{assistantName}</span>
                             </div>
                             <div className="message-bubble">
                                 <div className="typing-indicator">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
+                                    <span></span><span></span><span></span>
                                 </div>
                             </div>
                         </div>
@@ -334,49 +241,110 @@ export const Chat: React.FC<ChatProps> = ({
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* 复制错误提示 */}
-            {copyError && (
-                <div className="copy-error-toast">
-                    {copyError}
-                </div>
-            )}
-
-            {showFooter && (
-                <div className="chat-footer">
-                    <div className="chat-input-wrapper">
-                        <textarea
-                            ref={inputRef}
-                            className="chat-input"
-                            value={inputValue}
-                            onChange={handleInputChange}
-                            onKeyDown={handleKeyDown}
-                            placeholder={placeholder}
-                            disabled={disabled || loading || isSending}
-                            rows={1}
-                            maxLength={maxInputLength}
-                            spellCheck={false}
-                            autoCorrect="off"
-                            autoCapitalize="off"
-                            autoComplete="off"
-                        />
+            {/* 历史对话面板 */}
+            {showHistory && (
+                <div className="history-panel" ref={historyPanelRef}>
+                    <div className="history-header">
+                        <h3>历史对话</h3>
                         <button
-                            className={`chat-send-btn ${(!inputValue.trim() || disabled || loading || isSending) ? 'disabled' : ''}`}
-                            onClick={handleSend}
-                            disabled={!inputValue.trim() || disabled || loading || isSending}
+                            className="close-history-btn"
+                            onClick={() => setShowHistory(false)}
                         >
-                            发送
+                            ✕
                         </button>
                     </div>
-                    <div className="chat-tips">
-                        <span>按 Enter 发送，Shift + Enter 换行</span>
-                        {maxInputLength && (
-                            <span className="char-count">
-                                {inputValue.length}/{maxInputLength}
-                            </span>
+                    <div className="history-list">
+                        <button
+                            className="new-conversation-btn-large"
+                            onClick={() => {
+                                onNewConversation?.();
+                                setShowHistory(false);
+                            }}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                            <span>新建对话</span>
+                        </button>
+
+                        {conversations.length === 0 ? (
+                            <div className="empty-history">
+                                <p>暂无历史对话</p>
+                                <p className="empty-hint">点击上方按钮开始新对话</p>
+                            </div>
+                        ) : (
+                            conversations.map(conv => (
+                                <div
+                                    key={conv.id}
+                                    className={`history-item ${currentConversationId === conv.id ? 'active' : ''}`}
+                                    onClick={() => {
+                                        onSwitchConversation?.(conv.id);
+                                        setShowHistory(false);
+                                        setDeleteConfirmId(null);
+                                    }}
+                                >
+                                    <div className="history-item-content">
+                                        <div className="history-item-title">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" strokeWidth="1.5"/>
+                                                <path d="M22 6L12 13L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                            </svg>
+                                            <span>{conv.title}</span>
+                                        </div>
+                                        <div className="history-item-preview">
+                                            {conv.lastMessage}
+                                        </div>
+                                        <div className="history-item-meta">
+                                            <span className="history-time">{new Date(conv.timestamp).toLocaleDateString()}</span>
+                                            <span className="history-count">{conv.messages.length}条消息</span>
+                                        </div>
+                                    </div>
+                                    <div className="history-item-actions">
+                                        {deleteConfirmId === conv.id ? (
+                                            <div className="delete-confirm">
+                                                <button
+                                                    className="confirm-delete"
+                                                    onClick={(e) => handleConfirmDelete(e, conv.id)}
+                                                    title="确认删除"
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                        <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    className="cancel-delete"
+                                                    onClick={handleCancelDelete}
+                                                    title="取消"
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                className="delete-conversation-btn"
+                                                onClick={(e) => handleDeleteClick(e, conv.id)}
+                                                title="删除对话"
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                    <path d="M3 6H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                                    <path d="M19 6V20C19 21.1 18.1 22 17 22H7C5.9 22 5 21.1 5 20V6" stroke="currentColor" strokeWidth="2"/>
+                                                    <path d="M8 6V4C8 2.9 8.9 2 10 2H14C15.1 2 16 2.9 16 4V6" stroke="currentColor" strokeWidth="2"/>
+                                                    <path d="M10 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                                    <path d="M14 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
                 </div>
             )}
+
+            {copyError && <div className="copy-error-toast">{copyError}</div>}
         </div>
     );
 };

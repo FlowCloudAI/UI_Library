@@ -2,7 +2,7 @@ import {Button, ButtonGroup, ButtonToolbar} from "flowcloudai-ui";
 import {
     CheckButton, RollingBox, Input, Select, Slider, SideBar,
     Avatar, ListGroup, ListGroupItem, VirtualList, useAlert,
-    lazyLoad, Card, TabBar, TabItem , Chat
+    lazyLoad, Card, TabBar, TabItem , Chat, SideBarItem
 } from "flowcloudai-ui";
 import { useTheme } from 'flowcloudai-ui';
 import {useEffect, useState, useCallback} from "react";
