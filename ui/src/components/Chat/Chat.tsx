@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import './Chat.css';
 
 // 对话历史接口
@@ -19,38 +19,214 @@ export interface Message {
     status?: 'sending' | 'sent' | 'error';
 }
 
+// 样式配置接口
+export interface ChatTheme {
+    // 颜色配置
+    primaryColor?: string;
+    primaryGradient?: string;
+    userBubbleColor?: string;
+    userBubbleGradient?: string;
+    assistantBubbleColor?: string;
+    headerBgColor?: string;
+    headerBorderColor?: string;
+
+    // 尺寸配置
+    borderRadius?: string | number;
+    headerHeight?: string | number;
+    messageSpacing?: string | number;
+    fontSize?: string | number;
+    titleFontSize?: string | number;
+
+    // 其他配置
+    showTime?: boolean;
+    showHeader?: boolean;
+    showBorder?: boolean;
+    shadow?: string;
+}
+
 // Chat 组件 Props
 export interface ChatProps {
+    // 数据
     messages?: Message[];
     title?: string;
-    height?: string;
     loading?: boolean;
-    userName?: string;
-    assistantName?: string;
-    enableCopy?: boolean;
     conversations?: Conversation[];
     currentConversationId?: string;
+
+    // 文本配置
+    userName?: string;
+    assistantName?: string;
+    emptyText?: string;
+    newConversationText?: string;
+    historyTitle?: string;
+
+    // 功能开关
+    enableCopy?: boolean;
+    showHistoryButton?: boolean;
+    showMinimizeButton?: boolean;
+    showHeader?: boolean;
+    showFooter?: boolean;
+    autoScroll?: boolean;
+
+    // 事件回调
     onSwitchConversation?: (conversationId: string) => void;
     onNewConversation?: () => void;
     onDeleteConversation?: (conversationId: string) => void;
+    onMinimize?: () => void;
+    onRestore?: () => void;
+    onMessageCopy?: (message: Message) => void;
+
+    // 样式自定义
+    className?: string;
+    style?: React.CSSProperties;
+    headerClassName?: string;
+    headerStyle?: React.CSSProperties;
+    messagesClassName?: string;
+    messagesStyle?: React.CSSProperties;
+    bubbleClassName?: string;
+
+    // 主题配置
+    theme?: ChatTheme;
+
+    // 尺寸
+    height?: string | number;
+    width?: string | number;
 }
 
+// 默认主题
+const defaultTheme: ChatTheme = {
+    primaryColor: '#667eea',
+    primaryGradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    userBubbleGradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    assistantBubbleColor: 'var(--fc-color-bg-tertiary)',
+    borderRadius: 12,
+    fontSize: 14,
+    titleFontSize: 16,
+    showTime: false,
+    showBorder: true,
+    shadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+};
+
+// 消息项组件 - 使用 memo 优化性能
+const MessageItem = memo(({
+                              message,
+                              isUser,
+                              userName,
+                              assistantName,
+                              enableCopy,
+                              onCopy,
+                              bubbleClassName
+                          }: any) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(message.content);
+            setCopied(true);
+            onCopy?.(message);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('复制失败:', err);
+        }
+    };
+
+    if (message.type === 'system') {
+        return (
+            <div className="chat-message-system">
+                <span className="system-content">{message.content}</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className={`chat-message ${isUser ? 'user' : 'assistant'}`}>
+            <div className="message-content-wrapper">
+                <div className="message-header">
+                    <span className="message-sender">{isUser ? userName : assistantName}</span>
+                </div>
+                <div className={`message-bubble ${bubbleClassName || ''}`}>
+                    <div className="message-text">{message.content}</div>
+                    {enableCopy && (
+                        <button
+                            className={`copy-btn ${copied ? 'copied' : ''}`}
+                            onClick={handleCopy}
+                            title={copied ? "已复制" : "复制内容"}
+                        >
+                            {copied ? (
+                                <>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                    <span>已复制</span>
+                                </>
+                            ) : (
+                                <>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2"/>
+                                        <path d="M5 15H4C2.9 15 2 14.1 2 13V4C2 2.9 2.9 2 4 2H13C14.1 2 15 2.9 15 4V5" stroke="currentColor" strokeWidth="2"/>
+                                    </svg>
+                                    <span>复制</span>
+                                </>
+                            )}
+                        </button>
+                    )}
+                    {message.status === 'sending' && <span className="message-status sending">发送中...</span>}
+                    {message.status === 'error' && <span className="message-status error">发送失败</span>}
+                </div>
+            </div>
+        </div>
+    );
+});
+
+MessageItem.displayName = 'MessageItem';
+
 export const Chat: React.FC<ChatProps> = ({
+                                              // 数据
                                               messages = [],
                                               title = "AI 助手",
-                                              height = "600px",
                                               loading = false,
-                                              userName = "我",
-                                              assistantName = "AI助手",
-                                              enableCopy = true,
                                               conversations = [],
                                               currentConversationId,
+
+                                              // 文本配置
+                                              userName = "我",
+                                              assistantName = "AI助手",
+                                              emptyText = "暂无历史对话",
+                                              newConversationText = "新建对话",
+                                              historyTitle = "历史对话",
+
+                                              // 功能开关
+                                              enableCopy = true,
+                                              showHistoryButton = true,
+                                              showMinimizeButton = true,
+                                              showHeader = true,
+                                              showFooter = false,
+                                              autoScroll = true,
+
+                                              // 事件回调
                                               onSwitchConversation,
                                               onNewConversation,
-                                              onDeleteConversation
+                                              onDeleteConversation,
+                                              onMinimize,
+                                              onRestore,
+                                              onMessageCopy,
+
+                                              // 样式自定义
+                                              className = "",
+                                              style = {},
+                                              headerClassName = "",
+                                              headerStyle = {},
+                                              messagesClassName = "",
+                                              messagesStyle = {},
+                                              bubbleClassName = "",
+
+                                              // 主题配置
+                                              theme = {},
+
+                                              // 尺寸
+                                              height = "600px",
+                                              width,
                                           }) => {
-    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
-    const [copyError, setCopyError] = useState<string | null>(null);
     const [showHistory, setShowHistory] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
     const [isMinimized, setIsMinimized] = useState(false);
@@ -59,24 +235,22 @@ export const Chat: React.FC<ChatProps> = ({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const historyPanelRef = useRef<HTMLDivElement>(null);
 
+    // 合并主题
+    const mergedTheme = useMemo(() => ({ ...defaultTheme, ...theme }), [theme]);
+
     // 获取当前对话
-    const currentConversation = conversations.find(c => c.id === currentConversationId);
+    const currentConversation = useMemo(() =>
+            conversations.find(c => c.id === currentConversationId),
+        [conversations, currentConversationId]
+    );
     const currentTitle = currentConversation?.title || title;
 
     // 自动滚动到底部
     useEffect(() => {
-        if (messagesContainerRef.current && !showHistory && !isMinimized) {
+        if (autoScroll && messagesContainerRef.current && !showHistory && !isMinimized) {
             messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
-    }, [messages, loading, showHistory, isMinimized]);
-
-    // 清除错误提示
-    useEffect(() => {
-        if (copyError) {
-            const timer = setTimeout(() => setCopyError(null), 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [copyError]);
+    }, [messages, loading, showHistory, isMinimized, autoScroll]);
 
     // 点击外部关闭历史面板
     useEffect(() => {
@@ -91,99 +265,67 @@ export const Chat: React.FC<ChatProps> = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showHistory]);
 
-    // 复制消息
-    const handleCopyMessage = useCallback(async (messageId: string, content: string) => {
-        if (!navigator.clipboard) {
-            setCopyError('当前浏览器不支持复制功能');
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(content);
-            setCopiedMessageId(messageId);
-            setTimeout(() => setCopiedMessageId(null), 2000);
-        } catch {
-            setCopyError('复制失败，请重试');
-        }
-    }, []);
-
     // 处理删除确认
-    const handleDeleteClick = (e: React.MouseEvent, conversationId: string) => {
+    const handleDeleteClick = useCallback((e: React.MouseEvent, conversationId: string) => {
         e.stopPropagation();
         setDeleteConfirmId(conversationId);
-    };
+    }, []);
 
-    const handleConfirmDelete = (e: React.MouseEvent, conversationId: string) => {
+    const handleConfirmDelete = useCallback((e: React.MouseEvent, conversationId: string) => {
         e.stopPropagation();
         onDeleteConversation?.(conversationId);
         setDeleteConfirmId(null);
-    };
+    }, [onDeleteConversation]);
 
-    const handleCancelDelete = (e: React.MouseEvent) => {
+    const handleCancelDelete = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         setDeleteConfirmId(null);
-    };
+    }, []);
 
-    // 渲染消息
-    const renderMessage = (message: Message) => {
-        const isUser = message.type === 'user';
-        const isSystem = message.type === 'system';
-        const isCopied = copiedMessageId === message.id;
+    const handleMinimize = useCallback(() => {
+        setIsMinimized(true);
+        onMinimize?.();
+    }, [onMinimize]);
 
-        if (isSystem) {
-            return (
-                <div key={message.id} className="chat-message-system">
-                    <span className="system-content">{message.content}</span>
-                </div>
-            );
-        }
+    const handleRestore = useCallback(() => {
+        setIsMinimized(false);
+        onRestore?.();
+    }, [onRestore]);
 
-        return (
-            <div key={message.id} className={`chat-message ${isUser ? 'user' : 'assistant'}`}>
-                <div className="message-content-wrapper">
-                    <div className="message-header">
-                        <span className="message-sender">{isUser ? userName : assistantName}</span>
-                    </div>
-                    <div className="message-bubble">
-                        <div className="message-text">{message.content}</div>
-                        {enableCopy && (
-                            <button
-                                className={`copy-btn ${isCopied ? 'copied' : ''}`}
-                                onClick={() => handleCopyMessage(message.id, message.content)}
-                                title={isCopied ? "已复制" : "复制内容"}
-                            >
-                                {isCopied ? (
-                                    <>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                            <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                        </svg>
-                                        <span>已复制</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                            <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2"/>
-                                            <path d="M5 15H4C2.9 15 2 14.1 2 13V4C2 2.9 2.9 2 4 2H13C14.1 2 15 2.9 15 4V5" stroke="currentColor" strokeWidth="2"/>
-                                        </svg>
-                                        <span>复制</span>
-                                    </>
-                                )}
-                            </button>
-                        )}
-                        {message.status === 'sending' && <span className="message-status sending">发送中...</span>}
-                        {message.status === 'error' && <span className="message-status error">发送失败</span>}
-                    </div>
-                </div>
-            </div>
-        );
-    };
+    const handleCopy = useCallback((message: Message) => {
+        onMessageCopy?.(message);
+    }, [onMessageCopy]);
+
+    // 设置 CSS 变量
+    useEffect(() => {
+        const root = document.documentElement;
+        const t = mergedTheme;
+
+        if (t.primaryColor) root.style.setProperty('--chat-primary', t.primaryColor);
+        if (t.primaryGradient) root.style.setProperty('--chat-primary-gradient', t.primaryGradient);
+        if (t.userBubbleGradient) root.style.setProperty('--chat-user-bubble', t.userBubbleGradient);
+        if (t.assistantBubbleColor) root.style.setProperty('--chat-assistant-bubble', t.assistantBubbleColor);
+        if (t.borderRadius) root.style.setProperty('--chat-border-radius', typeof t.borderRadius === 'number' ? `${t.borderRadius}px` : t.borderRadius);
+        if (t.fontSize) root.style.setProperty('--chat-font-size', typeof t.fontSize === 'number' ? `${t.fontSize}px` : t.fontSize);
+        if (t.titleFontSize) root.style.setProperty('--chat-title-font-size', typeof t.titleFontSize === 'number' ? `${t.titleFontSize}px` : t.titleFontSize);
+        if (t.shadow) root.style.setProperty('--chat-shadow', t.shadow);
+        if (t.showBorder === false) root.style.setProperty('--chat-border-width', '0');
+    }, [mergedTheme]);
+
+    // 容器样式
+    const containerStyle = useMemo(() => ({
+        height: typeof height === 'number' ? `${height}px` : height,
+        width: typeof width === 'number' ? `${width}px` : width,
+        ...style
+    }), [height, width, style]);
 
     // 最小化模式
     if (isMinimized) {
         return (
-            <div className="chat-container-minimized">
+            <div className={`chat-container-minimized ${className}`} style={containerStyle}>
                 <button
                     className="restore-btn-only"
-                    onClick={() => setIsMinimized(false)}
+                    onClick={handleRestore}
                     title="展开"
                 >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -195,35 +337,56 @@ export const Chat: React.FC<ChatProps> = ({
     }
 
     return (
-        <div className="chat-container" style={{ height }}>
-            <div className="chat-header">
-                <div className="chat-title">{currentTitle}</div>
-                <div className="chat-header-actions">
-                    <button
-                        className="history-btn"
-                        onClick={() => setShowHistory(!showHistory)}
-                        title="历史对话"
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 8V12L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
-                            <path d="M12 4V2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                    </button>
-                    <button
-                        className="minimize-btn"
-                        onClick={() => setIsMinimized(true)}
-                        title="最小化"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                    </button>
+        <div className={`chat-container ${className}`} style={containerStyle}>
+            {showHeader && (
+                <div className={`chat-header ${headerClassName}`} style={headerStyle}>
+                    <div className="chat-title">{currentTitle}</div>
+                    <div className="chat-header-actions">
+                        {showHistoryButton && (
+                            <button
+                                className="history-btn"
+                                onClick={() => setShowHistory(!showHistory)}
+                                title="历史对话"
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 8V12L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+                                    <path d="M12 4V2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                            </button>
+                        )}
+                        {showMinimizeButton && (
+                            <button
+                                className="minimize-btn"
+                                onClick={handleMinimize}
+                                title="最小化"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                            </button>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
-            <div className="chat-messages" ref={messagesContainerRef}>
-                {messages.map(renderMessage)}
+            <div
+                className={`chat-messages ${messagesClassName}`}
+                ref={messagesContainerRef}
+                style={messagesStyle}
+            >
+                {messages.map(message => (
+                    <MessageItem
+                        key={message.id}
+                        message={message}
+                        isUser={message.type === 'user'}
+                        userName={userName}
+                        assistantName={assistantName}
+                        enableCopy={enableCopy}
+                        onCopy={handleCopy}
+                        bubbleClassName={bubbleClassName}
+                    />
+                ))}
                 {loading && (
                     <div className="chat-message assistant">
                         <div className="message-content-wrapper">
@@ -241,11 +404,17 @@ export const Chat: React.FC<ChatProps> = ({
                 <div ref={messagesEndRef} />
             </div>
 
+            {showFooter && (
+                <div className="chat-footer">
+                    {/* 可自定义的底部区域 */}
+                </div>
+            )}
+
             {/* 历史对话面板 */}
             {showHistory && (
                 <div className="history-panel" ref={historyPanelRef}>
                     <div className="history-header">
-                        <h3>历史对话</h3>
+                        <h3>{historyTitle}</h3>
                         <button
                             className="close-history-btn"
                             onClick={() => setShowHistory(false)}
@@ -264,12 +433,12 @@ export const Chat: React.FC<ChatProps> = ({
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                 <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                             </svg>
-                            <span>新建对话</span>
+                            <span>{newConversationText}</span>
                         </button>
 
                         {conversations.length === 0 ? (
                             <div className="empty-history">
-                                <p>暂无历史对话</p>
+                                <p>{emptyText}</p>
                                 <p className="empty-hint">点击上方按钮开始新对话</p>
                             </div>
                         ) : (
@@ -343,8 +512,6 @@ export const Chat: React.FC<ChatProps> = ({
                     </div>
                 </div>
             )}
-
-            {copyError && <div className="copy-error-toast">{copyError}</div>}
         </div>
     );
 };

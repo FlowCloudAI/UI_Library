@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Chat, Button, useAlert } from 'flowcloudai-ui'
+import { Chat, useAlert } from 'flowcloudai-ui'
 
 interface Message {
     id: string
@@ -43,40 +43,22 @@ export function ChatDemo() {
         await showAlert("消息已发送", "success", "toast", 2000)
     }
 
-    const handleClear = async () => {
-        const res = await showAlert("确定清空聊天记录？", "warning", "confirm")
-        if (res === "yes") {
-            setMessages([{
-                id: Date.now().toString(),
-                content: '聊天记录已清空。',
-                type: 'assistant',
-                timestamp: new Date(),
-            }])
-            await showAlert("已清空", "success", "toast", 2000)
-        }
-    }
-
     return (
         <>
             <div className="demo-section">
                 <h4>AI 对话</h4>
-                <div style={{ height: 500, maxWidth: 800 }}>
+                <div style={{ height: '500px', maxWidth: '800px' }}>
                     <Chat
                         messages={messages}
-                        onSendMessage={handleSend}
                         title="AI 智能助手"
-                        placeholder="输入你的问题，按 Enter 发送..."
                         loading={loading}
                         userName="我"
                         assistantName="AI助手"
-                        maxInputLength={2000}
-                        autoFocus
                         showHeader
                         showFooter
+                        height="500px"
+                        width="100%"
                     />
-                </div>
-                <div style={{ marginTop: 10 }}>
-                    <Button size="sm" onClick={handleClear}>清空记录</Button>
                 </div>
             </div>
         </>
