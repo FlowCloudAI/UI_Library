@@ -1,15 +1,15 @@
-import { SmartMessage } from 'flowcloudai-ui'
+import { SmartMessage } from '../../../ui/src'
 
 export function SmartMessageDemo() {
     const handleCopy = (content: string, role: string) => {
-        console.log(`复制了 ${role} 消息:`, content);
-    };
+        console.log(`复制了 ${role} 消息:`, content)
+    }
 
     return (
         <>
             <div className="demo-section">
                 <h4>消息类型</h4>
-                <div className="demo-row" style={{ flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <SmartMessage
                         id="demo-user"
                         content="这是一条用户消息，带有复制按钮，右对齐显示"
@@ -53,7 +53,7 @@ export function SmartMessageDemo() {
 
             <div className="demo-section">
                 <h4>消息状态</h4>
-                <div className="demo-row" style={{ flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <SmartMessage
                         id="demo-sending"
                         content="消息发送中..."

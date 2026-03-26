@@ -1,3 +1,4 @@
+// ui/src/components/SmartMessage/SmartMessage.tsx
 import React, { useState, memo } from 'react';
 import './SmartMessage.css';
 
@@ -11,17 +12,13 @@ export interface SmartMessageProps {
     role: MessageRole;
     timestamp?: Date;
     status?: 'sending' | 'sent' | 'error';
-    // 工具消息特有属性
     toolName?: string;
     toolResult?: any;
-    // 回调
     onCopy?: (content: string, role: MessageRole) => void;
-    // 自定义样式
     className?: string;
     style?: React.CSSProperties;
 }
 
-// 智能消息组件
 export const SmartMessage: React.FC<SmartMessageProps> = memo(({
                                                                    id,
                                                                    content,
@@ -34,23 +31,19 @@ export const SmartMessage: React.FC<SmartMessageProps> = memo(({
                                                                    className = '',
                                                                    style = {},
                                                                }) => {
+    // ... 组件实现保持不变
     const [copied, setCopied] = useState(false);
 
-    // 格式化时间
     const formattedTime = timestamp
         ? new Date(timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
         : '';
 
-    // 复制消息内容
     const handleCopy = async () => {
         try {
             let copyContent = content;
-
-            // 如果是工具消息，格式化输出
             if (role === 'tool' && toolResult) {
                 copyContent = `工具: ${toolName || '工具调用'}\n结果: ${JSON.stringify(toolResult, null, 2)}`;
             }
-
             await navigator.clipboard.writeText(copyContent);
             setCopied(true);
             onCopy?.(content, role);
@@ -60,12 +53,10 @@ export const SmartMessage: React.FC<SmartMessageProps> = memo(({
         }
     };
 
-    // 判断是否显示复制按钮
     const shouldShowCopyButton = () => {
         return role === 'user' || role === 'assistant';
     };
 
-    // 获取消息容器类名
     const getContainerClassName = () => {
         const baseClass = 'smart-message';
         const roleClass = `smart-message-${role}`;
@@ -73,18 +64,16 @@ export const SmartMessage: React.FC<SmartMessageProps> = memo(({
         return `${baseClass} ${roleClass} ${statusClass} ${className}`.trim();
     };
 
-    // 获取消息内容类名
     const getContentClassName = () => {
         const baseClass = 'smart-message-content';
         const roleContentClass = `smart-message-content-${role}`;
         return `${baseClass} ${roleContentClass}`;
     };
 
-    // 渲染系统消息
     const renderSystemMessage = () => (
         <div className="system-message-wrapper">
             <div className="system-message-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
                     <path d="M12 8V12M12 16H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
@@ -94,12 +83,11 @@ export const SmartMessage: React.FC<SmartMessageProps> = memo(({
         </div>
     );
 
-    // 渲染工具消息
     const renderToolMessage = () => (
         <div className="tool-message-wrapper">
             <div className="tool-message-header">
                 <div className="tool-message-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                         <path d="M14.7 6.3L19 2L22 5L17.7 9.3L14.7 6.3Z" stroke="currentColor" strokeWidth="2"/>
                         <path d="M9.3 17.7L5 22L2 19L6.3 14.7L9.3 17.7Z" stroke="currentColor" strokeWidth="2"/>
                         <path d="M12 12L14.7 9.3M12 12L9.3 14.7M12 12L8 8M12 12L16 16" stroke="currentColor" strokeWidth="2"/>
@@ -123,7 +111,6 @@ export const SmartMessage: React.FC<SmartMessageProps> = memo(({
         </div>
     );
 
-    // 渲染用户/AI 消息
     const renderUserAssistantMessage = () => (
         <>
             <div className="message-header">
@@ -142,14 +129,14 @@ export const SmartMessage: React.FC<SmartMessageProps> = memo(({
                     >
                         {copied ? (
                             <>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                                 </svg>
                                 <span>已复制</span>
                             </>
                         ) : (
                             <>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                     <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2"/>
                                     <path d="M5 15H4C2.9 15 2 14.1 2 13V4C2 2.9 2.9 2 4 2H13C14.1 2 15 2.9 15 4V5" stroke="currentColor" strokeWidth="2"/>
                                 </svg>
@@ -164,7 +151,6 @@ export const SmartMessage: React.FC<SmartMessageProps> = memo(({
         </>
     );
 
-    // 根据角色渲染不同的消息
     const renderMessage = () => {
         switch (role) {
             case 'system':

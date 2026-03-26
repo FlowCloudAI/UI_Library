@@ -1,5 +1,5 @@
 import { useState, type ComponentType } from 'react'
-import { useTheme, CheckButton } from 'flowcloudai-ui'
+import { useTheme, CheckButton } from '../../ui/src'
 import './App.css'
 
 import { ButtonDemo }         from './demos/ButtonDemo'
@@ -17,11 +17,22 @@ import { CardDemo }           from './demos/CardDemo'
 import { MarkdownEditorDemo } from './demos/MarkdownEditorDemo'
 import { TabBarDemo }         from './demos/TabBarDemo'
 import { SideBarDemo }        from './demos/SideBarDemo'
-import { TreeDemo }           from './demos/TreeDemo'
 import { ContextMenuDemo }    from './demos/ContextMenuDemo'
-import { ChatDemo }           from './demos/ChatDemo'
+import ChatDemo from './demos/ChatDemo'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
-import { SmartMessageDemo }   from './demos/SmartMessageDemos'
+import { SmartMessageDemo }   from './demos/SmartMessageDemo'
+
+// TreeDemoWrapper 组件
+const TreeDemoWrapper = () => (
+    <div className="demo-section">
+        <h4>Tree 组件</h4>
+        <div className="demo-row">
+            <div style={{ padding: '20px', background: 'var(--fc-color-bg-secondary)', borderRadius: '8px' }}>
+                Tree 组件演示
+            </div>
+        </div>
+    </div>
+)
 
 /* ===== 导航注册表 ===== */
 
@@ -91,7 +102,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Markdown:    MarkdownEditorDemo,
     TabBar:      TabBarDemo,
     SideBar:     SideBarDemo,
-    Tree:        TreeDemo,
+    Tree:        TreeDemoWrapper,
     ContextMenu: ContextMenuDemo,
     Chat:        ChatDemo,
     LazyLoad:    LazyLoadDemo,
@@ -104,27 +115,30 @@ const DEFAULT_KEY = NAV_GROUPS[0].items[0].key
 /* ===== App ===== */
 
 export default function App() {
-    const [activeDemo, setActiveDemo] = useState(DEFAULT_KEY)
+    const [activeDemo, setActiveDemo] = useState<string>(DEFAULT_KEY)
     const { theme, setTheme } = useTheme()
 
     const ActiveDemo = DEMO_COMPONENTS[activeDemo]
     const activeLabel = ALL_ITEMS.find(i => i.key === activeDemo)?.label ?? ''
 
+    const handleThemeChange = (isDark: boolean) => {
+        setTheme(isDark ? 'dark' : 'light')
+    }
+
     return (
         <div className="app-shell">
-            {/* 顶栏 */}
             <header className="app-topbar">
                 <span className="app-topbar__title">FlowCloud UI</span>
                 <CheckButton
                     checked={theme === 'dark'}
-                    onChange={v => setTheme(v ? 'dark' : 'light')}
-                    labelLeft="亮" labelRight="暗"
+                    onChange={handleThemeChange}
+                    labelLeft="亮"
+                    labelRight="暗"
                     size="sm"
                 />
             </header>
 
             <div className="app-body">
-                {/* 左侧导航 */}
                 <nav className="app-nav">
                     {NAV_GROUPS.map(group => (
                         <div key={group.label} className="app-nav-group">
@@ -142,7 +156,6 @@ export default function App() {
                     ))}
                 </nav>
 
-                {/* 内容区 */}
                 <main className="app-content">
                     <h2 className="app-content-title">{activeLabel}</h2>
                     {ActiveDemo && <ActiveDemo />}

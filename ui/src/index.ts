@@ -1,4 +1,4 @@
-// src/index.ts
+// ui/src/index.ts
 export { ThemeProvider, useTheme } from './ThemeProvider';
 export type { Theme } from './ThemeProvider';
 export * from "./components/Button/Button";
@@ -19,10 +19,10 @@ export * from "./components/Alert/AlertContext"
 export * from "./components/LazyLoad/LazyLoad"
 export * from "./components/Card/Card"
 export * from "./components/Bar/TabBar"
-export * from "./components/Chat/Chat"
 export * from "./components/Tag/TagItem"
 export * from "./components/MarkdownEditor/MarkdownEditor"
 export * from "./components/ContextMenu/ContextMenuContext"
+export * from "./components/Chat/Chat"
 export * from "./components/SmartMessage/SmartMessage"
 
 import "./style/index.css"
