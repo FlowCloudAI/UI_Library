@@ -80,6 +80,10 @@ npx eslint . --max-warnings 0
 
 **Local Linking**: Uses `install-local` npm package to link the local `ui/` package. This is transparent to development—editing `ui/src/` instantly reflects in the app.
 
+**⚠️ Critical Import Rule**: Always import from `flowcloudai-ui` package, NOT from `../../ui/src`. This ensures Context providers (ThemeProvider, AlertProvider, ContextMenuProvider) and their corresponding hooks use the same instance. Importing from `../../ui/src` directly can cause context mismatches and runtime errors like "useTheme must be used within <ThemeProvider>". Examples:
+- ✅ `import { useTheme, CheckButton } from 'flowcloudai-ui'`
+- ❌ `import { useTheme, CheckButton } from '../../ui/src'`
+
 ### Key Dependencies
 
 - **React 19** — Modern React with hooks
