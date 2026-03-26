@@ -1,6 +1,5 @@
-// ui/src/index.ts
-export { ThemeProvider, useTheme } from './ThemeProvider';
-export type { Theme } from './ThemeProvider';
+// src/index.ts
+export * from './ThemeProvider';
 export * from "./components/Button/Button";
 export * from "./components/Button/CheckButton";
 export * from "./components/Box/RollingBox";

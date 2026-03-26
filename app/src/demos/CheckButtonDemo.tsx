@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { CheckButton, useTheme } from 'flowcloudai-ui'
+import { CheckButton } from 'flowcloudai-ui'
 
 export function CheckButtonDemo() {
     const [enabled, setEnabled] = useState(false)
-    const { theme, setTheme } = useTheme()
 
     return (
         <>
@@ -13,11 +12,6 @@ export function CheckButtonDemo() {
                     <CheckButton/>
                     <CheckButton labelLeft="关" labelRight="开"/>
                     <CheckButton checked={enabled} onChange={setEnabled} labelRight="受控状态"/>
-                    <CheckButton
-                        checked={theme === 'dark'}
-                        onChange={v => setTheme(v ? 'dark' : 'light')}
-                        labelLeft="亮色" labelRight="暗色"
-                    />
                 </div>
             </div>
             <div className="demo-section">

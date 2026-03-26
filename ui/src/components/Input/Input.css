@@ -26,25 +26,51 @@
     color: var(--fc-color-text);
     font-size: var(--fc-font-size-md);
     line-height: var(--fc-line-height-tight);
-    outline: none;
+    outline: none !important;
 }
 
 .fc-input__field::placeholder {
     color: var(--fc-color-text-tertiary);
 }
 
-/* 尺寸 */
+/* 尺寸 - 调整 padding 使内容区与 wrapper 高度严格对齐 */
 .fc-input--xs .fc-input__wrapper { height: 1.75rem; }
-.fc-input--xs .fc-input__field { font-size: var(--fc-font-size-xs); padding: 0 var(--fc-space-sm); }
-.fc-input--sm .fc-input__wrapper { height: 2rem; }
-.fc-input--sm .fc-input__field { font-size: var(--fc-font-size-sm); }
-.fc-input--md .fc-input__wrapper { height: 2.5rem; }
-.fc-input--lg .fc-input__wrapper { height: 3rem; }
-.fc-input--lg .fc-input__field { font-size: var(--fc-font-size-lg); }
-.fc-input--xl .fc-input__wrapper { height: 3.5rem; }
-.fc-input--xl .fc-input__field { font-size: var(--fc-font-size-xl); }
+.fc-input--xs .fc-input__field {
+    font-size: var(--fc-font-size-xs);
+    padding: 0 var(--fc-space-sm);
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
 
-/* 状态 */
+.fc-input--sm .fc-input__wrapper { height: 2rem; }
+.fc-input--sm .fc-input__field {
+    font-size: var(--fc-font-size-sm);
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+}
+
+.fc-input--md .fc-input__wrapper { height: 2.5rem; }
+.fc-input--md .fc-input__field {
+    font-size: var(--fc-font-size-md);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.fc-input--lg .fc-input__wrapper { height: 3rem; }
+.fc-input--lg .fc-input__field {
+    font-size: var(--fc-font-size-lg);
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+}
+
+.fc-input--xl .fc-input__wrapper { height: 3.5rem; }
+.fc-input--xl .fc-input__field {
+    font-size: var(--fc-font-size-xl);
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+/* 状态样式 */
 .fc-input--error .fc-input__wrapper {
     border-color: var(--fc-color-danger);
     background: var(--fc-color-danger-bg);
@@ -58,13 +84,33 @@
     background: var(--fc-color-success-bg);
 }
 
+/* Hover 状态 */
 .fc-input:not(.fc-input--disabled):hover .fc-input__wrapper {
     border-color: var(--fc-color-border-hover);
 }
-.fc-input:not(.fc-input--disabled) .fc-input__field:focus ~ .fc-input__wrapper,
-.fc-input__wrapper:focus-within {
-    border-color: var(--fc-color-border-focus);
-    box-shadow: 0 0 0 3px var(--fc-color-primary-subtle);
+
+/*
+ * Focus 状态 - 只保留 border-color 变化，彻底消除"多圈"
+ * 方案：仅改变边框颜色，不加任何 shadow/outline
+ */
+.fc-input:not(.fc-input--disabled) .fc-input__wrapper:focus-within {
+    border-color: var(--fc-color-primary);
+    /* 可选：极轻量的外发光，不形成可见边框 */
+    box-shadow: 0 0 0 2px var(--fc-color-primary-subtle);
+}
+
+/* 状态与 focus 的组合 - 同样只改 border */
+.fc-input--error .fc-input__wrapper:focus-within {
+    border-color: var(--fc-color-danger);
+    box-shadow: 0 0 0 2px var(--fc-color-danger);
+}
+.fc-input--warning .fc-input__wrapper:focus-within {
+    border-color: var(--fc-color-warning);
+    box-shadow: 0 0 0 2px var(--fc-color-warning);
+}
+.fc-input--success .fc-input__wrapper:focus-within {
+    border-color: var(--fc-color-success);
+    box-shadow: 0 0 0 2px var(--fc-color-success);
 }
 
 /* 前缀后缀 */
@@ -78,7 +124,7 @@
     white-space: nowrap;
 }
 
-.fc-input__prefix { margin-left: var(--fc-space-md); margin-right: var(--fc-space-sm); }
+.fc-input__prefix { padding-left: var(--fc-space-md); margin-right: var(--fc-space-xs); }
 .fc-input__suffix { margin-right: var(--fc-space-md); margin-left: var(--fc-space-sm); }
 
 .fc-input__actions {
@@ -145,9 +191,9 @@
     font-size: var(--fc-font-size-xs);
     color: var(--fc-color-text-secondary);
 }
-.fc-input__helper--error { color: var(--fc-color-danger); }
-.fc-input__helper--warning { color: var(--fc-color-warning); }
-.fc-input__helper--success { color: var(--fc-color-success); }
+.fc-input--error .fc-input__helper { color: var(--fc-color-danger); }
+.fc-input--warning .fc-input__helper { color: var(--fc-color-warning); }
+.fc-input--success .fc-input__helper { color: var(--fc-color-success); }
 
 /* Disabled */
 .fc-input--disabled {

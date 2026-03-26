@@ -1,5 +1,5 @@
 import { useState, type ComponentType } from 'react'
-import { useTheme, CheckButton } from '../../ui/src'
+import { useTheme, CheckButton } from 'flowcloudai-ui'
 import './App.css'
 
 import { ButtonDemo }         from './demos/ButtonDemo'

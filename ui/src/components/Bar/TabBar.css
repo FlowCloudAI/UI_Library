@@ -266,7 +266,6 @@
 .fc-tab-bar__add-btn:hover {
     color: var(--fc-color-primary);
     background-color: var(--fc-color-bg-tertiary);
-    transform: rotate(90deg);
 }
 
 /* floating 模式下新增按钮也居中 */

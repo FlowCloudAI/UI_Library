@@ -92,11 +92,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
                 <span className="fc-input__addon fc-input__addon--before">{addonBefore}</span>
             )}
 
-            {prefix && (
-                <span className="fc-input__prefix">{prefix}</span>
-            )}
-
             <div className="fc-input__wrapper">
+                {prefix && (
+                    <span className="fc-input__prefix">{prefix}</span>
+                )}
+
                 {input}
 
                 <span className="fc-input__actions">
