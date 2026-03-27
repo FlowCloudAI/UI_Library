@@ -3,7 +3,7 @@
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    max-width: 80%;
+    max-width: 100%;
     animation: fadeIn 0.3s ease;
 }
 
@@ -28,9 +28,12 @@
     border-radius: 12px;
     padding: 8px 12px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    width: auto;
+    max-width: 100%;
+    word-wrap: break-word;
+    word-break: break-word;
 }
 
-/* 修正：使用已定义的主题变量 */
 .smart-message--user .smart-message-content-wrapper {
     background: var(--fc-color-primary, #667eea);
     color: white;
@@ -117,7 +120,7 @@
     color: #52c41a;
 }
 
-/* 复制按钮样式 */
+/* 复制按钮样式 - 在消息内部时使用（当 hideCopyButton=false 时显示） */
 .smart-message-copy-btn {
     background: transparent;
     border: none;
@@ -138,7 +141,7 @@
 
 .smart-message-copy-btn:hover {
     opacity: 1 !important;
-    background: var(--fc-color-bg-tertiary, #e8e8e8);
+    background: rgba(0, 0, 0, 0.05);
     transform: scale(1.05);
 }
 
@@ -170,11 +173,12 @@
 /* 响应式 */
 @media (max-width: 768px) {
     .smart-message {
-        max-width: 90%;
+        max-width: 100%;
     }
 
     .smart-message-content-wrapper {
         padding: 6px 10px;
+        max-width: 100%;
     }
 
     .smart-message-copy-btn {

@@ -14,14 +14,13 @@ export interface SmartMessageProps {
     onCopy?: (content: string, role: MessageRole) => void;
     className?: string;
     style?: React.CSSProperties;
-    hideCopyButton?: boolean;  // 新增：是否隐藏复制按钮
+    hideCopyButton?: boolean;
 }
 
 export const SmartMessage: React.FC<SmartMessageProps> = ({
                                                               id,
                                                               content,
                                                               role,
-                                                              timestamp,
                                                               status,
                                                               toolName,
                                                               toolResult,
@@ -42,14 +41,6 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
             console.error('复制失败:', err);
         }
     }, [content, role, onCopy]);
-
-    const formatTime = (date?: Date) => {
-        if (!date) return '';
-        return new Date(date).toLocaleTimeString('zh-CN', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
 
     const getStatusIcon = () => {
         switch (status) {
@@ -74,7 +65,6 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
     // 判断是否显示复制按钮
     const shouldShowCopyButton = () => {
         if (hideCopyButton) return false;
-        // 系统消息不显示复制按钮
         return role !== 'system';
 
     };
@@ -100,9 +90,6 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
                 </div>
 
                 <div className="smart-message-footer">
-                    {timestamp && (
-                        <span className="smart-message-time">{formatTime(timestamp)}</span>
-                    )}
                     {getStatusIcon()}
                 </div>
             </div>

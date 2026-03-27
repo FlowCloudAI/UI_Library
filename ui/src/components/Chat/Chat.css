@@ -50,7 +50,7 @@
     gap: 10px;
 }
 
-/* 功能按钮通用样式 - 合并所有按钮样式 */
+/* 功能按钮通用样式 */
 .minimize-btn,
 .history-btn,
 .restore-btn-only {
@@ -374,51 +374,6 @@
     transform: scale(1.1);
 }
 
-.delete-confirm {
-    display: flex;
-    gap: 8px;
-    animation: fadeIn 0.2s ease;
-}
-
-.confirm-delete,
-.cancel-delete {
-    padding: 4px;
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.confirm-delete {
-    background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
-}
-
-.confirm-delete:hover {
-    transform: scale(1.1);
-    box-shadow: 0 2px 8px rgba(82, 196, 26, 0.4);
-}
-
-.cancel-delete {
-    background: linear-gradient(135deg, #f5222d 0%, #ff4d4f 100%);
-}
-
-.cancel-delete:hover {
-    transform: scale(1.1);
-    box-shadow: 0 2px 8px rgba(245, 34, 45, 0.4);
-}
-
-.confirm-delete svg,
-.cancel-delete svg {
-    stroke: white;
-    width: 14px;
-    height: 14px;
-}
-
 .empty-history {
     text-align: center;
     padding: 40px 20px;
@@ -441,45 +396,45 @@
 }
 
 /* ========================================
-   消息包装器样式（带外部复制按钮）
+   消息包装器样式（复制按钮紧贴气泡）
    ======================================== */
 
-/* 消息包装器 */
+/* 消息包装器 - 宽度由内部内容决定 */
 .message-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    width: 100%;
+    position: relative;
 }
 
 /* 用户消息：整体靠右 */
 .message-wrapper--user {
-    align-items: flex-end;
+    align-self: flex-end;
 }
 
 /* AI消息：整体靠左 */
 .message-wrapper--assistant {
-    align-items: flex-start;
+    align-self: flex-start;
 }
 
-/* 复制按钮包装器 - 始终显示 */
+/* 复制按钮包装器 - 紧贴气泡 */
 .message-copy-wrapper {
     display: flex;
+    margin-top: 4px;
 }
 
-/* 左侧消息（AI）：复制按钮靠右显示 */
+/* 左侧消息（AI）：复制按钮在气泡右下角 */
 .message-copy-wrapper--assistant {
     justify-content: flex-end;
     padding-right: 8px;
 }
 
-/* 右侧消息（用户）：复制按钮靠左显示 */
+/* 右侧消息（用户）：复制按钮在气泡左下角 */
 .message-copy-wrapper--user {
     justify-content: flex-start;
     padding-left: 8px;
 }
 
-/* 复制按钮样式 - 背景透明，悬停有阴影 */
+/* 复制按钮样式 */
 .message-copy-btn {
     display: inline-flex;
     align-items: center;
@@ -500,9 +455,10 @@
 }
 
 .message-copy-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.08);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-1px);
+    color: var(--fc-color-text, #333);
 }
 
 .message-copy-btn:active {
