@@ -56,7 +56,7 @@ export interface ChatProps {
 
 export const Chat: React.FC<ChatProps> = ({
                                               messages = [],
-                                              title = "AI 助手",
+                                              title = "流云AI",
                                               loading = false,
                                               conversations = [],
                                               currentConversationId,
@@ -140,6 +140,46 @@ export const Chat: React.FC<ChatProps> = ({
         ...style
     }), [height, width, style]);
 
+    // 渲染单条消息（带外部复制按钮）
+    const renderMessageWithCopy = (message: Message) => {
+        const isUser = message.type === 'user';
+
+        return (
+            <div
+                key={message.id}
+                className={`message-wrapper message-wrapper--${isUser ? 'user' : 'assistant'}`}
+            >
+                {/* 消息气泡 - 隐藏内部复制按钮 */}
+                <SmartMessage
+                    id={message.id}
+                    content={message.content}
+                    role={message.type}
+                    timestamp={message.timestamp}
+                    status={message.status}
+                    toolName={message.toolName}
+                    toolResult={message.toolResult}
+                    onCopy={handleCopy}
+                    className={bubbleClassName}
+                    hideCopyButton={true}
+                />
+
+                {/* 外部复制按钮 */}
+                <div className={`message-copy-wrapper message-copy-wrapper--${isUser ? 'user' : 'assistant'}`}>
+                    <button
+                        className="message-copy-btn"
+                        onClick={() => handleCopy(message.content)}
+                        title="复制内容"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"
+                                  fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     if (isMinimized) {
         return (
             <div className={`chat-container-minimized ${className}`} style={containerStyle}>
@@ -178,20 +218,7 @@ export const Chat: React.FC<ChatProps> = ({
             )}
 
             <div className={`chat-messages ${messagesClassName}`} ref={messagesContainerRef} style={messagesStyle}>
-                {messages.map(message => (
-                    <SmartMessage
-                        key={message.id}
-                        id={message.id}
-                        content={message.content}
-                        role={message.type}
-                        timestamp={message.timestamp}
-                        status={message.status}
-                        toolName={message.toolName}
-                        toolResult={message.toolResult}
-                        onCopy={handleCopy}
-                        className={bubbleClassName}
-                    />
-                ))}
+                {messages.map(message => renderMessageWithCopy(message))}
                 {loading && (
                     <div className="typing-wrapper">
                         <div className="typing-indicator">

@@ -1,11 +1,8 @@
-// ui/src/components/SmartMessage/SmartMessage.tsx
-import React, { useState, memo } from 'react';
+import React, { useState, useCallback } from 'react';
 import './SmartMessage.css';
 
-// 消息类型定义
 export type MessageRole = 'user' | 'assistant' | 'system' | 'tool';
 
-// 消息接口
 export interface SmartMessageProps {
     id: string;
     content: string;
@@ -17,160 +14,118 @@ export interface SmartMessageProps {
     onCopy?: (content: string, role: MessageRole) => void;
     className?: string;
     style?: React.CSSProperties;
+    hideCopyButton?: boolean;  // 新增：是否隐藏复制按钮
 }
 
-export const SmartMessage: React.FC<SmartMessageProps> = memo(({
-                                                                   id,
-                                                                   content,
-                                                                   role,
-                                                                   timestamp,
-                                                                   status,
-                                                                   toolName,
-                                                                   toolResult,
-                                                                   onCopy,
-                                                                   className = '',
-                                                                   style = {},
-                                                               }) => {
-    // ... 组件实现保持不变
+export const SmartMessage: React.FC<SmartMessageProps> = ({
+                                                              id,
+                                                              content,
+                                                              role,
+                                                              timestamp,
+                                                              status,
+                                                              toolName,
+                                                              toolResult,
+                                                              onCopy,
+                                                              className = '',
+                                                              style = {},
+                                                              hideCopyButton = false,
+                                                          }) => {
     const [copied, setCopied] = useState(false);
 
-    const formattedTime = timestamp
-        ? new Date(timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-        : '';
-
-    const handleCopy = async () => {
+    const handleCopy = useCallback(async () => {
         try {
-            let copyContent = content;
-            if (role === 'tool' && toolResult) {
-                copyContent = `工具: ${toolName || '工具调用'}\n结果: ${JSON.stringify(toolResult, null, 2)}`;
-            }
-            await navigator.clipboard.writeText(copyContent);
+            await navigator.clipboard.writeText(content);
             setCopied(true);
             onCopy?.(content, role);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
             console.error('复制失败:', err);
         }
+    }, [content, role, onCopy]);
+
+    const formatTime = (date?: Date) => {
+        if (!date) return '';
+        return new Date(date).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     };
 
-    const shouldShowCopyButton = () => {
-        return role === 'user' || role === 'assistant';
-    };
-
-    const getContainerClassName = () => {
-        const baseClass = 'smart-message';
-        const roleClass = `smart-message-${role}`;
-        const statusClass = status ? `smart-message-${status}` : '';
-        return `${baseClass} ${roleClass} ${statusClass} ${className}`.trim();
-    };
-
-    const getContentClassName = () => {
-        const baseClass = 'smart-message-content';
-        const roleContentClass = `smart-message-content-${role}`;
-        return `${baseClass} ${roleContentClass}`;
-    };
-
-    const renderSystemMessage = () => (
-        <div className="system-message-wrapper">
-            <div className="system-message-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M12 8V12M12 16H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-            </div>
-            <div className="system-message-text">{content}</div>
-            {formattedTime && <div className="system-message-time">{formattedTime}</div>}
-        </div>
-    );
-
-    const renderToolMessage = () => (
-        <div className="tool-message-wrapper">
-            <div className="tool-message-header">
-                <div className="tool-message-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M14.7 6.3L19 2L22 5L17.7 9.3L14.7 6.3Z" stroke="currentColor" strokeWidth="2"/>
-                        <path d="M9.3 17.7L5 22L2 19L6.3 14.7L9.3 17.7Z" stroke="currentColor" strokeWidth="2"/>
-                        <path d="M12 12L14.7 9.3M12 12L9.3 14.7M12 12L8 8M12 12L16 16" stroke="currentColor" strokeWidth="2"/>
-                    </svg>
-                </div>
-                <span className="tool-message-name">{toolName || '工具调用'}</span>
-            </div>
-            <div className="tool-message-content">
-                <div className="tool-message-params">
-                    <strong>参数:</strong>
-                    <pre>{content}</pre>
-                </div>
-                {toolResult && (
-                    <div className="tool-message-result">
-                        <strong>结果:</strong>
-                        <pre>{typeof toolResult === 'object' ? JSON.stringify(toolResult, null, 2) : toolResult}</pre>
-                    </div>
-                )}
-            </div>
-            {formattedTime && <div className="tool-message-time">{formattedTime}</div>}
-        </div>
-    );
-
-    const renderUserAssistantMessage = () => (
-        <>
-            <div className="message-header">
-                <span className="message-sender">
-                    {role === 'user' ? '我' : 'AI助手'}
-                </span>
-                {formattedTime && <span className="message-time">{formattedTime}</span>}
-            </div>
-            <div className={getContentClassName()}>
-                <div className="message-text">{content}</div>
-                {shouldShowCopyButton() && (
-                    <button
-                        className={`copy-btn ${copied ? 'copied' : ''}`}
-                        onClick={handleCopy}
-                        title={copied ? "已复制" : "复制内容"}
-                    >
-                        {copied ? (
-                            <>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                </svg>
-                                <span>已复制</span>
-                            </>
-                        ) : (
-                            <>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2"/>
-                                    <path d="M5 15H4C2.9 15 2 14.1 2 13V4C2 2.9 2.9 2 4 2H13C14.1 2 15 2.9 15 4V5" stroke="currentColor" strokeWidth="2"/>
-                                </svg>
-                                <span>复制</span>
-                            </>
-                        )}
-                    </button>
-                )}
-                {status === 'sending' && <span className="message-status sending">发送中...</span>}
-                {status === 'error' && <span className="message-status error">发送失败</span>}
-            </div>
-        </>
-    );
-
-    const renderMessage = () => {
-        switch (role) {
-            case 'system':
-                return renderSystemMessage();
-            case 'tool':
-                return renderToolMessage();
-            case 'user':
-            case 'assistant':
+    const getStatusIcon = () => {
+        switch (status) {
+            case 'sending':
+                return <span className="smart-message-status sending">⏳</span>;
+            case 'error':
+                return <span className="smart-message-status error">⚠️</span>;
+            case 'sent':
+                return <span className="smart-message-status sent">✓</span>;
             default:
-                return renderUserAssistantMessage();
+                return null;
         }
     };
 
+    const getMessageClass = () => {
+        const baseClass = 'smart-message';
+        const roleClass = `smart-message--${role}`;
+        const statusClass = status ? `smart-message--${status}` : '';
+        return `${baseClass} ${roleClass} ${statusClass} ${className}`.trim();
+    };
+
+    // 判断是否显示复制按钮
+    const shouldShowCopyButton = () => {
+        if (hideCopyButton) return false;
+        // 系统消息不显示复制按钮
+        return role !== 'system';
+
+    };
+
     return (
-        <div className={getContainerClassName()} style={style} data-message-id={id}>
-            {renderMessage()}
+        <div className={getMessageClass()} style={style} data-message-id={id}>
+            <div className="smart-message-content-wrapper">
+                {toolName && (
+                    <div className="smart-message-tool-info">
+                        <span className="smart-message-tool-icon">🔧</span>
+                        <span className="smart-message-tool-name">{toolName}</span>
+                    </div>
+                )}
+
+                <div className="smart-message-content">
+                    {role === 'tool' && toolResult ? (
+                        <pre className="smart-message-tool-result">
+                            {JSON.stringify(toolResult, null, 2)}
+                        </pre>
+                    ) : (
+                        <div className="smart-message-text">{content}</div>
+                    )}
+                </div>
+
+                <div className="smart-message-footer">
+                    {timestamp && (
+                        <span className="smart-message-time">{formatTime(timestamp)}</span>
+                    )}
+                    {getStatusIcon()}
+                </div>
+            </div>
+
+            {shouldShowCopyButton() && (
+                <button
+                    className="smart-message-copy-btn"
+                    onClick={handleCopy}
+                    title="复制内容"
+                >
+                    {copied ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                    ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" fill="currentColor"/>
+                        </svg>
+                    )}
+                </button>
+            )}
         </div>
     );
-});
-
-SmartMessage.displayName = 'SmartMessage';
+};
 
 export default SmartMessage;

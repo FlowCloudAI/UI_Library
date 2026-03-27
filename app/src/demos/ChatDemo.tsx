@@ -15,7 +15,7 @@ export default function ChatDemo() {
     const [messages] = useState<Message[]>([
         {
             id: '1',
-            content: '你好！我是 AI 助手，有什么可以帮助你的吗？呜哩哇啦叽咕吧啦四大伊萨尼日利亚福利哇啦哦西吧！私密密西密西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西西',
+            content: '你好！我是 流云AI 助手，有什么可以帮助你的吗？',
             type: 'assistant',
             timestamp: new Date(),
         },
@@ -35,7 +35,7 @@ export default function ChatDemo() {
                 <div style={{height: '500px', maxWidth: '800px'}}>
                     <Chat
                         messages={messages}
-                        title="AI 智能助手"
+                        title="流云AI"
                         loading={loading}
                         showHeader
                         showFooter

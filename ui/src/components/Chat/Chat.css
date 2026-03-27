@@ -274,7 +274,7 @@
     gap: 8px;
     padding: 12px 16px;
     margin-bottom: 16px;
-    background: var(--chat-primary-gradient);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     border-radius: 12px;
     font-size: 14px;
@@ -440,7 +440,76 @@
     background: transparent;
 }
 
-/* 响应式 */
+/* ========================================
+   消息包装器样式（带外部复制按钮）
+   ======================================== */
+
+/* 消息包装器 */
+.message-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+/* 用户消息：整体靠右 */
+.message-wrapper--user {
+    align-items: flex-end;
+}
+
+/* AI消息：整体靠左 */
+.message-wrapper--assistant {
+    align-items: flex-start;
+}
+
+/* 复制按钮包装器 - 始终显示 */
+.message-copy-wrapper {
+    display: flex;
+}
+
+/* 左侧消息（AI）：复制按钮靠右显示 */
+.message-copy-wrapper--assistant {
+    justify-content: flex-end;
+    padding-right: 8px;
+}
+
+/* 右侧消息（用户）：复制按钮靠左显示 */
+.message-copy-wrapper--user {
+    justify-content: flex-start;
+    padding-left: 8px;
+}
+
+/* 复制按钮样式 - 背景透明，悬停有阴影 */
+.message-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--fc-color-text-secondary, #666);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.message-copy-btn svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+}
+
+.message-copy-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.message-copy-btn:active {
+    transform: translateY(0);
+}
+
+/* 响应式调整 */
 @media (max-width: 768px) {
     .chat-header {
         padding: 12px 16px;
@@ -466,6 +535,15 @@
     .restore-btn-only svg {
         width: 16px;
         height: 16px;
+    }
+
+    .message-copy-btn {
+        padding: 4px;
+    }
+
+    .message-copy-btn svg {
+        width: 12px;
+        height: 12px;
     }
 }
 
