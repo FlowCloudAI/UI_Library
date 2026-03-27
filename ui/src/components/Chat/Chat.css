@@ -510,3 +510,17 @@
         transition: none !important;
     }
 }
+
+/* 系统消息容器 - 确保居中 */
+.system-message-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* 工具消息容器 */
+.tool-message-container {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+}

@@ -14,7 +14,6 @@ export interface SmartMessageProps {
     onCopy?: (content: string, role: MessageRole) => void;
     className?: string;
     style?: React.CSSProperties;
-    hideCopyButton?: boolean;
 }
 
 export const SmartMessage: React.FC<SmartMessageProps> = ({
@@ -27,7 +26,6 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
                                                               onCopy,
                                                               className = '',
                                                               style = {},
-                                                              hideCopyButton = false,
                                                           }) => {
     const [copied, setCopied] = useState(false);
 
@@ -42,19 +40,6 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
         }
     }, [content, role, onCopy]);
 
-    const getStatusIcon = () => {
-        switch (status) {
-            case 'sending':
-                return <span className="smart-message-status sending">⏳</span>;
-            case 'error':
-                return <span className="smart-message-status error">⚠️</span>;
-            case 'sent':
-                return <span className="smart-message-status sent">✓</span>;
-            default:
-                return null;
-        }
-    };
-
     const getMessageClass = () => {
         const baseClass = 'smart-message';
         const roleClass = `smart-message--${role}`;
@@ -64,34 +49,49 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
 
     // 判断是否显示复制按钮
     const shouldShowCopyButton = () => {
-        if (hideCopyButton) return false;
-        return role !== 'system';
+        return role === 'user' || role === 'assistant';
+    };
 
+    // 根据角色渲染不同的内容
+    const renderContent = () => {
+        switch (role) {
+            case 'tool':
+                return (
+                    <>
+                        {toolName && (
+                            <div className="smart-message-tool-info">
+                                <span className="smart-message-tool-icon">🔧</span>
+                                <span className="smart-message-tool-name">{toolName}</span>
+                            </div>
+                        )}
+                        <div className="smart-message-content">
+                            <pre className="smart-message-tool-result">
+                                {JSON.stringify(toolResult || content, null, 2)}
+                            </pre>
+                        </div>
+                    </>
+                );
+
+            case 'system':
+                return (
+                    <div className="smart-message-content">
+                        <div className="smart-message-text system-text">{content}</div>
+                    </div>
+                );
+
+            default:
+                return (
+                    <div className="smart-message-content">
+                        <div className="smart-message-text">{content}</div>
+                    </div>
+                );
+        }
     };
 
     return (
         <div className={getMessageClass()} style={style} data-message-id={id}>
             <div className="smart-message-content-wrapper">
-                {toolName && (
-                    <div className="smart-message-tool-info">
-                        <span className="smart-message-tool-icon">🔧</span>
-                        <span className="smart-message-tool-name">{toolName}</span>
-                    </div>
-                )}
-
-                <div className="smart-message-content">
-                    {role === 'tool' && toolResult ? (
-                        <pre className="smart-message-tool-result">
-                            {JSON.stringify(toolResult, null, 2)}
-                        </pre>
-                    ) : (
-                        <div className="smart-message-text">{content}</div>
-                    )}
-                </div>
-
-                <div className="smart-message-footer">
-                    {getStatusIcon()}
-                </div>
+                {renderContent()}
             </div>
 
             {shouldShowCopyButton() && (
