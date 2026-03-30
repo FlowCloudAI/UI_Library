@@ -28,6 +28,16 @@ export function InputDemo() {
                     <Input size="lg" placeholder="大 (lg)"/>
                 </div>
             </div>
+            <div className="demo-section">
+                <h4>圆角</h4>
+                <div className="demo-col" style={{ maxWidth: 400 }}>
+                    <Input radius="none" placeholder="无圆角 (none)"/>
+                    <Input radius="sm"   placeholder="sm"/>
+                    <Input radius="md"   placeholder="md（默认）"/>
+                    <Input radius="lg"   placeholder="lg"/>
+                    <Input radius="full" placeholder="胶囊形 (full)"/>
+                </div>
+            </div>
         </>
     )
 }

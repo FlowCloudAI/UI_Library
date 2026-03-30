@@ -566,26 +566,97 @@ export function MyComponent() {
 
 ### CSS 变量
 
-组件使用 CSS 变量实现主题，可在全局样式中覆盖：
+组件使用 CSS 变量实现主题，可在全局样式中覆盖。完整变量列表见 `ui/src/style/index.css`，常用变量如下：
+
+| 变量 | 说明 |
+|------|------|
+| `--fc-color-primary` | 主色 |
+| `--fc-color-bg` | 页面背景色 |
+| `--fc-color-bg-secondary` | 次级背景色（导航栏、ghost 按钮 hover 等） |
+| `--fc-color-bg-tertiary` | 三级背景色（secondary 按钮 hover 等） |
+| `--fc-color-text` | 主文字色 |
+| `--fc-color-border` | 边框色 |
+| `--fc-radius-md` | 默认圆角 |
+| `--fc-font-family` | 字体 |
+
+---
+
+## 🖌️ 自定义 CSS 变量注入
+
+### 注入机制
+
+库的 CSS 通过 JS 模块自动注入（`import from 'flowcloudai-ui'` 触发）。**CSS 注入有严格的顺序要求**，写错位置的覆盖会静默失效。
+
+### 正确做法：独立覆盖文件，最后导入
+
+创建 `src/theme-override.css`，并在 `main.tsx` 中于 `flowcloudai-ui` **之后**导入：
+
+```typescript
+// main.tsx
+import { ThemeProvider } from 'flowcloudai-ui'  // 库 CSS 在此注入
+import './theme-override.css'                    // 覆盖必须在之后，否则被库 CSS 覆盖
+```
 
 ```css
+/* theme-override.css */
 :root {
-  --fc-color-primary: #007bff;
-  --fc-color-secondary: #6c757d;
-  --fc-color-success: #28a745;
-  --fc-color-danger: #dc3545;
-  --fc-color-warning: #ffc107;
-  --fc-color-info: #17a2b8;
-  /* ... 更多变量 */
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fc-color-primary: #0d6efd;
-    /* ... 暗色主题变量 */
-  }
+    --fc-color-primary: #e8711a;
+    --fc-color-primary-hover: #c05a12;
+    --fc-color-primary-active: #994810;
+    --fc-color-primary-subtle: var(--fc-orange-50);
 }
 ```
+
+### 注意：带 `!important` 的变量需特殊处理
+
+库的 `.theme-light` / `.theme-dark` class 对部分变量使用了 `!important`（如 `--fc-color-bg-secondary`）。
+普通 `:root` 声明**无法覆盖** `!important`，必须在相同选择器下对抗：
+
+```css
+/* theme-override.css */
+:root {
+    /* 未加 !important 的变量可直接覆盖 */
+    --fc-color-primary: #e8711a;
+}
+
+/* 加了 !important 的变量必须在相同选择器下覆盖 */
+.theme-light, [data-theme="light"] {
+    --fc-color-bg-secondary: #ffd6b0 !important;
+    --fc-color-bg-tertiary:  #ffbc80 !important;
+}
+.theme-dark, [data-theme="dark"] {
+    --fc-color-bg-secondary: #5a2d0c !important;
+    --fc-color-bg-tertiary:  #3d1a06 !important;
+}
+```
+
+### 各变量影响范围
+
+修改全局变量会间接影响引用它的组件局部变量（两级引用链）：
+
+```
+--fc-color-bg-secondary
+  └── Button .fc-btn--ghost    → --btn-bg-hover（ghost 按钮 hover 背景）
+  └── Button .fc-btn（默认）   → --btn-bg-hover（默认按钮 hover 背景）
+  └── 导航栏、侧边栏背景
+
+--fc-color-bg-tertiary
+  └── Button .fc-btn--secondary → --btn-bg-hover（secondary 按钮 hover 背景）
+
+--fc-color-primary
+  └── Button .fc-btn--primary   → --btn-bg、--btn-bg-hover、--btn-border
+  └── 导航选中项背景、链接色、焦点边框
+```
+
+### 常见误区
+
+| 写法 | 结果 | 原因 |
+|------|------|------|
+| `App.css` 里写 `:root {}` | ❌ 失效 | 库 CSS 注入更晚，后来者居上 |
+| `App.css` 里 `@import` 库再覆盖 | ❌ 失效 | 库 CSS 仍通过 JS 二次注入并覆盖 |
+| `main.tsx` 最后 import 覆盖文件 | ✅ 生效 | 注入顺序正确 |
+| `:root` 覆盖有 `!important` 的变量 | ❌ 失效 | `!important` 不受顺序影响 |
+| 相同选择器 + `!important` 覆盖 | ✅ 生效 | 同优先级时后来者居上 |
 
 ---
 

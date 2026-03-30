@@ -10,6 +10,13 @@ export interface MarkdownEditorProps {
     onAiComplete?: () => void;
     minHeight?:   number;
     placeholder?: string;
+    /**
+     * 显示模式
+     * - edit:    纯编辑（默认）
+     * - preview: 纯预览，只读渲染 Markdown
+     * - live:    左编辑右预览双栏
+     */
+    mode?: 'edit' | 'preview' | 'live';
     /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
     background?:      string;
     toolbarBackground?: string;
@@ -42,6 +49,7 @@ export function MarkdownEditor({
     onAiComplete,
     minHeight   = 200,
     placeholder = "在此输入内容...",
+    mode        = "edit",
     background,
     toolbarBackground,
     borderColor,
@@ -84,7 +92,7 @@ export function MarkdownEditor({
                 commands={TOOLBAR_COMMANDS}
                 extraCommands={extraCommands}
                 height={minHeight}
-                preview="edit"
+                preview={mode}
                 visibleDragbar={false}
                 textareaProps={{ placeholder }}
             />

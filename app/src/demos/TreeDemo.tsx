@@ -1,6 +1,10 @@
 import {useState} from 'react'
 import {Tree, flatToTree, type DropPosition} from 'flowcloudai-ui'
 
+const NAV_MIN = 180
+const NAV_MAX = 600
+const NAV_DEFAULT = 280
+
 let _nextId = 328
 const genId = () => String(++_nextId);
 
@@ -15,6 +19,23 @@ export function TreeDemo() {
     const [rows, setRows] = useState<FlatRow[]>(INITIAL_ROWS)
     const [selectedKey, setSelectedKey] = useState<string | undefined>(undefined)
     const [log, setLog] = useState<string[]>([])
+    const [navWidth, setNavWidth] = useState(NAV_DEFAULT)
+
+    const handleDividerMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault()
+        const startX = e.clientX
+        const startWidth = navWidth
+        const onMove = (ev: MouseEvent) => {
+            const next = Math.min(NAV_MAX, Math.max(NAV_MIN, startWidth + ev.clientX - startX))
+            setNavWidth(next)
+        }
+        const onUp = () => {
+            document.removeEventListener('mousemove', onMove)
+            document.removeEventListener('mouseup', onUp)
+        }
+        document.addEventListener('mousemove', onMove)
+        document.addEventListener('mouseup', onUp)
+    }
 
     const addLog = (msg: string) =>
         setLog(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 12))
@@ -149,57 +170,78 @@ export function TreeDemo() {
     return (
         <div className="demo-section">
             <h4>分类树（拖拽排序 / 重命名 / 增删）</h4>
-            <div style={{height: 600}}>
-                <div style={{display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap'}}>
-                    <div style={{
-                        width: 500,
-                        border: '1px solid var(--fc-color-border, #e2e8f0)',
-                        borderRadius: 8,
-                        overflow: 'hidden',
-                        flexShrink: 0,
-                    }}>
-                        <Tree
-                            treeData={roots}
-                            selectedKey={selectedKey}
-                            scrollHeight="600px"
-                            onSelect={key => {
-                                setSelectedKey(key);
-                                addLog(`选中 [${key}]`)
-                            }}
-                            onRename={handleRename}
-                            onCreate={handleCreate}
-                            onDelete={handleDelete}
-                            onMove={handleMove}
-                            searchable
-                        />
-                    </div>
+            <div style={{display: 'flex', height: 600, overflow: 'hidden', border: '1px solid var(--fc-color-border, #e2e8f0)', borderRadius: 8}}>
 
+                {/* 导航区 */}
+                <div style={{width: navWidth, flexShrink: 0, overflow: 'hidden'}}>
+                    <Tree
+                        treeData={roots}
+                        selectedKey={selectedKey}
+                        scrollHeight="600px"
+                        onSelect={key => {
+                            setSelectedKey(key)
+                            addLog(`选中 [${key}]`)
+                        }}
+                        onRename={handleRename}
+                        onCreate={handleCreate}
+                        onDelete={handleDelete}
+                        onMove={handleMove}
+                        searchable
+                    />
+                </div>
+
+                {/* 分隔手柄 */}
+                <div
+                    onMouseDown={handleDividerMouseDown}
+                    style={{
+                        width: 5,
+                        flexShrink: 0,
+                        cursor: 'col-resize',
+                        background: 'var(--fc-color-border, #e2e8f0)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'background 150ms',
+                        userSelect: 'none',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--fc-color-primary, #6366f1)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--fc-color-border, #e2e8f0)')}
+                >
                     <div style={{
-                        flex: 1,
-                        minWidth: 220,
-                        border: '1px solid var(--fc-color-border, #e2e8f0)',
-                        borderRadius: 8,
-                        padding: '12px 16px',
-                        fontSize: 13,
-                    }}>
-                        <div style={{fontWeight: 600, marginBottom: 8}}>操作日志</div>
-                        {log.length === 0 && (
-                            <div style={{color: '#94a3b8', fontSize: 12}}>
-                                试试展开、新建、重命名、拖拽或删除分类
-                            </div>
-                        )}
-                        {log.map((entry, i) => (
-                            <div key={i} style={{
-                                padding: '4px 0',
-                                borderBottom: '1px solid var(--fc-color-border, #f1f5f9)',
-                                color: i === 0 ? 'var(--fc-color-text)' : '#94a3b8',
-                                fontSize: 12,
-                                fontFamily: 'monospace',
-                            }}>
-                                {entry}
-                            </div>
-                        ))}
-                    </div>
+                        width: 3,
+                        height: 32,
+                        borderRadius: 9999,
+                        background: 'currentColor',
+                        opacity: 0.4,
+                        pointerEvents: 'none',
+                    }}/>
+                </div>
+
+                {/* 内容区 */}
+                <div style={{
+                    flex: 1,
+                    overflow: 'auto',
+                    padding: '12px 16px',
+                    fontSize: 13,
+                    borderLeft: 'none',
+                }}>
+                    <div style={{fontWeight: 600, marginBottom: 8}}>操作日志</div>
+                    {log.length === 0 && (
+                        <div style={{color: '#94a3b8', fontSize: 12}}>
+                            试试展开、新建、重命名、拖拽或删除分类
+                        </div>
+                    )}
+                    {log.map((entry, i) => (
+                        <div key={i} style={{
+                            padding: '4px 0',
+                            borderBottom: '1px solid var(--fc-color-border, #f1f5f9)',
+                            color: i === 0 ? 'var(--fc-color-text)' : '#94a3b8',
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                        }}>
+                            {entry}
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>

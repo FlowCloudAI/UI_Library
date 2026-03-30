@@ -18,21 +18,10 @@ import { MarkdownEditorDemo } from './demos/MarkdownEditorDemo'
 import { TabBarDemo }         from './demos/TabBarDemo'
 import { SideBarDemo }        from './demos/SideBarDemo'
 import { ContextMenuDemo }    from './demos/ContextMenuDemo'
-import ChatDemo from './demos/ChatDemo'
+import ChatDemo            from './demos/ChatDemo'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
 import { SmartMessageDemo }   from './demos/SmartMessageDemo'
-
-// TreeDemoWrapper 组件
-const TreeDemoWrapper = () => (
-    <div className="demo-section">
-        <h4>Tree 组件</h4>
-        <div className="demo-row">
-            <div style={{ padding: '20px', background: 'var(--fc-color-bg-secondary)', borderRadius: '8px' }}>
-                Tree 组件演示
-            </div>
-        </div>
-    </div>
-)
+import { TreeDemo }           from './demos/TreeDemo'
 
 /* ===== 导航注册表 ===== */
 
@@ -102,7 +91,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Markdown:    MarkdownEditorDemo,
     TabBar:      TabBarDemo,
     SideBar:     SideBarDemo,
-    Tree:        TreeDemoWrapper,
+    Tree:        TreeDemo,
     ContextMenu: ContextMenuDemo,
     Chat:        ChatDemo,
     LazyLoad:    LazyLoadDemo,

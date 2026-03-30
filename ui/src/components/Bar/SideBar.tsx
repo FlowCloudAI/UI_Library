@@ -20,6 +20,8 @@ export interface SideBarItem {
 export interface SideBarProps {
     /** 菜单项列表（受控） */
     items: SideBarItem[];
+    /** 底部固定菜单项（如设置、退出），始终显示在侧边栏底部 */
+    bottomItems?: SideBarItem[];
     /** 当前选中的 key（受控） */
     selectedKey: string;
     /** 是否折叠（受控） */
@@ -90,6 +92,7 @@ SideBarItemView.displayName = 'SideBarItemView';
 
 export const SideBar = memo<SideBarProps>(({
                                                items,
+                                               bottomItems,
                                                selectedKey,
                                                collapsed,
                                                width = 240,
@@ -160,6 +163,19 @@ export const SideBar = memo<SideBarProps>(({
                     />
                 ))}
             </nav>
+
+            {bottomItems && bottomItems.length > 0 && (
+                <div className="fc-sidebar__footer">
+                    {bottomItems.map((item) => (
+                        <SideBarItemView
+                            key={item.key}
+                            item={item}
+                            isSelected={selectedKey === item.key}
+                            onClick={handleClick}
+                        />
+                    ))}
+                </div>
+            )}
         </aside>
     );
 });

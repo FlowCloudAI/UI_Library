@@ -4,10 +4,13 @@ import * as React from "react";
 
 type InputSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 type InputStatus = 'default' | 'error' | 'warning' | 'success';
+type InputRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
 interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix'> {
     size?: InputSize;
     status?: InputStatus;
+    /** 圆角大小，不传则使用默认值 md */
+    radius?: InputRadius;
     prefix?: React.ReactNode;
     suffix?: React.ReactNode;
     allowClear?: boolean;
@@ -21,6 +24,7 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
                                                                          size = 'md',
                                                                          status = 'default',
+                                                                         radius,
                                                                          prefix,
                                                                          suffix,
                                                                          allowClear = false,
@@ -66,6 +70,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
         'fc-input',
         `fc-input--${size}`,
         `fc-input--${status}`,
+        radius && `fc-input--radius-${radius}`,
         (prefix || addonBefore) && 'fc-input--has-prefix',
         (suffix || addonAfter || showClear || showPasswordToggle) && 'fc-input--has-suffix',
         addonBefore && 'fc-input--addon-before',

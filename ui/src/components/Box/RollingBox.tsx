@@ -88,6 +88,20 @@ export function RollingBox({
         };
     }, []);
 
+    // 水平模式：将鼠标滚轮的纵向滚动映射为横向滚动
+    // wheel 事件需要 passive: false 才能 preventDefault()
+    React.useEffect(() => {
+        const el = containerRef.current;
+        if (!el || !horizontal) return;
+        const handler = (e: WheelEvent) => {
+            if (e.deltaY === 0) return;
+            e.preventDefault();
+            el.scrollLeft += e.deltaY;
+        };
+        el.addEventListener('wheel', handler, { passive: false });
+        return () => el.removeEventListener('wheel', handler);
+    }, [horizontal]);
+
     const resolvedDirection = horizontal ? 'horizontal' : 'vertical';
 
     const classNames = [

@@ -11,8 +11,11 @@ const menuItems: SideBarItem[] = [
     { key: 'home', label: '首页', icon: HomeIcon },
     { key: 'search', label: '搜索', icon: SearchIcon },
     { key: 'profile', label: '个人', icon: UserIcon },
-    { key: 'settings', label: '设置', icon: SettingsIcon },
     { key: 'disabled', label: '禁用项', icon: HomeIcon, disabled: true },
+]
+
+const bottomMenuItems: SideBarItem[] = [
+    { key: 'settings', label: '设置', icon: SettingsIcon },
 ]
 
 const demoWrap: CSSProperties = {
@@ -30,10 +33,11 @@ export function SideBarDemo() {
     return (
         <>
             <div className="demo-section">
-                <h4>基础（可折叠）</h4>
+                <h4>基础（可折叠）+ 底部固定项</h4>
                 <div style={demoWrap}>
                     <SideBar
                         items={menuItems}
+                        bottomItems={bottomMenuItems}
                         selectedKey={selectedKey}
                         collapsed={collapsed}
                         onSelect={setSelectedKey}

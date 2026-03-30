@@ -1,0 +1,17 @@
+/*
+:root {
+    --fc-color-primary: #e8711a;
+    --fc-color-primary-hover: #c05a12;
+    --fc-color-primary-active: #994810;
+    --fc-color-primary-subtle: var(--fc-orange-50);
+}
+
+/* --fc-color-bg-secondary 在 index.css 的 .theme-light/.theme-dark 里用了 !important，
+   :root 无法覆盖它，必须在相同选择器里设置 
+.theme-light, [data-theme="light"] {
+    --fc-color-bg-secondary: #ffd6b0 !important;
+}
+.theme-dark, [data-theme="dark"] {
+    --fc-color-bg-secondary: #5a2d0c !important;
+}
+*/

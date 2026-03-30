@@ -42,6 +42,14 @@ export function SelectDemo() {
                 </div>
             </div>
             <div className="demo-section">
+                <h4>圆角</h4>
+                <div className="demo-col" style={{ maxWidth: 360 }}>
+                    <Select radius="none" options={[{ value: '1', label: '无圆角 (none)' }, { value: '2', label: '选项2' }]}/>
+                    <Select radius="md"   options={[{ value: '1', label: 'md（默认）' }, { value: '2', label: '选项2' }]}/>
+                    <Select radius="full" options={[{ value: '1', label: '胶囊形 (full)' }, { value: '2', label: '选项2' }]}/>
+                </div>
+            </div>
+            <div className="demo-section">
                 <h4>颜色 / 禁用</h4>
                 <div className="demo-col" style={{ maxWidth: 360 }}>
                     <Select

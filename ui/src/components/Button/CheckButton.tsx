@@ -1,10 +1,14 @@
 import './CheckButton.css'
 import * as React from 'react'
 
+type CheckButtonRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
+
 interface CheckButtonBase {
     onChange?: (checked: boolean) => void
     disabled?: boolean
     size?: 'sm' | 'md' | 'lg'
+    /** 轨道圆角，默认 full（胶囊形） */
+    radius?: CheckButtonRadius
     labelLeft?: string
     labelRight?: string
     className?: string
@@ -42,6 +46,7 @@ export function CheckButton({
                                 onChange,
                                 disabled = false,
                                 size = 'md',
+                                radius,
                                 labelLeft,
                                 labelRight,
                                 trackBackground,
@@ -93,6 +98,7 @@ export function CheckButton({
     const cls = [
         'fc-check',
         `fc-check--${size}`,
+        radius && `fc-check--radius-${radius}`,
         checked   && 'fc-check--checked',
         disabled  && 'fc-check--disabled',
         className,

@@ -36,6 +36,23 @@ export function ButtonDemo() {
                 </div>
             </div>
             <div className="demo-section">
+                <h4>圆角</h4>
+                <div className="demo-row" style={{ alignItems: 'center' }}>
+                    <Button radius="none">无圆角</Button>
+                    <Button radius="sm">sm</Button>
+                    <Button radius="md">md</Button>
+                    <Button radius="lg">lg</Button>
+                    <Button radius="xl">xl</Button>
+                    <Button radius="full">full</Button>
+                </div>
+                <div className="demo-row" style={{ alignItems: 'center' }}>
+                    <Button variant="outline" size="sm" radius="none">无</Button>
+                    <Button variant="outline" size="sm" radius="full">胶囊</Button>
+                    <Button variant="secondary" size="lg" radius="none">无圆角大按钮</Button>
+                    <Button variant="secondary" size="lg" radius="full">胶囊大按钮</Button>
+                </div>
+            </div>
+            <div className="demo-section">
                 <h4>组合</h4>
                 <div className="demo-col">
                     <div className="demo-row">

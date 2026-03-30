@@ -9,6 +9,8 @@ interface SelectOption {
     group?: string;
 }
 
+type SelectRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
+
 interface SelectProps {
     options: SelectOption[];
     value?: string | number | (string | number)[];
@@ -18,6 +20,8 @@ interface SelectProps {
     searchable?: boolean;
     multiple?: boolean;
     disabled?: boolean;
+    /** 圆角大小，触发器和下拉框同步改变 */
+    radius?: SelectRadius;
     className?: string;
     style?: React.CSSProperties;
     virtualScroll?: boolean;
@@ -46,6 +50,7 @@ export function Select({
                            searchable = false,
                            multiple = false,
                            disabled = false,
+                           radius,
                            className = '',
                            style,
                            virtualScroll = false,
@@ -164,6 +169,7 @@ export function Select({
         isOpen && 'fc-select--open',
         multiple && 'fc-select--multiple',
         disabled && 'fc-select--disabled',
+        radius && `fc-select--radius-${radius}`,
         className
     ].filter(Boolean).join(' ');
 

@@ -23,6 +23,16 @@ export function CheckButtonDemo() {
                 </div>
             </div>
             <div className="demo-section">
+                <h4>圆角</h4>
+                <div className="demo-row" style={{ alignItems: 'center' }}>
+                    <CheckButton radius="none" labelRight="none"/>
+                    <CheckButton radius="sm"   labelRight="sm"/>
+                    <CheckButton radius="md"   labelRight="md"/>
+                    <CheckButton radius="lg"   labelRight="lg"/>
+                    <CheckButton radius="full" labelRight="full（默认）"/>
+                </div>
+            </div>
+            <div className="demo-section">
                 <h4>自定义颜色 / 禁用</h4>
                 <div className="demo-col">
                     <CheckButton labelColor="#533236" thumbBackground="#f1f1f1" labelRight="自定义文字色"/>

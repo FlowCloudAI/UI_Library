@@ -1,4 +1,6 @@
 /* ===== Demo Shell Layout ===== */
+/* NOTE: flowcloudai-ui/style is injected via the JS module import in main.tsx.
+   Theme variable overrides live in theme-override.css (imported last in main.tsx). */
 
 .app-shell {
     display: flex;

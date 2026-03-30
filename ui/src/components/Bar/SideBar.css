@@ -63,7 +63,14 @@
 .fc-sidebar__menu {
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
     padding: var(--fc-space-sm, 8px) 0;
+}
+
+/* ========== Footer ========== */
+.fc-sidebar__footer {
+    padding: var(--fc-space-sm, 8px) 0;
+    border-top: 1px solid var(--fc-color-border);
 }
 
 /* ========== Menu Item ========== */

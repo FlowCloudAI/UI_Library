@@ -14,7 +14,7 @@
     flex: 1;
     background: var(--fc-color-bg);
     border: 1px solid var(--fc-color-border);
-    border-radius: var(--fc-radius-md);
+    border-radius: var(--input-radius, var(--fc-radius-md));
     transition: border-color var(--fc-transition), box-shadow var(--fc-transition);
 }
 
@@ -165,13 +165,21 @@
 }
 
 .fc-input__addon--before {
-    border-radius: var(--fc-radius-md) 0 0 var(--fc-radius-md);
+    border-radius: var(--input-radius, var(--fc-radius-md)) 0 0 var(--input-radius, var(--fc-radius-md));
     border-right: none;
 }
 .fc-input__addon--after {
-    border-radius: 0 var(--fc-radius-md) var(--fc-radius-md) 0;
+    border-radius: 0 var(--input-radius, var(--fc-radius-md)) var(--input-radius, var(--fc-radius-md)) 0;
     border-left: none;
 }
+
+/* ---------- 圆角变体（写在尺寸之后，同优先级时胜出） ---------- */
+.fc-input--radius-none { --input-radius: 0px; }
+.fc-input--radius-sm   { --input-radius: var(--fc-radius-sm, 4px); }
+.fc-input--radius-md   { --input-radius: var(--fc-radius-md, 8px); }
+.fc-input--radius-lg   { --input-radius: var(--fc-radius-lg, 12px); }
+.fc-input--radius-xl   { --input-radius: var(--fc-radius-xl, 16px); }
+.fc-input--radius-full { --input-radius: var(--fc-radius-full, 9999px); }
 
 .fc-input--addon-before .fc-input__wrapper {
     border-top-left-radius: 0;

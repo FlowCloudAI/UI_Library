@@ -5,13 +5,14 @@
 .fc-btn {
     /* 组件局部变量 - 各变体只覆写这里 */
     --btn-bg: transparent;
-    --btn-bg-hover: var(--fc-color-bg-secondary, #f3f4f6);
+    --btn-bg-hover: var(--fc-color-bg-secondary, #c3c4c6);
     --btn-bg-active: var(--fc-color-bg-tertiary, #e5e7eb);
     --btn-color: var(--fc-color-text, #111827);
     --btn-color-hover: var(--btn-color);
     --btn-color-active: var(--fc-color-text-secondary, #6b7280);
     --btn-border: transparent;
     --btn-border-hover: transparent;
+    --btn-radius: var(--fc-radius-md, 8px);
 
     display: inline-flex;
     align-items: center;
@@ -22,7 +23,7 @@
     font-size: var(--fc-font-size-md, 16px);
     font-weight: var(--fc-font-weight-medium, 500);
     line-height: var(--fc-line-height-tight, 1.25);
-    border-radius: var(--fc-radius-md, 8px);
+    border-radius: var(--btn-radius);
     border: 1px solid var(--btn-border);
     cursor: pointer;
     text-decoration: none;
@@ -173,32 +174,40 @@
 .fc-btn--xs {
     padding: var(--fc-space-xs, 4px) var(--fc-space-sm, 8px);
     font-size: var(--fc-font-size-xs, 12px);
-    border-radius: var(--fc-radius-sm, 4px);
+    --btn-radius: var(--fc-radius-sm, 4px);
 }
 
 .fc-btn--sm {
     padding: var(--fc-space-sm, 8px) var(--fc-space-md, 12px);
     font-size: var(--fc-font-size-sm, 14px);
-    border-radius: var(--fc-radius-sm, 4px);
+    --btn-radius: var(--fc-radius-sm, 4px);
 }
 
 .fc-btn--md {
     padding: var(--fc-space-md, 12px) var(--fc-space-lg, 16px);
     font-size: var(--fc-font-size-md, 16px);
-    border-radius: var(--fc-radius-md, 8px);
+    --btn-radius: var(--fc-radius-md, 8px);
 }
 
 .fc-btn--lg {
     padding: var(--fc-space-lg, 16px) var(--fc-space-xl, 20px);
     font-size: var(--fc-font-size-lg, 18px);
-    border-radius: var(--fc-radius-lg, 12px);
+    --btn-radius: var(--fc-radius-lg, 12px);
 }
 
 .fc-btn--xl {
     padding: var(--fc-space-xl, 20px) var(--fc-space-2xl, 24px);
     font-size: var(--fc-font-size-xl, 20px);
-    border-radius: var(--fc-radius-lg, 12px);
+    --btn-radius: var(--fc-radius-lg, 12px);
 }
+
+/* ---------- 圆角变体（写在 size 之后，同优先级时胜出） ---------- */
+.fc-btn--radius-none { --btn-radius: 0px; }
+.fc-btn--radius-sm   { --btn-radius: var(--fc-radius-sm, 4px); }
+.fc-btn--radius-md   { --btn-radius: var(--fc-radius-md, 8px); }
+.fc-btn--radius-lg   { --btn-radius: var(--fc-radius-lg, 12px); }
+.fc-btn--radius-xl   { --btn-radius: var(--fc-radius-xl, 16px); }
+.fc-btn--radius-full { --btn-radius: var(--fc-radius-full, 9999px); }
 
 /* ---------- 形状与宽度 ---------- */
 .fc-btn--square,

@@ -20,7 +20,7 @@
     padding: var(--fc-space-md) var(--fc-space-lg);
     background: var(--select-trigger-bg);
     border: 1px solid var(--select-trigger-border);
-    border-radius: var(--fc-radius-md);
+    border-radius: var(--select-radius, var(--fc-radius-md));
     cursor: pointer;
     transition: border-color var(--fc-transition), box-shadow var(--fc-transition);
 }
@@ -62,11 +62,19 @@
     margin-top: var(--fc-space-xs);
     background: var(--fc-color-bg-elevated);
     border: 1px solid var(--fc-color-border);
-    border-radius: var(--fc-radius-md);
+    border-radius: var(--select-radius, var(--fc-radius-md));
     box-shadow: var(--fc-shadow-lg);
     z-index: var(--fc-z-dropdown);
     overflow: hidden;
 }
+
+/* ---------- 圆角变体 ---------- */
+.fc-select--radius-none { --select-radius: 0px; }
+.fc-select--radius-sm   { --select-radius: var(--fc-radius-sm, 4px); }
+.fc-select--radius-md   { --select-radius: var(--fc-radius-md, 8px); }
+.fc-select--radius-lg   { --select-radius: var(--fc-radius-lg, 12px); }
+.fc-select--radius-xl   { --select-radius: var(--fc-radius-xl, 16px); }
+.fc-select--radius-full { --select-radius: var(--fc-radius-full, 9999px); }
 
 /* Search */
 .fc-select__search {

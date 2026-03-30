@@ -3,12 +3,15 @@ import * as React from "react";
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+type ButtonRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /** 按钮变体 */
     variant?: ButtonVariant;
     /** 尺寸 */
     size?: ButtonSize;
+    /** 圆角大小，不传则跟随 size 默认值 */
+    radius?: ButtonRadius;
     /** 是否禁用 */
     disabled?: boolean;
     /** 加载状态 */
@@ -47,6 +50,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export function Button({
                            variant = 'primary',
                            size = 'md',
+                           radius,
                            disabled = false,
                            loading = false,
                            block = false,
@@ -97,6 +101,7 @@ export function Button({
         'fc-btn',
         `fc-btn--${variant}`,
         `fc-btn--${size}`,
+        radius && `fc-btn--radius-${radius}`,
         block && 'fc-btn--block',
         circle && 'fc-btn--circle',
         iconOnly && 'fc-btn--icon-only',
