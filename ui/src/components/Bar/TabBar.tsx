@@ -1,7 +1,7 @@
 // src/components/TabBar/TabBar.tsx
-import React, { useRef, useCallback, memo, useState, useEffect } from 'react';
+import React, {useRef, useCallback, memo, useState, useEffect} from 'react';
 import './TabBar.css';
-import { RollingBox } from '../Box/RollingBox';
+import {RollingBox} from '../Box/RollingBox';
 
 /* ========== 类型定义 ========== */
 
@@ -46,6 +46,12 @@ export interface TabBarProps {
      * @default 0.07
      */
     minWidthRatio?: number;
+    /**
+     * Tab 最大宽度比例（相对 window.innerWidth）。
+     * 在固定模式下，单个 Tab 的宽度不会超过此值，防止子项很少时占满过多空间。
+     * @default 0.15
+     */
+    maxTabWidthRatio?: number;
 
     /* ---- 回调 ---- */
 
@@ -134,7 +140,7 @@ const TabItemView = memo<TabItemViewProps>(({
 
     // 计算是否需要紧凑模式：当 tabWidth 小于临界值时（padding*2 + gap + close = 6*2 + 8 + 18 = 38px）
     // 保留一些余量，设置为 42px
-    const isCompact = tabWidth !== undefined && tabWidth < 50;
+    const isCompact = tabWidth !== undefined && tabWidth < 42;
 
     const classes = [
         'fc-tab-bar__tab',
@@ -146,7 +152,7 @@ const TabItemView = memo<TabItemViewProps>(({
     ].filter(Boolean).join(' ');
 
     const mergedStyle: React.CSSProperties = {
-        ...(tabWidth !== undefined ? { width: tabWidth, boxSizing: 'border-box', flexShrink: 0 } : undefined),
+        ...(tabWidth !== undefined ? {width: tabWidth, boxSizing: 'border-box', flexShrink: 0} : undefined),
         ...tabStyle,
         ...(isActive ? activeTabStyle : undefined),
     };
@@ -173,7 +179,7 @@ const TabItemView = memo<TabItemViewProps>(({
                     className="fc-tab-bar__tab-close"
                     onClick={(e) => onClose(e, item.key)}
                     role="button"
-                    aria-label={`关闭 ${false ? item.label : ''}`}
+                    aria-label={`关闭`}
                 >
                     {renderCloseIcon ? renderCloseIcon(item.key) : '×'}
                 </span>
@@ -196,6 +202,7 @@ export const TabBar = memo<TabBarProps>(({
                                              addable = false,
                                              draggable = false,
                                              minWidthRatio = 0.07,
+                                             maxTabWidthRatio = 0.15,
                                              onChange,
                                              onClose,
                                              onAdd,
@@ -217,12 +224,12 @@ export const TabBar = memo<TabBarProps>(({
                                              activeIndicatorColor,
                                          }) => {
     const colorVars: Record<string, string | undefined> = {
-        '--tab-bar-bg':           background,
-        '--tab-color':            tabColor,
-        '--tab-hover-color':      tabHoverColor,
-        '--tab-hover-bg':         tabHoverBackground,
-        '--tab-active-color':     tabActiveColor,
-        '--tab-active-bg':        tabActiveBackground,
+        '--tab-bar-bg': background,
+        '--tab-color': tabColor,
+        '--tab-hover-color': tabHoverColor,
+        '--tab-hover-bg': tabHoverBackground,
+        '--tab-active-color': tabActiveColor,
+        '--tab-active-bg': tabActiveBackground,
         '--tab-active-indicator': activeIndicatorColor,
     };
 
@@ -233,66 +240,150 @@ export const TabBar = memo<TabBarProps>(({
         }
     }
 
-    const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style };
+    const mergedStyle: React.CSSProperties = {...overrideStyle, ...style};
     const dragKeyRef = useRef<string | null>(null);
 
     // ── 自适应宽度 ──────────────────────────────────────────────────────────
     const navRef = useRef<HTMLDivElement>(null);
-    const [scrollMode, setScrollMode] = useState(false);
-    const [tabWidth, setTabWidth] = useState<number | undefined>(undefined);
+
+// 使用 ref 存储可变依赖，避免 calculate 因依赖变化而重新创建
+    const itemsLengthRef = useRef(items.length);
+    itemsLengthRef.current = items.length;
+    const addableRef = useRef(addable);
+    addableRef.current = addable;
+    const minWidthRatioRef = useRef(minWidthRatio);
+    minWidthRatioRef.current = minWidthRatio;
+    const maxTabWidthRatioRef = useRef(maxTabWidthRatio);
+    maxTabWidthRatioRef.current = maxTabWidthRatio;
+
+// 合并为单个状态，避免两次 setState 导致两次渲染
+    interface LayoutState {
+        scrollMode: boolean;
+        tabWidth: number | undefined;
+    }
+
+    const [layout, setLayout] = useState<LayoutState>({scrollMode: false, tabWidth: undefined});
+
+// 防抖定时器引用
+    const calculateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+// 缓存上一次计算的结果，用于比较和滞后保护
+    const lastLayoutRef = useRef<LayoutState>({scrollMode: false, tabWidth: undefined});
+
+// 缓存 addBtn 宽度，只在 addable 状态变化时重新测量
+    const addBtnWidthRef = useRef<number>(0);
+    const lastAddableRef = useRef<boolean | undefined>(undefined);
 
     const calculate = useCallback(() => {
         const navOuter = navRef.current?.parentElement;
         const nav = navRef.current;
-        if (!nav || !navOuter || items.length === 0) return;
-        
+        const currentItemsLength = itemsLengthRef.current;
+        const currentAddable = addableRef.current;
+        const currentMinWidthRatio = minWidthRatioRef.current;
+        const currentMaxTabWidthRatio = maxTabWidthRatioRef.current;
+
+        if (!nav || !navOuter || currentItemsLength === 0) return;
+
+        // 只在 addable 状态变化时重新测量 addBtn 宽度
+        if (currentAddable !== lastAddableRef.current) {
+            lastAddableRef.current = currentAddable;
+            if (currentAddable) {
+                const addBtnElement = navOuter.querySelector('.fc-tab-bar__add-btn');
+                if (addBtnElement) {
+                    const btnStyle = getComputedStyle(addBtnElement);
+                    const marginL = parseFloat(btnStyle.marginLeft) || 0;
+                    const marginR = parseFloat(btnStyle.marginRight) || 0;
+                    addBtnWidthRef.current = addBtnElement.getBoundingClientRect().width + marginL + marginR;
+                }
+            } else {
+                addBtnWidthRef.current = 0;
+            }
+        }
+
         const navOuterCS = getComputedStyle(navOuter);
         const navWrap = nav.querySelector('.fc-tab-bar__nav-wrap');
-        
-        // 获取 addBtn 的实际占用空间（宽度 + margin）
-        const addBtnElement = navOuter.querySelector('.fc-tab-bar__add-btn');
-        const addBtnTotalWidth = addable && addBtnElement 
-            ? addBtnElement.getBoundingClientRect().width
-            : 0;
-        
+
         // navOuter 的可用宽度（减去 padding）
         const navOuterW = navOuter.clientWidth
             - parseFloat(navOuterCS.paddingLeft)
             - parseFloat(navOuterCS.paddingRight);
-        
-        // nav 实际可用的宽度 = navOuter 可用宽度 - addBtn 占用空间
-        const navW = navOuterW - addBtnTotalWidth;
-        
-        // 获取 Tab 之间的 gap（attached 模式为 0，floating 模式为 4px）
-        const tabGap = navWrap ? parseFloat(getComputedStyle(navWrap).gap) : 0;
-        
-        // 计算每个 Tab 的理想宽度（考虑 gap 占用的空间）
-        // 总 gap = (items.length - 1) * tabGap
-        const totalGapWidth = (items.length - 1) * tabGap;
-        const idealW = (navW - totalGapWidth) / items.length;
-        
-        const threshold = window.innerWidth * minWidthRatio;
-        
-        // 计算最小允许宽度：padding(16*2) + gap(8) + close(18) = 58px
-        // 在紧凑模式下：padding(6*2) + gap(8) + close(18) = 38px
-        // 为了保护 close 按钮，设置硬性下限 42px（紧凑模式阈值）
-        const minAllowedWidth = 42;
-        
-        if (idealW < threshold) {
-            // 滚动模式：Tab 宽度锁在 threshold，与切换前一致，临界点无跳跃
-            setScrollMode(true);
-            setTabWidth(Math.max(threshold, minAllowedWidth));
-        } else {
-            setScrollMode(false);
-            setTabWidth(Math.max(idealW, minAllowedWidth));
-        }
-    }, [items.length, minWidthRatio, addable]);
 
+        // nav 实际可用的宽度
+        const navW = navOuterW - addBtnWidthRef.current;
+
+        // 获取 Tab 之间的 gap
+        const tabGap = navWrap ? parseFloat(getComputedStyle(navWrap).gap) : 0;
+
+        // 计算每个 Tab 的理想宽度
+        const totalGapWidth = (currentItemsLength - 1) * tabGap;
+        const idealW = (navW - totalGapWidth) / currentItemsLength;
+
+        const threshold = window.innerWidth * currentMinWidthRatio;
+        const maxAllowedWidth = window.innerWidth * currentMaxTabWidthRatio;
+        const minAllowedWidth = 42;
+
+        // 滞后保护：避免在边界处来回切换 mode
+        // 从非滚动切换到滚动：idealW < threshold
+        // 从滚动切换回非滚动：需要 idealW > threshold * 1.1（10% 滞后区间）
+        const prev = lastLayoutRef.current;
+        const hysteresisFactor = 1.1;
+
+        let newScrollMode: boolean;
+        let newTabWidth: number;
+
+        if (idealW < threshold) {
+            newScrollMode = true;
+            newTabWidth = Math.max(threshold, minAllowedWidth);
+        } else if (prev.scrollMode && idealW < threshold * hysteresisFactor) {
+            // 当前是滚动模式，且在滞后区间内，保持滚动模式
+            newScrollMode = true;
+            newTabWidth = Math.max(threshold, minAllowedWidth);
+        } else {
+            newScrollMode = false;
+            // 应用最大宽度限制
+            newTabWidth = Math.min(Math.max(idealW, minAllowedWidth), maxAllowedWidth);
+        }
+
+        // 只有结果真正变化时才更新状态
+        if (prev.tabWidth !== newTabWidth || prev.scrollMode !== newScrollMode) {
+            const newLayout: LayoutState = {scrollMode: newScrollMode, tabWidth: newTabWidth};
+            lastLayoutRef.current = newLayout;
+            setLayout(newLayout);
+        }
+    }, []); // 空依赖，函数引用永远稳定
+
+    // 防抖版本的 calculate
+    const calculateDebounced = useCallback(() => {
+        if (calculateTimeoutRef.current) {
+            clearTimeout(calculateTimeoutRef.current);
+        }
+        calculateTimeoutRef.current = setTimeout(calculate, 50);
+    }, [calculate]);
+
+    // 使用 ref 存储防抖函数，确保 resize 监听器始终调用最新版本
+    const calculateDebouncedRef = useRef(calculateDebounced);
+    calculateDebouncedRef.current = calculateDebounced;
+
+    // resize 监听器只在挂载时注册一次，不会因为 items 变化而重复注册
+    useEffect(() => {
+        // 使用 rAF 确保 DOM 完成布局后再计算
+        const rafId = requestAnimationFrame(calculate);
+
+        const handleResize = () => calculateDebouncedRef.current();
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            cancelAnimationFrame(rafId);
+            window.removeEventListener('resize', handleResize);
+            if (calculateTimeoutRef.current) {
+                clearTimeout(calculateTimeoutRef.current);
+            }
+        };
+    }, []); // 空依赖，只在挂载/卸载时执行
+
+    // 当 items 变化时重新计算布局
     useEffect(() => {
         calculate();
-        window.addEventListener('resize', calculate);
-        return () => window.removeEventListener('resize', calculate);
-    }, [calculate]);
+    }, [items.length, calculate]); // 只监听 items.length，不监听 items 引用
 
     const handleClick = useCallback(
         (key: string) => onChange(key),
@@ -346,6 +437,7 @@ export const TabBar = memo<TabBarProps>(({
     }, []);
 
     /* ---- 渲染 ---- */
+    const {scrollMode, tabWidth} = layout;
 
     const rootClasses = [
         'fc-tab-bar',
@@ -398,8 +490,7 @@ export const TabBar = memo<TabBarProps>(({
             <div className={`fc-tab-bar__nav-outer${scrollMode ? ' fc-tab-bar__nav-outer--scroll' : ''}`}>
                 <div className={`fc-tab-bar__nav${scrollMode ? ' fc-tab-bar__nav--scroll' : ''}`} ref={navRef}>
                     {scrollMode ? (
-                        // flex:1 + minWidth:0 强制 RollingBox 收缩至 nav 宽度，使 scrollWidth > clientWidth 触发内部滚动
-                        <RollingBox horizontal showThumb="hide" style={{ flex: 1, minWidth: 0, height: 'auto' }}>
+                        <RollingBox horizontal showThumb="hide" style={{flex: 1, minWidth: 0, height: 'auto'}}>
                             {tabList}
                         </RollingBox>
                     ) : tabList}

@@ -1,4 +1,4 @@
-import { SmartMessage } from '../../../ui/src'
+import { SmartMessage } from 'flowcloudai-ui'
 
 export function SmartMessageDemo() {
     const handleCopy = (content: string, role: string) => {

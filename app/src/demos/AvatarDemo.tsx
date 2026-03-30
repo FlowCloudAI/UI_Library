@@ -1,4 +1,4 @@
-import { Avatar } from '../../../ui/src';
+import { Avatar } from 'flowcloudai-ui'
 
 // 预设尺寸映射
 const sizeMap = {

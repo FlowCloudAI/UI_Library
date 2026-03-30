@@ -106,6 +106,7 @@
     gap: 0; /* attached 模式下 Tab 之间无间隙 */
     align-items: stretch;
     max-width: 100%; /* 防止 nav-wrap 超出 nav 容器 */
+    box-sizing: border-box; /* 确保边框盒计算一致 */
 }
 
 /* ========== 标签页（基础） ========== */
@@ -124,6 +125,11 @@
     border: none;
     user-select: none;
     border-radius: var(--tab-item-radius-tl) var(--tab-item-radius-tr) var(--tab-item-radius-br) var(--tab-item-radius-bl);
+}
+
+/* 滚动模式下：确保关闭按钮始终靠右对齐，不被压缩 */
+.fc-tab-bar__nav--scroll .fc-tab-bar__tab {
+    justify-content: space-between;
 }
 
 .fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled):not(.fc-tab-bar__tab--dragging) {

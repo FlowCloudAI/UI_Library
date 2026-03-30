@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {Chat} from '../../../ui/src/index'
+import {Chat} from 'flowcloudai-ui'
 
 interface Message {
     id: string
