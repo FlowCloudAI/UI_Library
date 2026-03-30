@@ -21,7 +21,7 @@ export function SmartMessageDemo() {
 
                     <SmartMessage
                         id="demo-assistant"
-                        content="这是一条AI助手消息，带有复制按钮，左对齐显示"
+                        content="这是一条流云AI消息，带有复制按钮，左对齐显示"
                         role="assistant"
                         timestamp={new Date()}
                         status="sent"

@@ -18,10 +18,23 @@ import { MarkdownEditorDemo } from './demos/MarkdownEditorDemo'
 import { TabBarDemo }         from './demos/TabBarDemo'
 import { SideBarDemo }        from './demos/SideBarDemo'
 import { ContextMenuDemo }    from './demos/ContextMenuDemo'
-import ChatDemo            from './demos/ChatDemo'
+import ChatDemo from './demos/ChatDemo'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
 import { SmartMessageDemo }   from './demos/SmartMessageDemo'
 import { TreeDemo }           from './demos/TreeDemo'
+import { RelationDemo } from './demos/RelationDemo'
+
+// TreeDemoWrapper 组件
+const TreeDemoWrapper = () => (
+    <div className="demo-section">
+        <h4>Tree 组件</h4>
+        <div className="demo-row">
+            <div style={{ padding: '20px', background: 'var(--fc-color-bg-secondary)', borderRadius: '8px' }}>
+                Tree 组件演示
+            </div>
+        </div>
+    </div>
+)
 
 /* ===== 导航注册表 ===== */
 
@@ -53,6 +66,7 @@ const NAV_GROUPS: NavGroup[] = [
             { key: 'Card',        label: 'Card' },
             { key: 'Markdown',    label: 'MarkdownEditor' },
             { key: 'SmartMessage', label: 'SmartMessage' },
+            { key: 'Relation',    label: '关系图谱' },
         ],
     },
     {
@@ -96,6 +110,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Chat:        ChatDemo,
     LazyLoad:    LazyLoadDemo,
     SmartMessage: SmartMessageDemo,
+    Relation:    RelationDemo,
 }
 
 const ALL_ITEMS = NAV_GROUPS.flatMap(g => g.items)
