@@ -21,6 +21,7 @@ import { ContextMenuDemo }    from './demos/ContextMenuDemo'
 import ChatDemo from './demos/ChatDemo'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
 import { SmartMessageDemo }   from './demos/SmartMessageDemo'
+import { RelationDemo } from './demos/RelationDemo'
 
 // TreeDemoWrapper 组件
 const TreeDemoWrapper = () => (
@@ -64,6 +65,7 @@ const NAV_GROUPS: NavGroup[] = [
             { key: 'Card',        label: 'Card' },
             { key: 'Markdown',    label: 'MarkdownEditor' },
             { key: 'SmartMessage', label: 'SmartMessage' },
+            { key: 'Relation',    label: '关系图谱' },
         ],
     },
     {
@@ -107,6 +109,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Chat:        ChatDemo,
     LazyLoad:    LazyLoadDemo,
     SmartMessage: SmartMessageDemo,
+    Relation:    RelationDemo,
 }
 
 const ALL_ITEMS = NAV_GROUPS.flatMap(g => g.items)
