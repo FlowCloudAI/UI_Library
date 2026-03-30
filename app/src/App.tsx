@@ -22,7 +22,7 @@ import ChatDemo from './demos/ChatDemo'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
 import { SmartMessageDemo }   from './demos/SmartMessageDemo'
 import { TreeDemo }           from './demos/TreeDemo'
-import { RelationDemo } from './demos/RelationDemo'
+import { RelationDemo }       from './demos/RelationDemo'  // 确保导入 RelationDemo
 
 /* ===== 导航注册表 ===== */
 
@@ -54,7 +54,7 @@ const NAV_GROUPS: NavGroup[] = [
             { key: 'Card',        label: 'Card' },
             { key: 'Markdown',    label: 'MarkdownEditor' },
             { key: 'SmartMessage', label: 'SmartMessage' },
-            { key: 'Relation',    label: '关系图谱' },
+            { key: 'Relation',    label: '关系图谱' },  // 确保这一行存在
         ],
     },
     {
@@ -98,7 +98,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Chat:        ChatDemo,
     LazyLoad:    LazyLoadDemo,
     SmartMessage: SmartMessageDemo,
-    Relation:    RelationDemo,
+    Relation:    RelationDemo,  // 确保这一行存在
 }
 
 const ALL_ITEMS = NAV_GROUPS.flatMap(g => g.items)
