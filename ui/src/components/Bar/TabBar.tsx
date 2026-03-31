@@ -385,6 +385,19 @@ export const TabBar = memo<TabBarProps>(({
         calculate();
     }, [items.length, calculate]); // 只监听 items.length，不监听 items 引用
 
+    // 滚动模式下新增 tab 时，自动滚动到末尾
+    const prevItemsLengthRef = useRef(items.length);
+    useEffect(() => {
+        const prev = prevItemsLengthRef.current;
+        prevItemsLengthRef.current = items.length;
+        if (items.length <= prev || !layout.scrollMode) return;
+        const roll = navRef.current?.querySelector('.fc-roll');
+        if (!roll) return;
+        requestAnimationFrame(() => {
+            roll.scrollLeft = roll.scrollWidth;
+        });
+    }, [items.length, layout.scrollMode]);
+
     const handleClick = useCallback(
         (key: string) => onChange(key),
         [onChange],

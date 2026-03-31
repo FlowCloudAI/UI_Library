@@ -285,12 +285,10 @@ body {
 /* 选中文本样式 */
 ::selection {
     background-color: var(--fc-color-primary-subtle, #EBF4FD);
-    color: var(--fc-color-primary, #378ADD);
 }
 
 [data-theme="dark"] ::selection {
     background-color: rgba(55, 138, 221, 0.3);
-    color: var(--fc-color-primary, #5DA4E8);
 }
 
 /* 焦点样式（提升可访问性） */

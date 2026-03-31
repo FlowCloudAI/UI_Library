@@ -53,6 +53,31 @@
     stroke: currentColor;
 }
 
+/* ---------- 选中文本样式修复 ---------- */
+.fc-md-wrap ::selection {
+    background-color: rgba(55, 138, 221, 0.25) !important;
+    color: inherit !important;
+}
+
+/* ---------- 双栏切换按钮 ---------- */
+.fc-md-split-btn {
+    border-radius: var(--fc-radius-md, 8px) !important;
+}
+
+.fc-md-split-btn--active {
+    background: var(--fc-color-primary-bg, rgba(99,102,241,0.15)) !important;
+    color:      var(--fc-color-primary, #6366f1) !important;
+}
+
+.fc-md-split-btn--active:hover {
+    background: var(--fc-color-primary-bg, rgba(99,102,241,0.22)) !important;
+}
+
+.fc-md-split-icon {
+    font-size: 15px;
+    line-height: 1;
+}
+
 /* ---------- AI 补全按钮 ---------- */
 .fc-md-ai-btn {
     font-size:     11px;

@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Button, ButtonGroup, MarkdownEditor, useAlert } from 'flowcloudai-ui'
 
-type Mode = 'edit' | 'preview' | 'live'
+type Mode = 'edit' | 'preview'
 
 const MODES: { value: Mode; label: string }[] = [
     { value: 'edit',    label: '编辑' },
     { value: 'preview', label: '预览' },
-    { value: 'live',    label: '双栏' },
 ]
 
 const INITIAL_CONTENT =
@@ -20,7 +19,7 @@ export function MarkdownEditorDemo() {
     return (
         <>
             <div className="demo-section">
-                <h4>编辑 / 预览 / 双栏切换</h4>
+                <h4>编辑 / 预览模式</h4>
                 <div className="demo-row" style={{ marginBottom: 12 }}>
                     <ButtonGroup>
                         {MODES.map(m => (
