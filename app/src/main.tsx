@@ -2,9 +2,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import 'flowcloudai-ui/style'
 import { ThemeProvider, AlertProvider, ContextMenuProvider } from 'flowcloudai-ui';
-import './theme-override.css'; // must come after flowcloudai-ui to win the cascade
+
+// @ts-ignore - CSS import, no types needed
+import 'flowcloudai-ui/style'
+import './theme-override.css';
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
