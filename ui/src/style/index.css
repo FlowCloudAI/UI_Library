@@ -15,15 +15,15 @@
     --fc-blue-800: #072D54;
     --fc-blue-900: #031A33;
 
-    --fc-gray-50: #FAFAF9;
-    --fc-gray-100: #F1EFE8;
-    --fc-gray-150: #E0DDD4;
-    --fc-gray-200: #D3D1C7;
-    --fc-gray-400: #B5B2A6;
-    --fc-gray-600: #5F5E5A;
+    --fc-gray-50: #FAFAFA;
+    --fc-gray-100: #F5F5F5;
+    --fc-gray-150: #E0E0E0;
+    --fc-gray-200: #D0D0D0;
+    --fc-gray-400: #B3B3B3;
+    --fc-gray-600: #5F5F5F;
     --fc-gray-700: #3D3D3A;
-    --fc-gray-800: #2C2C2A;
-    --fc-gray-900: #1A1A19;
+    --fc-gray-800: #2C2C2C;
+    --fc-gray-900: #1A1A1A;
 
     --fc-red-50: #FDEDED;
     --fc-red-100: #FAD0D0;
@@ -63,8 +63,8 @@
     --fc-color-primary-subtle: var(--fc-blue-50);
 
     --fc-color-bg: #FFFFFF;
-    --fc-color-bg-secondary: var(--fc-gray-200);
-    --fc-color-bg-tertiary: var(--fc-gray-400);
+    --fc-color-bg-secondary: var(--fc-gray-100);
+    --fc-color-bg-tertiary: var(--fc-gray-200);
     --fc-color-bg-elevated: #FFFFFF;
     --fc-color-bg-overlay: rgba(0, 0, 0, 0.4);
 
@@ -296,87 +296,4 @@ body {
     outline: 2px solid var(--fc-color-border-focus, #378ADD);
     outline-offset: 2px;
     border-radius: var(--fc-radius-sm, 4px);
-}
-
-/* ========== 后备方案：使用 class 确保暗色主题生效 ========== */
-
-/* 亮色主题 class */
-.theme-light {
-    --fc-color-bg: #FFFFFF !important;
-    --fc-color-bg-secondary: var(--fc-gray-50) !important;
-    --fc-color-bg-tertiary: var(--fc-gray-100) !important;
-    --fc-color-text: var(--fc-gray-900) !important;
-    --fc-color-text-secondary: var(--fc-gray-600) !important;
-    --fc-color-border: var(--fc-gray-200) !important;
-    --fc-color-border-light: var(--fc-gray-150) !important;
-}
-
-/* 暗色主题 class */
-.theme-dark {
-    --fc-color-primary: var(--fc-blue-300) !important;
-    --fc-color-primary-hover: var(--fc-blue-200) !important;
-    --fc-color-primary-active: var(--fc-blue-100) !important;
-    --fc-color-primary-subtle: rgba(55, 138, 221, 0.12) !important;
-
-    --fc-color-bg: #0F0F0F !important;
-    --fc-color-bg-secondary: #1A1A1A !important;
-    --fc-color-bg-tertiary: #222222 !important;
-    --fc-color-bg-elevated: #282828 !important;
-    --fc-color-bg-overlay: rgba(0, 0, 0, 0.6) !important;
-
-    --fc-color-text: #E8E8E6 !important;
-    --fc-color-text-secondary: #9C9A92 !important;
-    --fc-color-text-tertiary: #636158 !important;
-    --fc-color-text-disabled: #4A4845 !important;
-    --fc-color-text-on-primary: #FFFFFF !important;
-
-    --fc-color-border: #333330 !important;
-    --fc-color-border-light: #2A2A28 !important;
-    --fc-color-border-hover: #555550 !important;
-    --fc-color-border-focus: var(--fc-blue-400) !important;
-
-    --fc-color-danger: #F06060 !important;
-    --fc-color-danger-hover: #F58080 !important;
-    --fc-color-danger-bg: rgba(226, 75, 74, 0.12) !important;
-    --fc-color-danger-border: rgba(226, 75, 74, 0.25) !important;
-
-    --fc-color-success: #7EBB38 !important;
-    --fc-color-success-hover: #9FD058 !important;
-    --fc-color-success-bg: rgba(99, 153, 34, 0.12) !important;
-    --fc-color-success-border: rgba(99, 153, 34, 0.25) !important;
-
-    --fc-color-warning: #F0A030 !important;
-    --fc-color-warning-hover: #F5BC60 !important;
-    --fc-color-warning-bg: rgba(214, 128, 0, 0.12) !important;
-    --fc-color-warning-border: rgba(214, 128, 0, 0.25) !important;
-
-    --fc-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-    --fc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-    --fc-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3) !important;
-    --fc-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4) !important;
-}
-
-/* 确保列表组在暗色主题下正确显示 */
-.theme-dark .fc-list-group {
-    background-color: var(--fc-color-bg, #0F0F0F) !important;
-}
-
-.theme-dark .fc-list-group-item {
-    background-color: var(--fc-color-bg, #0F0F0F) !important;
-    color: var(--fc-color-text, #E8E8E6) !important;
-    border-bottom-color: var(--fc-color-border-light, #2A2A28) !important;
-}
-
-.theme-dark .fc-list-group--bordered {
-    border-color: var(--fc-color-border, #333330) !important;
-}
-
-.theme-dark .fc-list-group-item:hover:not(.fc-list-group-item--disabled) {
-    background-color: var(--fc-color-bg-secondary, #1A1A1A) !important;
-}
-
-.theme-dark .fc-list-group-item--active {
-    background-color: var(--fc-color-primary-subtle, rgba(55, 138, 221, 0.12)) !important;
-    color: var(--fc-color-primary, #5DA4E8) !important;
-    border-left-color: var(--fc-color-primary, #5DA4E8) !important;
 }

@@ -54,8 +54,13 @@ export function Slider({
                            tooltipColor,
                        }: SliderProps) {
     const trackRef = React.useRef<HTMLDivElement>(null)
-    const draggingRef = React.useRef<number | null>(null)
     const [dragging, setDragging] = React.useState<number | null>(null)
+    // 存储当前拖拽的全局监听清理函数，组件卸载时调用
+    const dragCleanupRef = React.useRef<(() => void) | null>(null)
+
+    React.useEffect(() => {
+        return () => { dragCleanupRef.current?.() }
+    }, [])
 
     const initialValue = defaultValue ?? (range ? [min, max] : min)
     const [internalValue, setInternalValue] = React.useState<SliderValue>(initialValue)
@@ -93,8 +98,8 @@ export function Slider({
         return Math.max(min, Math.min(max, stepped))
     }
 
-    const handleMove = React.useCallback((clientX: number, clientY: number) => {
-        if (!trackRef.current || draggingRef.current === null || disabled) return
+    const handleMove = React.useCallback((clientX: number, clientY: number, activeIndex: number) => {
+        if (!trackRef.current || disabled) return
 
         const rect = trackRef.current.getBoundingClientRect()
         const percent = orientation === 'horizontal'
@@ -106,7 +111,7 @@ export function Slider({
         let nextValue: SliderValue
         if (range) {
             const [start, end] = currentValue as [number, number]
-            nextValue = draggingRef.current === 0
+            nextValue = activeIndex === 0
                 ? [Math.min(newValue, end), end]
                 : [start, Math.max(newValue, start)]
         } else {
@@ -117,27 +122,52 @@ export function Slider({
         onChange?.(nextValue)
     }, [disabled, orientation, range, currentValue, isControlled, onChange, min, max, step])
 
+    const startDrag = (index: number, clientX: number, clientY: number) => {
+        if (disabled) return
+        setDragging(index)
+
+        const handleMouseMove = (ev: MouseEvent) => handleMove(ev.clientX, ev.clientY, index)
+        const handleTouchMove = (ev: TouchEvent) => {
+            ev.preventDefault()
+            const t = ev.touches[0]
+            handleMove(t.clientX, t.clientY, index)
+        }
+        const cleanup = () => {
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+            document.removeEventListener('touchmove', handleTouchMove)
+            document.removeEventListener('touchend', handleTouchEnd)
+            dragCleanupRef.current = null
+        }
+        const handleMouseUp = () => { setDragging(null); cleanup() }
+        const handleTouchEnd = () => { setDragging(null); cleanup() }
+
+        dragCleanupRef.current = cleanup
+        document.addEventListener('mousemove', handleMouseMove)
+        document.addEventListener('mouseup', handleMouseUp)
+        document.addEventListener('touchmove', handleTouchMove, { passive: false })
+        document.addEventListener('touchend', handleTouchEnd)
+
+        // 立即处理初始位置
+        handleMove(clientX, clientY, index)
+    }
+
     const handleMouseDown = (index: number) => (e: React.MouseEvent) => {
         if (disabled) return
         e.preventDefault()
-        draggingRef.current = index
-        setDragging(index)
+        startDrag(index, e.clientX, e.clientY)
+    }
 
-        const handleMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY)
-        const handleMouseUp = () => {
-            draggingRef.current = null
-            setDragging(null)
-            document.removeEventListener('mousemove', handleMouseMove)
-            document.removeEventListener('mouseup', handleMouseUp)
-        }
-
-        document.addEventListener('mousemove', handleMouseMove)
-        document.addEventListener('mouseup', handleMouseUp)
+    const handleTouchStart = (index: number) => (e: React.TouchEvent) => {
+        if (disabled) return
+        e.preventDefault()
+        const t = e.touches[0]
+        startDrag(index, t.clientX, t.clientY)
     }
 
     const handleTrackClick = (e: React.MouseEvent) => {
-        if (disabled || draggingRef.current !== null) return
-        handleMove(e.clientX, e.clientY)
+        if (disabled || dragging !== null) return
+        handleMove(e.clientX, e.clientY, 0)
     }
 
     const [startVal, endVal] = range
@@ -181,6 +211,7 @@ export function Slider({
                         className={`fc-slider__thumb ${dragging === 0 ? 'fc-slider__thumb--active' : ''}`}
                         style={thumbStyle(startPercent)}
                         onMouseDown={handleMouseDown(0)}
+                        onTouchStart={handleTouchStart(0)}
                     >
                         {tooltip && <span className="fc-slider__tooltip">{startVal}</span>}
                     </div>
@@ -190,6 +221,7 @@ export function Slider({
                     className={`fc-slider__thumb ${dragging === (range ? 1 : 0) ? 'fc-slider__thumb--active' : ''}`}
                     style={thumbStyle(endPercent)}
                     onMouseDown={handleMouseDown(range ? 1 : 0)}
+                    onTouchStart={handleTouchStart(range ? 1 : 0)}
                 >
                     {tooltip && <span className="fc-slider__tooltip">{endVal}</span>}
                 </div>

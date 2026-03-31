@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import SmartMessage, { type MessageRole } from '../SmartMessage/SmartMessage';
+import { useClickOutside } from '../../hooks/useClickOutside';
 import './Chat.css';
 
 // 消息接口
@@ -103,15 +104,7 @@ export const Chat: React.FC<ChatProps> = ({
         }
     }, [messages, loading, showHistory, isMinimized, autoScroll]);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (showHistory && historyPanelRef.current && !historyPanelRef.current.contains(event.target as Node)) {
-                setShowHistory(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [showHistory]);
+    useClickOutside(historyPanelRef, () => setShowHistory(false), showHistory);
 
     const handleDeleteConversation = useCallback((conversationId: string) => {
         onDeleteConversation?.(conversationId);

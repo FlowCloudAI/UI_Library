@@ -1,5 +1,6 @@
 import "./ContextMenuContext.css";
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
+import { useClickOutside } from '../../hooks/useClickOutside';
 
 /* ---- 菜单项类型 ---- */
 export type ContextMenuDivider = { type: "divider" };
@@ -56,18 +57,13 @@ export function ContextMenuProvider({
     const hide = () => setMenu(s => ({ ...s, visible: false }));
 
     /* 点击外部 / Escape 关闭 */
+    useClickOutside(menuRef, hide, menu.visible);
+
     useEffect(() => {
         if (!menu.visible) return;
-        const onPointerDown = (e: PointerEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) hide();
-        };
         const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") hide(); };
-        window.addEventListener("pointerdown", onPointerDown);
-        window.addEventListener("keydown",     onKeyDown);
-        return () => {
-            window.removeEventListener("pointerdown", onPointerDown);
-            window.removeEventListener("keydown",     onKeyDown);
-        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
     }, [menu.visible]);
 
     /* 防止菜单超出视口 */

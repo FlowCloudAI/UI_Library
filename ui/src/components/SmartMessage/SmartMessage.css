@@ -1,5 +1,5 @@
 /* SmartMessage 组件样式 */
-.smart-message {
+.fc-smart-message {
     display: flex;
     align-items: flex-start;
     gap: 8px;
@@ -8,19 +8,19 @@
 }
 
 /* 用户消息：右对齐 */
-.smart-message--user {
+.fc-smart-message--user {
     flex-direction: row-reverse;
     align-self: flex-end;
 }
 
 /* AI消息：左对齐 */
-.smart-message--assistant {
+.fc-smart-message--assistant {
     flex-direction: row;
     align-self: flex-start;
 }
 
 /* 系统消息：居中显示 - 关键修复 */
-.smart-message--system {
+.fc-smart-message--system {
     align-self: center;
     justify-content: center;
     max-width: 90%;
@@ -28,13 +28,13 @@
 }
 
 /* 工具消息 */
-.smart-message--tool {
+.fc-smart-message--tool {
     align-self: flex-start;
     max-width: 90%;
 }
 
 /* 内容包装器 */
-.smart-message-content-wrapper {
+.fc-smart-message-content-wrapper {
     position: relative;
     background: var(--fc-color-bg-secondary, #f0f0f0);
     border-radius: 12px;
@@ -46,19 +46,19 @@
 }
 
 /* 用户消息样式 - 蓝色背景，右对齐 */
-.smart-message--user .smart-message-content-wrapper {
+.fc-smart-message--user .fc-smart-message-content-wrapper {
     background: var(--fc-color-primary, #667eea);
     color: white;
 }
 
 /* AI消息样式 - 灰色背景，左对齐 */
-.smart-message--assistant .smart-message-content-wrapper {
+.fc-smart-message--assistant .fc-smart-message-content-wrapper {
     background: var(--fc-color-bg-secondary, #f0f0f0);
     color: var(--fc-color-text, #333);
 }
 
 /* 系统消息样式 - 居中，灰色文字，浅灰背景 */
-.smart-message--system .smart-message-content-wrapper {
+.fc-smart-message--system .fc-smart-message-content-wrapper {
     background: var(--fc-color-bg-tertiary, #f0f0f0);
     color: var(--fc-color-text-tertiary, #999);
     text-align: center;
@@ -70,7 +70,7 @@
 }
 
 /* 工具消息样式 */
-.smart-message--tool .smart-message-content-wrapper {
+.fc-smart-message--tool .fc-smart-message-content-wrapper {
     background: var(--fc-color-bg-tertiary, #e8e8e8);
     color: var(--fc-color-text-secondary, #666);
     font-family: monospace;
@@ -78,7 +78,7 @@
 }
 
 /* 工具信息头部 */
-.smart-message-tool-info {
+.fc-smart-message-tool-info {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -89,34 +89,34 @@
     padding-bottom: 4px;
 }
 
-.smart-message-tool-icon {
+.fc-smart-message-tool-icon {
     font-size: 12px;
 }
 
-.smart-message-tool-name {
+.fc-smart-message-tool-name {
     font-family: monospace;
     font-weight: 500;
 }
 
 /* 内容区域 */
-.smart-message-content {
+.fc-smart-message-content {
     word-wrap: break-word;
     word-break: break-word;
     white-space: pre-wrap;
 }
 
-.smart-message-text {
+.fc-smart-message-text {
     line-height: 1.5;
 }
 
 /* 系统消息文字样式 */
-.system-text {
+.fc-smart-message-system-text {
     font-style: italic;
     opacity: 0.7;
 }
 
 /* 工具结果样式 */
-.smart-message-tool-result {
+.fc-smart-message-tool-result {
     background: rgba(0, 0, 0, 0.05);
     padding: 8px;
     border-radius: 6px;
@@ -127,7 +127,7 @@
 }
 
 /* 底部区域 */
-.smart-message-footer {
+.fc-smart-message-footer {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -136,28 +136,28 @@
     opacity: 0.7;
 }
 
-.smart-message-time {
+.fc-smart-message-time {
     font-size: 10px;
 }
 
-.smart-message-status {
+.fc-smart-message-status {
     font-size: 10px;
 }
 
-.smart-message-status.sending {
+.fc-smart-message-status.sending {
     animation: pulse 1s infinite;
 }
 
-.smart-message-status.error {
+.fc-smart-message-status.error {
     color: #f5222d;
 }
 
-.smart-message-status.sent {
+.fc-smart-message-status.sent {
     color: #52c41a;
 }
 
 /* 复制按钮样式 - 在消息内部 */
-.smart-message-copy-btn {
+.fc-smart-message-copy-btn {
     background: transparent;
     border: none;
     cursor: pointer;
@@ -171,17 +171,17 @@
     opacity: 0;
 }
 
-.smart-message:hover .smart-message-copy-btn {
+.fc-smart-message:hover .fc-smart-message-copy-btn {
     opacity: 0.6;
 }
 
-.smart-message-copy-btn:hover {
+.fc-smart-message-copy-btn:hover {
     opacity: 1 !important;
     background: rgba(0, 0, 0, 0.05);
     transform: scale(1.05);
 }
 
-.smart-message-copy-btn:active {
+.fc-smart-message-copy-btn:active {
     transform: scale(0.95);
 }
 
@@ -208,24 +208,24 @@
 
 /* 响应式 */
 @media (max-width: 768px) {
-    .smart-message {
+    .fc-smart-message {
         max-width: 100%;
     }
 
-    .smart-message--system {
+    .fc-smart-message--system {
         max-width: 95%;
     }
 
-    .smart-message-content-wrapper {
+    .fc-smart-message-content-wrapper {
         padding: 6px 10px;
         max-width: 100%;
     }
 
-    .smart-message--system .smart-message-content-wrapper {
+    .fc-smart-message--system .fc-smart-message-content-wrapper {
         padding: 4px 12px;
     }
 
-    .smart-message-copy-btn {
+    .fc-smart-message-copy-btn {
         padding: 2px;
     }
 }

@@ -41,9 +41,9 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
     }, [content, role, onCopy]);
 
     const getMessageClass = () => {
-        const baseClass = 'smart-message';
-        const roleClass = `smart-message--${role}`;
-        const statusClass = status ? `smart-message--${status}` : '';
+        const baseClass = 'fc-smart-message';
+        const roleClass = `fc-smart-message--${role}`;
+        const statusClass = status ? `fc-smart-message--${status}` : '';
         return `${baseClass} ${roleClass} ${statusClass} ${className}`.trim();
     };
 
@@ -59,14 +59,14 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
                 return (
                     <>
                         {toolName && (
-                            <div className="smart-message-tool-info">
-                                <span className="smart-message-tool-icon">🔧</span>
-                                <span className="smart-message-tool-name">{toolName}</span>
+                            <div className="fc-smart-message-tool-info">
+                                <span className="fc-smart-message-tool-icon">🔧</span>
+                                <span className="fc-smart-message-tool-name">{toolName}</span>
                             </div>
                         )}
-                        <div className="smart-message-content">
-                            <pre className="smart-message-tool-result">
-                                {JSON.stringify(toolResult || content, null, 2)}
+                        <div className="fc-smart-message-content">
+                            <pre className="fc-smart-message-tool-result">
+                                {(() => { try { return JSON.stringify(toolResult || content, null, 2); } catch { return '[序列化失败]'; } })()}
                             </pre>
                         </div>
                     </>
@@ -74,15 +74,15 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
 
             case 'system':
                 return (
-                    <div className="smart-message-content">
-                        <div className="smart-message-text system-text">{content}</div>
+                    <div className="fc-smart-message-content">
+                        <div className="fc-smart-message-text fc-smart-message-system-text">{content}</div>
                     </div>
                 );
 
             default:
                 return (
-                    <div className="smart-message-content">
-                        <div className="smart-message-text">{content}</div>
+                    <div className="fc-smart-message-content">
+                        <div className="fc-smart-message-text">{content}</div>
                     </div>
                 );
         }
@@ -90,13 +90,13 @@ export const SmartMessage: React.FC<SmartMessageProps> = ({
 
     return (
         <div className={getMessageClass()} style={style} data-message-id={id}>
-            <div className="smart-message-content-wrapper">
+            <div className="fc-smart-message-content-wrapper">
                 {renderContent()}
             </div>
 
             {shouldShowCopyButton() && (
                 <button
-                    className="smart-message-copy-btn"
+                    className="fc-smart-message-copy-btn"
                     onClick={handleCopy}
                     title="复制内容"
                 >

@@ -1,6 +1,7 @@
 // Select.tsx
 import './Select.css'
 import * as React from "react";
+import { useClickOutside } from '../../hooks/useClickOutside';
 
 interface SelectOption {
     value: string | number;
@@ -15,7 +16,7 @@ interface SelectProps {
     options: SelectOption[];
     value?: string | number | (string | number)[];
     defaultValue?: string | number | (string | number)[];
-    onChange?: (value: any) => void;
+    onChange?: (value: string | number | (string | number)[]) => void;
     placeholder?: string;
     searchable?: boolean;
     multiple?: boolean;
@@ -154,15 +155,40 @@ export function Select({
     };
 
     // 点击外部关闭
-    React.useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
-            if (!containerRef.current?.contains(e.target as Node)) {
+    useClickOutside(containerRef, () => setIsOpen(false));
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (disabled) return;
+        switch (e.key) {
+            case 'Enter':
+            case ' ':
+                e.preventDefault();
+                if (!isOpen) { setIsOpen(true); break; }
+                if (flatOptions[highlightedIndex]) handleSelect(flatOptions[highlightedIndex]);
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                if (!isOpen) { setIsOpen(true); break; }
+                setHighlightedIndex(i => Math.min(i + 1, flatOptions.length - 1));
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setHighlightedIndex(i => Math.max(i - 1, 0));
+                break;
+            case 'Escape':
+                e.preventDefault();
                 setIsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
-    }, []);
+                break;
+            case 'Home':
+                e.preventDefault();
+                setHighlightedIndex(0);
+                break;
+            case 'End':
+                e.preventDefault();
+                setHighlightedIndex(flatOptions.length - 1);
+                break;
+        }
+    };
 
     const classNames = [
         'fc-select',
@@ -174,10 +200,14 @@ export function Select({
     ].filter(Boolean).join(' ');
 
     return (
-        <div ref={containerRef} className={classNames} style={mergedStyle}>
+        <div ref={containerRef} className={classNames} style={mergedStyle} onKeyDown={handleKeyDown}>
             <div
                 className="fc-select__trigger"
                 onClick={() => !disabled && setIsOpen(!isOpen)}
+                tabIndex={disabled ? -1 : 0}
+                role="combobox"
+                aria-expanded={isOpen}
+                aria-haspopup="listbox"
             >
                 <span className={`fc-select__value ${(currentValue === undefined || currentValue === null || (multiple && !(currentValue as any[]).length)) && 'fc-select__value--placeholder'}`}>
                     {displayLabel()}

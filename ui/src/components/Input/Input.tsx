@@ -6,7 +6,7 @@ type InputSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 type InputStatus = 'default' | 'error' | 'warning' | 'success';
 type InputRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
-interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix'> {
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix' | 'onChange'> {
     size?: InputSize;
     status?: InputStatus;
     /** 圆角大小，不传则使用默认值 md */
@@ -18,6 +18,7 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
     addonBefore?: React.ReactNode;
     addonAfter?: React.ReactNode;
     helperText?: string;
+    onChange?: (value: string) => void;
     onClear?: () => void;
 }
 
@@ -48,15 +49,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!isControlled) setInternalValue(e.target.value);
-        onChange?.(e);
+        onChange?.(e.target.value);
     };
 
     const handleClear = () => {
         if (!isControlled) setInternalValue('');
         onClear?.();
-        // 触发空值的change事件
-        const event = {target: {value: ''}} as React.ChangeEvent<HTMLInputElement>;
-        onChange?.(event);
+        onChange?.('');
     };
 
     const togglePassword = () => {

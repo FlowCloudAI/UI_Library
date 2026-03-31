@@ -1,5 +1,5 @@
 import "./AlertContext.css"
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { RollingBox } from "../Box/RollingBox";
 import { Button } from "../Button/Button";
 
@@ -64,12 +64,19 @@ export function AlertProvider({ children, background, borderColor }: AlertProvid
     const [alert, setAlert] = useState<AlertProps>({
         msg: "", type: "info", mode: "alert", visible: false, choice: () => {},
     });
+    const mountedRef = useRef(true);
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; };
+    }, []);
 
     const showAlert = (msg: string, type: AlertType, mode: AlertMode = "alert", duration?: number) =>
-        new Promise<string>((resolve) => {
+        new Promise<string>((resolve, reject) => {
+            if (!mountedRef.current) { reject(new Error('AlertProvider unmounted')); return; }
             setAlert({
                 msg, type, mode, visible: true, duration,
                 choice: (res) => {
+                    if (!mountedRef.current) return;
                     setAlert(p => ({ ...p, visible: false }));
                     resolve(res);
                 },
