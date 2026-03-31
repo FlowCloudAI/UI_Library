@@ -568,16 +568,16 @@ export function MyComponent() {
 
 组件使用 CSS 变量实现主题，可在全局样式中覆盖。完整变量列表见 `ui/src/style/index.css`，常用变量如下：
 
-| 变量 | 说明 |
-|------|------|
-| `--fc-color-primary` | 主色 |
-| `--fc-color-bg` | 页面背景色 |
+| 变量                        | 说明                          |
+|---------------------------|-----------------------------|
+| `--fc-color-primary`      | 主色                          |
+| `--fc-color-bg`           | 页面背景色                       |
 | `--fc-color-bg-secondary` | 次级背景色（导航栏、ghost 按钮 hover 等） |
-| `--fc-color-bg-tertiary` | 三级背景色（secondary 按钮 hover 等） |
-| `--fc-color-text` | 主文字色 |
-| `--fc-color-border` | 边框色 |
-| `--fc-radius-md` | 默认圆角 |
-| `--fc-font-family` | 字体 |
+| `--fc-color-bg-tertiary`  | 三级背景色（secondary 按钮 hover 等） |
+| `--fc-color-text`         | 主文字色                        |
+| `--fc-color-border`       | 边框色                         |
+| `--fc-radius-md`          | 默认圆角                        |
+| `--fc-font-family`        | 字体                          |
 
 ---
 
@@ -650,13 +650,13 @@ import './theme-override.css'                    // 覆盖必须在之后，否�
 
 ### 常见误区
 
-| 写法 | 结果 | 原因 |
-|------|------|------|
-| `App.css` 里写 `:root {}` | ❌ 失效 | 库 CSS 注入更晚，后来者居上 |
-| `App.css` 里 `@import` 库再覆盖 | ❌ 失效 | 库 CSS 仍通过 JS 二次注入并覆盖 |
-| `main.tsx` 最后 import 覆盖文件 | ✅ 生效 | 注入顺序正确 |
-| `:root` 覆盖有 `!important` 的变量 | ❌ 失效 | `!important` 不受顺序影响 |
-| 相同选择器 + `!important` 覆盖 | ✅ 生效 | 同优先级时后来者居上 |
+| 写法                           | 结果   | 原因                   |
+|------------------------------|------|----------------------|
+| `App.css` 里写 `:root {}`      | ❌ 失效 | 库 CSS 注入更晚，后来者居上     |
+| `App.css` 里 `@import` 库再覆盖   | ❌ 失效 | 库 CSS 仍通过 JS 二次注入并覆盖 |
+| `main.tsx` 最后 import 覆盖文件    | ✅ 生效 | 注入顺序正确               |
+| `:root` 覆盖有 `!important` 的变量 | ❌ 失效 | `!important` 不受顺序影响  |
+| 相同选择器 + `!important` 覆盖      | ✅ 生效 | 同优先级时后来者居上           |
 
 ---
 
@@ -794,5 +794,5 @@ MIT
 
 ## 📞 联系方式
 
-- 📧 Email: support@flowcloudai.com
+- 📧 Email: flowcloudai@163.com
 - 🐛 Issues: [GitHub Issues](https://github.com/flowcloudai/ui-library/issues)
