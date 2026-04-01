@@ -77,8 +77,8 @@ export function useAdaptiveTabLayout(
         const totalGapWidth = (currentItemsLength - 1) * tabGap;
         const idealW = (navW - totalGapWidth) / currentItemsLength;
 
-        const threshold = window.innerWidth * currentMinWidthRatio;
-        const maxAllowedWidth = window.innerWidth * currentMaxTabWidthRatio;
+        const threshold = screen.width * currentMinWidthRatio;
+        const maxAllowedWidth = screen.width * currentMaxTabWidthRatio;
         const minAllowedWidth = 42;
 
         const prev = lastLayoutRef.current;

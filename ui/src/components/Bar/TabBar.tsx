@@ -95,6 +95,12 @@ export interface TabBarProps {
     tabActiveBackground?: string;
     /** 激活态指示器颜色（attached 模式底线 / floating 模式无效） */
     activeIndicatorColor?: string;
+    /**
+     * 将 TabBar 空白区域标记为 Tauri 窗口拖拽区域。
+     * 开启后，标签之外的空白处可拖动窗口；标签、关闭、添加按钮已内置 no-drag 保护。
+     * @default false
+     */
+    tauriDragRegion?: boolean;
 }
 
 /* ========== 子组件：单个 Tab ========== */
@@ -216,6 +222,7 @@ export const TabBar = memo<TabBarProps>(({
                                              renderAddButton,
                                              className = '',
                                              style,
+                                             tauriDragRegion = false,
                                              background,
                                              tabColor,
                                              tabHoverColor,
@@ -367,9 +374,11 @@ export const TabBar = memo<TabBarProps>(({
         </div>
     );
 
+    const dragRegion = tauriDragRegion ? {'data-tauri-drag-region': ''} : {};
+
     return (
-        <div className={rootClasses} style={mergedStyle} role="tablist">
-            <div className={`fc-tab-bar__nav-outer${scrollMode ? ' fc-tab-bar__nav-outer--scroll' : ''}`}>
+        <div className={rootClasses} style={mergedStyle} role="tablist" {...dragRegion}>
+            <div className={`fc-tab-bar__nav-outer${scrollMode ? ' fc-tab-bar__nav-outer--scroll' : ''}`} {...dragRegion}>
                 <div className={`fc-tab-bar__nav${scrollMode ? ' fc-tab-bar__nav--scroll' : ''}`} ref={navRef}>
                     {scrollMode ? (
                         <RollingBox horizontal showThumb="hide" style={{flex: 1, minWidth: 0, height: 'auto'}}>
