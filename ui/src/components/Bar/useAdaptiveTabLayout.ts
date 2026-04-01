@@ -34,7 +34,7 @@ export function useAdaptiveTabLayout(
 
     const [layout, setLayout] = useState<AdaptiveTabLayout>({ scrollMode: false, tabWidth: undefined });
 
-    const calculateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const rafRef = useRef<number | null>(null);
     const lastLayoutRef = useRef<AdaptiveTabLayout>({ scrollMode: false, tabWidth: undefined });
     const addBtnWidthRef = useRef<number>(0);
     const lastAddableRef = useRef<boolean | undefined>(undefined);
@@ -105,23 +105,32 @@ export function useAdaptiveTabLayout(
         }
     }, [navRef]);
 
-    const calculateDebounced = useCallback(() => {
-        if (calculateTimeoutRef.current) clearTimeout(calculateTimeoutRef.current);
-        calculateTimeoutRef.current = setTimeout(calculate, 50);
-    }, [calculate]);
+    const calculateRef = useRef(calculate);
+    calculateRef.current = calculate;
 
-    const calculateDebouncedRef = useRef(calculateDebounced);
-    calculateDebouncedRef.current = calculateDebounced;
-
-    // 挂载时注册 resize 监听，卸载时清理
+    // 用 ResizeObserver 监听容器尺寸，每帧 layout 后立即触发，无需 debounce
     useEffect(() => {
-        const rafId = requestAnimationFrame(calculate);
-        const handleResize = () => calculateDebouncedRef.current();
-        window.addEventListener('resize', handleResize);
+        const navOuter = navRef.current?.parentElement;
+        if (!navOuter) return;
+
+        const ro = new ResizeObserver(() => {
+            if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+            rafRef.current = requestAnimationFrame(() => {
+                rafRef.current = null;
+                calculateRef.current();
+            });
+        });
+
+        ro.observe(navOuter);
+        // 初次计算
+        rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = null;
+            calculateRef.current();
+        });
+
         return () => {
-            cancelAnimationFrame(rafId);
-            window.removeEventListener('resize', handleResize);
-            if (calculateTimeoutRef.current) clearTimeout(calculateTimeoutRef.current);
+            ro.disconnect();
+            if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
