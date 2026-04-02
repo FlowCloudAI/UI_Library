@@ -44,8 +44,16 @@ export function TabBarDemo() {
             <div className="demo-section">
                 <h4>可关闭 + 可添加 + 拖拽排序</h4>
                 <TabBar
-                    items={tabs} activeKey={activeKey} variant="floating"
-                    closable addable draggable radius="md" tabRadius="md"
+                    minTabWidth={8}
+                    maxTabWidth={15}
+                    items={tabs}
+                    activeKey={activeKey}
+                    variant="floating"
+                    closable
+                    addable
+                    draggable
+                    radius="md"
+                    tabRadius="md"
                     onChange={setActiveKey} onClose={handleClose} onAdd={handleAdd} onReorder={setTabs}
                 />
                 <div style={{ padding: '8px 12px', fontSize: 13, color: 'var(--fc-color-text-secondary)' }}>当前：{activeKey}</div>
@@ -64,7 +72,7 @@ export function TabBarDemo() {
                     <div>
                         <p style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)', marginBottom: 6 }}>attached 暗色主题</p>
                         <TabBar items={BASE_TABS} activeKey={activeKey} variant="attached"
-                            background="#1e1e2e" tabColor="#a0a0b0" tabHoverColor="#ffffff"
+                            background={"#1e1e2e"} tabColor="#a0a0b0" tabHoverColor="#ffffff"
                             tabHoverBackground="#2a2a3e" tabActiveColor="#c084fc"
                             tabActiveBackground="#2a2a3e" activeIndicatorColor="#c084fc"
                             onChange={setActiveKey}
