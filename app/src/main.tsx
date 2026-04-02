@@ -6,14 +6,14 @@ import { ThemeProvider, AlertProvider, ContextMenuProvider } from 'flowcloudai-u
 
 // @ts-ignore - CSS import, no types needed
 import 'flowcloudai-ui/style'
-import './theme-override.css';
+import './theme-override.css'
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
         <ThemeProvider defaultTheme={"system"}>
             <AlertProvider>
                 <ContextMenuProvider>
-                    <App />
+                    <App/>
                 </ContextMenuProvider>
             </AlertProvider>
         </ThemeProvider>
