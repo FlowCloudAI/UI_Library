@@ -4,12 +4,13 @@
 .relation-container {
     position: relative;
     width: 100%;
+    height: 100%;
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     transition: background-color 0.3s ease;
 }
 
-/* 覆盖 ReactFlow 默认样式 */
+/* 覆盖 ReactFlow 默认样式 - 确保背景透明 */
 .relation-container .react-flow {
     background-color: transparent !important;
 }
@@ -35,33 +36,38 @@
     background-color: transparent !important;
 }
 
-/* 节点悬停效果增强 */
-.relation-node:hover {
-    transform: translateY(-4px) scale(1.02);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* 节点样式 - 移除悬停时的 transform 避免布局抖动 */
+.relation-node {
+    transition: box-shadow 0.2s ease;
 }
 
+.relation-node:hover {
+    /* 只改变阴影，不改变位置，避免连线重新计算 */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* 选中节点样式 */
 .relation-node-selected {
     box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.5) !important;
 }
 
-/* 连接点悬停效果 */
+/* 连接点样式 - 简化悬停效果 */
 .react-flow__handle {
-    transition: all 0.2s ease;
+    transition: opacity 0.2s ease;
+    opacity: 0.6;
 }
 
 .react-flow__handle:hover {
-    transform: scale(1.3);
-    background-color: #ff8e8e !important;
+    opacity: 1;
+    /* 移除 scale 变换，避免位置偏移 */
 }
 
-/* 连线动画效果 */
+/* 连线样式 - 只保留颜色过渡，移除 stroke-width 过渡减少延迟 */
 .react-flow__edge-path {
-    transition: stroke-width 0.2s ease, stroke 0.2s ease;
+    transition: stroke 0.2s ease;
 }
 
 .react-flow__edge:hover .react-flow__edge-path {
-    stroke-width: 3px;
     stroke: #ff8e8e;
 }
 
@@ -74,12 +80,11 @@
 }
 
 .react-flow__edge-label:hover {
-    transform: scale(1.05);
     background-color: #ff6b6b !important;
     color: #ffffff !important;
 }
 
-/* 控制按钮样式（如果需要） */
+/* 控制按钮样式 */
 .react-flow__controls {
     border-radius: 12px;
     overflow: hidden;
@@ -87,7 +92,7 @@
 }
 
 .react-flow__controls-button {
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 
 .react-flow__controls-button:hover {
@@ -97,19 +102,18 @@
 
 /* 滚动条样式 */
 .relation-container ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 .relation-container ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
 }
 
 .relation-container ::-webkit-scrollbar-thumb {
-    background: rgba(255, 107, 107, 0.5);
-    border-radius: 4px;
-    transition: background 0.2s ease;
+    background: rgba(255, 107, 107, 0.4);
+    border-radius: 3px;
 }
 
 .relation-container ::-webkit-scrollbar-thumb:hover {
@@ -136,7 +140,7 @@
     }
 }
 
-/* 节点内动画 */
+/* 状态指示器动画 */
 @keyframes pulse {
     0%, 100% {
         opacity: 1;
@@ -148,7 +152,6 @@
     }
 }
 
-/* 状态指示器动画 */
 .relation-node-status {
     animation: pulse 2s infinite;
 }

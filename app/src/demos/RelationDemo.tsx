@@ -113,6 +113,7 @@ export const RelationDemo = () => {
                         onNodeDoubleClick={handleNodeDoubleClick}
                         onEdgeClick={handleEdgeClick}
                         onConnect={handleConnect}
+                        showHandles={false}
                     />
                 </div>
             </div>
