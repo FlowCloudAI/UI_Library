@@ -1,17 +1,5 @@
 /* src/components/TabBar/TabBar.css */
 
-/* ==========================================================
-   可覆盖的 CSS 变量（在 .fc-tab-bar 或父容器上设置即可）
-
-   --fc-tab-color:          标签文字颜色
-   --fc-tab-bg:             标签背景色
-   --fc-tab-hover-color:    hover 文字颜色
-   --fc-tab-hover-bg:       hover 背景色
-   --fc-tab-active-color:   激活态文字颜色
-   --fc-tab-active-bg:      激活态背景色
-   --fc-tab-active-border:  激活态指示器颜色（attached 模式下的底线）
-   ========================================================== */
-
 /* ========== 基础容器 ========== */
 .fc-tab-bar {
     /* 颜色变量 */
@@ -22,6 +10,10 @@
     --tab-active-color:     var(--fc-color-primary);
     --tab-active-bg:        var(--fc-color-bg);
     --tab-active-indicator: var(--fc-color-primary);
+
+    /* 尺寸变量 - 由 JS 传入 */
+    --tab-min-width:        8rem;
+    --tab-max-width:        18rem;
 
     /* 圆角变量 - 容器 */
     --tab-bar-radius-tl:    var(--fc-radius-md);
@@ -45,71 +37,37 @@
 }
 
 /* ========== 容器圆角 ========== */
-.fc-tab-bar--radius-none {
-    --tab-bar-radius-tl: 0px;
-    --tab-bar-radius-tr: 0px;
-    --tab-bar-radius-br: 0px;
-    --tab-bar-radius-bl: 0px;
-}
-.fc-tab-bar--radius-sm {
-    --tab-bar-radius-tl: var(--fc-radius-sm, 4px);
-    --tab-bar-radius-tr: var(--fc-radius-sm, 4px);
-}
-.fc-tab-bar--radius-md {
-    --tab-bar-radius-tl: var(--fc-radius-md, 8px);
-    --tab-bar-radius-tr: var(--fc-radius-md, 8px);
-}
-.fc-tab-bar--radius-lg {
-    --tab-bar-radius-tl: var(--fc-radius-lg, 12px);
-    --tab-bar-radius-tr: var(--fc-radius-lg, 12px);
-}
-.fc-tab-bar--radius-xl {
-    --tab-bar-radius-tl: var(--fc-radius-xl, 16px);
-    --tab-bar-radius-tr: var(--fc-radius-xl, 16px);
-}
-.fc-tab-bar--radius-full {
-    --tab-bar-radius-tl: var(--fc-radius-full, 9999px);
-    --tab-bar-radius-tr: var(--fc-radius-full, 9999px);
-}
+.fc-tab-bar--radius-none { --tab-bar-radius-tl: 0px; --tab-bar-radius-tr: 0px; --tab-bar-radius-br: 0px; --tab-bar-radius-bl: 0px; }
+.fc-tab-bar--radius-sm { --tab-bar-radius-tl: var(--fc-radius-sm, 4px); --tab-bar-radius-tr: var(--fc-radius-sm, 4px); }
+.fc-tab-bar--radius-md { --tab-bar-radius-tl: var(--fc-radius-md, 8px); --tab-bar-radius-tr: var(--fc-radius-md, 8px); }
+.fc-tab-bar--radius-lg { --tab-bar-radius-tl: var(--fc-radius-lg, 12px); --tab-bar-radius-tr: var(--fc-radius-lg, 12px); }
+.fc-tab-bar--radius-xl { --tab-bar-radius-tl: var(--fc-radius-xl, 16px); --tab-bar-radius-tr: var(--fc-radius-xl, 16px); }
+.fc-tab-bar--radius-full { --tab-bar-radius-tl: var(--fc-radius-full, 9999px); --tab-bar-radius-tr: var(--fc-radius-full, 9999px); }
 
 /* ========== 导航栏 ========== */
-/* nav-outer：addBtn 在此层与 nav 平级，不进入滚动区域 */
 .fc-tab-bar__nav-outer {
     display: flex;
     align-items: stretch;
 }
 
-/* 滚动模式：nav-outer 裁切整体（含 addBtn 以外的滚动区） */
-.fc-tab-bar__nav-outer--scroll {
-    overflow: hidden;
-}
-
-.fc-tab-bar__nav {
-    flex: 1;
-    min-width: 0;
-    /* 非滚动模式不裁切，让 Tab 以精确均分宽度自然显示 */
-    /* 滚动模式由 .fc-tab-bar__nav--scroll 追加 overflow:hidden */
-    display: flex;
-    align-items: stretch;
-    position: relative;
-    z-index: 0; /* 确保 nav 层在 addBtn 下方，避免覆盖 */
-}
-
-/* 滚动模式：nav 裁切 RollingBox 的视觉溢出 */
-.fc-tab-bar__nav--scroll {
-    overflow: hidden;
-    flex-shrink: 0; /* 防止 nav 压缩 addBtn 的空间 */
-}
-
 .fc-tab-bar__nav-wrap {
     display: flex;
-    gap: 0; /* attached 模式下 Tab 之间无间隙 */
     align-items: stretch;
-    max-width: 100%; /* 防止 nav-wrap 超出 nav 容器 */
-    box-sizing: border-box; /* 确保边框盒计算一致 */
 }
 
-/* ========== 标签页（基础） ========== */
+/* 滚动模式 */
+.fc-tab-bar__nav-wrap--scroll {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.fc-tab-bar__nav-wrap--scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* ========== 标签页 - 核心修改：用 CSS 控制宽度 ========== */
 .fc-tab-bar__tab {
     position: relative;
     display: inline-flex;
@@ -125,14 +83,17 @@
     border: none;
     user-select: none;
     border-radius: var(--tab-item-radius-tl) var(--tab-item-radius-tr) var(--tab-item-radius-br) var(--tab-item-radius-bl);
+
+    /* 自适应宽度：grow 填充空间（capped by max-width），shrink 压缩（floored by min-width）*/
+    flex: 1 1 var(--tab-max-width);
+    min-width: var(--tab-min-width);
+    max-width: var(--tab-max-width);
+
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
-/* 滚动模式下：确保关闭按钮始终靠右对齐，不被压缩 */
-.fc-tab-bar__nav--scroll .fc-tab-bar__tab {
-    justify-content: space-between;
-}
-
-.fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled):not(.fc-tab-bar__tab--dragging) {
+.fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled):not(.fc-tab-bar__tab--dragging):not(.fc-tab-bar__tab--active) {
     color: var(--tab-hover-color);
     background-color: var(--tab-hover-bg);
 }
@@ -148,11 +109,16 @@
     opacity: 0.6;
 }
 
-/* ==========================================================
-   VARIANT: attached（贴合）
-   标签底部紧贴导航栏下边缘，底部 2px 线条作为激活指示器
-   ========================================================== */
+/* 标签文字溢出 */
+.fc-tab-bar__tab-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
 
+/* ========== VARIANT: attached（贴合） ========== */
 .fc-tab-bar--attached {
     border-bottom: 2px solid var(--fc-color-border);
 }
@@ -166,11 +132,7 @@
     border-bottom-color: var(--tab-active-indicator);
 }
 
-/* ==========================================================
-   VARIANT: floating（悬浮）
-   标签垂直居中悬浮在导航栏中，胶囊/圆角形态，背景填充
-   ========================================================== */
-
+/* ========== VARIANT: floating（悬浮） ========== */
 .fc-tab-bar--floating {
     border-bottom: none;
 }
@@ -202,79 +164,28 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-/* ==========================================================
-   Tab 项圆角（tabRadius prop）
-   在 attached 模式下提供四周圆角；在 floating 模式下覆盖默认胶囊圆角
-   可用 CSS 变量 --tab-item-radius-tl/tr/br/bl 精细控制
-   ========================================================== */
-
-.fc-tab-bar--tab-radius-none {
-    --tab-item-radius-tl: 0px;
-    --tab-item-radius-tr: 0px;
-    --tab-item-radius-br: 0px;
-    --tab-item-radius-bl: 0px;
-}
-.fc-tab-bar--tab-radius-sm {
-    --tab-item-radius-tl: var(--fc-radius-sm, 4px);
-    --tab-item-radius-tr: var(--fc-radius-sm, 4px);
-    --tab-item-radius-br: var(--fc-radius-sm, 4px);
-    --tab-item-radius-bl: var(--fc-radius-sm, 4px);
-}
-.fc-tab-bar--tab-radius-md {
-    --tab-item-radius-tl: var(--fc-radius-md, 8px);
-    --tab-item-radius-tr: var(--fc-radius-md, 8px);
-    --tab-item-radius-br: var(--fc-radius-md, 8px);
-    --tab-item-radius-bl: var(--fc-radius-md, 8px);
-}
-.fc-tab-bar--tab-radius-lg {
-    --tab-item-radius-tl: var(--fc-radius-lg, 12px);
-    --tab-item-radius-tr: var(--fc-radius-lg, 12px);
-    --tab-item-radius-br: var(--fc-radius-lg, 12px);
-    --tab-item-radius-bl: var(--fc-radius-lg, 12px);
-}
-.fc-tab-bar--tab-radius-xl {
-    --tab-item-radius-tl: var(--fc-radius-xl, 16px);
-    --tab-item-radius-tr: var(--fc-radius-xl, 16px);
-    --tab-item-radius-br: var(--fc-radius-xl, 16px);
-    --tab-item-radius-bl: var(--fc-radius-xl, 16px);
-}
-.fc-tab-bar--tab-radius-full {
-    --tab-item-radius-tl: var(--fc-radius-full, 9999px);
-    --tab-item-radius-tr: var(--fc-radius-full, 9999px);
-    --tab-item-radius-br: var(--fc-radius-full, 9999px);
-    --tab-item-radius-bl: var(--fc-radius-full, 9999px);
-}
+/* ========== Tab 项圆角 ========== */
+.fc-tab-bar--tab-radius-none { --tab-item-radius-tl: 0px; --tab-item-radius-tr: 0px; --tab-item-radius-br: 0px; --tab-item-radius-bl: 0px; }
+.fc-tab-bar--tab-radius-sm { --tab-item-radius-tl: var(--fc-radius-sm, 4px); --tab-item-radius-tr: var(--fc-radius-sm, 4px); --tab-item-radius-br: var(--fc-radius-sm, 4px); --tab-item-radius-bl: var(--fc-radius-sm, 4px); }
+.fc-tab-bar--tab-radius-md { --tab-item-radius-tl: var(--fc-radius-md, 8px); --tab-item-radius-tr: var(--fc-radius-md, 8px); --tab-item-radius-br: var(--fc-radius-md, 8px); --tab-item-radius-bl: var(--fc-radius-md, 8px); }
+.fc-tab-bar--tab-radius-lg { --tab-item-radius-tl: var(--fc-radius-lg, 12px); --tab-item-radius-tr: var(--fc-radius-lg, 12px); --tab-item-radius-br: var(--fc-radius-lg, 12px); --tab-item-radius-bl: var(--fc-radius-lg, 12px); }
+.fc-tab-bar--tab-radius-xl { --tab-item-radius-tl: var(--fc-radius-xl, 16px); --tab-item-radius-tr: var(--fc-radius-xl, 16px); --tab-item-radius-br: var(--fc-radius-xl, 16px); --tab-item-radius-bl: var(--fc-radius-xl, 16px); }
+.fc-tab-bar--tab-radius-full { --tab-item-radius-tl: var(--fc-radius-full, 9999px); --tab-item-radius-tr: var(--fc-radius-full, 9999px); --tab-item-radius-br: var(--fc-radius-full, 9999px); --tab-item-radius-bl: var(--fc-radius-full, 9999px); }
 
 /* ========== Tauri 兼容：排除 Tab 元素出 drag-region ========== */
-/* 当 TabBar 父容器带有 data-tauri-drag-region 时，Tab 元素会继承窗口拖拽行为，
-   导致 mousedown 被 Tauri 抢占，@dnd-kit 和点击事件全部失效。
-   -webkit-app-region: no-drag 明确排除这些交互元素。 */
 .fc-tab-bar__tab,
 .fc-tab-bar__tab-close,
 .fc-tab-bar__add-btn {
     -webkit-app-region: no-drag;
 }
 
-/* ========== 均分模式（Tab 数量多时自动压缩，Firefox 风格文字淡出） ========== */
-.fc-tab-bar--shrink .fc-tab-bar__tab {
+/* ========== Tauri 拖拽手柄 ========== */
+/* nav-wrap 已占据所有空间（flex: 1），drag-handle 不参与空间分配，
+   仅作为标记节点让 Tauri 识别可拖拽区域 */
+.fc-tab-bar__drag-handle {
+    flex: 0 0 0px;
     overflow: hidden;
-    min-width: 0;
-}
-
-/* 当 tabWidth 过小时，动态压缩 padding 以保护 close 按钮不被裁切 */
-.fc-tab-bar--shrink .fc-tab-bar__tab[data-compact="true"] {
-    padding-left: var(--fc-space-xs, 6px);
-    padding-right: var(--fc-space-xs, 6px);
-}
-
-/* 文字区域：mask-image 从右侧渐变透明，关闭按钮不受影响（它在 span 之外） */
-.fc-tab-bar--shrink .fc-tab-bar__tab-label {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 20px), transparent 100%);
-    mask-image: linear-gradient(to right, black 0%, black calc(100% - 20px), transparent 100%);
+    -webkit-app-region: drag;
 }
 
 /* ========== 拖拽样式 ========== */
@@ -298,7 +209,7 @@
     color: var(--fc-color-text-tertiary);
     border-radius: var(--fc-radius-sm, 4px);
     transition: all var(--fc-transition, 150ms ease);
-    flex-shrink: 0; /* 关键修复：防止 close 按钮被压缩裁切 */
+    flex-shrink: 0;
 }
 
 .fc-tab-bar__tab-close:hover {
@@ -312,6 +223,7 @@
     align-items: center;
     justify-content: center;
     width: 32px;
+    flex-shrink: 0;
     margin: 0 var(--fc-space-sm, 8px);
     font-size: 20px;
     font-weight: bold;
@@ -327,34 +239,13 @@
     background-color: var(--fc-color-bg-tertiary);
 }
 
-/* floating 模式下新增按钮也居中 */
 .fc-tab-bar--floating .fc-tab-bar__add-btn {
     border-radius: var(--fc-radius-full, 9999px);
 }
 
 /* ========== 暗色主题 ========== */
-[data-theme="dark"] .fc-tab-bar--attached {
-    border-bottom-color: var(--fc-color-border);
-}
-
-[data-theme="dark"] .fc-tab-bar__tab--active {
-    background-color: var(--tab-active-bg);
-}
-
-[data-theme="dark"] .fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled) {
-    background-color: var(--tab-hover-bg);
-}
-
 [data-theme="dark"] .fc-tab-bar--floating .fc-tab-bar__tab--active {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-[data-theme="dark"] .fc-tab-bar__add-btn:hover {
-    background-color: var(--fc-color-bg-tertiary);
-}
-
-[data-theme="dark"] .fc-tab-bar__tab-close:hover {
-    background-color: var(--fc-color-border-light);
 }
 
 /* ========== 响应式 ========== */
