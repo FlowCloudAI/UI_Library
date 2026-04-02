@@ -1,48 +1,108 @@
 // src/components/TabBar/TabBar.tsx
-import React, { useRef, useCallback, memo, useEffect } from 'react';
+import React, {useRef, useCallback, memo, useEffect} from 'react';
 import './TabBar.css';
 
 /* ========== 类型定义 ========== */
+
 export interface TabItem {
+    /** 唯一标识 */
     key: string;
+    /** 标签显示内容 */
     label: React.ReactNode;
+    /** 是否禁用 */
     disabled?: boolean;
+    /** 是否可关闭（覆盖全局 closable） */
     closable?: boolean;
 }
 
 export interface TabBarProps {
+    /** Tab 列表（受控） */
     items: TabItem[];
+    /** 当前激活的 Tab key（受控） */
     activeKey: string;
+
+    /**
+     * 布局变体
+     * - attached: 贴合模式 — 标签底部紧贴导航栏下边缘，底部线条作为激活指示器
+     * - floating: 悬浮模式 — 标签垂直居中悬浮，胶囊形态，背景填充作为激活指示器
+     * @default 'attached'
+     */
     variant?: 'attached' | 'floating';
+
+    /** TabBar 容器圆角 */
     radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    /** 单个 Tab 项的圆角（仅在 floating 模式下或需要四周圆角时使用） */
     tabRadius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    /** 是否显示关闭按钮 */
     closable?: boolean;
+    /** 是否显示添加按钮 */
     addable?: boolean;
+    /** 是否启用拖拽排序 */
     draggable?: boolean;
-    minTabWidth?: number;
-    maxTabWidth?: number;
+    /**
+     * Tab 最小宽度比例（相对 screen.width）。
+     * Tab 压缩至此宽度后触发横向滚动。
+     * @default 0.07
+     */
+    minWidthRatio?: number;
+    /**
+     * Tab 最大宽度比例（相对 screen.width）。
+     * Tab 较少时不超过此宽度。
+     * @default 0.15
+     */
+    maxTabWidthRatio?: number;
+
+    /* ---- 回调 ---- */
+
     onChange: (activeKey: string) => void;
     onClose?: (key: string) => void;
     onAdd?: () => void;
     onReorder?: (reorderedItems: TabItem[]) => void;
+
+    /* ---- 样式定制 ---- */
+
+    /** 每个 Tab 的自定义 className */
     tabClassName?: string;
+    /** 激活态 Tab 的额外 className */
     activeTabClassName?: string;
+    /** 每个 Tab 的自定义 inline style */
     tabStyle?: React.CSSProperties;
+    /** 激活态 Tab 的自定义 inline style（会合并到 tabStyle 之上） */
     activeTabStyle?: React.CSSProperties;
+
+    /** 自定义关闭图标渲染 */
     renderCloseIcon?: (key: string) => React.ReactNode;
+    /** 自定义添加按钮渲染 */
     renderAddButton?: () => React.ReactNode;
+
     className?: string;
     style?: React.CSSProperties;
+
+    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    /** 容器背景色 */
     background?: string;
+    /** 标签默认文字色 */
     tabColor?: string;
+    /** 标签 hover 文字色 */
     tabHoverColor?: string;
+    /** 标签 hover 背景色 */
     tabHoverBackground?: string;
+    /** 激活态文字色 */
     tabActiveColor?: string;
+    /** 激活态背景色 */
     tabActiveBackground?: string;
+    /** 激活态指示器颜色（attached 模式底线 / floating 模式无效） */
     activeIndicatorColor?: string;
+    /**
+     * 将 TabBar 空白区域标记为 Tauri 窗口拖拽区域。
+     * 开启后，标签之外的空白处可拖动窗口；标签、关闭、添加按钮已内置 no-drag 保护。
+     * @default false
+     */
+    tauriDragRegion?: boolean;
 }
 
 /* ========== 子组件：单个 Tab ========== */
+
 interface TabItemViewProps {
     item: TabItem;
     isActive: boolean;
@@ -62,11 +122,22 @@ interface TabItemViewProps {
 }
 
 const TabItemView = memo<TabItemViewProps>(({
-                              item, isActive, closable, draggable,
-                              tabClassName, activeTabClassName, tabStyle, activeTabStyle,
-                              renderCloseIcon, onClick, onClose,
-                              onDragStart, onDragOver, onDrop, onDragEnd,
-                          }) => {
+    item,
+    isActive,
+    closable,
+    draggable,
+    tabClassName,
+    activeTabClassName,
+    tabStyle,
+    activeTabStyle,
+    renderCloseIcon,
+    onClick,
+    onClose,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onDragEnd,
+}) => {
     const showClose = item.closable !== undefined ? item.closable : closable;
 
     const classes = [
@@ -106,28 +177,50 @@ const TabItemView = memo<TabItemViewProps>(({
                     role="button"
                     aria-label="关闭"
                 >
-          {renderCloseIcon ? renderCloseIcon(item.key) : '×'}
-        </span>
+                    {renderCloseIcon ? renderCloseIcon(item.key) : '×'}
+                </span>
             )}
         </div>
     );
 });
+
 TabItemView.displayName = 'TabItemView';
 
 /* ========== 主组件：TabBar ========== */
+
 export const TabBar = memo<TabBarProps>(({
-                                items, activeKey,
-                                variant = 'attached', radius = 'md', tabRadius,
-                                closable = false, addable = false, draggable = false,
-                                minTabWidth = 8, maxTabWidth = 18,
-                                onChange, onClose, onAdd, onReorder,
-                                tabClassName, activeTabClassName, tabStyle, activeTabStyle,
-                                renderCloseIcon, renderAddButton,
-                                className = '', style,
-                                background, tabColor, tabHoverColor, tabHoverBackground,
-                                tabActiveColor, tabActiveBackground, activeIndicatorColor,
-                            }) => {
-    const cssVarMap: Record<string, string | undefined> = {
+    items,
+    activeKey,
+    variant = 'attached',
+    radius = 'md',
+    tabRadius,
+    closable = false,
+    addable = false,
+    draggable = false,
+    minWidthRatio = 0.07,
+    maxTabWidthRatio = 0.15,
+    onChange,
+    onClose,
+    onAdd,
+    onReorder,
+    tabClassName,
+    activeTabClassName,
+    tabStyle,
+    activeTabStyle,
+    renderCloseIcon,
+    renderAddButton,
+    className = '',
+    style,
+    tauriDragRegion = false,
+    background,
+    tabColor,
+    tabHoverColor,
+    tabHoverBackground,
+    tabActiveColor,
+    tabActiveBackground,
+    activeIndicatorColor,
+}) => {
+    const colorVars: Record<string, string | undefined> = {
         '--tab-bar-bg': background,
         '--tab-color': tabColor,
         '--tab-hover-color': tabHoverColor,
@@ -135,82 +228,95 @@ export const TabBar = memo<TabBarProps>(({
         '--tab-active-color': tabActiveColor,
         '--tab-active-bg': tabActiveBackground,
         '--tab-active-indicator': activeIndicatorColor,
-        '--tab-min-width': `${minTabWidth}rem`,
-        '--tab-max-width': `${maxTabWidth}rem`,
     };
 
-    const cssVars: React.CSSProperties = {};
-    for (const [k, v] of Object.entries(cssVarMap)) {
-        if (v !== undefined) (cssVars as any)[k] = v;
+    const overrideStyle: React.CSSProperties = {};
+    for (const [key, value] of Object.entries(colorVars)) {
+        if (value !== undefined) {
+            (overrideStyle as any)[key] = value;
+        }
     }
 
-    const mergedStyle: React.CSSProperties = { ...cssVars, ...style };
-
-    const navOuterRef = useRef<HTMLDivElement>(null);
-    const addBtnRef = useRef<HTMLDivElement>(null);
-    const navWrapRef = useRef<HTMLDivElement>(null);
+    const mergedStyle: React.CSSProperties = {...overrideStyle, ...style};
     const dragKeyRef = useRef<string | null>(null);
-
-    // 纵向滚轮 → 横向滚动
-    useEffect(() => {
-        const el = navWrapRef.current;
-        if (!el) return;
-        const handler = (e: WheelEvent) => {
-            if (e.deltaY === 0 || e.deltaX !== 0) return;
-            el.scrollLeft += e.deltaY;
-            e.preventDefault();
-        };
-        el.addEventListener('wheel', handler, { passive: false });
-        return () => el.removeEventListener('wheel', handler);
-    }, []);
+    const navRef = useRef<HTMLDivElement>(null);
 
     // 新增 tab 时自动滚动到末尾
-    const prevLenRef = useRef(items.length);
+    const prevItemsLengthRef = useRef(items.length);
     useEffect(() => {
-        const prev = prevLenRef.current;
-        prevLenRef.current = items.length;
+        const prev = prevItemsLengthRef.current;
+        prevItemsLengthRef.current = items.length;
         if (items.length <= prev) return;
-        const el = navWrapRef.current;
-        if (!el) return;
-        requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
+        const nav = navRef.current;
+        if (!nav) return;
+        requestAnimationFrame(() => { nav.scrollLeft = nav.scrollWidth; });
     }, [items.length]);
 
-    const handleClick = useCallback((key: string) => onChange(key), [onChange]);
-
-    const handleClose = useCallback((e: React.MouseEvent, key: string) => {
-        e.stopPropagation();
-        onClose?.(key);
-    }, [onClose]);
-
-    const handleDragStart = useCallback((e: React.DragEvent, key: string) => {
-        dragKeyRef.current = key;
-        e.dataTransfer.effectAllowed = 'move';
-        const target = e.currentTarget as HTMLElement;
-        requestAnimationFrame(() => target.classList.add('fc-tab-bar__tab--dragging'));
+    // 鼠标滚轮垂直滚动转为水平滚动（原生 overflow-x: auto 不自动处理 deltaY）
+    useEffect(() => {
+        const nav = navRef.current;
+        if (!nav) return;
+        const handleWheel = (e: WheelEvent) => {
+            if (e.deltaY === 0) return;
+            e.preventDefault();
+            nav.scrollLeft += Number(e.deltaY);
+        };
+        nav.addEventListener('wheel', handleWheel, {passive: false});
+        return () => nav.removeEventListener('wheel', handleWheel);
     }, []);
+
+    const handleClick = useCallback(
+        (key: string) => onChange(key),
+        [onChange],
+    );
+
+    const handleClose = useCallback(
+        (e: React.MouseEvent, key: string) => {
+            e.stopPropagation();
+            onClose?.(key);
+        },
+        [onClose],
+    );
+
+    const handleDragStart = useCallback(
+        (e: React.DragEvent, key: string) => {
+            dragKeyRef.current = key;
+            e.dataTransfer.effectAllowed = 'move';
+            const target = e.currentTarget as HTMLElement;
+            requestAnimationFrame(() => target.classList.add('fc-tab-bar__tab--dragging'));
+        },
+        [],
+    );
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
     }, []);
 
-    const handleDrop = useCallback((e: React.DragEvent, targetKey: string) => {
-        e.preventDefault();
-        const dragKey = dragKeyRef.current;
-        if (!dragKey || dragKey === targetKey || !onReorder) return;
-        const from = items.findIndex((i) => i.key === dragKey);
-        const to = items.findIndex((i) => i.key === targetKey);
-        if (from === -1 || to === -1) return;
-        const reordered = [...items];
-        const [moved] = reordered.splice(from, 1);
-        reordered.splice(to, 0, moved);
-        onReorder(reordered);
-    }, [items, onReorder]);
+    const handleDrop = useCallback(
+        (e: React.DragEvent, targetKey: string) => {
+            e.preventDefault();
+            const dragKey = dragKeyRef.current;
+            if (!dragKey || dragKey === targetKey || !onReorder) return;
+
+            const fromIndex = items.findIndex((i) => i.key === dragKey);
+            const toIndex = items.findIndex((i) => i.key === targetKey);
+            if (fromIndex === -1 || toIndex === -1) return;
+
+            const reordered = [...items];
+            const [moved] = reordered.splice(fromIndex, 1);
+            reordered.splice(toIndex, 0, moved);
+            onReorder(reordered);
+        },
+        [items, onReorder],
+    );
 
     const handleDragEnd = useCallback((e: React.DragEvent) => {
         dragKeyRef.current = null;
         (e.currentTarget as HTMLElement).classList.remove('fc-tab-bar__tab--dragging');
     }, []);
+
+    /* ---- 渲染 ---- */
 
     const rootClasses = [
         'fc-tab-bar',
@@ -220,15 +326,18 @@ export const TabBar = memo<TabBarProps>(({
         className,
     ].filter(Boolean).join(' ');
 
-    const navWrapClasses = [
-        'fc-tab-bar__nav-wrap',
-        'fc-tab-bar__nav-wrap--scroll', // 始终启用滚动模式，由 CSS 控制
-    ].filter(Boolean).join(' ');
+    // Tab 宽度上下限通过 CSS 变量传入，CSS flex 自动处理压缩与滚动
+    const navWrapStyle = {
+        '--tab-min-width': `${Math.round(screen.width * minWidthRatio)}px`,
+        '--tab-max-width': `${Math.round(screen.width * maxTabWidthRatio)}px`,
+    } as React.CSSProperties;
+
+    const dragRegion = tauriDragRegion ? {'data-tauri-drag-region': ''} : {};
 
     return (
-        <div className={rootClasses} style={mergedStyle} role="tablist">
-            <div className="fc-tab-bar__nav-outer" ref={navOuterRef}>
-                <div className={navWrapClasses} ref={navWrapRef}>
+        <div className={rootClasses} style={mergedStyle} role="tablist" {...dragRegion}>
+            <div className="fc-tab-bar__nav-outer" {...dragRegion}>
+                <div className="fc-tab-bar__nav-wrap" ref={navRef} style={navWrapStyle}>
                     {items.map((item) => (
                         <TabItemView
                             key={item.key}
@@ -252,7 +361,6 @@ export const TabBar = memo<TabBarProps>(({
                     {addable && (
                         <div
                             className="fc-tab-bar__add-btn"
-                            ref={addBtnRef}
                             onClick={onAdd}
                             role="button"
                             aria-label="添加标签"
@@ -261,11 +369,11 @@ export const TabBar = memo<TabBarProps>(({
                         </div>
                     )}
                 </div>
-                {/* Tauri 拖拽区域：只在空白处启用 */}
-                <div className="fc-tab-bar__drag-handle" data-tauri-drag-region />
             </div>
         </div>
     );
 });
+
 TabBar.displayName = 'TabBar';
+
 export default TabBar;

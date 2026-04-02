@@ -1,5 +1,17 @@
 /* src/components/TabBar/TabBar.css */
 
+/* ==========================================================
+   可覆盖的 CSS 变量（在 .fc-tab-bar 或父容器上设置即可）
+
+   --fc-tab-color:          标签文字颜色
+   --fc-tab-bg:             标签背景色
+   --fc-tab-hover-color:    hover 文字颜色
+   --fc-tab-hover-bg:       hover 背景色
+   --fc-tab-active-color:   激活态文字颜色
+   --fc-tab-active-bg:      激活态背景色
+   --fc-tab-active-border:  激活态指示器颜色（attached 模式下的底线）
+   ========================================================== */
+
 /* ========== 基础容器 ========== */
 .fc-tab-bar {
     /* 颜色变量 */
@@ -10,10 +22,6 @@
     --tab-active-color:     var(--fc-color-primary);
     --tab-active-bg:        var(--fc-color-bg);
     --tab-active-indicator: var(--fc-color-primary);
-
-    /* 尺寸变量 - 由 JS 传入 */
-    --tab-min-width:        8rem;
-    --tab-max-width:        18rem;
 
     /* 圆角变量 - 容器 */
     --tab-bar-radius-tl:    var(--fc-radius-md);
@@ -37,42 +45,65 @@
 }
 
 /* ========== 容器圆角 ========== */
-.fc-tab-bar--radius-none { --tab-bar-radius-tl: 0px; --tab-bar-radius-tr: 0px; --tab-bar-radius-br: 0px; --tab-bar-radius-bl: 0px; }
-.fc-tab-bar--radius-sm { --tab-bar-radius-tl: var(--fc-radius-sm, 4px); --tab-bar-radius-tr: var(--fc-radius-sm, 4px); }
-.fc-tab-bar--radius-md { --tab-bar-radius-tl: var(--fc-radius-md, 8px); --tab-bar-radius-tr: var(--fc-radius-md, 8px); }
-.fc-tab-bar--radius-lg { --tab-bar-radius-tl: var(--fc-radius-lg, 12px); --tab-bar-radius-tr: var(--fc-radius-lg, 12px); }
-.fc-tab-bar--radius-xl { --tab-bar-radius-tl: var(--fc-radius-xl, 16px); --tab-bar-radius-tr: var(--fc-radius-xl, 16px); }
-.fc-tab-bar--radius-full { --tab-bar-radius-tl: var(--fc-radius-full, 9999px); --tab-bar-radius-tr: var(--fc-radius-full, 9999px); }
+.fc-tab-bar--radius-none {
+    --tab-bar-radius-tl: 0px;
+    --tab-bar-radius-tr: 0px;
+    --tab-bar-radius-br: 0px;
+    --tab-bar-radius-bl: 0px;
+}
+.fc-tab-bar--radius-sm {
+    --tab-bar-radius-tl: var(--fc-radius-sm, 4px);
+    --tab-bar-radius-tr: var(--fc-radius-sm, 4px);
+}
+.fc-tab-bar--radius-md {
+    --tab-bar-radius-tl: var(--fc-radius-md, 8px);
+    --tab-bar-radius-tr: var(--fc-radius-md, 8px);
+}
+.fc-tab-bar--radius-lg {
+    --tab-bar-radius-tl: var(--fc-radius-lg, 12px);
+    --tab-bar-radius-tr: var(--fc-radius-lg, 12px);
+}
+.fc-tab-bar--radius-xl {
+    --tab-bar-radius-tl: var(--fc-radius-xl, 16px);
+    --tab-bar-radius-tr: var(--fc-radius-xl, 16px);
+}
+.fc-tab-bar--radius-full {
+    --tab-bar-radius-tl: var(--fc-radius-full, 9999px);
+    --tab-bar-radius-tr: var(--fc-radius-full, 9999px);
+}
 
 /* ========== 导航栏 ========== */
+
+/* nav-outer：tauri drag-region 锚点 + floating 变体内边距载体 */
 .fc-tab-bar__nav-outer {
     display: flex;
     align-items: stretch;
+    flex: 1;
+    min-width: 0;
 }
 
+/* nav-wrap：水平 scroll container，所有 tab 和 add 按钮在此排布 */
 .fc-tab-bar__nav-wrap {
     display: flex;
     align-items: stretch;
-}
-
-/* 滚动模式 */
-.fc-tab-bar__nav-wrap--scroll {
     flex: 1;
     min-width: 0;
     overflow-x: auto;
-    scrollbar-width: none;
-    display: flex;
-    align-items: stretch;
+    scrollbar-width: none; /* Firefox */
+}
+.fc-tab-bar__nav-wrap::-webkit-scrollbar {
+    display: none; /* Chrome / Safari / WebKit */
 }
 
-.fc-tab-bar__nav-wrap--scroll::-webkit-scrollbar {
-    display: none;
-}
-
-/* ========== 标签页 - 核心修改：用 CSS 控制宽度 ========== */
+/* ========== 标签页（基础） ========== */
 .fc-tab-bar__tab {
+    /* CSS flex 自动均分并压缩，压缩至 --tab-min-width 后容器横向滚动 */
+    flex: 1 1 0;
+    min-width: var(--tab-min-width, 80px);
+    max-width: var(--tab-max-width, 200px);
+
     position: relative;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: var(--fc-space-sm, 8px);
     padding: var(--fc-space-sm, 8px) var(--fc-space-lg, 16px);
@@ -84,18 +115,12 @@
     white-space: nowrap;
     border: none;
     user-select: none;
-    border-radius: var(--tab-item-radius-tl) var(--tab-item-radius-tr) var(--tab-item-radius-br) var(--tab-item-radius-bl);
-
-    /* 自适应宽度：grow 填充空间（capped by max-width），shrink 压缩（floored by min-width）*/
-    flex: 1 1 var(--tab-max-width);
-    min-width: var(--tab-min-width);
-    max-width: var(--tab-max-width);
-
-    overflow: hidden;
     box-sizing: border-box;
+    border-radius: var(--tab-item-radius-tl) var(--tab-item-radius-tr) var(--tab-item-radius-br) var(--tab-item-radius-bl);
+    overflow: hidden;
 }
 
-.fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled):not(.fc-tab-bar__tab--dragging):not(.fc-tab-bar__tab--active) {
+.fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled):not(.fc-tab-bar__tab--dragging) {
     color: var(--tab-hover-color);
     background-color: var(--tab-hover-bg);
 }
@@ -111,16 +136,21 @@
     opacity: 0.6;
 }
 
-/* 标签文字溢出 */
+/* 标签文字：flex 填满并在右侧渐变淡出，保护关闭按钮不被裁切 */
 .fc-tab-bar__tab-label {
     flex: 1;
     min-width: 0;
     overflow: hidden;
     white-space: nowrap;
-    text-overflow: ellipsis;
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 20px), transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black calc(100% - 20px), transparent 100%);
 }
 
-/* ========== VARIANT: attached（贴合） ========== */
+/* ==========================================================
+   VARIANT: attached（贴合）
+   标签底部紧贴导航栏下边缘，底部 2px 线条作为激活指示器
+   ========================================================== */
+
 .fc-tab-bar--attached {
     border-bottom: 2px solid var(--fc-color-border);
 }
@@ -134,12 +164,11 @@
     border-bottom-color: var(--tab-active-indicator);
 }
 
-/* attached 模式下，nav-wrap 需要包含添加按钮 */
-.fc-tab-bar--attached .fc-tab-bar__nav-wrap {
-    align-items: stretch;
-}
+/* ==========================================================
+   VARIANT: floating（悬浮）
+   标签垂直居中悬浮在导航栏中，胶囊/圆角形态，背景填充
+   ========================================================== */
 
-/* ========== VARIANT: floating（悬浮） ========== */
 .fc-tab-bar--floating {
     border-bottom: none;
 }
@@ -159,11 +188,6 @@
     margin-bottom: 0;
 }
 
-/* floating 模式下，添加按钮垂直居中 */
-.fc-tab-bar--floating .fc-tab-bar__add-btn {
-    align-self: center;
-}
-
 .fc-tab-bar--floating {
     --tab-item-radius-tl: var(--fc-radius-full, 9999px);
     --tab-item-radius-tr: var(--fc-radius-full, 9999px);
@@ -176,28 +200,52 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-/* ========== Tab 项圆角 ========== */
-.fc-tab-bar--tab-radius-none { --tab-item-radius-tl: 0px; --tab-item-radius-tr: 0px; --tab-item-radius-br: 0px; --tab-item-radius-bl: 0px; }
-.fc-tab-bar--tab-radius-sm { --tab-item-radius-tl: var(--fc-radius-sm, 4px); --tab-item-radius-tr: var(--fc-radius-sm, 4px); --tab-item-radius-br: var(--fc-radius-sm, 4px); --tab-item-radius-bl: var(--fc-radius-sm, 4px); }
-.fc-tab-bar--tab-radius-md { --tab-item-radius-tl: var(--fc-radius-md, 8px); --tab-item-radius-tr: var(--fc-radius-md, 8px); --tab-item-radius-br: var(--fc-radius-md, 8px); --tab-item-radius-bl: var(--fc-radius-md, 8px); }
-.fc-tab-bar--tab-radius-lg { --tab-item-radius-tl: var(--fc-radius-lg, 12px); --tab-item-radius-tr: var(--fc-radius-lg, 12px); --tab-item-radius-br: var(--fc-radius-lg, 12px); --tab-item-radius-bl: var(--fc-radius-lg, 12px); }
-.fc-tab-bar--tab-radius-xl { --tab-item-radius-tl: var(--fc-radius-xl, 16px); --tab-item-radius-tr: var(--fc-radius-xl, 16px); --tab-item-radius-br: var(--fc-radius-xl, 16px); --tab-item-radius-bl: var(--fc-radius-xl, 16px); }
-.fc-tab-bar--tab-radius-full { --tab-item-radius-tl: var(--fc-radius-full, 9999px); --tab-item-radius-tr: var(--fc-radius-full, 9999px); --tab-item-radius-br: var(--fc-radius-full, 9999px); --tab-item-radius-bl: var(--fc-radius-full, 9999px); }
+/* ==========================================================
+   Tab 项圆角（tabRadius prop）
+   ========================================================== */
+
+.fc-tab-bar--tab-radius-none {
+    --tab-item-radius-tl: 0px;
+    --tab-item-radius-tr: 0px;
+    --tab-item-radius-br: 0px;
+    --tab-item-radius-bl: 0px;
+}
+.fc-tab-bar--tab-radius-sm {
+    --tab-item-radius-tl: var(--fc-radius-sm, 4px);
+    --tab-item-radius-tr: var(--fc-radius-sm, 4px);
+    --tab-item-radius-br: var(--fc-radius-sm, 4px);
+    --tab-item-radius-bl: var(--fc-radius-sm, 4px);
+}
+.fc-tab-bar--tab-radius-md {
+    --tab-item-radius-tl: var(--fc-radius-md, 8px);
+    --tab-item-radius-tr: var(--fc-radius-md, 8px);
+    --tab-item-radius-br: var(--fc-radius-md, 8px);
+    --tab-item-radius-bl: var(--fc-radius-md, 8px);
+}
+.fc-tab-bar--tab-radius-lg {
+    --tab-item-radius-tl: var(--fc-radius-lg, 12px);
+    --tab-item-radius-tr: var(--fc-radius-lg, 12px);
+    --tab-item-radius-br: var(--fc-radius-lg, 12px);
+    --tab-item-radius-bl: var(--fc-radius-lg, 12px);
+}
+.fc-tab-bar--tab-radius-xl {
+    --tab-item-radius-tl: var(--fc-radius-xl, 16px);
+    --tab-item-radius-tr: var(--fc-radius-xl, 16px);
+    --tab-item-radius-br: var(--fc-radius-xl, 16px);
+    --tab-item-radius-bl: var(--fc-radius-xl, 16px);
+}
+.fc-tab-bar--tab-radius-full {
+    --tab-item-radius-tl: var(--fc-radius-full, 9999px);
+    --tab-item-radius-tr: var(--fc-radius-full, 9999px);
+    --tab-item-radius-br: var(--fc-radius-full, 9999px);
+    --tab-item-radius-bl: var(--fc-radius-full, 9999px);
+}
 
 /* ========== Tauri 兼容：排除 Tab 元素出 drag-region ========== */
 .fc-tab-bar__tab,
 .fc-tab-bar__tab-close,
 .fc-tab-bar__add-btn {
     -webkit-app-region: no-drag;
-}
-
-/* ========== Tauri 拖拽手柄 ========== */
-/* nav-wrap 已占据所有空间（flex: 1），drag-handle 不参与空间分配，
-   仅作为标记节点让 Tauri 识别可拖拽区域 */
-.fc-tab-bar__drag-handle {
-    flex: 0 0 0px;
-    overflow: hidden;
-    -webkit-app-region: drag;
 }
 
 /* ========== 拖拽样式 ========== */
@@ -231,13 +279,16 @@
 
 /* ========== 新增按钮 ========== */
 .fc-tab-bar__add-btn {
+    /* sticky：未溢出时自然跟随最后一个 tab；溢出后固定在可视区右侧 */
+    position: sticky;
+    right: 0;
+    flex-shrink: 0;
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 32px;
-    flex-shrink: 0;
-    margin-left: var(--fc-space-sm, 8px);
-    margin-right: var(--fc-space-sm, 8px);
+    margin: 0 var(--fc-space-sm, 8px);
     font-size: 20px;
     font-weight: bold;
     user-select: none;
@@ -245,6 +296,9 @@
     cursor: pointer;
     transition: all var(--fc-transition, 150ms ease);
     border-radius: var(--fc-radius-sm, 4px);
+
+    /* 遮挡滚动过来的 tab */
+    background-color: var(--tab-bar-bg);
 }
 
 .fc-tab-bar__add-btn:hover {
@@ -257,8 +311,28 @@
 }
 
 /* ========== 暗色主题 ========== */
+[data-theme="dark"] .fc-tab-bar--attached {
+    border-bottom-color: var(--fc-color-border);
+}
+
+[data-theme="dark"] .fc-tab-bar__tab--active {
+    background-color: var(--tab-active-bg);
+}
+
+[data-theme="dark"] .fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled) {
+    background-color: var(--tab-hover-bg);
+}
+
 [data-theme="dark"] .fc-tab-bar--floating .fc-tab-bar__tab--active {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .fc-tab-bar__add-btn:hover {
+    background-color: var(--fc-color-bg-tertiary);
+}
+
+[data-theme="dark"] .fc-tab-bar__tab-close:hover {
+    background-color: var(--fc-color-border-light);
 }
 
 /* ========== 响应式 ========== */
