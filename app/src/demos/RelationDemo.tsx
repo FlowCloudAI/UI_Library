@@ -1,121 +1,66 @@
 // src/demos/RelationDemo.tsx
 // @ts-nocheck
-import { useTheme } from 'flowcloudai-ui';
+import React from 'react';
 import { Relation } from 'flowcloudai-ui';
 
 export const RelationDemo = () => {
-    const { theme } = useTheme();
+    const getCurrentTheme = () => {
+        // 方式1：如果主题在 html 的 data-theme 属性上
+        const htmlTheme = document.documentElement.getAttribute('data-theme');
+        if (htmlTheme === 'dark' || htmlTheme === 'light') return htmlTheme;
 
-    // 示例节点数据
-    const nodes = [
-        {
-            id: '1',
-            type: 'custom',
-            position: { x: 100, y: 100 },
-            data: {
-                iconType: 'war',
-                title: '艾瑟拉·金狮战团',
-                subtitle: '精英战斗部队',
-                description: '成立于第三纪元，守护王国',
-                status: 'active',
-            },
-        },
-        {
-            id: '2',
-            type: 'custom',
-            position: { x: 450, y: 100 },
-            data: {
-                iconType: 'target',
-                title: '黎明之刃',
-                subtitle: '特种作战分队',
-                description: '擅长渗透与突袭',
-                status: 'active',
-            },
-        },
-        {
-            id: '3',
-            type: 'custom',
-            position: { x: 275, y: 320 },
-            data: {
-                iconType: 'star',
-                title: '狮心统帅',
-                subtitle: '指挥官',
-                description: '战团最高领袖',
-                status: 'active',
-            },
-        },
-        {
-            id: '4',
-            type: 'custom',
-            position: { x: 620, y: 280 },
-            data: {
-                iconType: 'shield',
-                title: '铁壁防线',
-                subtitle: '防御部队',
-                description: '坚守阵地，固若金汤',
-                status: 'active',
-            },
-        },
-        {
-            id: '5',
-            type: 'custom',
-            position: { x: 800, y: 450 },
-            data: {
-                iconType: 'award',
-                title: '荣耀军团',
-                subtitle: '功勋部队',
-                description: '屡建战功，荣耀加身',
-                status: 'warning',
-            },
-        },
-    ];
+        // 方式2：如果主题在 localStorage
+        const stored = localStorage.getItem('theme');
+        if (stored === 'dark' || stored === 'light') return stored;
 
-    // 示例连线数据
-    const edges = [
-        { id: 'e1-3', source: '1', target: '3', label: '统领' },
-        { id: 'e2-3', source: '2', target: '3', label: '隶属于' },
-        { id: 'e3-4', source: '3', target: '4', label: '指挥' },
-        { id: 'e4-5', source: '4', target: '5', label: '支援' },
-    ];
-
-    // 交互处理函数
-    const handleNodeClick = (nodeId: string, nodeData: any) => {
-        console.log('节点点击:', nodeId, nodeData);
+        // 方式3：检测系统偏好
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     };
 
-    const handleNodeDoubleClick = (nodeId: string, nodeData: any) => {
-        console.log('节点双击:', nodeId, nodeData);
+    const theme = getCurrentTheme();
+
+    const data = {
+        nodes: [
+            { id: '1', name: '狮心统帅', type: 'person', description: '最高指挥官', importance: 10 },
+            { id: '2', name: '艾瑟拉·金狮战团', type: 'organization', description: '精英战斗部队', importance: 8 },
+            { id: '3', name: '黎明之刃', type: 'organization', description: '特种作战分队', importance: 7 },
+            { id: '4', name: '铁壁防线', type: 'organization', description: '防御部队', importance: 7 },
+            { id: '5', name: '荣耀军团', type: 'organization', description: '功勋部队', importance: 9 },
+            { id: '6', name: '边境冲突', type: 'event', description: '北部边境事件', importance: 6 },
+        ],
+        edges: [
+            { source: '2', target: '1', label: '隶属于', type: 'subordinate' },
+            { source: '3', target: '1', label: '隶属于', type: 'subordinate' },
+            { source: '4', target: '1', label: '隶属于', type: 'subordinate' },
+            { source: '5', target: '2', label: '支援', type: 'friend' },
+            { source: '5', target: '3', label: '协同', type: 'friend' },
+            { source: '5', target: '4', label: '支援', type: 'friend' },
+            { source: '6', target: '4', label: '涉及', type: 'neutral' },
+        ]
     };
 
-    const handleEdgeClick = (edgeId: string, edgeData: any) => {
-        console.log('连线点击:', edgeId, edgeData);
+    const handleNodeClick = (node: any) => {
+        console.log('点击节点:', node);
+        // 可以在这里添加您的业务逻辑
     };
 
-    const handleConnect = (connection: any) => {
-        console.log('创建新连接:', connection);
+    const handleEdgeClick = (edge: any) => {
+        console.log('点击连线:', edge);
+        // 可以在这里添加您的业务逻辑
     };
 
     return (
-        <div className="demo-section">
-            <h4>关系图谱</h4>
-
-            <div className="demo-row">
-                <div style={{ width: '100%', height: '500px', background: theme === 'dark' ? '#0f172a' : '#f5f7fa', borderRadius: '12px', overflow: 'hidden' }}>
-                    <Relation
-                        nodes={nodes}
-                        edges={edges}
-                        theme={theme}
-                        height="500px"
-                        fitView={true}
-                        enableEdgeCreation={true}
-                        enableNodeDrag={true}
-                        onNodeClick={handleNodeClick}
-                        onNodeDoubleClick={handleNodeDoubleClick}
-                        onEdgeClick={handleEdgeClick}
-                        onConnect={handleConnect}
-                    />
-                </div>
-            </div>
+        <div style={{ width: '100%', height: '600px' }}>
+            <Relation
+                data={data}
+                theme={theme}
+                height="100%"
+                width="100%"
+                onNodeClick={handleNodeClick}
+                onEdgeClick={handleEdgeClick}
+            />
         </div>
     );
 };
+
+export default RelationDemo;
