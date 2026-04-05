@@ -40,17 +40,17 @@ export interface TabBarProps {
     /** 是否启用拖拽排序 */
     draggable?: boolean;
     /**
-     * Tab 最小宽度比例（相对 screen.width）。
+     * Tab 最小宽度，支持任意 CSS 长度值（如 "8rem"、"120px"）。
      * Tab 压缩至此宽度后触发横向滚动。
-     * @default 0.07
+     * @default "80px"
      */
-    minWidthRatio?: number;
+    minTabWidth?: string;
     /**
-     * Tab 最大宽度比例（相对 screen.width）。
+     * Tab 最大宽度，支持任意 CSS 长度值（如 "16rem"、"200px"）。
      * Tab 较少时不超过此宽度。
-     * @default 0.15
+     * @default "200px"
      */
-    maxTabWidthRatio?: number;
+    maxTabWidth?: string;
     /**
      * 控制 Tab 是否自动填充容器宽度。
      * - true: flex: 1 1 0，Tab 会自动拉伸填满导航栏（默认行为）
@@ -205,8 +205,8 @@ export const TabBar = memo<TabBarProps>(({
     closable = false,
     addable = false,
     draggable = false,
-    minWidthRatio = 0.07,
-    maxTabWidthRatio = 0.15,
+    minTabWidth = '80px',
+    maxTabWidth = '200px',
     fillWidth = true,
     onChange,
     onClose,
@@ -337,8 +337,8 @@ export const TabBar = memo<TabBarProps>(({
 
     // Tab 宽度上下限通过 CSS 变量传入，CSS flex 自动处理压缩与滚动
     const navWrapStyle = {
-        '--tab-min-width': `${Math.round(screen.width * minWidthRatio)}px`,
-        '--tab-max-width': `${Math.round(screen.width * maxTabWidthRatio)}px`,
+        '--tab-min-width': minTabWidth,
+        '--tab-max-width': maxTabWidth,
         '--tab-fill-width': fillWidth ? '1' : '0',
     } as React.CSSProperties;
 

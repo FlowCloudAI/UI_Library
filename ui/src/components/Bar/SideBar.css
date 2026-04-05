@@ -19,7 +19,7 @@
     display: flex;
     flex-direction: column;
     width: var(--sidebar-width);
-    height: 100vh;
+    height: 100%;
     background: var(--fc-color-bg-secondary);
     border-right: 1px solid var(--fc-color-border);
     overflow: hidden;
@@ -69,6 +69,7 @@
 
 /* ========== Footer ========== */
 .fc-sidebar__footer {
+    flex-shrink: 0;
     padding: var(--fc-space-sm, 8px) 0;
     border-top: 1px solid var(--fc-color-border);
 }

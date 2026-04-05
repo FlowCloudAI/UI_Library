@@ -44,8 +44,8 @@ export function TabBarDemo() {
             <div className="demo-section">
                 <h4>可关闭 + 可添加 + 拖拽排序</h4>
                 <TabBar
-                    minTabWidth={8}
-                    maxTabWidth={15}
+                    minTabWidth={"12rem"}
+                    maxTabWidth={"15rem"}
                     items={tabs}
                     activeKey={activeKey}
                     variant="floating"
@@ -54,6 +54,8 @@ export function TabBarDemo() {
                     draggable
                     radius="md"
                     tabRadius="md"
+                    fillWidth={false}
+                    tauriDragRegion
                     onChange={setActiveKey} onClose={handleClose} onAdd={handleAdd} onReorder={setTabs}
                 />
                 <div style={{ padding: '8px 12px', fontSize: 13, color: 'var(--fc-color-text-secondary)' }}>当前：{activeKey}</div>
@@ -98,15 +100,34 @@ export function TabBarDemo() {
                 <div className="demo-col">
                     <div>
                         <p style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)', marginBottom: 6 }}>fillWidth=true（默认，Tab 自动拉伸填满）</p>
-                        <TabBar items={BASE_TABS.slice(0, 2)} activeKey={activeKey} variant="attached" fillWidth onChange={setActiveKey}/>
+                        <TabBar
+                            items={BASE_TABS.slice(0, 2)}
+                            activeKey={activeKey}
+                            variant="attached"
+                            fillWidth
+                            onChange={setActiveKey}
+                        />
                     </div>
                     <div>
                         <p style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)', marginBottom: 6 }}>fillWidth=false（Tab 只占内容宽度，剩余空间留白）</p>
-                        <TabBar items={BASE_TABS.slice(0, 2)} activeKey={activeKey} variant="attached" fillWidth={false} onChange={setActiveKey}/>
+                        <TabBar
+                            items={BASE_TABS.slice(0, 2)}
+                            activeKey={activeKey}
+                            variant="attached"
+                            fillWidth={false}
+                            onChange={setActiveKey}
+                        />
                     </div>
                     <div>
                         <p style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)', marginBottom: 6 }}>fillWidth=false + tauriDragRegion=true（空白区域可拖拽窗口）</p>
-                        <TabBar items={BASE_TABS.slice(0, 2)} activeKey={activeKey} variant="attached" fillWidth={false} tauriDragRegion onChange={setActiveKey}/>
+                        <TabBar
+                            items={BASE_TABS.slice(0, 2)}
+                            activeKey={activeKey}
+                            variant="attached"
+                            fillWidth={false}
+                            tauriDragRegion
+                            onChange={setActiveKey}
+                        />
                     </div>
                 </div>
             </div>

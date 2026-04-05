@@ -48,7 +48,7 @@ export function SideBarDemo() {
         <>
             <div className="demo-section">
                 <h4>基础（可折叠）+ 底部固定项</h4>
-                <div style={demoWrap}>
+                <div  style={{...demoWrap, height: 400}}>
                     <SideBar
                         items={menuItems}
                         bottomItems={bottomMenuItems}
@@ -64,7 +64,7 @@ export function SideBarDemo() {
             </div>
             <div className="demo-section">
                 <h4>自定义颜色（绿色主题）</h4>
-                <div style={{...demoWrap, height: 260}}>
+                <div style={{...demoWrap, height: 300}}>
                     <SideBar
                         items={menuItems}
                         selectedKey={selectedKey}
