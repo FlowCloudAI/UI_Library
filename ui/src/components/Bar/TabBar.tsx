@@ -4,7 +4,7 @@ import './TabBar.css';
 import {
     DndContext,
     closestCenter,
-    PointerSensor,
+    MouseSensor,
     useSensor,
     useSensors,
     type DragEndEvent,
@@ -150,6 +150,7 @@ interface TabItemViewProps {
     isActive: boolean;
     closable: boolean;
     draggable: boolean;
+    stopMouseDown: boolean;
     tabClassName?: string;
     activeTabClassName?: string;
     tabStyle?: React.CSSProperties;
@@ -164,6 +165,7 @@ const TabItemView = memo<TabItemViewProps>(({
     isActive,
     closable,
     draggable,
+    stopMouseDown,
     tabClassName,
     activeTabClassName,
     tabStyle,
@@ -203,14 +205,23 @@ const TabItemView = memo<TabItemViewProps>(({
         ...(isActive ? activeTabStyle : undefined),
     };
 
+    // 将 dnd-kit 的 onMouseDown 与 Tauri stopPropagation 合并
+    // dnd-kit 必须先执行（注册后续 mousemove/mouseup 监听），再阻断冒泡
+    const {onMouseDown: dndMouseDown, ...restListeners} = listeners ?? {};
+    const handleMouseDown = (e: React.MouseEvent) => {
+        dndMouseDown?.(e as any);
+        if (stopMouseDown) e.stopPropagation();
+    };
+
     return (
         <div
             ref={setNodeRef}
             className={classes}
             style={mergedStyle}
             onClick={() => !item.disabled && onClick(item.key)}
+            onMouseDown={handleMouseDown}
             {...attributes}
-            {...listeners}
+            {...restListeners}
             role="tab"
             aria-selected={isActive}
             aria-disabled={item.disabled}
@@ -327,9 +338,9 @@ export const TabBar = memo<TabBarProps>(({
         [onClose],
     );
 
-    // PointerSensor：移动超过 5px 才激活拖拽，避免误触点击
+    // MouseSensor：Tauri/WebView2 下 pointerdown 被 Windows 吃掉，必须用 mousedown 驱动的 MouseSensor
     const sensors = useSensors(
-        useSensor(PointerSensor, {
+        useSensor(MouseSensor, {
             activationConstraint: {distance: 5},
         }),
     );
@@ -369,6 +380,7 @@ export const TabBar = memo<TabBarProps>(({
             isActive={activeKey === item.key}
             closable={closable}
             draggable={draggable}
+            stopMouseDown={tauriDragRegion}
             tabClassName={tabClassName}
             activeTabClassName={activeTabClassName}
             tabStyle={tabStyle}
@@ -400,6 +412,7 @@ export const TabBar = memo<TabBarProps>(({
                         <div
                             className="fc-tab-bar__add-btn"
                             onClick={onAdd}
+                            onMouseDown={tauriDragRegion ? (e) => e.stopPropagation() : undefined}
                             role="button"
                             aria-label="添加标签"
                         >
