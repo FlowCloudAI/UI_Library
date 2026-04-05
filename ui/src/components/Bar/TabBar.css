@@ -256,11 +256,14 @@
 
 /* ========== 拖拽样式 ========== */
 .fc-tab-bar__tab--draggable {
-    cursor: default;
+    cursor: grab;
+    will-change: transform;
 }
 
 .fc-tab-bar__tab--dragging {
     opacity: 0.4;
+    cursor: grabbing;
+    z-index: 1;
 }
 
 /* ========== 关闭按钮 ========== */

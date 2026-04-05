@@ -1,6 +1,40 @@
 // src/components/TabBar/TabBar.tsx
-import React, {useRef, useCallback, memo, useEffect} from 'react';
+import React, {useRef, useCallback, memo, useEffect, useMemo} from 'react';
 import './TabBar.css';
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+    type Modifier,
+} from '@dnd-kit/core';
+
+// 限制拖拽在水平轴且不超出容器边界（替代 @dnd-kit/modifiers 的两个 modifier）
+function useContainerBoundModifier(containerRef: React.RefObject<HTMLDivElement | null>): Modifier {
+    return useMemo(() => ({transform, activeNodeRect}) => {
+        if (!containerRef.current || !activeNodeRect) {
+            return {...transform, y: 0};
+        }
+        const {left, right} = containerRef.current.getBoundingClientRect();
+        // 算出元素在当前 scroll 位置下能向左/右移动的最大距离
+        const minX = left - activeNodeRect.left;
+        const maxX = right - activeNodeRect.right;
+        return {
+            ...transform,
+            y: 0,
+            x: Math.min(Math.max(transform.x, minX), maxX),
+        };
+    }, [containerRef]);
+}
+import {
+    SortableContext,
+    useSortable,
+    horizontalListSortingStrategy,
+    arrayMove,
+} from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
 
 /* ========== 类型定义 ========== */
 
@@ -123,10 +157,6 @@ interface TabItemViewProps {
     renderCloseIcon?: (key: string) => React.ReactNode;
     onClick: (key: string) => void;
     onClose: (e: React.MouseEvent, key: string) => void;
-    onDragStart: (e: React.DragEvent, key: string) => void;
-    onDragOver: (e: React.DragEvent) => void;
-    onDrop: (e: React.DragEvent, key: string) => void;
-    onDragEnd: (e: React.DragEvent) => void;
 }
 
 const TabItemView = memo<TabItemViewProps>(({
@@ -141,11 +171,19 @@ const TabItemView = memo<TabItemViewProps>(({
     renderCloseIcon,
     onClick,
     onClose,
-    onDragStart,
-    onDragOver,
-    onDrop,
-    onDragEnd,
 }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: item.key,
+        disabled: !draggable || !!item.disabled,
+    });
+
     const showClose = item.closable !== undefined ? item.closable : closable;
 
     const classes = [
@@ -153,25 +191,26 @@ const TabItemView = memo<TabItemViewProps>(({
         isActive && 'fc-tab-bar__tab--active',
         item.disabled && 'fc-tab-bar__tab--disabled',
         draggable && !item.disabled && 'fc-tab-bar__tab--draggable',
+        isDragging && 'fc-tab-bar__tab--dragging',
         tabClassName,
         isActive && activeTabClassName,
     ].filter(Boolean).join(' ');
 
     const mergedStyle: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
         ...tabStyle,
         ...(isActive ? activeTabStyle : undefined),
     };
 
     return (
         <div
+            ref={setNodeRef}
             className={classes}
             style={mergedStyle}
             onClick={() => !item.disabled && onClick(item.key)}
-            draggable={draggable && !item.disabled}
-            onDragStart={(e) => onDragStart(e, item.key)}
-            onDragOver={onDragOver}
-            onDrop={(e) => onDrop(e, item.key)}
-            onDragEnd={onDragEnd}
+            {...attributes}
+            {...listeners}
             role="tab"
             aria-selected={isActive}
             aria-disabled={item.disabled}
@@ -181,6 +220,7 @@ const TabItemView = memo<TabItemViewProps>(({
             {showClose && !item.disabled && (
                 <span
                     className="fc-tab-bar__tab-close"
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => onClose(e, item.key)}
                     role="button"
                     aria-label="关闭"
@@ -247,8 +287,8 @@ export const TabBar = memo<TabBarProps>(({
     }
 
     const mergedStyle: React.CSSProperties = {...overrideStyle, ...style};
-    const dragKeyRef = useRef<string | null>(null);
     const navRef = useRef<HTMLDivElement>(null);
+    const boundModifier = useContainerBoundModifier(navRef);
 
     // 新增 tab 时自动滚动到末尾
     const prevItemsLengthRef = useRef(items.length);
@@ -287,43 +327,21 @@ export const TabBar = memo<TabBarProps>(({
         [onClose],
     );
 
-    const handleDragStart = useCallback(
-        (e: React.DragEvent, key: string) => {
-            dragKeyRef.current = key;
-            e.dataTransfer.effectAllowed = 'move';
-            const target = e.currentTarget as HTMLElement;
-            requestAnimationFrame(() => target.classList.add('fc-tab-bar__tab--dragging'));
-        },
-        [],
+    // PointerSensor：移动超过 5px 才激活拖拽，避免误触点击
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {distance: 5},
+        }),
     );
 
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-    }, []);
-
-    const handleDrop = useCallback(
-        (e: React.DragEvent, targetKey: string) => {
-            e.preventDefault();
-            const dragKey = dragKeyRef.current;
-            if (!dragKey || dragKey === targetKey || !onReorder) return;
-
-            const fromIndex = items.findIndex((i) => i.key === dragKey);
-            const toIndex = items.findIndex((i) => i.key === targetKey);
-            if (fromIndex === -1 || toIndex === -1) return;
-
-            const reordered = [...items];
-            const [moved] = reordered.splice(fromIndex, 1);
-            reordered.splice(toIndex, 0, moved);
-            onReorder(reordered);
-        },
-        [items, onReorder],
-    );
-
-    const handleDragEnd = useCallback((e: React.DragEvent) => {
-        dragKeyRef.current = null;
-        (e.currentTarget as HTMLElement).classList.remove('fc-tab-bar__tab--dragging');
-    }, []);
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
+        const {active, over} = event;
+        if (!over || active.id === over.id || !onReorder) return;
+        const fromIndex = items.findIndex((i) => i.key === active.id);
+        const toIndex = items.findIndex((i) => i.key === over.id);
+        if (fromIndex === -1 || toIndex === -1) return;
+        onReorder(arrayMove(items, fromIndex, toIndex));
+    }, [items, onReorder]);
 
     /* ---- 渲染 ---- */
 
@@ -344,30 +362,40 @@ export const TabBar = memo<TabBarProps>(({
 
     const dragRegion = tauriDragRegion ? {'data-tauri-drag-region': ''} : {};
 
+    const tabItems = items.map((item) => (
+        <TabItemView
+            key={item.key}
+            item={item}
+            isActive={activeKey === item.key}
+            closable={closable}
+            draggable={draggable}
+            tabClassName={tabClassName}
+            activeTabClassName={activeTabClassName}
+            tabStyle={tabStyle}
+            activeTabStyle={activeTabStyle}
+            renderCloseIcon={renderCloseIcon}
+            onClick={handleClick}
+            onClose={handleClose}
+        />
+    ));
+
     return (
         <div className={rootClasses} style={mergedStyle} role="tablist" {...dragRegion}>
             <div className="fc-tab-bar__nav-outer" {...dragRegion}>
                 <div className="fc-tab-bar__nav-wrap" ref={navRef} style={navWrapStyle}>
-                    {items.map((item) => (
-                        <TabItemView
-                            key={item.key}
-                            item={item}
-                            isActive={activeKey === item.key}
-                            closable={closable}
-                            draggable={draggable}
-                            tabClassName={tabClassName}
-                            activeTabClassName={activeTabClassName}
-                            tabStyle={tabStyle}
-                            activeTabStyle={activeTabStyle}
-                            renderCloseIcon={renderCloseIcon}
-                            onClick={handleClick}
-                            onClose={handleClose}
-                            onDragStart={handleDragStart}
-                            onDragOver={handleDragOver}
-                            onDrop={handleDrop}
-                            onDragEnd={handleDragEnd}
-                        />
-                    ))}
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        modifiers={[boundModifier]}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext
+                            items={items.map((i) => i.key)}
+                            strategy={horizontalListSortingStrategy}
+                        >
+                            {tabItems}
+                        </SortableContext>
+                    </DndContext>
                     {addable && (
                         <div
                             className="fc-tab-bar__add-btn"
