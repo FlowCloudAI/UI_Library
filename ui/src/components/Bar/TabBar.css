@@ -82,6 +82,11 @@
     min-width: 0;
 }
 
+/* 当启用 tauriDragRegion 时，nav-outer 作为可拖拽区域 */
+.fc-tab-bar__nav-outer[data-tauri-drag-region] {
+    -webkit-app-region: drag;
+}
+
 /* nav-wrap：水平 scroll container，所有 tab 和 add 按钮在此排布 */
 .fc-tab-bar__nav-wrap {
     display: flex;
@@ -98,7 +103,8 @@
 /* ========== 标签页（基础） ========== */
 .fc-tab-bar__tab {
     /* CSS flex 自动均分并压缩，压缩至 --tab-min-width 后容器横向滚动 */
-    flex: 1 1 0;
+    /* --tab-fill-width: 1 (fill) / 0 (no-fill)，通过 JS 传入 */
+    flex: var(--tab-fill-width, 1) 1 0;
     min-width: var(--tab-min-width, 80px);
     max-width: var(--tab-max-width, 200px);
 

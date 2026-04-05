@@ -93,6 +93,23 @@ export function TabBarDemo() {
                     </div>
                 </div>
             </div>
+            <div className="demo-section">
+                <h4>fillWidth（控制 Tab 是否填充宽度）</h4>
+                <div className="demo-col">
+                    <div>
+                        <p style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)', marginBottom: 6 }}>fillWidth=true（默认，Tab 自动拉伸填满）</p>
+                        <TabBar items={BASE_TABS.slice(0, 2)} activeKey={activeKey} variant="attached" fillWidth onChange={setActiveKey}/>
+                    </div>
+                    <div>
+                        <p style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)', marginBottom: 6 }}>fillWidth=false（Tab 只占内容宽度，剩余空间留白）</p>
+                        <TabBar items={BASE_TABS.slice(0, 2)} activeKey={activeKey} variant="attached" fillWidth={false} onChange={setActiveKey}/>
+                    </div>
+                    <div>
+                        <p style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)', marginBottom: 6 }}>fillWidth=false + tauriDragRegion=true（空白区域可拖拽窗口）</p>
+                        <TabBar items={BASE_TABS.slice(0, 2)} activeKey={activeKey} variant="attached" fillWidth={false} tauriDragRegion onChange={setActiveKey}/>
+                    </div>
+                </div>
+            </div>
         </>
     )
 }
