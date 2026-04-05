@@ -40,17 +40,17 @@ export interface TabBarProps {
     /** 是否启用拖拽排序 */
     draggable?: boolean;
     /**
-     * Tab 最小宽度比例（相对 screen.width）。
+     * Tab 最小宽度（rem 单位）。
      * Tab 压缩至此宽度后触发横向滚动。
-     * @default 0.07
+     * @default '7rem'
      */
-    minWidthRatio?: number;
+    minWidth?: string;
     /**
-     * Tab 最大宽度比例（相对 screen.width）。
+     * Tab 最大宽度（rem 单位）。
      * Tab 较少时不超过此宽度。
-     * @default 0.15
+     * @default '15rem'
      */
-    maxTabWidthRatio?: number;
+    maxTabWidth?: string;
 
     /* ---- 回调 ---- */
 
@@ -197,8 +197,8 @@ export const TabBar = memo<TabBarProps>(({
     closable = false,
     addable = false,
     draggable = false,
-    minWidthRatio = 0.07,
-    maxTabWidthRatio = 0.15,
+    minWidth = '7rem',
+    maxTabWidth = '15rem',
     onChange,
     onClose,
     onAdd,
@@ -328,8 +328,8 @@ export const TabBar = memo<TabBarProps>(({
 
     // Tab 宽度上下限通过 CSS 变量传入，CSS flex 自动处理压缩与滚动
     const navWrapStyle = {
-        '--tab-min-width': `${Math.round(screen.width * minWidthRatio)}px`,
-        '--tab-max-width': `${Math.round(screen.width * maxTabWidthRatio)}px`,
+        '--tab-min-width': minWidth,
+        '--tab-max-width': maxTabWidth,
     } as React.CSSProperties;
 
     const dragRegion = tauriDragRegion ? {'data-tauri-drag-region': ''} : {};

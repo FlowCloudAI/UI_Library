@@ -295,7 +295,7 @@
     color: var(--fc-color-text-secondary);
     cursor: pointer;
     transition: all var(--fc-transition, 150ms ease);
-    border-radius: var(--fc-radius-sm, 4px);
+    border-radius: var(--fc-radius-sm, 2px);
 
     /* 遮挡滚动过来的 tab */
     background-color: var(--tab-bar-bg);
