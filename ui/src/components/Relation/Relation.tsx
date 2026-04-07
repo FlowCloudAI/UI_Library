@@ -14,6 +14,7 @@ import {
     Handle,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { useForceLayout, ForceNode, ForceEdge } from '../../hooks/useForceLayout';
 
 // 类型定义
 export interface RelationNodeData {
@@ -45,6 +46,8 @@ export interface RelationProps {
     width?: string | number;
     className?: string;
     style?: React.CSSProperties;
+    enableRefresh?: boolean; // 是否显示刷新按钮
+    autoFitContainer?: boolean; // 是否自动适应容器大小
 }
 
 // 节点颜色
@@ -210,129 +213,89 @@ const SmartEdge = ({ id, sourceX, sourceY, targetX, targetY, style = {}, markerE
 
 const edgeTypes = { smart: SmartEdge };
 
-// 计算树形布局（自动排列，避免重叠）
-const calculateTreeLayout = (nodes: RelationNodeData[], edges: RelationEdgeData[]) => {
-    if (nodes.length === 0) return [];
-
-    // 构建父子关系
-    const childrenMap = new Map<string, string[]>();
-    const parentMap = new Map<string, string>();
-
-    edges.forEach((edge) => {
-        if (!childrenMap.has(edge.source)) childrenMap.set(edge.source, []);
-        childrenMap.get(edge.source)!.push(edge.target);
-        parentMap.set(edge.target, edge.source);
-    });
-
-    // 找根节点
-    const roots = nodes.filter((n) => !parentMap.has(n.id));
-    const actualRoots = roots.length > 0 ? roots : [nodes[0]];
-
-    const positioned: any[] = [];
-    const levelNodes = new Map<number, string[]>();
-
-    // BFS 计算层级
-    const queue: Array<{ id: string; level: number }> = actualRoots.map((r) => ({ id: r.id, level: 0 }));
-    const visited = new Set<string>();
-
-    while (queue.length > 0) {
-        const item = queue.shift()!;
-        if (visited.has(item.id)) continue;
-        visited.add(item.id);
-
-        if (!levelNodes.has(item.level)) levelNodes.set(item.level, []);
-        levelNodes.get(item.level)!.push(item.id);
-
-        const children = childrenMap.get(item.id) || [];
-        children.forEach((childId) => {
-            if (!visited.has(childId)) {
-                queue.push({ id: childId, level: item.level + 1 });
-            }
-        });
-    }
-
-    // 布局参数
-    const startX = 50;
-    const startY = 50;
-    const levelHeight = 120;
-    const nodeWidth = 180;
-    const nodeGap = 30;
-
-    // 为每层分配位置
-    for (const [level, nodeIds] of levelNodes.entries()) {
-        const totalWidth = nodeIds.length * nodeWidth + (nodeIds.length - 1) * nodeGap;
-        let currentX = startX + (800 - totalWidth) / 2;
-
-        nodeIds.forEach((nodeId, index) => {
-            const node = nodes.find((n) => n.id === nodeId);
-            if (node) {
-                positioned.push({
-                    ...node,
-                    position: {
-                        x: currentX + index * (nodeWidth + nodeGap),
-                        y: startY + level * levelHeight,
-                    },
-                });
-            }
-        });
-    }
-
-    // 处理未被访问的节点（孤岛）
-    const positionedIds = new Set(positioned.map((p) => p.id));
-    const remaining = nodes.filter((n) => !positionedIds.has(n.id));
-    remaining.forEach((node, idx) => {
-        positioned.push({
-            ...node,
-            position: { x: 50 + (idx % 3) * 200, y: 500 + Math.floor(idx / 3) * 100 },
-        });
-    });
-
-    return positioned;
-};
-
 // 主组件内容
 const RelationContent: FC<RelationProps> = ({
                                                 data,
                                                 onNodeClick,
                                                 onEdgeClick,
                                                 theme = 'light',
-                                                height = '600px',
+                                                height = '100vh',
                                                 width = '100%',
                                                 className = '',
                                                 style = {},
+                                                enableRefresh = true,
+                                                autoFitContainer = true,
                                             }) => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const { fitView } = useReactFlow();
+    const { calculateLayout, stopSimulation } = useForceLayout();
     const [isReady, setIsReady] = useState(false);
     const isInitialized = useRef(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const isDark = theme === 'dark';
     const bgColor = isDark ? '#0f172a' : '#f8fafc';
 
-    // 初始化节点和边
-    useEffect(() => {
-        if (!data?.nodes?.length) {
-            setNodes([]);
-            setEdges([]);
-            setIsReady(false);
-            return;
-        }
+    // 解析高度和宽度为数值（用于布局计算）
+    const parseDimension = (dim: string | number, defaultVal: number): number => {
+        if (typeof dim === 'number') return dim;
+        const parsed = parseInt(dim, 10);
+        return isNaN(parsed) ? defaultVal : parsed;
+    };
 
-        const positionedNodes = calculateTreeLayout(data.nodes, data.edges);
+    /**
+     * 执行布局计算
+     */
+    const performLayout = useCallback(() => {
+        if (!data?.nodes?.length || !containerRef.current) return;
 
+        const containerWidth = parseDimension(width, 1000);
+        const containerHeight = parseDimension(height, 800);
+
+        // 准备力导向布局的节点和边数据
+        const forceNodes: ForceNode[] = data.nodes.map((node) => ({
+            id: node.id,
+            name: node.name,
+            type: node.type,
+            description: node.description,
+            importance: node.importance,
+        }));
+
+        const forceEdges: ForceEdge[] = data.edges.map((edge) => ({
+            source: edge.source,
+            target: edge.target,
+            label: edge.label,
+            type: edge.type,
+            strength: edge.strength,
+        }));
+
+        // 计算力导向布局
+        const positions = calculateLayout(forceNodes, forceEdges, {
+            width: containerWidth,
+            height: containerHeight,
+        });
+
+        // 创建位置映射
+        const positionMap = new Map(positions.map((p) => [p.id, p]));
+
+        // 更新 React Flow 节点
         setNodes(
-            positionedNodes.map((node) => ({
-                id: node.id,
-                type: 'custom',
-                position: node.position,
-                data: {
-                    ...node,
-                    theme,
-                },
-            }))
+            data.nodes.map((node) => {
+                const pos = positionMap.get(node.id);
+                return {
+                    id: node.id,
+                    type: 'custom',
+                    position: pos ? { x: pos.x, y: pos.y } : { x: 0, y: 0 },
+                    data: {
+                        ...node,
+                        theme,
+                    },
+                };
+            })
         );
 
+        // 更新边
         setEdges(
             data.edges.map((edge) => {
                 const edgeColor = getEdgeColor(edge.type || 'neutral', isDark);
@@ -351,14 +314,30 @@ const RelationContent: FC<RelationProps> = ({
 
         setIsReady(true);
         isInitialized.current = false;
-    }, [data, theme, setNodes, setEdges]);
+    }, [data, theme, isDark, width, height, calculateLayout, setNodes, setEdges]);
+
+    // 初始化时执行布局
+    useEffect(() => {
+        if (!data?.nodes?.length) {
+            setNodes([]);
+            setEdges([]);
+            setIsReady(false);
+            return;
+        }
+
+        performLayout();
+
+        return () => {
+            stopSimulation();
+        };
+    }, [data, performLayout, stopSimulation, setNodes, setEdges]);
 
     // 自动适配视图
     useEffect(() => {
         if (isReady && fitView && !isInitialized.current) {
             isInitialized.current = true;
             setTimeout(() => {
-                fitView({ duration: 300, padding: 0.15 }).catch(() => {});
+                fitView({ duration: 300, padding: 0.2 }).catch(() => {});
             }, 100);
         }
     }, [isReady, fitView]);
@@ -387,14 +366,16 @@ const RelationContent: FC<RelationProps> = ({
         return (
             <div
                 style={{
-                    width,
-                    height,
+                    width: autoFitContainer ? '100%' : width,
+                    height: autoFitContainer ? '100%' : height,
                     backgroundColor: bgColor,
                     borderRadius: '12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: isDark ? '#94a3b8' : '#64748b',
+                    border: `2px solid ${isDark ? '#334155' : '#e2e8f0'}`,
+                    boxSizing: 'border-box'
                 }}
             >
                 <div style={{ textAlign: 'center' }}>
@@ -407,9 +388,56 @@ const RelationContent: FC<RelationProps> = ({
 
     return (
         <div
+            ref={containerRef}
             className={`relation-container ${className}`}
-            style={{ width, height, ...style, backgroundColor: bgColor, borderRadius: '12px', overflow: 'hidden' }}
+            style={{ 
+                width: autoFitContainer ? '100%' : width, 
+                height: autoFitContainer ? '100%' : height, 
+                ...style, 
+                backgroundColor: bgColor, 
+                borderRadius: '12px', 
+                overflow: 'hidden', 
+                position: 'relative',
+                border: `2px solid ${isDark ? '#334155' : '#e2e8f0'}`,
+                boxSizing: 'border-box'
+            }}
         >
+            {/* 刷新按钮 */}
+            {enableRefresh && (
+                <button
+                    onClick={performLayout}
+                    style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                        zIndex: 10,
+                        background: isDark ? '#334155' : '#ffffff',
+                        border: `1px solid ${isDark ? '#475569' : '#e2e8f0'}`,
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        color: isDark ? '#e2e8f0' : '#1e293b',
+                        boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.1)',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = isDark ? '#475569' : '#f1f5f9';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = isDark ? '#334155' : '#ffffff';
+                        e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                >
+                    <span>🔄</span>
+                    <span>重新布局</span>
+                </button>
+            )}
+            
             <ReactFlow
                 nodes={nodes}
                 edges={edges}

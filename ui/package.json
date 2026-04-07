@@ -23,6 +23,7 @@
     "react-dom": "^19"
   },
   "devDependencies": {
+    "@types/d3-force": "^3.0.10",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
@@ -38,6 +39,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@uiw/react-md-editor": "^4.0.4",
-    "@xyflow/react": "^12.10.2"
+    "@xyflow/react": "^12.10.2",
+    "d3-force": "^3.0.0"
   }
 }
