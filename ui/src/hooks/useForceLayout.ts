@@ -152,6 +152,94 @@ const calculateComponentOffsets = (
 };
 
 /**
+ * 计算点到线段的最短距离和垂足
+ */
+const pointToSegmentDistance = (
+    px: number, py: number,
+    x1: number, y1: number,
+    x2: number, y2: number
+) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lengthSquared = dx * dx + dy * dy;
+    
+    if (lengthSquared === 0) {
+        // 线段退化为点
+        const dist = Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+        return { distance: dist, closestX: x1, closestY: y1 };
+    }
+    
+    // 计算投影参数 t
+    let t = ((px - x1) * dx + (py - y1) * dy) / lengthSquared;
+    t = Math.max(0, Math.min(1, t)); // 限制在线段范围内
+    
+    const closestX = x1 + t * dx;
+    const closestY = y1 + t * dy;
+    const distance = Math.sqrt((px - closestX) ** 2 + (py - closestY) ** 2);
+    
+    return { distance, closestX, closestY };
+};
+
+/**
+ * 应用边-节点排斥力（避免边穿过节点）
+ */
+const applyEdgeNodeRepulsion = (
+    nodes: ForceNode[],
+    edges: ForceEdge[],
+    repulsionStrength: number = 50,
+    nodeRadius: number = 70
+) => {
+    nodes.forEach((node) => {
+        if (!node.x || !node.y) return;
+        
+        let forceX = 0;
+        let forceY = 0;
+        
+        const nodeX = node.x; // 提取为确定的 number 类型
+        const nodeY = node.y;
+        
+        edges.forEach((edge) => {
+            const sourceId = typeof edge.source === 'string' ? edge.source : (edge.source as any).id;
+            const targetId = typeof edge.target === 'string' ? edge.target : (edge.target as any).id;
+            
+            // 跳过与该节点相连的边
+            if (sourceId === node.id || targetId === node.id) return;
+            
+            const sourceNode = nodes.find(n => n.id === sourceId);
+            const targetNode = nodes.find(n => n.id === targetId);
+            
+            if (!sourceNode || !targetNode || !sourceNode.x || !sourceNode.y || !targetNode.x || !targetNode.y) return;
+            
+            // 计算节点到边的距离
+            const { distance, closestX, closestY } = pointToSegmentDistance(
+                nodeX, nodeY,
+                sourceNode.x, sourceNode.y,
+                targetNode.x, targetNode.y
+            );
+            
+            // 如果距离小于阈值，施加排斥力
+            if (distance < nodeRadius && distance > 0.001) {
+                const force = (nodeRadius - distance) / nodeRadius * repulsionStrength;
+                const dirX = nodeX - closestX;
+                const dirY = nodeY - closestY;
+                const len = Math.sqrt(dirX * dirX + dirY * dirY);
+                
+                if (len > 0.001) {
+                    forceX += (dirX / len) * force;
+                    forceY += (dirY / len) * force;
+                }
+            }
+        });
+        
+        // 应用力到节点位置
+        if (Math.abs(forceX) > 0.001 || Math.abs(forceY) > 0.001) {
+            node.x! += forceX;
+            node.y! += forceY;
+        }
+    });
+};
+
+/**
  * 力导向布局 Hook
  */
 export const useForceLayout = () => {
@@ -222,9 +310,18 @@ export const useForceLayout = () => {
                 .stop();
             
             // 同步执行迭代（不带动画）
-            for (let i = 0; i < (finalConfig.iterations || 300); ++i) {
+            const iterations = finalConfig.iterations || 300;
+            for (let i = 0; i < iterations; ++i) {
                 simulation.tick();
+                
+                // 每 10 次迭代应用一次边-节点排斥力（平衡性能和效果）
+                if (i % 10 === 0) {
+                    applyEdgeNodeRepulsion(simNodes, simEdges, 50, 70);
+                }
             }
+            
+            // 最后一次强力调整
+            applyEdgeNodeRepulsion(simNodes, simEdges, 80, 70);
             
             // 提取最终位置
             const positions = simNodes.map((node) => ({

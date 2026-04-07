@@ -10,7 +10,8 @@ import {
     useReactFlow,
     ReactFlowProvider,
     Background,
-
+    Position,
+    Handle,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useForceLayout, ForceNode, ForceEdge } from '../../hooks/useForceLayout';
@@ -92,6 +93,10 @@ const getIconForType = (type: string): string => {
 const CustomNode: FC<{ data: any }> = ({ data }) => {
     const isDark = data.theme === 'dark';
     const nodeColor = getNodeColor(data.type || 'default', isDark);
+    
+    // 根据连接的边动态计算 Handle 位置
+    // 这里我们使用一个简化的策略：根据节点类型预设 Handle 位置
+    // 更复杂的方案需要根据实际连接的边来计算
 
     return (
         <div
@@ -115,7 +120,16 @@ const CustomNode: FC<{ data: any }> = ({ data }) => {
                 e.currentTarget.style.boxShadow = isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.1)';
             }}
         >
-            {/* 移除固定 Handle，让 React Flow 自动计算最优连接点 */}
+            {/* 添加四个方向的 Handle，React Flow 会自动选择最优的 */}
+            <Handle type="source" position={Position.Top} style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Left} style={{ opacity: 0 }} />
+            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+            <Handle type="target" position={Position.Right} style={{ opacity: 0 }} />
+            <Handle type="target" position={Position.Bottom} style={{ opacity: 0 }} />
+            <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
+            
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div
                     style={{
@@ -159,6 +173,143 @@ const CustomNode: FC<{ data: any }> = ({ data }) => {
 };
 
 const nodeTypes = { custom: CustomNode };
+
+// 智能连接点计算：计算从源节点到目标节点的最优边框交点
+const calculateSmartEdgePoints = (
+    sourceX: number,
+    sourceY: number,
+    targetX: number,
+    targetY: number,
+    sourceWidth: number = 140,
+    sourceHeight: number = 60,
+    targetWidth: number = 140,
+    targetHeight: number = 60
+) => {
+    const dx = targetX - sourceX;
+    const dy = targetY - sourceY;
+    const angle = Math.atan2(dy, dx);
+
+    // 计算源节点边框交点
+    const sourceHalfWidth = sourceWidth / 2;
+    const sourceHalfHeight = sourceHeight / 2;
+    
+    // 根据角度计算与矩形边框的交点
+    let sourceOffsetX, sourceOffsetY;
+    const tanAngle = Math.abs(Math.tan(angle));
+    const aspectRatio = sourceHalfHeight / sourceHalfWidth;
+    
+    if (tanAngle < aspectRatio) {
+        // 交点在左右边
+        sourceOffsetX = dx > 0 ? sourceHalfWidth : -sourceHalfWidth;
+        sourceOffsetY = sourceOffsetX * Math.tan(angle);
+    } else {
+        // 交点在上下边
+        sourceOffsetY = dy > 0 ? sourceHalfHeight : -sourceHalfHeight;
+        sourceOffsetX = sourceOffsetY / Math.tan(angle);
+    }
+
+    // 计算目标节点边框交点
+    const targetHalfWidth = targetWidth / 2;
+    const targetHalfHeight = targetHeight / 2;
+    
+    let targetOffsetX, targetOffsetY;
+    const targetTanAngle = Math.abs(Math.tan(angle));
+    const targetAspectRatio = targetHalfHeight / targetHalfWidth;
+    
+    if (targetTanAngle < targetAspectRatio) {
+        targetOffsetX = dx > 0 ? -targetHalfWidth : targetHalfWidth;
+        targetOffsetY = targetOffsetX * Math.tan(angle);
+    } else {
+        targetOffsetY = dy > 0 ? -targetHalfHeight : targetHalfHeight;
+        targetOffsetX = targetOffsetY / Math.tan(angle);
+    }
+
+    return {
+        startX: sourceX + sourceOffsetX,
+        startY: sourceY + sourceOffsetY,
+        endX: targetX + targetOffsetX,
+        endY: targetY + targetOffsetY,
+    };
+};
+
+// 自定义连线组件（智能连接点 + 箭头）
+const SmartEdge = ({ id, sourceX, sourceY, targetX, targetY, style = {}, markerEnd, data}: any) => {
+    // 假设节点尺寸
+    const nodeWidth = 140;
+    const nodeHeight = 60;
+
+    // 计算智能连接点（基于节点中心）
+    const { startX, startY, endX, endY } = calculateSmartEdgePoints(
+        sourceX, sourceY, targetX, targetY,
+        nodeWidth, nodeHeight, nodeWidth, nodeHeight
+    );
+
+    // 使用智能连接点计算贝塞尔曲线路径
+    const dx = endX - startX;
+    const dy = endY - startY;
+    
+    // 动态调整控制点，使曲线更平滑
+    const distance = Math.sqrt(dx * dx + dy * dy);Math.min(distance * 0.25, 100);
+// 限制最大偏移量
+    
+    const path = `M ${startX} ${startY} C ${startX + dx * 0.25} ${startY + dy * 0.25}, ${endX - dx * 0.25} ${endY - dy * 0.25}, ${endX} ${endY}`;
+
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2;
+
+    const getLabelStyle = () => {
+        if (style.stroke === '#ef4444') return { bg: '#fee2e2', color: '#dc2626' };
+        if (style.stroke === '#10b981') return { bg: '#d1fae5', color: '#065f46' };
+        return { bg: '#e2e8f0', color: '#475569' };
+    };
+    const labelStyle = getLabelStyle();
+
+    return (
+        <g>
+            {/* 绘制一条从 Handle 到智能起点的辅助线（透明，用于交互） */}
+            <path 
+                d={`M ${sourceX} ${sourceY} L ${startX} ${startY}`}
+                stroke="transparent"
+                strokeWidth="10"
+                fill="none"
+                style={{ pointerEvents: 'stroke' }}
+            />
+            
+            {/* 主路径：从智能起点到智能终点 */}
+            <path 
+                id={id} 
+                style={style} 
+                className="react-flow__edge-path" 
+                d={path} 
+                markerEnd={markerEnd} 
+                fill="none" 
+            />
+            
+            {/* 标签 */}
+            {data?.label && (
+                <foreignObject x={midX - 30} y={midY - 10} width={60} height={20} style={{ overflow: 'visible' }}>
+                    <div
+                        style={{
+                            background: labelStyle.bg,
+                            padding: '2px 6px',
+                            borderRadius: '10px',
+                            fontSize: '10px',
+                            fontWeight: 500,
+                            color: labelStyle.color,
+                            textAlign: 'center',
+                            whiteSpace: 'nowrap',
+                            pointerEvents: 'none',
+                        }}
+                    >
+                        {data.label}
+                    </div>
+                </foreignObject>
+            )}
+        </g>
+    );
+};
+
+const edgeTypes = { smart: SmartEdge };
 
 // 主组件内容
 const RelationContent: FC<RelationProps> = ({
@@ -261,13 +412,15 @@ const RelationContent: FC<RelationProps> = ({
                     id: `${edge.source}-${edge.target}`,
                     source: edge.source,
                     target: edge.target,
-                    // 不指定 type，直接使用 React Flow 默认的 'default' 类型
+                    type: 'smart',
                     label: edge.label,
+                    data: { label: edge.label },
                     style: { stroke: edgeColor, strokeWidth: 2 },
-                    // 确保 markerEnd 是最简化的标准对象
-                    markerEnd: {
-                        type: MarkerType.Arrow,
-                        color: edgeColor,
+                    markerEnd: { 
+                        type: MarkerType.ArrowClosed, 
+                        width: 12, 
+                        height: 12, 
+                        color: edgeColor 
                     },
                 };
             })
@@ -407,6 +560,7 @@ const RelationContent: FC<RelationProps> = ({
                 onNodeClick={handleNodeClick}
                 onEdgeClick={handleEdgeClick}
                 nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
                 nodesDraggable={false}
                 nodesConnectable={false}
                 fitView={false}
