@@ -1,5 +1,4 @@
 // src/components/Relation/Relation.tsx
-// @ts-nocheck
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import type { FC } from 'react';
 import {
@@ -12,11 +11,13 @@ import {
     Background,
     Position,
     Handle,
+    Edge,
+    Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useForceLayout, ForceNode, ForceEdge } from '../../hooks/useForceLayout';
 
-// 类型定义
+// ==================== 类型定义 ====================
 export interface RelationNodeData {
     id: string;
     name: string;
@@ -46,11 +47,12 @@ export interface RelationProps {
     width?: string | number;
     className?: string;
     style?: React.CSSProperties;
-    enableRefresh?: boolean; // 是否显示刷新按钮
-    autoFitContainer?: boolean; // 是否自动适应容器大小
+    enableRefresh?: boolean;
+    autoFitContainer?: boolean;
 }
 
-// 节点颜色
+// ==================== 工具函数 ====================
+
 const getNodeColor = (type: string, isDark: boolean): string => {
     const colors: Record<string, string> = {
         person: isDark ? '#60a5fa' : '#3b82f6',
@@ -63,7 +65,6 @@ const getNodeColor = (type: string, isDark: boolean): string => {
     return colors[type] || colors.default;
 };
 
-// 连线颜色
 const getEdgeColor = (type: string, isDark: boolean): string => {
     const colors: Record<string, string> = {
         friend: isDark ? '#34d399' : '#10b981',
@@ -76,7 +77,6 @@ const getEdgeColor = (type: string, isDark: boolean): string => {
     return colors[type] || colors.default;
 };
 
-// 节点图标
 const getIconForType = (type: string): string => {
     const icons: Record<string, string> = {
         person: '👤',
@@ -89,14 +89,55 @@ const getIconForType = (type: string): string => {
     return icons[type] || icons.default;
 };
 
-// 自定义节点组件
-const CustomNode: FC<{ data: any }> = ({ data }) => {
+/**
+ * P0修复：布局结果归一化与缩放
+ * - 平移到正坐标
+ * - 缩放到画布80%
+ * - 限制最大缩放1.5倍，避免过度放大
+ */
+const normalizeLayoutPositions = (
+    positions: Array<{ id: string; x: number; y: number }>,
+    containerWidth: number,
+    containerHeight: number
+): Array<{ id: string; x: number; y: number }> => {
+    if (positions.length === 0) return [];
+
+    // 计算边界
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+
+    positions.forEach((pos) => {
+        minX = Math.min(minX, pos.x);
+        minY = Math.min(minY, pos.y);
+        maxX = Math.max(maxX, pos.x);
+        maxY = Math.max(maxY, pos.y);
+    });
+
+    const layoutWidth = maxX - minX || 1;
+    const layoutHeight = maxY - minY || 1;
+
+    // P0修复：计算缩放因子，限制最大值1.5
+    let scale = Math.min(
+        (containerWidth * 0.8) / layoutWidth,
+        (containerHeight * 0.8) / layoutHeight
+    );
+    scale = Math.min(scale, 1.5); // 限制最大缩放
+
+    // 计算偏移量使布局居中
+    const offsetX = (containerWidth - layoutWidth * scale) / 2 - minX * scale;
+    const offsetY = (containerHeight - layoutHeight * scale) / 2 - minY * scale;
+
+    return positions.map((pos) => ({
+        id: pos.id,
+        x: pos.x * scale + offsetX,
+        y: pos.y * scale + offsetY,
+    }));
+};
+
+// ==================== 自定义节点组件 ====================
+const CustomNode: FC<{ data: any; id: string }> = ({ data }) => {
     const isDark = data.theme === 'dark';
     const nodeColor = getNodeColor(data.type || 'default', isDark);
-    
-    // 根据连接的边动态计算 Handle 位置
-    // 这里我们使用一个简化的策略：根据节点类型预设 Handle 位置
-    // 更复杂的方案需要根据实际连接的边来计算
 
     return (
         <div
@@ -120,15 +161,15 @@ const CustomNode: FC<{ data: any }> = ({ data }) => {
                 e.currentTarget.style.boxShadow = isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.1)';
             }}
         >
-            {/* 添加四个方向的 Handle，React Flow 会自动选择最优的 */}
-            <Handle type="source" position={Position.Top} style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Left} style={{ opacity: 0 }} />
-            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-            <Handle type="target" position={Position.Right} style={{ opacity: 0 }} />
-            <Handle type="target" position={Position.Bottom} style={{ opacity: 0 }} />
-            <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
+            {/* P1修复：为每个 Handle 分配唯一 id */}
+            <Handle type="source" position={Position.Top} id="source-top" style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Right} id="source-right" style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Bottom} id="source-bottom" style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Left} id="source-left" style={{ opacity: 0 }} />
+            <Handle type="target" position={Position.Top} id="target-top" style={{ opacity: 0 }} />
+            <Handle type="target" position={Position.Right} id="target-right" style={{ opacity: 0 }} />
+            <Handle type="target" position={Position.Bottom} id="target-bottom" style={{ opacity: 0 }} />
+            <Handle type="target" position={Position.Left} id="target-left" style={{ opacity: 0 }} />
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div
@@ -174,158 +215,21 @@ const CustomNode: FC<{ data: any }> = ({ data }) => {
 
 const nodeTypes = { custom: CustomNode };
 
-// 智能连接点计算：计算从源节点到目标节点的最优边框交点
-const calculateSmartEdgePoints = (
-    sourceX: number,
-    sourceY: number,
-    targetX: number,
-    targetY: number,
-    sourceWidth: number = 140,
-    sourceHeight: number = 60,
-    targetWidth: number = 140,
-    targetHeight: number = 60
-) => {
-    const dx = targetX - sourceX;
-    const dy = targetY - sourceY;
-    const angle = Math.atan2(dy, dx);
-
-    // 计算源节点边框交点
-    const sourceHalfWidth = sourceWidth / 2;
-    const sourceHalfHeight = sourceHeight / 2;
-    
-    // 根据角度计算与矩形边框的交点
-    let sourceOffsetX, sourceOffsetY;
-    const tanAngle = Math.abs(Math.tan(angle));
-    const aspectRatio = sourceHalfHeight / sourceHalfWidth;
-    
-    if (tanAngle < aspectRatio) {
-        // 交点在左右边
-        sourceOffsetX = dx > 0 ? sourceHalfWidth : -sourceHalfWidth;
-        sourceOffsetY = sourceOffsetX * Math.tan(angle);
-    } else {
-        // 交点在上下边
-        sourceOffsetY = dy > 0 ? sourceHalfHeight : -sourceHalfHeight;
-        sourceOffsetX = sourceOffsetY / Math.tan(angle);
-    }
-
-    // 计算目标节点边框交点
-    const targetHalfWidth = targetWidth / 2;
-    const targetHalfHeight = targetHeight / 2;
-    
-    let targetOffsetX, targetOffsetY;
-    const targetTanAngle = Math.abs(Math.tan(angle));
-    const targetAspectRatio = targetHalfHeight / targetHalfWidth;
-    
-    if (targetTanAngle < targetAspectRatio) {
-        targetOffsetX = dx > 0 ? -targetHalfWidth : targetHalfWidth;
-        targetOffsetY = targetOffsetX * Math.tan(angle);
-    } else {
-        targetOffsetY = dy > 0 ? -targetHalfHeight : targetHalfHeight;
-        targetOffsetX = targetOffsetY / Math.tan(angle);
-    }
-
-    return {
-        startX: sourceX + sourceOffsetX,
-        startY: sourceY + sourceOffsetY,
-        endX: targetX + targetOffsetX,
-        endY: targetY + targetOffsetY,
-    };
-};
-
-// 自定义连线组件（智能连接点 + 箭头）
-const SmartEdge = ({ id, sourceX, sourceY, targetX, targetY, style = {}, markerEnd, data}: any) => {
-    // 假设节点尺寸
-    const nodeWidth = 140;
-    const nodeHeight = 60;
-
-    // 计算智能连接点（基于节点中心）
-    const { startX, startY, endX, endY } = calculateSmartEdgePoints(
-        sourceX, sourceY, targetX, targetY,
-        nodeWidth, nodeHeight, nodeWidth, nodeHeight
-    );
-
-    // 使用智能连接点计算贝塞尔曲线路径
-    const dx = endX - startX;
-    const dy = endY - startY;
-    
-    // 动态调整控制点，使曲线更平滑
-    const distance = Math.sqrt(dx * dx + dy * dy);Math.min(distance * 0.25, 100);
-// 限制最大偏移量
-    
-    const path = `M ${startX} ${startY} C ${startX + dx * 0.25} ${startY + dy * 0.25}, ${endX - dx * 0.25} ${endY - dy * 0.25}, ${endX} ${endY}`;
-
-    const midX = (startX + endX) / 2;
-    const midY = (startY + endY) / 2;
-
-    const getLabelStyle = () => {
-        if (style.stroke === '#ef4444') return { bg: '#fee2e2', color: '#dc2626' };
-        if (style.stroke === '#10b981') return { bg: '#d1fae5', color: '#065f46' };
-        return { bg: '#e2e8f0', color: '#475569' };
-    };
-    const labelStyle = getLabelStyle();
-
-    return (
-        <g>
-            {/* 绘制一条从 Handle 到智能起点的辅助线（透明，用于交互） */}
-            <path 
-                d={`M ${sourceX} ${sourceY} L ${startX} ${startY}`}
-                stroke="transparent"
-                strokeWidth="10"
-                fill="none"
-                style={{ pointerEvents: 'stroke' }}
-            />
-            
-            {/* 主路径：从智能起点到智能终点 */}
-            <path 
-                id={id} 
-                style={style} 
-                className="react-flow__edge-path" 
-                d={path} 
-                markerEnd={markerEnd} 
-                fill="none" 
-            />
-            
-            {/* 标签 */}
-            {data?.label && (
-                <foreignObject x={midX - 30} y={midY - 10} width={60} height={20} style={{ overflow: 'visible' }}>
-                    <div
-                        style={{
-                            background: labelStyle.bg,
-                            padding: '2px 6px',
-                            borderRadius: '10px',
-                            fontSize: '10px',
-                            fontWeight: 500,
-                            color: labelStyle.color,
-                            textAlign: 'center',
-                            whiteSpace: 'nowrap',
-                            pointerEvents: 'none',
-                        }}
-                    >
-                        {data.label}
-                    </div>
-                </foreignObject>
-            )}
-        </g>
-    );
-};
-
-const edgeTypes = { smart: SmartEdge };
-
-// 主组件内容
+// ==================== 主组件内容 ====================
 const RelationContent: FC<RelationProps> = ({
-                                                data,
-                                                onNodeClick,
-                                                onEdgeClick,
-                                                theme = 'light',
-                                                height = '100vh',
-                                                width = '100%',
-                                                className = '',
-                                                style = {},
-                                                enableRefresh = true,
-                                                autoFitContainer = true,
-                                            }) => {
-    const [nodes, setNodes, onNodesChange] = useNodesState([]);
-    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    data,
+    onNodeClick,
+    onEdgeClick,
+    theme = 'light',
+    height = '100vh',
+    width = '100%',
+    className = '',
+    style = {},
+    enableRefresh = true,
+    autoFitContainer = true,
+}) => {
+    const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
     const { fitView } = useReactFlow();
     const { calculateLayout, stopSimulation } = useForceLayout();
     const [isReady, setIsReady] = useState(false);
@@ -335,23 +239,31 @@ const RelationContent: FC<RelationProps> = ({
     const isDark = theme === 'dark';
     const bgColor = isDark ? '#0f172a' : '#f8fafc';
 
-    // 解析高度和宽度为数值（用于布局计算）
-    const parseDimension = (dim: string | number, defaultVal: number): number => {
-        if (typeof dim === 'number') return dim;
-        const parsed = parseInt(dim, 10);
-        return isNaN(parsed) ? defaultVal : parsed;
-    };
+    /**
+     * P0修复：获取容器实际尺寸
+     * 使用 getBoundingClientRect() 而非 parseInt 解析 CSS 字符串
+     */
+    const getContainerSize = useCallback(() => {
+        const rect = containerRef.current?.getBoundingClientRect();
+        return {
+            width: rect?.width || 1200,
+            height: rect?.height || 800,
+        };
+    }, []);
 
     /**
-     * 执行布局计算
+     * P0修复：执行布局计算
+     * 1. 使用真实容器尺寸
+     * 2. 力导向参数已优化（斥力-700，距离180，碰撞75）
+     * 3. 归一化时限制缩放≤1.5
      */
     const performLayout = useCallback(() => {
         if (!data?.nodes?.length || !containerRef.current) return;
 
-        const containerWidth = parseDimension(width, 1000);
-        const containerHeight = parseDimension(height, 800);
+        // P0修复：获取真实容器尺寸
+        const { width: containerWidth, height: containerHeight } = getContainerSize();
 
-        // 准备力导向布局的节点和边数据
+        // 准备力导向布局数据
         const forceNodes: ForceNode[] = data.nodes.map((node) => ({
             id: node.id,
             name: node.name,
@@ -368,67 +280,64 @@ const RelationContent: FC<RelationProps> = ({
             strength: edge.strength,
         }));
 
-        // 计算力导向布局
-        const positions = calculateLayout(forceNodes, forceEdges, {
+        // P0修复：传递真实容器尺寸给力导向布局
+        const rawPositions = calculateLayout(forceNodes, forceEdges, {
             width: containerWidth,
             height: containerHeight,
         });
 
+        // P0修复：归一化并限制缩放
+        const normalizedPositions = normalizeLayoutPositions(rawPositions, containerWidth, containerHeight);
+
         // 创建位置映射
-        const positionMap = new Map(positions.map((p) => [p.id, p]));
+        const positionMap = new Map(normalizedPositions.map((p) => [p.id, p]));
 
-        // 更新 React Flow 节点
-        setNodes(
-            data.nodes.map((node) => {
-                const pos = positionMap.get(node.id);
-                return {
-                    id: node.id,
-                    type: 'custom',
-                    position: pos ? { x: pos.x, y: pos.y } : { x: 0, y: 0 },
-                    data: {
-                        ...node,
-                        theme,
-                    },
-                };
-            })
-        );
-
-        // 检测双向边
-        const edgeMap = new Map<string, RelationEdgeData>();
-        data.edges.forEach((edge) => {
-            const key = `${edge.source}-${edge.target}`;
-            edgeMap.set(key, edge);
+        // 构建节点
+        const newNodes = data.nodes.map((node) => {
+            const pos = positionMap.get(node.id);
+            return {
+                id: node.id,
+                type: 'custom',
+                position: pos ? { x: pos.x, y: pos.y } : { x: 0, y: 0 },
+                data: {
+                    ...node,
+                    theme,
+                },
+            };
         });
         
-        // 更新边，使用智能连接点
-        setEdges(
-            data.edges.map((edge) => {
-                const edgeColor = getEdgeColor(edge.type || 'neutral', isDark);
-                const reverseKey = `${edge.target}-${edge.source}`;
-                        
-                // 检测是否为双向边（用于后续可能的样式区分）
-                edgeMap.has(reverseKey);
-                return {
-                    id: `${edge.source}-${edge.target}`,
-                    source: edge.source,
-                    target: edge.target,
-                    type: 'smart',
-                    label: edge.label,
-                    data: { label: edge.label },
-                    style: { stroke: edgeColor, strokeWidth: 2 },
-                    markerEnd: { 
-                        type: MarkerType.ArrowClosed, 
-                        width: 12, 
-                        height: 12, 
-                        color: edgeColor 
-                    },
-                };
-            })
-        );
+        setNodes(newNodes);
+
+        // P1修复：使用 smoothstep 边类型，删除 offset（smoothstep不支持）
+        const newEdges = data.edges.map((edge) => {
+            const edgeId = `${edge.source}-${edge.target}`;
+            const edgeColor = getEdgeColor(edge.type || 'neutral', isDark);
+            
+            return {
+                id: edgeId,
+                source: edge.source,
+                target: edge.target,
+                type: 'smoothstep', // P1修复：使用内置类型
+                label: edge.label,
+                data: { label: edge.label },
+                style: { 
+                    stroke: edgeColor, 
+                    strokeWidth: 2,
+                },
+                markerEnd: { 
+                    type: MarkerType.ArrowClosed, 
+                    width: 12, 
+                    height: 12, 
+                    color: edgeColor 
+                },
+            };
+        });
+        
+        setEdges(newEdges);
 
         setIsReady(true);
         isInitialized.current = false;
-    }, [data, theme, isDark, width, height, calculateLayout, setNodes, setEdges]);
+    }, [data, theme, isDark, getContainerSize, calculateLayout, setNodes, setEdges]);
 
     // 初始化时执行布局
     useEffect(() => {
@@ -439,35 +348,46 @@ const RelationContent: FC<RelationProps> = ({
             return;
         }
 
-        performLayout();
+        // 延迟执行，确保容器已渲染
+        const timer = setTimeout(() => {
+            performLayout();
+        }, 50);
 
         return () => {
+            clearTimeout(timer);
             stopSimulation();
         };
     }, [data, performLayout, stopSimulation, setNodes, setEdges]);
 
-    // 自动适配视图
+    // P0修复：调整 fitView 参数，增大 padding 避免压缩
     useEffect(() => {
         if (isReady && fitView && !isInitialized.current) {
             isInitialized.current = true;
             setTimeout(() => {
-                fitView({ duration: 300, padding: 0.2 }).catch(() => {});
-            }, 100);
+                fitView({ duration: 300, padding: 0.3 }).catch(() => {});
+            }, 150);
         }
     }, [isReady, fitView]);
 
     const handleNodeClick = useCallback(
-        (_event: React.MouseEvent, node: any) => {
+        (_event: React.MouseEvent, node: Node) => {
             if (onNodeClick && node.data) {
-                const { id, name, type, description, avatar, importance } = node.data;
-                onNodeClick({ id, name, type, description, avatar, importance });
+                const nodeData = node.data as any as RelationNodeData;
+                onNodeClick({ 
+                    id: nodeData.id, 
+                    name: nodeData.name, 
+                    type: nodeData.type, 
+                    description: nodeData.description, 
+                    avatar: nodeData.avatar, 
+                    importance: nodeData.importance 
+                });
             }
         },
         [onNodeClick]
     );
 
     const handleEdgeClick = useCallback(
-        (_event: React.MouseEvent, edge: any) => {
+        (_event: React.MouseEvent, edge: Edge) => {
             if (onEdgeClick && data?.edges) {
                 const edgeData = data.edges.find((e) => `${e.source}-${e.target}` === edge.id);
                 if (edgeData) onEdgeClick(edgeData);
@@ -476,6 +396,7 @@ const RelationContent: FC<RelationProps> = ({
         [onEdgeClick, data]
     );
 
+    // 空数据状态
     if (!data?.nodes?.length) {
         return (
             <div
@@ -560,7 +481,6 @@ const RelationContent: FC<RelationProps> = ({
                 onNodeClick={handleNodeClick}
                 onEdgeClick={handleEdgeClick}
                 nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
                 nodesDraggable={false}
                 nodesConnectable={false}
                 fitView={false}
