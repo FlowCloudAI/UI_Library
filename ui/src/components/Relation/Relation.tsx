@@ -10,8 +10,7 @@ import {
     useReactFlow,
     ReactFlowProvider,
     Background,
-    Position,
-    Handle,
+
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useForceLayout, ForceNode, ForceEdge } from '../../hooks/useForceLayout';
@@ -96,6 +95,7 @@ const CustomNode: FC<{ data: any }> = ({ data }) => {
 
     return (
         <div
+            className="react-flow__node-custom"
             style={{
                 background: isDark ? '#1e293b' : '#ffffff',
                 border: `2px solid ${nodeColor}`,
@@ -115,11 +115,7 @@ const CustomNode: FC<{ data: any }> = ({ data }) => {
                 e.currentTarget.style.boxShadow = isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.1)';
             }}
         >
-            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
-            <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
-
+            {/* 移除固定 Handle，让 React Flow 自动计算最优连接点 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div
                     style={{
@@ -163,55 +159,6 @@ const CustomNode: FC<{ data: any }> = ({ data }) => {
 };
 
 const nodeTypes = { custom: CustomNode };
-
-// 自定义连线组件（带箭头和标签）
-const SmartEdge = ({ id, sourceX, sourceY, targetX, targetY, style = {}, markerEnd, data }: any) => {
-    // 贝塞尔曲线路径
-    const dx = targetX - sourceX;
-    const dy = targetY - sourceY;
-    const offsetX = dx * 0.2;
-    const offsetY = dy * 0.2;
-    const path = `M ${sourceX} ${sourceY} C ${sourceX + offsetX} ${sourceY + offsetY}, ${targetX - offsetX} ${targetY - offsetY}, ${targetX} ${targetY}`;
-
-    // 标签位置（中点）
-    const midX = (sourceX + targetX) / 2;
-    const midY = (sourceY + targetY) / 2;
-
-    // 根据线条颜色设置标签背景
-    const getLabelStyle = () => {
-        if (style.stroke === '#ef4444') return { bg: '#fee2e2', color: '#dc2626' };
-        if (style.stroke === '#10b981') return { bg: '#d1fae5', color: '#065f46' };
-        return { bg: '#e2e8f0', color: '#475569' };
-    };
-    const labelStyle = getLabelStyle();
-
-    return (
-        <g>
-            <path id={id} style={style} className="react-flow__edge-path" d={path} markerEnd={markerEnd} fill="none" />
-            {data?.label && (
-                <foreignObject x={midX - 30} y={midY - 10} width={60} height={20} style={{ overflow: 'visible' }}>
-                    <div
-                        style={{
-                            background: labelStyle.bg,
-                            padding: '2px 6px',
-                            borderRadius: '10px',
-                            fontSize: '10px',
-                            fontWeight: 500,
-                            color: labelStyle.color,
-                            textAlign: 'center',
-                            whiteSpace: 'nowrap',
-                            pointerEvents: 'none',
-                        }}
-                    >
-                        {data.label}
-                    </div>
-                </foreignObject>
-            )}
-        </g>
-    );
-};
-
-const edgeTypes = { smart: SmartEdge };
 
 // 主组件内容
 const RelationContent: FC<RelationProps> = ({
@@ -295,19 +242,33 @@ const RelationContent: FC<RelationProps> = ({
             })
         );
 
-        // 更新边
+        // 检测双向边
+        const edgeMap = new Map<string, RelationEdgeData>();
+        data.edges.forEach((edge) => {
+            const key = `${edge.source}-${edge.target}`;
+            edgeMap.set(key, edge);
+        });
+        
+        // 更新边，使用智能连接点
         setEdges(
             data.edges.map((edge) => {
                 const edgeColor = getEdgeColor(edge.type || 'neutral', isDark);
+                const reverseKey = `${edge.target}-${edge.source}`;
+                        
+                // 检测是否为双向边（用于后续可能的样式区分）
+                edgeMap.has(reverseKey);
                 return {
                     id: `${edge.source}-${edge.target}`,
                     source: edge.source,
                     target: edge.target,
-                    type: 'smart',
+                    // 不指定 type，直接使用 React Flow 默认的 'default' 类型
                     label: edge.label,
-                    data: { label: edge.label },
                     style: { stroke: edgeColor, strokeWidth: 2 },
-                    markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12, color: edgeColor },
+                    // 确保 markerEnd 是最简化的标准对象
+                    markerEnd: {
+                        type: MarkerType.Arrow,
+                        color: edgeColor,
+                    },
                 };
             })
         );
@@ -446,7 +407,6 @@ const RelationContent: FC<RelationProps> = ({
                 onNodeClick={handleNodeClick}
                 onEdgeClick={handleEdgeClick}
                 nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
                 nodesDraggable={false}
                 nodesConnectable={false}
                 fitView={false}

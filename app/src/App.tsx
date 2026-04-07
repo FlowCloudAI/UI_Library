@@ -108,7 +108,7 @@ const DEFAULT_KEY = NAV_GROUPS[0].items[0].key
 
 export default function App() {
     const [activeDemo, setActiveDemo] = useState<string>(DEFAULT_KEY)
-    const { theme, setTheme } = useTheme()
+    const { resolvedTheme, setTheme } = useTheme()
 
     const ActiveDemo = DEMO_COMPONENTS[activeDemo]
     const activeLabel = ALL_ITEMS.find(i => i.key === activeDemo)?.label ?? ''
@@ -122,7 +122,7 @@ export default function App() {
             <header className="app-topbar">
                 <span className="app-topbar__title">FlowCloud UI</span>
                 <CheckButton
-                    checked={theme === 'dark'}
+                    checked={resolvedTheme === 'dark'}
                     onChange={handleThemeChange}
                     labelLeft="亮"
                     labelRight="暗"

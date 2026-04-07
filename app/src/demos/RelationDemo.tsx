@@ -1,23 +1,12 @@
 // src/demos/RelationDemo.tsx
 // @ts-nocheck
 import React from 'react';
-import { Relation } from 'flowcloudai-ui';
+import { Relation, useTheme } from 'flowcloudai-ui';
 
 export const RelationDemo = () => {
-    const getCurrentTheme = () => {
-        // 方式1：如果主题在 html 的 data-theme 属性上
-        const htmlTheme = document.documentElement.getAttribute('data-theme');
-        if (htmlTheme === 'dark' || htmlTheme === 'light') return htmlTheme;
-
-        // 方式2：如果主题在 localStorage
-        const stored = localStorage.getItem('theme');
-        if (stored === 'dark' || stored === 'light') return stored;
-
-        // 方式3：检测系统偏好
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    };
-
-    const theme = getCurrentTheme();
+    // 使用 useTheme Hook 实时同步主题
+    const { resolvedTheme } = useTheme();
+    const theme = resolvedTheme; // 'light' or 'dark'
 
     const data = {
         nodes: [

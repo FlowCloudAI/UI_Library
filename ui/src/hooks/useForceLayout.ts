@@ -45,15 +45,15 @@ export interface ForceLayoutConfig {
 
 // 默认配置（针对500节点优化，保证<200ms性能）
 const DEFAULT_CONFIG: Omit<ForceLayoutConfig, 'width' | 'height'> = {
-    linkDistance: 220,
-    chargeStrength: -800,
-    centerStrength: 0.05,
-    collideRadius: 100,
-    linkStrength: 0.5,
-    iterations: 280,
+    linkDistance: 350,
+    chargeStrength: -1200,
+    centerStrength: 0.03,
+    collideRadius: 140,
+    linkStrength: 0.35,
+    iterations: 300,
     alphaMin: 0.05,
     alphaDecay: 0.03,
-    componentGap: 500,
+    componentGap: 600,
 };
 
 /**
