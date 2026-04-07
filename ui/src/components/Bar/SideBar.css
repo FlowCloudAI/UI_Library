@@ -29,7 +29,8 @@
 /* ========== Header ========== */
 .fc-sidebar__header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
+    align-items: center;
     padding: var(--fc-space-md, 12px);
     border-bottom: 1px solid var(--fc-color-border);
 }

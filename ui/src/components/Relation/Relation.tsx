@@ -1,5 +1,5 @@
 // src/components/Relation/Relation.tsx
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import type { FC } from 'react';
 import {
     ReactFlow,
@@ -15,6 +15,7 @@ import {
     Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import './Relation.css';
 import { useForceLayout, ForceNode, ForceEdge } from '../../hooks/useForceLayout';
 
 // ==================== 类型定义 ====================
@@ -50,6 +51,8 @@ export interface RelationProps {
     enableRefresh?: boolean;
     autoFitContainer?: boolean;
 }
+
+type FlowNodeData = RelationNodeData & { theme: 'light' | 'dark' };
 
 // ==================== 工具函数 ====================
 
@@ -89,59 +92,14 @@ const getIconForType = (type: string): string => {
     return icons[type] || icons.default;
 };
 
-/**
- * P0修复：布局结果归一化与缩放
- * - 平移到正坐标
- * - 缩放到画布80%
- * - 限制最大缩放1.5倍，避免过度放大
- */
-const normalizeLayoutPositions = (
-    positions: Array<{ id: string; x: number; y: number }>,
-    containerWidth: number,
-    containerHeight: number
-): Array<{ id: string; x: number; y: number }> => {
-    if (positions.length === 0) return [];
-
-    // 计算边界
-    let minX = Infinity, minY = Infinity;
-    let maxX = -Infinity, maxY = -Infinity;
-
-    positions.forEach((pos) => {
-        minX = Math.min(minX, pos.x);
-        minY = Math.min(minY, pos.y);
-        maxX = Math.max(maxX, pos.x);
-        maxY = Math.max(maxY, pos.y);
-    });
-
-    const layoutWidth = maxX - minX || 1;
-    const layoutHeight = maxY - minY || 1;
-
-    // P0修复：计算缩放因子，限制最大值1.5
-    let scale = Math.min(
-        (containerWidth * 0.8) / layoutWidth,
-        (containerHeight * 0.8) / layoutHeight
-    );
-    scale = Math.min(scale, 1.5); // 限制最大缩放
-
-    // 计算偏移量使布局居中
-    const offsetX = (containerWidth - layoutWidth * scale) / 2 - minX * scale;
-    const offsetY = (containerHeight - layoutHeight * scale) / 2 - minY * scale;
-
-    return positions.map((pos) => ({
-        id: pos.id,
-        x: pos.x * scale + offsetX,
-        y: pos.y * scale + offsetY,
-    }));
-};
-
 // ==================== 自定义节点组件 ====================
-const CustomNode: FC<{ data: any; id: string }> = ({ data }) => {
+const CustomNode: FC<{ data: FlowNodeData; id: string }> = ({ data }) => {
     const isDark = data.theme === 'dark';
     const nodeColor = getNodeColor(data.type || 'default', isDark);
 
     return (
         <div
-            className="react-flow__node-custom"
+            className="relation-node"
             style={{
                 background: isDark ? '#1e293b' : '#ffffff',
                 border: `2px solid ${nodeColor}`,
@@ -150,27 +108,11 @@ const CustomNode: FC<{ data: any; id: string }> = ({ data }) => {
                 minWidth: '140px',
                 cursor: 'pointer',
                 boxShadow: isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.1)',
-                transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = isDark ? '0 6px 16px rgba(0,0,0,0.4)' : '0 4px 12px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.1)';
             }}
         >
-            {/* P1修复：为每个 Handle 分配唯一 id */}
-            <Handle type="source" position={Position.Top} id="source-top" style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Right} id="source-right" style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Bottom} id="source-bottom" style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Left} id="source-left" style={{ opacity: 0 }} />
-            <Handle type="target" position={Position.Top} id="target-top" style={{ opacity: 0 }} />
-            <Handle type="target" position={Position.Right} id="target-right" style={{ opacity: 0 }} />
-            <Handle type="target" position={Position.Bottom} id="target-bottom" style={{ opacity: 0 }} />
-            <Handle type="target" position={Position.Left} id="target-left" style={{ opacity: 0 }} />
-            
+            <Handle type="source" position={Position.Right} id="s" style={{ opacity: 0 }} />
+            <Handle type="target" position={Position.Left} id="t" style={{ opacity: 0 }} />
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div
                     style={{
@@ -221,7 +163,7 @@ const RelationContent: FC<RelationProps> = ({
     onNodeClick,
     onEdgeClick,
     theme = 'light',
-    height = '100vh',
+    height = '100%',
     width = '100%',
     className = '',
     style = {},
@@ -232,17 +174,22 @@ const RelationContent: FC<RelationProps> = ({
     const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
     const { fitView } = useReactFlow();
     const { calculateLayout, stopSimulation } = useForceLayout();
-    const [isReady, setIsReady] = useState(false);
-    const isInitialized = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const isDark = theme === 'dark';
     const bgColor = isDark ? '#0f172a' : '#f8fafc';
 
-    /**
-     * P0修复：获取容器实际尺寸
-     * 使用 getBoundingClientRect() 而非 parseInt 解析 CSS 字符串
-     */
+    // Refs so performLayout doesn't close over theme — avoids re-running layout on theme change
+    const themeRef = useRef(theme);
+    const isDarkRef = useRef(isDark);
+    useEffect(() => {
+        themeRef.current = theme;
+        isDarkRef.current = isDark;
+    }, [theme, isDark]);
+
+    // fitViewDone guards against calling fitView on every node update (e.g. theme changes)
+    const fitViewDone = useRef(false);
+
     const getContainerSize = useCallback(() => {
         const rect = containerRef.current?.getBoundingClientRect();
         return {
@@ -251,19 +198,11 @@ const RelationContent: FC<RelationProps> = ({
         };
     }, []);
 
-    /**
-     * P0修复：执行布局计算
-     * 1. 使用真实容器尺寸
-     * 2. 力导向参数已优化（斥力-700，距离180，碰撞75）
-     * 3. 归一化时限制缩放≤1.5
-     */
     const performLayout = useCallback(() => {
         if (!data?.nodes?.length || !containerRef.current) return;
 
-        // P0修复：获取真实容器尺寸
         const { width: containerWidth, height: containerHeight } = getContainerSize();
 
-        // 准备力导向布局数据
         const forceNodes: ForceNode[] = data.nodes.map((node) => ({
             id: node.id,
             name: node.name,
@@ -280,75 +219,59 @@ const RelationContent: FC<RelationProps> = ({
             strength: edge.strength,
         }));
 
-        // P0修复：传递真实容器尺寸给力导向布局
         const rawPositions = calculateLayout(forceNodes, forceEdges, {
             width: containerWidth,
             height: containerHeight,
         });
 
-        // P0修复：归一化并限制缩放
-        const normalizedPositions = normalizeLayoutPositions(rawPositions, containerWidth, containerHeight);
+        // 直接使用 D3 原始坐标，保留 forceCollide 建立的间距
+        // 视口居中/缩放由 fitView 处理，不再对节点坐标做压缩
+        const positionMap = new Map(rawPositions.map((p) => [p.id, p]));
 
-        // 创建位置映射
-        const positionMap = new Map(normalizedPositions.map((p) => [p.id, p]));
-
-        // 构建节点
-        const newNodes = data.nodes.map((node) => {
+        const newNodes: Node[] = data.nodes.map((node) => {
             const pos = positionMap.get(node.id);
             return {
                 id: node.id,
                 type: 'custom',
                 position: pos ? { x: pos.x, y: pos.y } : { x: 0, y: 0 },
-                data: {
-                    ...node,
-                    theme,
-                },
+                data: { ...node, theme: themeRef.current } as unknown as Record<string, unknown>,
             };
         });
-        
-        setNodes(newNodes);
 
-        // P1修复：使用 smoothstep 边类型，删除 offset（smoothstep不支持）
-        const newEdges = data.edges.map((edge) => {
-            const edgeId = `${edge.source}-${edge.target}`;
-            const edgeColor = getEdgeColor(edge.type || 'neutral', isDark);
-            
+        const newEdges: Edge[] = data.edges.map((edge, index) => {
+            const edgeId = `${edge.source}-${edge.target}-${index}`;
+            const edgeColor = getEdgeColor(edge.type || 'neutral', isDarkRef.current);
             return {
                 id: edgeId,
                 source: edge.source,
                 target: edge.target,
-                type: 'smoothstep', // P1修复：使用内置类型
+                type: 'smoothstep',
                 label: edge.label,
-                data: { label: edge.label },
-                style: { 
-                    stroke: edgeColor, 
-                    strokeWidth: 2,
-                },
-                markerEnd: { 
-                    type: MarkerType.ArrowClosed, 
-                    width: 12, 
-                    height: 12, 
-                    color: edgeColor 
+                data: { relEdge: edge },
+                style: { stroke: edgeColor, strokeWidth: 2 },
+                markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    width: 12,
+                    height: 12,
+                    color: edgeColor,
                 },
             };
         });
-        
+
+        // Reset guard so fitView fires after this layout
+        fitViewDone.current = false;
+        setNodes(newNodes);
         setEdges(newEdges);
+    }, [data, getContainerSize, calculateLayout, setNodes, setEdges]);
 
-        setIsReady(true);
-        isInitialized.current = false;
-    }, [data, theme, isDark, getContainerSize, calculateLayout, setNodes, setEdges]);
-
-    // 初始化时执行布局
+    // Layout effect: re-runs only when data changes
     useEffect(() => {
         if (!data?.nodes?.length) {
             setNodes([]);
             setEdges([]);
-            setIsReady(false);
             return;
         }
 
-        // 延迟执行，确保容器已渲染
         const timer = setTimeout(() => {
             performLayout();
         }, 50);
@@ -359,28 +282,48 @@ const RelationContent: FC<RelationProps> = ({
         };
     }, [data, performLayout, stopSimulation, setNodes, setEdges]);
 
-    // P0修复：调整 fitView 参数，增大 padding 避免压缩
+    // Theme-only effect: update colors in existing nodes/edges without recalculating positions
     useEffect(() => {
-        if (isReady && fitView && !isInitialized.current) {
-            isInitialized.current = true;
+        const isDarkNow = theme === 'dark';
+        setNodes((prev) =>
+            prev.map((n) => ({
+                ...n,
+                data: { ...n.data, theme },
+            }))
+        );
+        setEdges((prev) =>
+            prev.map((e) => {
+                const relEdge = e.data?.relEdge as RelationEdgeData | undefined;
+                const edgeColor = getEdgeColor(relEdge?.type || 'neutral', isDarkNow);
+                return {
+                    ...e,
+                    style: { stroke: edgeColor, strokeWidth: 2 },
+                    markerEnd: {
+                        type: MarkerType.ArrowClosed,
+                        width: 12,
+                        height: 12,
+                        color: edgeColor,
+                    },
+                };
+            })
+        );
+    }, [theme, setNodes, setEdges]);
+
+    // fitView once after layout; theme updates set fitViewDone=true so this is skipped
+    useEffect(() => {
+        if (nodes.length > 0 && !fitViewDone.current && fitView) {
+            fitViewDone.current = true;
             setTimeout(() => {
                 fitView({ duration: 300, padding: 0.3 }).catch(() => {});
             }, 150);
         }
-    }, [isReady, fitView]);
+    }, [nodes, fitView]);
 
     const handleNodeClick = useCallback(
         (_event: React.MouseEvent, node: Node) => {
             if (onNodeClick && node.data) {
-                const nodeData = node.data as any as RelationNodeData;
-                onNodeClick({ 
-                    id: nodeData.id, 
-                    name: nodeData.name, 
-                    type: nodeData.type, 
-                    description: nodeData.description, 
-                    avatar: nodeData.avatar, 
-                    importance: nodeData.importance 
-                });
+                const { theme: _t, ...nodeData } = node.data as unknown as FlowNodeData;
+                onNodeClick(nodeData);
             }
         },
         [onNodeClick]
@@ -388,15 +331,13 @@ const RelationContent: FC<RelationProps> = ({
 
     const handleEdgeClick = useCallback(
         (_event: React.MouseEvent, edge: Edge) => {
-            if (onEdgeClick && data?.edges) {
-                const edgeData = data.edges.find((e) => `${e.source}-${e.target}` === edge.id);
-                if (edgeData) onEdgeClick(edgeData);
+            if (onEdgeClick && edge.data?.relEdge) {
+                onEdgeClick(edge.data.relEdge as RelationEdgeData);
             }
         },
-        [onEdgeClick, data]
+        [onEdgeClick]
     );
 
-    // 空数据状态
     if (!data?.nodes?.length) {
         return (
             <div
@@ -410,7 +351,7 @@ const RelationContent: FC<RelationProps> = ({
                     justifyContent: 'center',
                     color: isDark ? '#94a3b8' : '#64748b',
                     border: `2px solid ${isDark ? '#334155' : '#e2e8f0'}`,
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
                 }}
             >
                 <div style={{ textAlign: 'center' }}>
@@ -425,19 +366,18 @@ const RelationContent: FC<RelationProps> = ({
         <div
             ref={containerRef}
             className={`relation-container ${className}`}
-            style={{ 
-                width: autoFitContainer ? '100%' : width, 
-                height: autoFitContainer ? '100%' : height, 
-                ...style, 
-                backgroundColor: bgColor, 
-                borderRadius: '12px', 
-                overflow: 'hidden', 
+            style={{
+                width: autoFitContainer ? '100%' : width,
+                height: autoFitContainer ? '100%' : height,
+                ...style,
+                backgroundColor: bgColor,
+                borderRadius: '12px',
+                overflow: 'hidden',
                 position: 'relative',
                 border: `2px solid ${isDark ? '#334155' : '#e2e8f0'}`,
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
             }}
         >
-            {/* 刷新按钮 */}
             {enableRefresh && (
                 <button
                     onClick={performLayout}
@@ -459,20 +399,12 @@ const RelationContent: FC<RelationProps> = ({
                         alignItems: 'center',
                         gap: '6px',
                     }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = isDark ? '#475569' : '#f1f5f9';
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = isDark ? '#334155' : '#ffffff';
-                        e.currentTarget.style.transform = 'scale(1)';
-                    }}
                 >
                     <span>🔄</span>
                     <span>重新布局</span>
                 </button>
             )}
-            
+
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -481,7 +413,7 @@ const RelationContent: FC<RelationProps> = ({
                 onNodeClick={handleNodeClick}
                 onEdgeClick={handleEdgeClick}
                 nodeTypes={nodeTypes}
-                nodesDraggable={false}
+                nodesDraggable={true}
                 nodesConnectable={false}
                 fitView={false}
                 minZoom={0.3}
@@ -496,7 +428,6 @@ const RelationContent: FC<RelationProps> = ({
     );
 };
 
-// 导出组件
 const Relation: FC<RelationProps> = (props) => {
     return (
         <ReactFlowProvider>
