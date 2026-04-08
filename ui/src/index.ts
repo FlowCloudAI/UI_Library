@@ -24,6 +24,7 @@ export * from "./components/ContextMenu/ContextMenuContext";
 export * from "./components/Chat/Chat";
 export * from "./components/SmartMessage/SmartMessage";
 export * from "./components/Relation/Relation";
+export * from "./components/Time/Time";
 export * from "./hooks/useForceLayout";
 
 import "./style/index.css"
