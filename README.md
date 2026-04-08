@@ -257,21 +257,41 @@ export function AvatarExample() {
 ---
 
 #### Card（卡片）
-内容容器组件，用于展示卡片式内容。
+内容容器组件，用于展示卡片式内容，支持底部渐变遮罩、可配置文字区占比、hover 展开和左上角标签。
 
 ```typescript
 import { Card } from 'flowcloudai-ui'
 
 export function CardExample() {
   return (
-    <Card>
-      <Card.Header>标题</Card.Header>
-      <Card.Body>内容区域</Card.Body>
-      <Card.Footer>底部区域</Card.Footer>
-    </Card>
+    <Card
+      image="https://picsum.photos/id/1015/400/300"
+      title="秋日山林"
+      description="底部文字区使用透明渐变遮罩作为背景，适合用于 Project 和 EntryBrief 列表展示。"
+      extraInfo="更新时间：2026-04-08"
+      tag="项目"
+      variant="shadow"
+      hoverable
+      expandContentOnHover
+      contentAreaRatio={0.28}
+      hoverContentAreaRatio={0.64}
+      overlayStartOpacity={0.04}
+      overlayEndOpacity={0.96}
+    />
   )
 }
 ```
+
+**常用属性：**
+- `image` / `imageSlot`: 卡片图片，`imageSlot` 优先级更高
+- `imageHeight`: 图片区域高度，支持数字或 CSS 长度
+- `contentAreaRatio`: 文字区初始占比，范围 `0.1-0.8`
+- `hoverContentAreaRatio`: hover 后文字区占比，范围 `0.1-0.8`
+- `expandContentOnHover`: 是否在 hover 后自动展开文字区
+- `overlayStartOpacity`: 渐变遮罩起始透明度，范围 `0-1`
+- `overlayEndOpacity`: 渐变遮罩结束透明度，范围 `0-1`
+- `tag`: 左上角标签，支持字符串或自定义 `ReactNode`
+- `description`: 超出可见区域时自动截断并显示省略号
 
 ---
 

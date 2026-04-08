@@ -1,51 +1,62 @@
-// src/components/Card/Card.tsx
 import React, { ReactNode } from 'react';
 import './Card.css';
 
+const clampRatio = (value: number) => Math.min(0.8, Math.max(0.1, value));
+
 export interface CardProps {
-    /** 图片地址 */
     image?: string;
-    /** 图片区域自定义内容（优先级高于 image） */
     imageSlot?: ReactNode;
-    /** 图片高度 */
     imageHeight?: number | string;
-    /** 标题 */
     title?: ReactNode;
-    /** 描述文字 */
     description?: ReactNode;
-    /** 底部操作区域 */
     actions?: ReactNode;
-    /** 额外信息（价格、时间、标签等） */
     extraInfo?: ReactNode;
-    /** 卡片变体 */
     variant?: 'default' | 'bordered' | 'shadow' | 'outline';
-    /** 是否可悬停 */
     hoverable?: boolean;
-    /** 是否禁用 */
     disabled?: boolean;
-    /** 自定义类名 */
+    contentAreaRatio?: number;
+    hoverContentAreaRatio?: number;
+    expandContentOnHover?: boolean;
+    overlayStartOpacity?: number;
+    overlayEndOpacity?: number;
+    tag?: ReactNode;
     className?: string;
-    /** 自定义样式 */
     style?: React.CSSProperties;
-    /** 点击卡片回调 */
     onClick?: () => void;
 }
 
 export const Card = ({
-                         image,
-                         imageSlot,
-                         imageHeight = 200,
-                         title,
-                         description,
-                         actions,
-                         extraInfo,
-                         variant = 'default',
-                         hoverable = false,
-                         disabled = false,
-                         className = '',
-                         style,
-                         onClick,
-                     }: CardProps) => {
+    image,
+    imageSlot,
+    imageHeight = 200,
+    title,
+    description,
+    actions,
+    extraInfo,
+    variant = 'default',
+    hoverable = false,
+    disabled = false,
+    contentAreaRatio = 0.36,
+    hoverContentAreaRatio = 0.7,
+    expandContentOnHover = false,
+    overlayStartOpacity = 0,
+    overlayEndOpacity = 0.92,
+    tag,
+    className = '',
+    style,
+    onClick,
+}: CardProps) => {
+    const baseContentRatio = clampRatio(contentAreaRatio);
+    const expandedContentRatio = clampRatio(Math.max(baseContentRatio, hoverContentAreaRatio));
+    const shouldExpandOnHover = expandContentOnHover && hoverable && !disabled;
+    const hasMedia = Boolean(imageSlot || image);
+    const safeOverlayStartOpacity = Math.min(1, Math.max(0, overlayStartOpacity));
+    const safeOverlayEndOpacity = Math.min(1, Math.max(0, overlayEndOpacity));
+    const overlayMidOpacity = Math.min(
+        1,
+        Math.max(safeOverlayStartOpacity, (safeOverlayStartOpacity + safeOverlayEndOpacity) / 2)
+    );
+
     const handleClick = () => {
         if (!disabled && onClick) {
             onClick();
@@ -63,33 +74,49 @@ export const Card = ({
         .filter(Boolean)
         .join(' ');
 
+    const mergedStyle: React.CSSProperties = {
+        '--fc-card-content-ratio': String(baseContentRatio),
+        '--fc-card-content-ratio-hover': String(expandedContentRatio),
+        '--fc-card-media-height':
+            typeof imageHeight === 'number' ? `${imageHeight}px` : imageHeight,
+        '--fc-card-overlay-start-opacity': String(safeOverlayStartOpacity),
+        '--fc-card-overlay-mid-opacity': String(overlayMidOpacity),
+        '--fc-card-overlay-end-opacity': String(safeOverlayEndOpacity),
+        ...style,
+    } as React.CSSProperties;
+
     const renderImage = () => {
         if (imageSlot) return imageSlot;
-        if (image) {
-            return (
-                <img
-                    className="fc-card__image"
-                    src={image}
-                    alt={typeof title === 'string' ? title : 'card image'}
-                />
-            );
-        }
-        return null;
+        if (!image) return null;
+
+        return (
+            <img
+                className="fc-card__image"
+                src={image}
+                alt={typeof title === 'string' ? title : 'card image'}
+            />
+        );
     };
 
     return (
-        <div className={classes} style={style} onClick={handleClick}>
-            {/* 图片区域 - 占据卡片中上部分 */}
-            {renderImage() && (
+        <div
+            className={classes}
+            style={mergedStyle}
+            onClick={handleClick}
+            data-has-media={hasMedia}
+            data-expand-on-hover={shouldExpandOnHover}
+        >
+            {hasMedia && (
                 <div
                     className="fc-card__image-wrapper"
-                    style={{ height: imageHeight }}
+                    style={{ height: typeof imageHeight === 'number' ? `${imageHeight}px` : imageHeight }}
                 >
                     {renderImage()}
                 </div>
             )}
 
-            {/* 文字信息区域 - 占据卡片下部 */}
+            {tag && <div className="fc-card__tag">{tag}</div>}
+
             <div className="fc-card__content">
                 {title && <div className="fc-card__title">{title}</div>}
                 {description && <div className="fc-card__description">{description}</div>}

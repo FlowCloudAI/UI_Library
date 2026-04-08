@@ -1,10 +1,45 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'node:path'
+
+const tauriPlatform = process.env.TAURI_ENV_PLATFORM
+const buildTarget =
+    tauriPlatform === 'windows'
+        ? 'chrome105'
+        : tauriPlatform
+            ? 'safari13'
+            : 'es2020'
 
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react()],
     resolve: {
+        alias: [
+            {
+                find: 'react/jsx-runtime',
+                replacement: path.resolve(__dirname, './node_modules/react/jsx-runtime.js'),
+            },
+            {
+                find: 'react/jsx-dev-runtime',
+                replacement: path.resolve(__dirname, './node_modules/react/jsx-dev-runtime.js'),
+            },
+            {
+                find: 'react',
+                replacement: path.resolve(__dirname, './node_modules/react'),
+            },
+            {
+                find: 'react-dom',
+                replacement: path.resolve(__dirname, './node_modules/react-dom'),
+            },
+            {
+                find: 'flowcloudai-ui/style',
+                replacement: path.resolve(__dirname, '../ui/dist/index.css'),
+            },
+            {
+                find: 'flowcloudai-ui',
+                replacement: path.resolve(__dirname, '../ui/dist/index.js'),
+            },
+        ],
         extensions: ['.cts', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json']
     },
     // 防止 Vite 清除 Rust 显示的错误
@@ -31,10 +66,7 @@ export default defineConfig({
     envPrefix: ['VITE_', 'TAURI_ENV_*'],
     build: {
         // Tauri 在 Windows 上使用 Chromium，在 macOS 和 Linux 上使用 WebKit
-        target:
-            process.env.TAURI_ENV_PLATFORM == 'windows'
-                ? 'chrome105'
-                : 'safari13',
+        target: buildTarget,
         // 在 debug 构建中不使用 minify
         minify: !process.env.TAURI_ENV_DEBUG ? 'esbuild' : false,
         // 在 debug 构建中生成 sourcemap

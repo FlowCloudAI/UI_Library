@@ -1,6 +1,5 @@
 /* src/components/Relation/Relation.css */
 
-/* 容器基础样式 */
 .relation-container {
     position: relative;
     width: 100%;
@@ -11,7 +10,6 @@
     transition: all 0.3s ease;
 }
 
-/* 确保 ReactFlow 正确渲染 */
 .relation-container .react-flow {
     width: 100%;
     height: 100%;
@@ -30,59 +28,74 @@
     cursor: grabbing;
 }
 
-/* 节点样式 */
 .relation-node {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .relation-node:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
 }
 
-[data-theme="dark"] .relation-node:hover {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+[data-theme='dark'] .relation-node:hover {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42);
 }
 
-/* 确保连线正确显示 */
-.react-flow__edge-path {
+.relation-container .react-flow__edge-path {
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
-/* 连线标签样式 */
-.react-flow__edge-label {
+.relation-edge-label {
+    position: absolute;
     pointer-events: none;
-    font-size: 11px;
-    font-weight: 500;
+    max-width: 220px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(6px);
 }
 
-.react-flow__edge-label text {
-    dominant-baseline: middle;
-    text-anchor: middle;
+.relation-edge-label.is-selected {
+    border-color: rgba(59, 130, 246, 0.45);
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.18);
 }
 
-/* 隐藏所有默认的控制按钮 */
+[data-theme='dark'] .relation-edge-label,
+.relation-container[data-theme='dark'] .relation-edge-label {
+    color: #e2e8f0;
+    background: rgba(15, 23, 42, 0.92);
+    border-color: rgba(71, 85, 105, 0.84);
+    box-shadow: 0 6px 18px rgba(2, 6, 23, 0.36);
+}
+
+.relation-container .react-flow__edge.selected .react-flow__edge-path {
+    stroke-width: 2.8px;
+}
+
 .react-flow__controls {
     display: none;
 }
 
-/* 隐藏 attribution */
 .react-flow__attribution {
     display: none;
 }
 
-/* 隐藏 minimap */
 .react-flow__minimap {
     display: none;
 }
 
-/* 确保背景正确显示 */
 .react-flow__background {
     opacity: 0.5;
 }
 
-/* 滚动条样式 */
 .relation-container ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -102,20 +115,11 @@
     background: rgba(0, 0, 0, 0.3);
 }
 
-/* 响应式调整 */
 @media (max-width: 768px) {
     .relation-node {
-        min-width: 120px !important;
-        padding: 6px 10px !important;
-    }
-
-    .relation-node > div {
-        gap: 6px !important;
-    }
-
-    .relation-node > div > div:first-child {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 14px !important;
+        min-width: 200px !important;
+        max-width: 230px !important;
+        min-height: 104px !important;
+        padding: 12px !important;
     }
 }

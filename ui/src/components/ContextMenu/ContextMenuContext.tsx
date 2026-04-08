@@ -26,7 +26,9 @@ type MenuState = {
 /* ---- Context ---- */
 const ContextMenuContext = createContext<{
     showContextMenu: (e: React.MouseEvent, items: ContextMenuItem[]) => void;
-}>(null!);
+}>({
+    showContextMenu: () => {},
+});
 
 /* ---- Provider Props ---- */
 export interface ContextMenuProviderProps {

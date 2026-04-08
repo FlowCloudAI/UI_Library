@@ -91,7 +91,7 @@
 .fc-tab-bar__nav-wrap {
     display: flex;
     align-items: stretch;
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: none; /* Firefox */
@@ -100,11 +100,16 @@
     display: none; /* Chrome / Safari / WebKit */
 }
 
+.fc-tab-bar--fit .fc-tab-bar__nav-wrap {
+    flex: 0 1 auto;
+    width: max-content;
+    max-width: 100%;
+}
+
 /* ========== 标签页（基础） ========== */
 .fc-tab-bar__tab {
-    /* CSS flex 自动均分并压缩，压缩至 --tab-min-width 后容器横向滚动 */
-    /* --tab-fill-width: 1 (fill) / 0 (no-fill)，通过 JS 传入 */
-    flex: var(--tab-fill-width, 1) 1 0;
+    /* fill 模式下自动均分并压缩至 --tab-min-width，之后容器横向滚动 */
+    flex: 1 1 0;
     min-width: var(--tab-min-width, 80px);
     max-width: var(--tab-max-width, 200px);
 
@@ -124,6 +129,10 @@
     box-sizing: border-box;
     border-radius: var(--tab-item-radius-tl) var(--tab-item-radius-tr) var(--tab-item-radius-br) var(--tab-item-radius-bl);
     overflow: hidden;
+}
+
+.fc-tab-bar--fit .fc-tab-bar__tab {
+    flex: 0 0 auto;
 }
 
 .fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled):not(.fc-tab-bar__tab--dragging):not(.fc-tab-bar__tab--active) {

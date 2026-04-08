@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {Tree, flatToTree, type DropPosition} from 'flowcloudai-ui'
+import {Tree, flatToTree, type CategoryTreeNode, type DropPosition} from 'flowcloudai-ui'
 
 const NAV_MIN = 180
 const NAV_MAX = 600
@@ -81,6 +81,10 @@ export function TreeDemo() {
                 return updated
             }
         })
+    }
+
+    const handleDeleteRequest = (node: CategoryTreeNode) => {
+        addLog(`请求删除 [${node.key}] "${node.title}"`)
     }
 
     // Drop on target = become target's last child
@@ -184,6 +188,7 @@ export function TreeDemo() {
                         }}
                         onRename={handleRename}
                         onCreate={handleCreate}
+                        onDeleteRequest={handleDeleteRequest}
                         onDelete={handleDelete}
                         onMove={handleMove}
                         searchable

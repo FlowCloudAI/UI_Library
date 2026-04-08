@@ -87,8 +87,8 @@ export interface TabBarProps {
     maxTabWidth?: string;
     /**
      * 控制 Tab 是否自动填充容器宽度。
-     * - true: flex: 1 1 0，Tab 会自动拉伸填满导航栏（默认行为）
-     * - false: flex: 0 1 auto，Tab 只占内容宽度，剩余空间留白
+     * - true: Tab 会自动拉伸填满导航栏（默认行为）
+     * - false: 导航区按内容宽度收缩，Tab 只占内容宽度，剩余空间留白
      * 当 tauriDragRegion 为 true 且 fillWidth 为 false 时，空白区域可作为窗口拖拽区。
      * @default true
      */
@@ -360,15 +360,15 @@ export const TabBar = memo<TabBarProps>(({
         'fc-tab-bar',
         `fc-tab-bar--${variant}`,
         `fc-tab-bar--radius-${radius}`,
+        fillWidth ? 'fc-tab-bar--fill' : 'fc-tab-bar--fit',
         tabRadius && `fc-tab-bar--tab-radius-${tabRadius}`,
         className,
     ].filter(Boolean).join(' ');
 
-    // Tab 宽度上下限通过 CSS 变量传入，CSS flex 自动处理压缩与滚动
+    // Tab 宽度上下限通过 CSS 变量传入，fill/fit 模式由根节点 class 控制
     const navWrapStyle = {
         '--tab-min-width': minTabWidth,
         '--tab-max-width': maxTabWidth,
-        '--tab-fill-width': fillWidth ? '1' : '0',
     } as React.CSSProperties;
 
     const dragRegion = tauriDragRegion ? {'data-tauri-drag-region': ''} : {};

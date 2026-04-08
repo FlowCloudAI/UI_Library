@@ -21,6 +21,7 @@ import {
     useSensors,
 } from '@dnd-kit/core'
 import { RollingBox } from '../Box/RollingBox'
+import { useContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenuContext'
 import { DeleteDialog } from './DeleteDialog'
 import type { DeleteMode } from './DeleteDialog'
 import { CategoryTreeNode, isDescendantOf } from './flatToTree'
@@ -32,6 +33,8 @@ export type DropPosition = 'before' | 'after' | 'into'
 
 interface TreeActionsValue {
     toggleExpand: (key: string) => void
+    expandSubtree: (node: CategoryTreeNode) => void
+    collapseSubtree: (node: CategoryTreeNode) => void
     select: (key: string) => void
     startEdit: (key: string) => void
     commitEdit: (key: string, newTitle: string) => Promise<void>
@@ -125,6 +128,18 @@ const DndSlot = memo(function DndSlot({
     return <>{children({ setRef, handleProps, isDragging, isDragSource, dropPosition })}</>
 })
 
+function collectExpandableKeys(node: CategoryTreeNode): string[] {
+    const keys: string[] = []
+    const visit = (current: CategoryTreeNode) => {
+        if (current.children.length > 0) {
+            keys.push(current.key)
+            current.children.forEach(visit)
+        }
+    }
+    visit(node)
+    return keys
+}
+
 // ── TreeNodeItem (memo — skips re-render unless own props change) ────────────
 
 interface TreeNodeItemProps {
@@ -136,8 +151,10 @@ interface TreeNodeItemProps {
 const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }: TreeNodeItemProps) {
     const actions = useContext(TreeActionsCtx)   // stable — never triggers re-render
     const state   = useContext(TreeStateCtx)     // changes on expand/select/edit
+    const { showContextMenu } = useContextMenu()
 
     const isExpanded  = state.expandedKeys.has(node.key)
+    const isSelected  = state.selectedKey === node.key
     const isEditing   = state.editingKey === node.key
     const hasChildren = node.children.length > 0
     const indent      = level * 20 + 12
@@ -153,6 +170,55 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
         if (e.key === 'Escape') actions.cancelEdit()
     }, [actions, node.key, localEdit])
 
+    const handleItemClick = useCallback(() => {
+        if (!isSelected) {
+            actions.select(node.key)
+            return
+        }
+        if (hasChildren) actions.toggleExpand(node.key)
+    }, [actions, hasChildren, isSelected, node.key])
+
+    const handleSwitcherClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (hasChildren) actions.toggleExpand(node.key)
+    }, [actions, hasChildren, node.key])
+
+    const handleContextMenu = useCallback((e: React.MouseEvent) => {
+        actions.select(node.key)
+        const items: ContextMenuItem[] = [
+            {
+                label: '重命名',
+                icon: '✏',
+                onClick: () => actions.startEdit(node.key),
+            },
+            {
+                label: '全部展开',
+                icon: '▾',
+                onClick: () => actions.expandSubtree(node),
+                disabled: !hasChildren,
+            },
+            {
+                label: '全部收起',
+                icon: '▸',
+                onClick: () => actions.collapseSubtree(node),
+                disabled: !hasChildren,
+            },
+            { type: 'divider' },
+            {
+                label: '添加子项',
+                icon: '+',
+                onClick: () => { actions.requestCreate(node.key).then() },
+            },
+            {
+                label: '删除',
+                icon: '🗑',
+                onClick: () => actions.requestDelete(node),
+                danger: true,
+            },
+        ]
+        showContextMenu(e, items)
+    }, [actions, hasChildren, node, showContextMenu])
+
     return (
         <DndSlot nodeKey={node.key} disabled={isEditing || hidden}>
             {({ setRef, handleProps, isDragging, isDragSource, dropPosition }) => (
@@ -161,6 +227,7 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
                         ref={setRef}
                         className={[
                             'fc-tree__item',
+                            isSelected               && 'fc-tree__item--selected',
                             isDragSource              && 'fc-tree__item--drag-source',
                             dropPosition === 'into'   && 'fc-tree__item--drop-into',
                             dropPosition === 'before'  && 'fc-tree__item--drop-before',
@@ -170,6 +237,8 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
                             paddingLeft: dropPosition === 'into' ? indent + 8 : indent,
                             '--fc-indent': `${indent}px`,
                         } as React.CSSProperties}
+                        onClick={handleItemClick}
+                        onContextMenu={isEditing ? undefined : handleContextMenu}
                     >
                         {/* Drag handle */}
                         <span
@@ -186,7 +255,7 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
                                 !hasChildren && 'fc-tree__switcher--hidden',
                                 isExpanded   && 'fc-tree__switcher--open',
                             ].filter(Boolean).join(' ')}
-                            onClick={() => hasChildren && actions.toggleExpand(node.key)}
+                            onClick={handleSwitcherClick}
                         >
                             {hasChildren ? '▶' : ''}
                         </span>
@@ -203,15 +272,16 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
                                 onClick={e => e.stopPropagation()}
                             />
                         ) : (
-                            <span
-                                className="fc-tree__title"
-                                onClick={() => {
-                                    actions.select(node.key)
-                                    if (hasChildren) actions.toggleExpand(node.key)
-                                }}
-                                onDoubleClick={() => actions.startEdit(node.key)}
-                            >
-                                {node.title}
+                            <span className="fc-tree__title-slot">
+                                <span
+                                    className="fc-tree__title"
+                                    onDoubleClick={(e) => {
+                                        e.stopPropagation()
+                                        actions.startEdit(node.key)
+                                    }}
+                                >
+                                    {node.title}
+                                </span>
                             </span>
                         )}
 
@@ -258,6 +328,7 @@ export interface TreeProps {
     onRename?: (key: string, newName: string) => Promise<void>
     onCreate?: (parentKey: string | null) => Promise<string>
     onDelete?: (key: string, mode: DeleteMode) => Promise<void>
+    onDeleteRequest?: (node: CategoryTreeNode) => void
     onMove?: (key: string, targetKey: string, position: DropPosition) => Promise<void>
     onSelect?: (key: string) => void
     selectedKey?: string
@@ -271,6 +342,7 @@ export function Tree({
                          onRename,
                          onCreate,
                          onDelete,
+                         onDeleteRequest,
                          onMove,
                          onSelect,
                          selectedKey,
@@ -313,6 +385,26 @@ export function Tree({
         })
     }, [])
 
+    const expandSubtree = useCallback((node: CategoryTreeNode) => {
+        const keys = collectExpandableKeys(node)
+        if (keys.length === 0) return
+        setExpandedKeys(prev => {
+            const next = new Set(prev)
+            keys.forEach(key => next.add(key))
+            return next
+        })
+    }, [])
+
+    const collapseSubtree = useCallback((node: CategoryTreeNode) => {
+        const keys = collectExpandableKeys(node)
+        if (keys.length === 0) return
+        setExpandedKeys(prev => {
+            const next = new Set(prev)
+            keys.forEach(key => next.delete(key))
+            return next
+        })
+    }, [])
+
     const select     = useCallback((key: string) => onSelect?.(key), [onSelect])
     const startEdit  = useCallback((key: string) => setEditingKey(key), [])
     const cancelEdit = useCallback(() => setEditingKey(null), [])
@@ -331,8 +423,9 @@ export function Tree({
     }, [onCreate])
 
     const requestDelete = useCallback((node: CategoryTreeNode) => {
+        onDeleteRequest?.(node)
         setDeleteTarget(node)
-    }, [])
+    }, [onDeleteRequest])
 
     // ── DnD handlers ─────────────────────────────────────────────────────────
 
@@ -413,8 +506,8 @@ export function Tree({
     // ── Context values (memoised separately) ─────────────────────────────────
 
     const actionsValue = useMemo<TreeActionsValue>(() => ({
-        toggleExpand, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete,
-    }), [toggleExpand, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete])
+        toggleExpand, expandSubtree, collapseSubtree, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete,
+    }), [toggleExpand, expandSubtree, collapseSubtree, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete])
 
     const stateValue = useMemo<TreeStateValue>(() => ({
         expandedKeys,

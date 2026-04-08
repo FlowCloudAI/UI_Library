@@ -1,7 +1,15 @@
 /* src/components/Card/Card.css */
 
-/* ========== 基础样式 ========== */
 .fc-card {
+    --fc-card-content-ratio: 0.36;
+    --fc-card-content-ratio-hover: 0.7;
+    --fc-card-media-height: 200px;
+    --fc-card-overlay-start-opacity: 0;
+    --fc-card-overlay-mid-opacity: 0.46;
+    --fc-card-overlay-end-opacity: 0.92;
+    --fc-card-content-height: calc(var(--fc-card-media-height) * var(--fc-card-content-ratio));
+    --fc-card-content-motion: 0.1s ease;
+
     display: flex;
     flex-direction: column;
     background-color: var(--fc-color-bg);
@@ -9,9 +17,11 @@
     overflow: hidden;
     transition: all var(--fc-transition);
     cursor: default;
+    position: relative;
+    min-height: var(--fc-card-media-height);
+    isolation: isolate;
 }
 
-/* ========== 变体样式 ========== */
 .fc-card--default {
     background-color: var(--fc-color-bg);
 }
@@ -28,7 +38,10 @@
     border: 1px solid var(--fc-color-primary);
 }
 
-/* ========== 交互样式 ========== */
+.fc-card[data-has-media="true"] {
+    background-color: var(--fc-color-bg-tertiary);
+}
+
 .fc-card--hoverable:hover {
     transform: translateY(-4px);
     box-shadow: var(--fc-shadow-md);
@@ -49,12 +62,11 @@
     box-shadow: none;
 }
 
-/* ========== 图片区域 ========== */
 .fc-card__image-wrapper {
-    flex-shrink: 0;
     overflow: hidden;
     background-color: var(--fc-color-bg-tertiary);
     position: relative;
+    min-height: var(--fc-card-media-height);
 }
 
 .fc-card__image {
@@ -63,27 +75,86 @@
     object-fit: cover;
     transition: transform var(--fc-transition);
     display: block;
+    background-color: var(--fc-color-bg-tertiary);
 }
 
 .fc-card--hoverable:hover .fc-card__image {
     transform: scale(1.05);
 }
 
-/* ========== 内容区域 ========== */
 .fc-card__content {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    padding: var(--fc-space-lg);
+    justify-content: flex-end;
     gap: var(--fc-space-sm);
-    background-color: var(--fc-color-bg);
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-height: var(--fc-card-content-height);
+    padding: var(--fc-space-lg);
+    z-index: 1;
+    color: #fff;
+    transition:
+        min-height var(--fc-card-content-motion),
+        padding var(--fc-card-content-motion),
+        background var(--fc-card-content-motion),
+        gap var(--fc-card-content-motion);
+    background: linear-gradient(
+        180deg,
+        rgba(8, 12, 20, var(--fc-card-overlay-start-opacity)) 0%,
+        rgba(8, 12, 20, var(--fc-card-overlay-mid-opacity)) 34%,
+        rgba(8, 12, 20, var(--fc-card-overlay-end-opacity)) 100%
+    );
 }
 
-/* 标题 */
+.fc-card[data-has-media="false"] .fc-card__content {
+    position: relative;
+    min-height: auto;
+    height: 100%;
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--fc-color-bg) 64%, transparent) 0%,
+        color-mix(in srgb, var(--fc-color-bg) 90%, black 10%) 100%
+    );
+}
+
+.fc-card[data-expand-on-hover="true"]:hover .fc-card__content {
+    min-height: calc(var(--fc-card-media-height) * var(--fc-card-content-ratio-hover));
+}
+
+.fc-card__tag {
+    position: absolute;
+    top: var(--fc-space-md);
+    left: var(--fc-space-md);
+    z-index: 2;
+    max-width: calc(100% - (var(--fc-space-md) * 2));
+}
+
+.fc-card__tag > * {
+    max-width: 100%;
+}
+
+.fc-card__content > * {
+    transition:
+        transform var(--fc-card-content-motion),
+        opacity var(--fc-card-content-motion),
+        margin var(--fc-card-content-motion),
+        color var(--fc-card-content-motion);
+}
+
+.fc-card[data-expand-on-hover="true"] .fc-card__content > * {
+    transform: translateY(8px);
+}
+
+.fc-card[data-expand-on-hover="true"]:hover .fc-card__content > * {
+    transform: translateY(0);
+}
+
 .fc-card__title {
     font-size: var(--fc-font-size-lg);
     font-weight: var(--fc-font-weight-bold);
-    color: var(--fc-color-text);
+    color: inherit;
     line-height: var(--fc-line-height-tight);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -92,10 +163,9 @@
     -webkit-box-orient: vertical;
 }
 
-/* 描述文字 */
 .fc-card__description {
     font-size: var(--fc-font-size-sm);
-    color: var(--fc-color-text-secondary);
+    color: color-mix(in srgb, #ffffff 82%, transparent);
     line-height: var(--fc-line-height-normal);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -104,37 +174,51 @@
     -webkit-box-orient: vertical;
 }
 
-/* 额外信息（价格、评分等） */
+.fc-card[data-expand-on-hover="true"] .fc-card__description {
+    opacity: 0.88;
+}
+
+.fc-card[data-expand-on-hover="true"]:hover .fc-card__description {
+    -webkit-line-clamp: 6;
+    opacity: 1;
+}
+
 .fc-card__extra-info {
     font-size: var(--fc-font-size-md);
-    color: var(--fc-color-primary);
+    color: color-mix(in srgb, #ffffff 92%, var(--fc-color-primary) 8%);
     font-weight: var(--fc-font-weight-medium);
     margin-top: var(--fc-space-xs);
 }
 
-/* 操作区域 */
 .fc-card__actions {
     margin-top: var(--fc-space-sm);
     padding-top: var(--fc-space-sm);
-    border-top: 1px solid var(--fc-color-border-light);
+    border-top: 1px solid color-mix(in srgb, #ffffff 18%, transparent);
     display: flex;
     gap: var(--fc-space-sm);
     align-items: center;
 }
 
-/* 操作区域内的按钮样式调整 */
 .fc-card__actions .fc-button {
     flex: 1;
 }
 
-/* ========== 暗色主题自动适配 ========== */
-/* 所有颜色都使用 CSS 变量，暗色主题会自动切换 */
-/* 无需额外编写暗色主题样式，因为 CSS 变量已在 ThemeProvider 中定义 */
+.fc-card[data-has-media="false"].fc-card--hoverable {
+    box-shadow: var(--fc-shadow-sm);
+}
 
-/* ========== 响应式设计 ========== */
+.fc-card[data-has-media="false"].fc-card--hoverable:hover {
+    background-color: color-mix(in srgb, var(--fc-color-bg) 94%, var(--fc-color-primary) 6%);
+}
+
 @media (max-width: 640px) {
     .fc-card__content {
         padding: var(--fc-space-md);
+    }
+
+    .fc-card__tag {
+        top: var(--fc-space-sm);
+        left: var(--fc-space-sm);
     }
 
     .fc-card__title {
@@ -148,31 +232,4 @@
     .fc-card__extra-info {
         font-size: var(--fc-font-size-sm);
     }
-}
-
-/* ========== 可选：图片加载失败时的占位样式 ========== */
-.fc-card__image {
-    background-color: var(--fc-color-bg-tertiary);
-    position: relative;
-}
-
-.fc-card__image::after {
-    content: '📷';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 32px;
-    color: var(--fc-color-text-tertiary);
-    display: none;
-}
-
-.fc-card__image[src=""],
-.fc-card__image:not([src]) {
-    opacity: 0;
-}
-
-.fc-card__image[src=""] + .fc-card__image::after,
-.fc-card__image:not([src]) + .fc-card__image::after {
-    display: block;
 }

@@ -80,6 +80,7 @@
 
 .fc-tree__item {
     --fc-indent: 12px;
+    --fc-tree-actions-width: 74px;
     display: flex;
     align-items: center;
     gap: var(--fc-space-sm);
@@ -97,6 +98,19 @@
 
 .fc-tree__item:hover {
     background: var(--fc-color-bg-secondary);
+}
+
+.fc-tree__item--selected {
+    background: var(--fc-color-primary-subtle);
+}
+
+.fc-tree__item--selected:hover {
+    background: var(--fc-color-primary-subtle);
+}
+
+.fc-tree__item:hover,
+.fc-tree__item:focus-within {
+    padding-right: calc(var(--fc-space-md) + var(--fc-tree-actions-width));
 }
 
 .fc-tree__item--drag-source {
@@ -229,8 +243,14 @@
 
 /* ── Title ───────────────────────────────────────────────────────────────────── */
 
-.fc-tree__title {
+.fc-tree__title-slot {
     flex: 1;
+    min-width: 0;
+}
+
+.fc-tree__title {
+    display: inline-block;
+    max-width: 100%;
     font-size: var(--fc-font-size-md);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -257,16 +277,22 @@
 /* ── Hover actions ───────────────────────────────────────────────────────────── */
 
 .fc-tree__actions {
-    display: flex;
+    position: absolute;
+    right: var(--fc-space-md);
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
     align-items: center;
     gap: 2px;
-    flex-shrink: 0;
     opacity: 0;
     transition: opacity var(--fc-transition);
+    pointer-events: none;
 }
 
-.fc-tree__item:hover .fc-tree__actions {
+.fc-tree__item:hover .fc-tree__actions,
+.fc-tree__item:focus-within .fc-tree__actions {
     opacity: 1;
+    pointer-events: auto;
 }
 
 .fc-tree__action {
@@ -301,7 +327,7 @@
 .fc-tree__add-root {
     padding: var(--fc-space-sm) var(--fc-space-md);
     border-top: 1px solid var(--fc-color-border);
-    margin-top: 2px;
+    margin-top: calc(2px + 1rem);
 }
 
 .fc-tree__add-root-btn {
