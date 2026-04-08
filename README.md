@@ -1,51 +1,38 @@
 # FlowCloud UI Library
 
-一个现代化的 React 组件库，基于 TypeScript 和 Vite 构建。提供开箱即用的高质量 UI 组件，支持浅色/深色主题切换。
+基于 React 19、TypeScript 和 Vite/tsup 构建的 UI 组件库，包含主题系统、基础表单、导航组件、内容展示、关系图谱和时间线等能力。
 
-[![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-8-purple.svg)](https://vitejs.dev)
+本文档只列组件和工具的自定义参数。`button`、`input`、`div`、`ul`、`li` 等原生 HTML 元素自带属性，以及通用的 `className`、`style` 等常规容器参数，不重复说明。
 
-## 🎯 核心特性
-
-- 📦 **20+ 高质量组件** - 涵盖表单、导航、内容展示等多个场景
-- 🎨 **主题系统** - 内置浅色/深色主题，ThemeProvider 全局管理
-- ⚡ **高性能** - 虚拟列表支持超大数据集，拖拽优化
-- 🎯 **TypeScript** - 完整的类型定义，开发体验一流
-- 📱 **响应式设计** - 适配各种屏幕尺寸
-- 🎁 **开箱即用** - ESM、CJS、Types 完整分发
-
-## 📦 安装
+## 安装
 
 ```bash
 npm install flowcloudai-ui
-# 或
-yarn add flowcloudai-ui
 ```
 
-## 🚀 快速开始
+## 快速开始
 
-### 1. 导入样式
-
-```typescript
-import 'flowcloudai-ui/style'
-```
-
-### 2. 使用 ThemeProvider
-
-```typescript
+```tsx
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { ThemeProvider, AlertProvider, ContextMenuProvider } from 'flowcloudai-ui'
-import App from './App'
+import {
+  ThemeProvider,
+  AlertProvider,
+  ContextMenuProvider,
+  Button,
+} from 'flowcloudai-ui'
 import 'flowcloudai-ui/style'
+
+function App() {
+  return <Button>你好，FlowCloud UI</Button>
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider>
+    <ThemeProvider defaultTheme="system">
       <AlertProvider>
         <ContextMenuProvider>
-          <App/>
+          <App />
         </ContextMenuProvider>
       </AlertProvider>
     </ThemeProvider>
@@ -53,766 +40,695 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 )
 ```
 
-### 3. 在组件中使用
+## 本地开发
 
-```typescript
-import { Button, useTheme } from 'flowcloudai-ui'
+### 目录
 
-export function MyComponent() {
-  const { theme, setTheme } = useTheme()
+- `ui/`：组件库源码、打包配置、发布包内容
+- `app/`：组件演示应用
 
-  return (
-    <div>
-      <Button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-        切换主题
-      </Button>
-    </div>
-  )
-}
-```
-
-## 📚 组件库
-
-### 基础组件
-
-#### Button（按钮）
-多种变体和尺寸的按钮组件。
-
-```typescript
-import { Button } from 'flowcloudai-ui'
-
-export function ButtonExample() {
-  return (
-    <>
-      <Button>主要</Button>
-      <Button variant="secondary">次要</Button>
-      <Button variant="outline">轮廓</Button>
-      <Button variant="danger">删除</Button>
-      <Button variant="success">确认</Button>
-      <Button size="sm">小尺寸</Button>
-      <Button size="lg">大尺寸</Button>
-      <Button iconLeft="←">返回</Button>
-      <Button disabled>禁用</Button>
-    </>
-  )
-}
-```
-
-**属性：**
-- `variant`: primary | secondary | outline | ghost | danger | success | warning
-- `size`: xs | sm | md | lg | xl
-- `iconLeft` / `iconRight`: 按钮图标
-- `block`: 块级按钮
-- `disabled`: 禁用状态
-
----
-
-#### CheckButton（复选按钮/切换按钮）
-切换状态的按钮，常用于开关、模式切换。
-
-```typescript
-import { CheckButton } from 'flowcloudai-ui'
-
-export function CheckButtonExample() {
-  return (
-    <CheckButton
-      checked={isDark}
-      onChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-      labelLeft="亮"
-      labelRight="暗"
-    />
-  )
-}
-```
-
----
-
-#### Alert（提示框）
-支持多种模式的提示框组件，包括 alert、confirm、toast。
-
-```typescript
-import { Button, useAlert } from 'flowcloudai-ui'
-
-export function AlertExample() {
-  const { showAlert } = useAlert()
-
-  return (
-    <div>
-      {/* 简单提示 */}
-      <Button onClick={() => showAlert('操作成功', 'success')}>
-        成功提示
-      </Button>
-
-      {/* 确认框 */}
-      <Button
-        onClick={async () => {
-          const res = await showAlert('确定删除吗？', 'warning', 'confirm')
-          if (res === 'yes') {
-            // 用户点击了确认
-          }
-        }}
-      >
-        删除确认
-      </Button>
-
-      {/* 自动消失的 Toast */}
-      <Button
-        onClick={() => showAlert('加载完成', 'info', 'toast', 2000)}
-      >
-        2秒 Toast
-      </Button>
-    </div>
-  )
-}
-```
-
-**类型：**
-- `alert`: 模态提示框
-- `confirm`: 确认框，需要用户选择
-- `toast`: 自动消失的浮窗提示
-
----
-
-### 表单组件
-
-#### Input（输入框）
-带有主题支持的文本输入框。
-
-```typescript
-import { Input } from 'flowcloudai-ui'
-
-export function InputExample() {
-  return <Input placeholder="请输入内容..." />
-}
-```
-
----
-
-#### Select（下拉选择器）
-支持单选、搜索、自定义选项的下拉菜单。
-
-```typescript
-import { Select } from 'flowcloudai-ui'
-
-export function SelectExample() {
-  const options = [
-    { value: '1', label: '选项1' },
-    { value: '2', label: '选项2' },
-  ]
-  return <Select options={options} placeholder="选择一个选项..." />
-}
-```
-
----
-
-#### Slider（滑块）
-范围滑块组件，支持单个或范围选择。
-
-```typescript
-import { Slider } from 'flowcloudai-ui'
-
-export function SliderExample() {
-  return <Slider min={0} max={100} step={5} />
-}
-```
-
----
-
-#### TagItem（标签）
-用于显示标签、标记等内容。
-
-```typescript
-import { TagItem } from 'flowcloudai-ui'
-
-export function TagItemExample() {
-  return (
-    <>
-      <TagItem>标签1</TagItem>
-      <TagItem variant="secondary">标签2</TagItem>
-    </>
-  )
-}
-```
-
----
-
-### 展示组件
-
-#### Avatar（头像）
-用户头像组件，支持图片和文字。
-
-```typescript
-import { Avatar } from 'flowcloudai-ui'
-
-export function AvatarExample() {
-  return (
-    <>
-      <Avatar src="https://..." alt="用户名" />
-      <Avatar>JD</Avatar>
-    </>
-  )
-}
-```
-
----
-
-#### Card（卡片）
-内容容器组件，用于展示卡片式内容，支持底部渐变遮罩、可配置文字区占比、hover 展开和左上角标签。
-
-```typescript
-import { Card } from 'flowcloudai-ui'
-
-export function CardExample() {
-  return (
-    <Card
-      image="https://picsum.photos/id/1015/400/300"
-      title="秋日山林"
-      description="底部文字区使用透明渐变遮罩作为背景，适合用于 Project 和 EntryBrief 列表展示。"
-      extraInfo="更新时间：2026-04-08"
-      tag="项目"
-      variant="shadow"
-      hoverable
-      expandContentOnHover
-      contentAreaRatio={0.28}
-      hoverContentAreaRatio={0.64}
-      overlayStartOpacity={0.04}
-      overlayEndOpacity={0.96}
-    />
-  )
-}
-```
-
-**常用属性：**
-- `image` / `imageSlot`: 卡片图片，`imageSlot` 优先级更高
-- `imageHeight`: 图片区域高度，支持数字或 CSS 长度
-- `contentAreaRatio`: 文字区初始占比，范围 `0.1-0.8`
-- `hoverContentAreaRatio`: hover 后文字区占比，范围 `0.1-0.8`
-- `expandContentOnHover`: 是否在 hover 后自动展开文字区
-- `overlayStartOpacity`: 渐变遮罩起始透明度，范围 `0-1`
-- `overlayEndOpacity`: 渐变遮罩结束透明度，范围 `0-1`
-- `tag`: 左上角标签，支持字符串或自定义 `ReactNode`
-- `description`: 超出可见区域时自动截断并显示省略号
-
----
-
-#### ListGroup（列表组）
-垂直排列的列表项组件。
-
-```typescript
-import { ListGroup } from 'flowcloudai-ui'
-
-export function ListGroupExample() {
-  return (
-    <ListGroup>
-      <ListGroup.Item>列表项 1</ListGroup.Item>
-      <ListGroup.Item>列表项 2</ListGroup.Item>
-      <ListGroup.Item active>列表项 3</ListGroup.Item>
-    </ListGroup>
-  )
-}
-```
-
----
-
-#### VirtualList（虚拟列表）
-高性能列表组件，支持超大数据集。采用虚拟化技术，只渲染可见项。
-
-```typescript
-import { VirtualList } from 'flowcloudai-ui'
-
-export function VirtualListExample() {
-  const items = Array.from({ length: 10000 }, (_, i) => ({
-    id: i,
-    label: `Item ${i}`,
-  }))
-
-  return (
-    <VirtualList
-      items={items}
-      itemKey="id"
-      itemHeight={40}
-      height={600}
-      renderItem={(item) => <div>{item.label}</div>}
-    />
-  )
-}
-```
-
----
-
-#### MarkdownEditor（Markdown 编辑器）
-支持 Markdown 预览和编辑的编辑器组件。
-
-```typescript
-import { MarkdownEditor } from 'flowcloudai-ui'
-
-export function MarkdownEditorExample() {
-  const [md, setMd] = React.useState('# 标题\n\n内容...')
-  return (
-    <MarkdownEditor
-      value={md}
-      onChange={setMd}
-      height={500}
-    />
-  )
-}
-```
-
----
-
-#### RollingBox（滚动盒子）
-带动画效果的滚动内容展示组件。
-
-```typescript
-import { RollingBox } from 'flowcloudai-ui'
-
-export function RollingBoxExample() {
-  return (
-    <RollingBox>
-      <div>滚动内容 1</div>
-      <div>滚动内容 2</div>
-    </RollingBox>
-  )
-}
-```
-
----
-
-#### LazyLoad（懒加载）
-当内容进入视口时才加载的组件。
-
-```typescript
-import { LazyLoad } from 'flowcloudai-ui'
-
-export function LazyLoadExample() {
-  return (
-    <LazyLoad>
-      {/* 这些内容只在进入视口时加载 */}
-      <img src="large-image.jpg" alt="图片" />
-    </LazyLoad>
-  )
-}
-```
-
----
-
-#### Chat（聊天界面）
-AI 聊天应用的完整界面组件。
-
-```typescript
-import { Chat } from 'flowcloudai-ui'
-
-export function ChatExample() {
-  const messages = [
-    {
-      id: '1',
-      content: '你好！',
-      type: 'assistant' as const,
-      timestamp: new Date(),
-    },
-    {
-      id: '2',
-      content: '你好！有什么可以帮助你的？',
-      type: 'user' as const,
-      timestamp: new Date(),
-    },
-  ]
-
-  return (
-    <Chat
-      messages={messages}
-      title="AI 智能助手"
-      showHeader
-      showFooter
-    />
-  )
-}
-```
-
----
-
-### 导航组件
-
-#### TabBar（标签栏）
-标签页导航组件。
-
-```typescript
-import { TabBar } from 'flowcloudai-ui'
-
-export function TabBarExample() {
-  const [active, setActive] = React.useState('tab1')
-
-  return (
-    <TabBar active={active} onChange={setActive}>
-      <TabBar.Tab key="tab1" label="标签 1" />
-      <TabBar.Tab key="tab2" label="标签 2" />
-      <TabBar.Tab key="tab3" label="标签 3" />
-    </TabBar>
-  )
-}
-```
-
----
-
-#### SideBar（侧边栏）
-侧边导航栏组件。
-
-```typescript
-import { SideBar } from 'flowcloudai-ui'
-
-export function SideBarExample() {
-  return (
-    <SideBar>
-      <SideBar.Item>首页</SideBar.Item>
-      <SideBar.Item>用户管理</SideBar.Item>
-      <SideBar.Item>设置</SideBar.Item>
-    </SideBar>
-  )
-}
-```
-
----
-
-#### Tree（树形组件）
-支持拖拽、编辑、删除的树形组件。
-
-```typescript
-import { Tree, flatToTree } from 'flowcloudai-ui'
-
-export function TreeExample() {
-  const [data, setData] = React.useState([
-    { id: '1', parent_id: null, name: '根目录', sort_order: 0 },
-    { id: '2', parent_id: '1', name: '子目录 1', sort_order: 0 },
-    { id: '3', parent_id: '1', name: '子目录 2', sort_order: 1 },
-  ])
-
-  const { roots } = flatToTree(data)
-
-  return (
-    <Tree
-      roots={roots}
-      onRename={(key, name) => {
-        // 处理重命名
-      }}
-      onDelete={(key, mode) => {
-        // 处理删除
-      }}
-      onDrop={(dragKey, dropKey, position) => {
-        // 处理拖拽
-      }}
-    />
-  )
-}
-```
-
-**特性：**
-- ✨ 拖拽排序
-- ✏️ 节点重命名
-- 🗑️ 删除节点（级联或提升）
-- 📁 创建新节点
-
----
-
-### 覆盖层组件
-
-#### ContextMenu（上下文菜单）
-右键菜单组件，基于 Context API。
-
-```typescript
-import { Button, useContextMenu } from 'flowcloudai-ui'
-
-export function ContextMenuExample() {
-  const { show } = useContextMenu()
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault()
-    show({
-      x: e.clientX,
-      y: e.clientY,
-      items: [
-        { label: '复制', onClick: () => console.log('复制') },
-        { label: '粘贴', onClick: () => console.log('粘贴') },
-        { type: 'divider' },
-        { label: '删除', onClick: () => console.log('删除') },
-      ],
-    })
-  }
-
-  return (
-    <div onContextMenu={handleContextMenu} style={{ padding: '20px' }}>
-      右键点击
-    </div>
-  )
-}
-```
-
----
-
-#### SmartMessage（智能消息）
-动态内容展示组件。
-
-```typescript
-import { SmartMessage } from 'flowcloudai-ui'
-
-export function SmartMessageExample() {
-  return (
-    <SmartMessage
-      content="这是一条智能消息"
-      type="info"
-    />
-  )
-}
-```
-
----
-
-## 🎨 主题系统
-
-### 使用 useTheme Hook
-
-```typescript
-import { useTheme } from 'flowcloudai-ui'
-
-export function MyComponent() {
-  const { theme, setTheme } = useTheme()
-
-  return (
-    <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-      当前主题: {theme}
-    </button>
-  )
-}
-```
-
-### CSS 变量
-
-组件使用 CSS 变量实现主题，可在全局样式中覆盖。完整变量列表见 `ui/src/style/index.css`，常用变量如下：
-
-| 变量                        | 说明                          |
-|---------------------------|-----------------------------|
-| `--fc-color-primary`      | 主色                          |
-| `--fc-color-bg`           | 页面背景色                       |
-| `--fc-color-bg-secondary` | 次级背景色（导航栏、ghost 按钮 hover 等） |
-| `--fc-color-bg-tertiary`  | 三级背景色（secondary 按钮 hover 等） |
-| `--fc-color-text`         | 主文字色                        |
-| `--fc-color-border`       | 边框色                         |
-| `--fc-radius-md`          | 默认圆角                        |
-| `--fc-font-family`        | 字体                          |
-
----
-
-## 🖌️ 自定义 CSS 变量注入
-
-### 注入机制
-
-库的 CSS 通过 JS 模块自动注入（`import from 'flowcloudai-ui'` 触发）。**CSS 注入有严格的顺序要求**，写错位置的覆盖会静默失效。
-
-### 正确做法：独立覆盖文件，最后导入
-
-创建 `src/theme-override.css`，并在 `main.tsx` 中于 `flowcloudai-ui` **之后**导入：
-
-```typescript
-// main.tsx
-import { ThemeProvider } from 'flowcloudai-ui'  // 库 CSS 在此注入
-import './theme-override.css'                    // 覆盖必须在之后，否则被库 CSS 覆盖
-```
-
-```css
-/* theme-override.css */
-:root {
-    --fc-color-primary: #e8711a;
-    --fc-color-primary-hover: #c05a12;
-    --fc-color-primary-active: #994810;
-    --fc-color-primary-subtle: var(--fc-orange-50);
-}
-```
-
-### 注意：带 `!important` 的变量需特殊处理
-
-库的 `.theme-light` / `.theme-dark` class 对部分变量使用了 `!important`（如 `--fc-color-bg-secondary`）。
-普通 `:root` 声明**无法覆盖** `!important`，必须在相同选择器下对抗：
-
-```css
-/* theme-override.css */
-:root {
-    /* 未加 !important 的变量可直接覆盖 */
-    --fc-color-primary: #e8711a;
-}
-
-/* 加了 !important 的变量必须在相同选择器下覆盖 */
-.theme-light, [data-theme="light"] {
-    --fc-color-bg-secondary: #ffd6b0 !important;
-    --fc-color-bg-tertiary:  #ffbc80 !important;
-}
-.theme-dark, [data-theme="dark"] {
-    --fc-color-bg-secondary: #5a2d0c !important;
-    --fc-color-bg-tertiary:  #3d1a06 !important;
-}
-```
-
-### 各变量影响范围
-
-修改全局变量会间接影响引用它的组件局部变量（两级引用链）：
-
-```
---fc-color-bg-secondary
-  └── Button .fc-btn--ghost    → --btn-bg-hover（ghost 按钮 hover 背景）
-  └── Button .fc-btn（默认）   → --btn-bg-hover（默认按钮 hover 背景）
-  └── 导航栏、侧边栏背景
-
---fc-color-bg-tertiary
-  └── Button .fc-btn--secondary → --btn-bg-hover（secondary 按钮 hover 背景）
-
---fc-color-primary
-  └── Button .fc-btn--primary   → --btn-bg、--btn-bg-hover、--btn-border
-  └── 导航选中项背景、链接色、焦点边框
-```
-
-### 常见误区
-
-| 写法                           | 结果   | 原因                   |
-|------------------------------|------|----------------------|
-| `App.css` 里写 `:root {}`      | ❌ 失效 | 库 CSS 注入更晚，后来者居上     |
-| `App.css` 里 `@import` 库再覆盖   | ❌ 失效 | 库 CSS 仍通过 JS 二次注入并覆盖 |
-| `main.tsx` 最后 import 覆盖文件    | ✅ 生效 | 注入顺序正确               |
-| `:root` 覆盖有 `!important` 的变量 | ❌ 失效 | `!important` 不受顺序影响  |
-| 相同选择器 + `!important` 覆盖      | ✅ 生效 | 同优先级时后来者居上           |
-
----
-
-## 🛠️ 项目结构
-
-```
-flowcloudai-ui-monorepo/
-├── ui/                          # 组件库
-│   ├── src/
-│   │   ├── components/          # 所有组件
-│   │   │   ├── Button/
-│   │   │   ├── Alert/
-│   │   │   ├── Tree/
-│   │   │   └── ...
-│   │   ├── ThemeProvider.tsx    # 主题提供者
-│   │   ├── AlertProvider.tsx    # 提示框提供者
-│   │   ├── ContextMenuProvider.tsx
-│   │   ├── style/               # 全局样式
-│   │   └── index.ts             # 主入口
-│   ├── dist/                    # 编译输出
-│   ├── tsup.config.ts
-│   └── package.json
-├── app/                         # 演示应用
-│   ├── src/
-│   │   ├── demos/              # 每个组件的演示
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   └── package.json
-└── README.md
-```
-
----
-
-## 📖 开发指南
-
-### 快速开始
+### 启动流程
 
 ```bash
-# 克隆项目
-git clone <repo-url>
-cd flowcloudai-ui-library
+cd ui
+npm install
+npm run build
 
-# 安装依赖并链接本地包
-cd app && npm run install:local
-
-# 启动开发服务器
+cd ../app
+npm install
 npm run dev
 ```
 
-访问 http://localhost:5173 查看所有组件演示。
+演示应用默认端口为 `5174`。
 
-### 构建
+## 主题与样式
 
-```bash
-# 构建组件库
-cd ui && npm run build
+### 样式入口
 
-# 输出到 ui/dist/
-# - dist/index.js (ESM)
-# - dist/index.cjs (CJS)
-# - dist/index.d.ts (Types)
-# - dist/index.css (Styles)
-```
-
-### 添加新组件
-
-1. 在 `ui/src/components/` 创建新文件夹
-2. 实现组件并在 `ui/src/index.ts` 中导出
-3. 在 `app/src/demos/` 创建演示文件
-4. 在 `app/src/App.tsx` 的 `NAV_GROUPS` 和 `DEMO_COMPONENTS` 中注册
-
----
-
-## ⚠️ 重要提示
-
-### 导入规则
-
-在 `app/` 中必须从 `flowcloudai-ui` 包导入，**不能直接从 `../../ui/src` 导入**。这确保 Context 提供者（ThemeProvider、AlertProvider、ContextMenuProvider）使用同一实例。
-
-```typescript
-// ✅ 正确
-import { useTheme, Button } from 'flowcloudai-ui'
-
-// ❌ 错误 - 会导致 "useTheme must be used within <ThemeProvider>" 错误
-import { useTheme, Button } from '../../ui/src'
-```
-
----
-
-## 📦 npm 发布
-
-```bash
-# 构建库
-cd ui && npm run build
-
-# 发布到 npm
-npm publish
-```
-
-消费者可以这样使用：
-
-```bash
-npm install flowcloudai-ui
-```
-
-```typescript
-import { Button, ThemeProvider } from 'flowcloudai-ui'
+```tsx
 import 'flowcloudai-ui/style'
 ```
 
----
+### 主题 Provider
 
-## 🔧 技术栈
+`ThemeProvider` 会把主题写入目标元素的 `data-theme` 属性：
 
-- **React 19** - UI 框架
-- **TypeScript 5.9** - 类型系统
-- **Vite 8** - 构建工具
-- **tsup 8** - 库打包器
-- **@dnd-kit** - 拖拽库
-- **@uiw/react-md-editor** - Markdown 编辑器
+- `data-theme="light"`
+- `data-theme="dark"`
 
----
+默认写入 `document.documentElement`；如果传入 `target`，则写入对应元素。
 
-## 📄 许可证
+### 常用 CSS 变量
 
-MIT
+- `--fc-color-primary`
+- `--fc-color-primary-hover`
+- `--fc-color-primary-active`
+- `--fc-color-bg`
+- `--fc-color-bg-secondary`
+- `--fc-color-bg-tertiary`
+- `--fc-color-text`
+- `--fc-color-text-secondary`
+- `--fc-color-border`
+- `--fc-radius-md`
+- `--fc-font-family`
 
----
+### 覆盖示例
 
-## 🤝 贡献
+```tsx
+import 'flowcloudai-ui/style'
+import './theme-override.css'
+```
 
-欢迎提交 Issue 和 Pull Request！
+```css
+:root {
+  --fc-color-primary: #e8711a;
+  --fc-color-primary-hover: #c05a12;
+  --fc-color-primary-active: #994810;
+}
 
----
+[data-theme='dark'] {
+  --fc-color-bg: #111111;
+  --fc-color-bg-secondary: #1b1b1b;
+}
+```
 
-## 📞 联系方式
+## Hooks 与工具
 
-- 📧 Email: flowcloudai@163.com
-- 🐛 Issues: [GitHub Issues](https://github.com/flowcloudai/ui-library/issues)
+### `useTheme`
+
+返回：
+
+- `theme`：用户设置的主题值，类型为 `'light' | 'dark' | 'system'`
+- `resolvedTheme`：最终生效主题，类型为 `'light' | 'dark'`
+- `setTheme(theme)`：切换主题
+
+### `useAlert`
+
+返回：
+
+- `showAlert(msg, type, mode?, duration?)`：显示提示框、确认框或 toast，返回 `Promise<string>`
+
+### `useContextMenu`
+
+返回：
+
+- `showContextMenu(event, items)`：在鼠标事件位置显示菜单
+
+### `lazyLoad(importFn, options?)`
+
+用途：按需懒加载组件，并提供超时兜底。
+
+参数：
+
+- `importFn`：动态导入函数，需返回默认导出组件
+- `options.fallback`：加载中占位内容
+- `options.timeout`：超时时间，单位毫秒
+
+### `flatToTree(list)`
+
+用途：把扁平分类列表转换为树结构。
+
+返回：
+
+- `roots`：根节点数组
+- `orphans`：父节点缺失的孤儿节点数组
+
+### `findNodeInfo(nodes, key, parent?)`
+
+用途：在树中查找节点、父节点、兄弟列表和索引。
+
+### `isDescendantOf(roots, ancestorKey, targetKey)`
+
+用途：判断 `targetKey` 是否为 `ancestorKey` 的后代。
+
+### `mockLayoutProvider`
+
+用途：为 `Relation` 提供默认 mock 布局能力，适合 demo、Storybook 和本地联调。
+
+### `useBackendLayout(options)`
+
+用途：在关系图中驱动异步布局请求、视口拟合和加载状态同步。
+
+## 辅助数据结构
+
+### `SelectOption`
+
+- `value: string | number`：选项值
+- `label: string`：显示文本
+- `disabled?: boolean`：是否禁用
+- `group?: string`：所属分组名
+
+### `SideBarItem`
+
+- `key: string`：唯一标识
+- `label: string`：显示文本
+- `icon?: ReactNode`：图标
+- `disabled?: boolean`：是否禁用
+- `href?: string`：链接地址，传入后项会按链接渲染
+
+### `TabItem`
+
+- `key: string`：唯一标识
+- `label: ReactNode`：标签文本或自定义内容
+- `disabled?: boolean`：是否禁用
+- `closable?: boolean`：是否允许关闭，可覆盖 `TabBar` 全局设置
+
+### `TagSchema`
+
+- `id: string`：字段标识
+- `name: string`：标签名
+- `type: 'number' | 'string' | 'boolean'`：值类型
+- `range_min?: number | null`：数值下限
+- `range_max?: number | null`：数值上限
+
+### `Message`
+
+- `id: string`：消息 ID
+- `content: string`：消息文本
+- `type: 'user' | 'assistant' | 'system' | 'tool'`：消息角色
+- `timestamp: Date`：消息时间
+- `status?: 'sending' | 'sent' | 'error'`：发送状态
+- `toolName?: string`：工具消息名称
+- `toolResult?: any`：工具消息结果
+
+### `Conversation`
+
+- `id: string`：会话 ID
+- `title: string`：会话标题
+- `lastMessage: string`：最后一条消息摘要
+- `timestamp: Date`：更新时间
+- `messages: Message[]`：消息数组
+
+### `TimelineEvent`
+
+- `id: string`：事件 ID
+- `title: string`：事件标题
+- `startTime: number`：起始时间戳
+- `date: string`：显示日期文本
+- `description?: string`：事件说明
+- `color?: string`：事件点颜色
+
+### `RelationNodeData`
+
+- `id: string`：节点 ID
+- `name?: string`：节点名称
+- `title?: string`：节点标题
+- `type?: string`：节点类型
+- `group?: string`：分组标识
+- `categoryId?: string`：分类标识
+- `summary?: string`：摘要
+- `description?: string`：描述
+- `content?: string`：正文内容
+- `avatar?: string`：头像 URL
+- `importance?: number`：重要度
+- `color?: string`：节点颜色
+- `icon?: string`：节点图标文本
+
+### `RelationEdgeData`
+
+- `source: string`：起点节点 ID
+- `target: string`：终点节点 ID
+- `label?: string`：边标签
+- `content?: string`：边说明
+- `type?: string`：边类型
+- `relation?: 'one_way' | 'two_way'`：关系方向
+- `direction?: 'one_way' | 'two_way'`：方向字段别名
+- `strength?: number`：边强度
+- `important?: boolean`：是否为重要边
+
+### `RelationTypeStyle`
+
+- `color?: string`：节点类型颜色
+- `icon?: string`：节点类型图标文本
+
+### `LayoutProvider`
+
+- `computeLayout(request): Promise<LayoutResponse>`：执行布局计算并返回节点坐标和可选边界框
+
+## 组件文档
+
+## Providers
+
+### `ThemeProvider`
+
+用途：提供主题上下文和主题切换能力。
+
+参数：
+
+- `children: ReactNode`：子节点
+- `defaultTheme?: 'light' | 'dark' | 'system'`：默认主题
+- `target?: HTMLElement`：主题属性写入目标元素
+
+### `AlertProvider`
+
+用途：提供 `useAlert()` 上下文，并渲染弹窗/确认框/toast。
+
+参数：
+
+- `children: ReactNode`：子节点
+- `background?: string`：弹层背景色覆盖
+- `borderColor?: string`：弹层边框色覆盖
+
+### `ContextMenuProvider`
+
+用途：提供 `useContextMenu()` 上下文，并管理右键菜单浮层。
+
+参数：
+
+- `children: ReactNode`：子节点
+- `background?: string`：菜单背景色覆盖
+- `borderColor?: string`：菜单边框色覆盖
+- `hoverBackground?: string`：菜单项 hover 背景色覆盖
+
+## 基础组件
+
+### `Button`
+
+用途：通用按钮，支持多种视觉变体、尺寸和状态。
+
+参数：
+
+- `variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning'`：按钮变体
+- `size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'`：按钮尺寸
+- `radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'`：圆角尺寸
+- `disabled?: boolean`：是否禁用
+- `loading?: boolean`：是否显示加载状态
+- `block?: boolean`：是否占满整行宽度
+- `circle?: boolean`：是否为圆形按钮
+- `iconOnly?: boolean`：是否为纯图标按钮
+- `iconLeft?: ReactNode`：左侧图标
+- `iconRight?: ReactNode`：右侧图标
+- `background?: string`：默认背景色
+- `hoverBackground?: string`：hover 背景色
+- `activeBackground?: string`：激活态背景色
+- `color?: string`：默认文字色
+- `hoverColor?: string`：hover 文字色
+- `activeColor?: string`：激活态文字色
+- `borderColor?: string`：默认边框色
+- `hoverBorderColor?: string`：hover 边框色
+
+### `ButtonGroup`
+
+用途：将多个按钮按组排列。
+
+参数：
+
+- `children: ReactNode`：按钮组内容
+
+### `ButtonToolbar`
+
+用途：为按钮组提供工具栏级别的布局。
+
+参数：
+
+- `children: ReactNode`：工具栏内容
+- `align?: 'left' | 'center' | 'right' | 'between'`：内容对齐方式
+
+### `CheckButton`
+
+用途：二值切换按钮，可用于亮暗切换、开关、模式切换。
+
+参数：
+
+- `checked?: boolean`：受控选中状态
+- `defaultChecked?: boolean`：非受控初始状态
+- `onChange?: (checked: boolean) => void`：状态变化回调
+- `disabled?: boolean`：是否禁用
+- `size?: 'sm' | 'md' | 'lg'`：尺寸
+- `radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'`：轨道圆角
+- `labelLeft?: string`：左侧标签
+- `labelRight?: string`：右侧标签
+- `trackBackground?: string`：未选中轨道背景色
+- `checkedTrackBackground?: string`：选中轨道背景色
+- `thumbBackground?: string`：滑块背景色
+- `thumbDotColor?: string`：滑块内部装饰色
+- `labelColor?: string`：标签文字色
+
+## 表单组件
+
+### `Input`
+
+用途：文本输入框，支持前后缀、清空、密码显隐和状态样式。
+
+参数：
+
+- `size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'`：输入框尺寸
+- `status?: 'default' | 'error' | 'warning' | 'success'`：状态样式
+- `radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'`：圆角尺寸
+- `prefix?: ReactNode`：输入框前缀内容
+- `suffix?: ReactNode`：输入框后缀内容
+- `allowClear?: boolean`：是否显示清空按钮
+- `passwordToggle?: boolean`：密码输入时是否显示显隐切换按钮
+- `addonBefore?: ReactNode`：外层前置附加内容
+- `addonAfter?: ReactNode`：外层后置附加内容
+- `helperText?: string`：辅助说明文本
+- `onChange?: (value: string) => void`：值变更回调，直接返回字符串值
+- `onClear?: () => void`：点击清空时触发
+
+### `Slider`
+
+用途：单值或范围滑块，支持横向/纵向、刻度、tooltip 和颜色定制。
+
+参数：
+
+- `value?: number | [number, number]`：受控值
+- `defaultValue?: number | [number, number]`：非受控初始值
+- `onChange?: (value: number | [number, number]) => void`：值变化回调
+- `min?: number`：最小值
+- `max?: number`：最大值
+- `step?: number`：步进值
+- `range?: boolean`：是否启用双滑块范围模式
+- `orientation?: 'horizontal' | 'vertical'`：方向
+- `disabled?: boolean`：是否禁用
+- `marks?: Record<number, string>`：刻度标签
+- `tooltip?: boolean`：是否显示 tooltip
+- `trackBackground?: string`：轨道背景色
+- `fillBackground?: string`：已填充区域背景色
+- `thumbBackground?: string`：滑块背景色
+- `thumbBorderColor?: string`：滑块边框色
+- `markDotColor?: string`：刻度点颜色
+- `markLabelColor?: string`：刻度文字颜色
+- `tooltipBackground?: string`：tooltip 背景色
+- `tooltipColor?: string`：tooltip 文字色
+
+### `Select`
+
+用途：单选或多选下拉框，支持搜索、分组、虚拟滚动和颜色定制。
+
+参数：
+
+- `options: SelectOption[]`：选项数组
+- `value?: string | number | (string | number)[]`：受控值
+- `defaultValue?: string | number | (string | number)[]`：非受控初始值
+- `onChange?: (value: string | number | (string | number)[]) => void`：值变更回调
+- `placeholder?: string`：占位文本
+- `searchable?: boolean`：是否启用搜索
+- `multiple?: boolean`：是否启用多选
+- `disabled?: boolean`：是否禁用
+- `radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'`：触发器和面板圆角
+- `virtualScroll?: boolean`：是否启用虚拟滚动
+- `virtualItemHeight?: number`：虚拟列表单项高度
+- `maxHeight?: number`：下拉列表最大高度
+- `triggerBackground?: string`：触发器背景色
+- `triggerBorderColor?: string`：触发器边框色
+- `selectedColor?: string`：已选项文字色
+- `selectedBackground?: string`：已选项背景色
+- `hoverBackground?: string`：hover 或键盘高亮背景色
+
+### `TagItem`
+
+用途：展示或编辑结构化标签值，支持字符串、数值和布尔值。
+
+参数：
+
+- `schema: TagSchema`：字段结构定义
+- `value?: number | string | boolean`：当前值
+- `onChange?: (value) => void`：值变更回调
+- `mode?: 'show' | 'edit'`：显示模式，`show` 可双击进入编辑，`edit` 始终编辑
+- `background?: string`：背景色
+- `color?: string`：文字色
+- `borderColor?: string`：边框色
+
+## 展示组件
+
+### `Avatar`
+
+用途：头像组件，支持图片、回退图片、边框和懒加载。
+
+参数：
+
+- `src?: string`：头像图片地址
+- `fallbackSrc?: string`：主图加载失败时的回退图片地址
+- `size?: number | string`：头像尺寸
+- `shape?: 'circle' | 'square'`：形状
+- `alt?: string`：图片替代文本
+- `lazyLoad?: boolean`：是否启用图片懒加载
+- `onImageLoad?: () => void`：图片加载成功回调
+- `onImageError?: (error?: Event) => void`：图片加载失败回调
+- `bordered?: boolean`：是否显示边框
+
+### `Card`
+
+用途：卡片容器，支持图片区、文字区、悬停展开、渐变遮罩和标签角标。
+
+参数：
+
+- `image?: string`：图片地址
+- `imageSlot?: ReactNode`：自定义图片区内容
+- `imageHeight?: number | string`：图片区高度
+- `title?: ReactNode`：标题
+- `description?: ReactNode`：描述
+- `actions?: ReactNode`：操作区内容
+- `extraInfo?: ReactNode`：额外信息
+- `variant?: 'default' | 'bordered' | 'shadow' | 'outline'`：卡片视觉风格
+- `hoverable?: boolean`：是否启用 hover 效果
+- `disabled?: boolean`：是否禁用交互
+- `contentAreaRatio?: number`：文字区初始占比
+- `hoverContentAreaRatio?: number`：hover 后文字区占比
+- `expandContentOnHover?: boolean`：hover 时是否展开文字区
+- `overlayStartOpacity?: number`：渐变遮罩起始透明度
+- `overlayEndOpacity?: number`：渐变遮罩结束透明度
+- `tag?: ReactNode`：左上角标签
+- `onClick?: () => void`：点击回调
+
+### `ListGroup`
+
+用途：列表组容器，用于承载多项 `ListGroupItem`。
+
+参数：
+
+- `bordered?: boolean`：是否显示外边框
+- `flush?: boolean`：是否去掉外层圆角和额外边距感
+
+### `ListGroupItem`
+
+用途：列表组单项，支持激活态、禁用态和点击交互。
+
+参数：
+
+- `active?: boolean`：是否处于激活态
+- `disabled?: boolean`：是否禁用
+- `onClick?: (event) => void`：点击回调
+
+### `RollingBox`
+
+用途：带自定义滚动条的内容容器，支持横向/纵向滚动和滚动条样式控制。
+
+参数：
+
+- `showThumb?: 'auto' | 'hide' | 'show'`：滚动条显示模式
+- `horizontal?: boolean`：是否启用横向滚动
+- `vertical?: boolean`：是否启用纵向滚动
+- `thumbSize?: 'thin' | 'normal' | 'thick'`：滚动条尺寸
+- `showTrack?: boolean`：是否显示轨道
+- `children: ReactNode`：滚动内容
+- `thumbColor?: string`：滚动条颜色
+- `thumbHoverColor?: string`：hover 滚动条颜色
+- `thumbActiveColor?: string`：滚动中滚动条颜色
+- `trackColor?: string`：轨道背景色
+
+### `VirtualList`
+
+用途：只渲染可见区域的高性能列表。
+
+参数：
+
+- `data: T[]`：数据源
+- `height: number`：容器高度
+- `itemHeight: number`：单项固定高度
+- `renderItem: (item, index) => ReactNode`：单项渲染函数
+- `overscan?: number`：预渲染缓冲数量
+- `showScrollbar?: boolean`：是否显示滚动条
+- `onScrollEnd?: () => void`：滚动到底部回调
+
+### `MarkdownEditor`
+
+用途：Markdown 编辑与预览组件，可选 AI 完成功能入口。
+
+参数：
+
+- `value: string`：编辑器内容
+- `onChange: (value: string) => void`：内容变化回调
+- `onAiComplete?: () => void`：AI 补全回调，传入后显示 AI 按钮
+- `minHeight?: number`：最小高度
+- `placeholder?: string`：占位文本
+- `mode?: 'edit' | 'preview'`：显示模式
+- `background?: string`：编辑区背景色
+- `toolbarBackground?: string`：工具栏背景色
+- `borderColor?: string`：边框色
+
+### `SmartMessage`
+
+用途：消息气泡组件，支持用户、助手、系统和工具消息。
+
+参数：
+
+- `id: string`：消息 ID
+- `content: string`：消息内容
+- `role: 'user' | 'assistant' | 'system' | 'tool'`：消息角色
+- `timestamp?: Date`：消息时间
+- `status?: 'sending' | 'sent' | 'error'`：消息状态
+- `toolName?: string`：工具名称
+- `toolResult?: any`：工具结果
+- `onCopy?: (content: string, role) => void`：复制回调
+
+### `Chat`
+
+用途：完整聊天容器，支持历史会话、消息面板、头部和最小化状态。
+
+参数：
+
+- `messages?: Message[]`：消息列表
+- `title?: string`：标题
+- `loading?: boolean`：是否显示加载状态
+- `conversations?: Conversation[]`：历史会话列表
+- `currentConversationId?: string`：当前会话 ID
+- `emptyText?: string`：空历史文案
+- `newConversationText?: string`：新建会话按钮文案
+- `historyTitle?: string`：历史面板标题
+- `showHistoryButton?: boolean`：是否显示历史按钮
+- `showMinimizeButton?: boolean`：是否显示最小化按钮
+- `showHeader?: boolean`：是否显示头部
+- `showFooter?: boolean`：是否显示底部区域
+- `autoScroll?: boolean`：消息更新时是否自动滚到底部
+- `onSwitchConversation?: (conversationId: string) => void`：切换会话回调
+- `onNewConversation?: () => void`：新建会话回调
+- `onDeleteConversation?: (conversationId: string) => void`：删除会话回调
+- `onMinimize?: () => void`：最小化回调
+- `onRestore?: () => void`：恢复回调
+- `onMessageCopy?: (message: Message) => void`：消息复制回调
+- `height?: string`：整体高度
+- `width?: string`：整体宽度
+
+### `Timeline`
+
+用途：横向时间线组件，展示带时间点的事件序列。
+
+参数：
+
+- `events: TimelineEvent[]`：时间线事件数组
+
+## 导航与结构组件
+
+### `TabBar`
+
+用途：标签栏组件，支持 attached/floating 风格、关闭、新增、拖拽和颜色定制。
+
+参数：
+
+- `items: TabItem[]`：标签项数组
+- `activeKey: string`：当前激活标签 key
+- `variant?: 'attached' | 'floating'`：布局风格
+- `radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'`：容器圆角
+- `tabRadius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'`：单个标签圆角
+- `closable?: boolean`：是否允许关闭标签
+- `addable?: boolean`：是否显示新增按钮
+- `draggable?: boolean`：是否启用拖拽排序
+- `minTabWidth?: string`：标签最小宽度
+- `maxTabWidth?: string`：标签最大宽度
+- `fillWidth?: boolean`：标签是否自动拉伸填满容器
+- `onChange: (activeKey: string) => void`：激活标签变更回调
+- `onClose?: (key: string) => void`：关闭标签回调
+- `onAdd?: () => void`：新增标签回调
+- `onReorder?: (items: TabItem[]) => void`：重排回调
+- `renderCloseIcon?: (key: string) => ReactNode`：关闭图标渲染函数
+- `renderAddButton?: () => ReactNode`：新增按钮渲染函数
+- `background?: string`：容器背景色
+- `tabColor?: string`：标签默认文字色
+- `tabHoverColor?: string`：标签 hover 文字色
+- `tabHoverBackground?: string`：标签 hover 背景色
+- `tabActiveColor?: string`：标签激活态文字色
+- `tabActiveBackground?: string`：标签激活态背景色
+- `activeIndicatorColor?: string`：激活态指示器颜色
+- `tauriDragRegion?: boolean`：是否把空白区域作为 Tauri 窗口拖拽区
+
+### `SideBar`
+
+用途：侧边栏导航组件，支持折叠、底部固定项和样式变量覆盖。
+
+参数：
+
+- `items: SideBarItem[]`：主菜单项数组
+- `bottomItems?: SideBarItem[]`：底部固定菜单项数组
+- `selectedKey: string`：当前选中 key
+- `collapsed: boolean`：是否折叠
+- `width?: number`：展开宽度
+- `collapsedWidth?: number`：折叠宽度
+- `onSelect: (key: string) => void`：选中项变更回调
+- `onCollapse: (collapsed: boolean) => void`：折叠状态变化回调
+
+### `Tree`
+
+用途：树形结构组件，支持搜索、选择、重命名、新建、删除和拖拽移动。
+
+参数：
+
+- `treeData: CategoryTreeNode[]`：树数据
+- `onRename?: (key: string, newName: string) => Promise<void>`：重命名回调
+- `onCreate?: (parentKey: string | null) => Promise<string>`：创建节点回调，需返回新节点 key
+- `onDelete?: (key: string, mode: 'lift' | 'cascade') => Promise<void>`：删除回调
+- `onDeleteRequest?: (node: CategoryTreeNode) => void`：发起删除前回调
+- `onMove?: (key: string, targetKey: string, position: 'before' | 'after' | 'into') => Promise<void>`：拖拽移动回调
+- `onSelect?: (key: string) => void`：选中节点回调
+- `selectedKey?: string`：受控选中 key
+- `searchable?: boolean`：是否显示搜索框
+- `scrollHeight?: string`：滚动区域高度
+
+### `DeleteDialog`
+
+用途：树节点删除确认弹窗，支持提升子节点或级联删除。
+
+参数：
+
+- `node: CategoryTreeNode | null`：待删除节点
+- `onClose: () => void`：关闭弹窗回调
+- `onDelete: (key: string, mode: 'lift' | 'cascade') => Promise<void>`：确认删除回调
+
+### `OrphanDialog`
+
+用途：处理 `flatToTree` 生成的孤儿节点，让调用方选择提升或移除。
+
+参数：
+
+- `orphans: CategoryTreeNode[]`：孤儿节点列表
+- `onResolve: (resolutions: Record<string, 'lift' | 'remove'>) => void`：解决方案提交回调
+- `onClose: () => void`：关闭弹窗回调
+
+## 图谱组件
+
+### `Relation`
+
+用途：关系图谱组件，基于 React Flow 渲染节点与边，并通过 `layoutProvider` 计算布局。
+
+参数：
+
+- `data?: { nodes: RelationNodeData[]; edges: RelationEdgeData[] }`：图谱数据
+- `layoutProvider: LayoutProvider`：布局提供器
+- `nodeOrigin?: [number, number]`：节点原点
+- `onNodeClick?: (node: RelationNodeData) => void`：节点点击回调
+- `onEdgeClick?: (edge: RelationEdgeData) => void`：边点击回调
+- `theme?: 'dark' | 'light'`：图谱主题
+- `height?: string | number`：图谱高度
+- `width?: string | number`：图谱宽度
+- `enableRefresh?: boolean`：是否显示重新布局/刷新能力
+- `autoFitContainer?: boolean`：布局完成后是否自动适配视口
+- `labelMode?: 'always' | 'selected' | 'hover' | 'important' | 'never'`：边标签显示策略
+- `typeStyles?: Record<string, RelationTypeStyle>`：节点类型样式映射
+- `renderLayoutStatus?: (state: RelationLayoutState) => ReactNode`：自定义布局状态渲染
+
+## 发布信息
+
+- 包名：`flowcloudai-ui`
+- 样式入口：`flowcloudai-ui/style`
+- 构建命令：`cd ui && npm run build`
+- 演示应用：`cd app && npm run dev`
+
+## 组件源码入口建议
+
+- 主题：`ui/src/ThemeProvider.tsx`
+- 全局样式：`ui/src/style/index.css`
+- 基础组件：`ui/src/components/Button/`
+- 表单组件：`ui/src/components/Input/`、`Select/`、`Slider/`
+- 树组件：`ui/src/components/Tree/`
+- 图谱组件：`ui/src/components/Relation/`
+- 时间线：`ui/src/components/Time/`

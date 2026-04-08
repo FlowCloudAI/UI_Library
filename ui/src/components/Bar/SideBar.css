@@ -28,16 +28,20 @@
 
 /* ========== Header ========== */
 .fc-sidebar__header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    position: relative;
     padding: var(--fc-space-md, 12px);
+    min-height: calc(32px + var(--fc-space-md, 12px) * 2);
     border-bottom: 1px solid var(--fc-color-border);
+    box-sizing: border-box;
 }
 
 .fc-sidebar__collapse-btn {
     width: 32px;
     height: 32px;
+    position: absolute;
+    top: 50%;
+    left: calc(100% - var(--fc-space-md, 12px) - 32px);
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -46,8 +50,10 @@
     color: var(--fc-color-text-secondary);
     cursor: pointer;
     border-radius: var(--fc-radius-md, 8px);
+    box-sizing: border-box;
     transition: background var(--fc-transition, 150ms ease),
-    color var(--fc-transition, 150ms ease);
+    color var(--fc-transition, 150ms ease),
+    left var(--fc-transition-slow, 250ms ease);
 }
 
 .fc-sidebar__collapse-btn:hover {
@@ -157,6 +163,10 @@
 .fc-sidebar--collapsed .fc-sidebar__label {
     opacity: 0;
     padding-right: 0;
+}
+
+.fc-sidebar--collapsed .fc-sidebar__collapse-btn {
+    left: calc(50% - 16px);
 }
 
 /* ========== 暗色主题 ========== */
