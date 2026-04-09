@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import './Card.css';
 
 const clampRatio = (value: number) => Math.min(0.8, Math.max(0.1, value));
@@ -56,6 +56,12 @@ export const Card = ({
         1,
         Math.max(safeOverlayStartOpacity, (safeOverlayStartOpacity + safeOverlayEndOpacity) / 2)
     );
+    const contentRef = useRef<HTMLDivElement>(null);
+    const titleRef = useRef<HTMLDivElement>(null);
+    const descriptionRef = useRef<HTMLDivElement>(null);
+    const extraInfoRef = useRef<HTMLDivElement>(null);
+    const actionsRef = useRef<HTMLDivElement>(null);
+    const [descriptionLineClamp, setDescriptionLineClamp] = useState<number>(3);
 
     const handleClick = () => {
         if (!disabled && onClick) {
@@ -98,6 +104,55 @@ export const Card = ({
         );
     };
 
+    useLayoutEffect(() => {
+        const contentElement = contentRef.current;
+        const descriptionElement = descriptionRef.current;
+
+        if (!contentElement || !descriptionElement || !description) {
+            return;
+        }
+
+        const measure = () => {
+            const contentStyle = window.getComputedStyle(contentElement);
+            const descriptionStyle = window.getComputedStyle(descriptionElement);
+            const contentPadding =
+                parseFloat(contentStyle.paddingTop || '0') + parseFloat(contentStyle.paddingBottom || '0');
+            const gap = parseFloat(contentStyle.rowGap || contentStyle.gap || '0');
+            const titleHeight = titleRef.current?.offsetHeight ?? 0;
+            const extraInfoHeight = extraInfoRef.current?.offsetHeight ?? 0;
+            const actionsHeight = actionsRef.current?.offsetHeight ?? 0;
+            const baseBlocks = [title, extraInfo, actions].filter(Boolean).length;
+            const gapCount = baseBlocks > 0 ? baseBlocks : 0;
+            const reservedHeight =
+                contentPadding + titleHeight + extraInfoHeight + actionsHeight + gap * gapCount;
+            const availableDescriptionHeight = Math.max(0, contentElement.clientHeight - reservedHeight);
+            const lineHeight = parseFloat(descriptionStyle.lineHeight || '0');
+
+            if (!lineHeight || Number.isNaN(lineHeight)) {
+                setDescriptionLineClamp(3);
+                return;
+            }
+
+            setDescriptionLineClamp(Math.max(0, Math.floor(availableDescriptionHeight / lineHeight)));
+        };
+
+        measure();
+
+        const resizeObserver = new ResizeObserver(() => {
+            measure();
+        });
+
+        resizeObserver.observe(contentElement);
+        resizeObserver.observe(descriptionElement);
+        if (titleRef.current) resizeObserver.observe(titleRef.current);
+        if (extraInfoRef.current) resizeObserver.observe(extraInfoRef.current);
+        if (actionsRef.current) resizeObserver.observe(actionsRef.current);
+
+        return () => {
+            resizeObserver.disconnect();
+        };
+    }, [title, description, extraInfo, actions, shouldExpandOnHover]);
+
     return (
         <div
             className={classes}
@@ -117,11 +172,19 @@ export const Card = ({
 
             {tag && <div className="fc-card__tag">{tag}</div>}
 
-            <div className="fc-card__content">
-                {title && <div className="fc-card__title">{title}</div>}
-                {description && <div className="fc-card__description">{description}</div>}
-                {extraInfo && <div className="fc-card__extra-info">{extraInfo}</div>}
-                {actions && <div className="fc-card__actions">{actions}</div>}
+            <div className="fc-card__content" ref={contentRef}>
+                {title && <div className="fc-card__title" ref={titleRef}>{title}</div>}
+                {description && descriptionLineClamp > 0 && (
+                    <div
+                        className="fc-card__description"
+                        ref={descriptionRef}
+                        style={{ WebkitLineClamp: descriptionLineClamp }}
+                    >
+                        {description}
+                    </div>
+                )}
+                {extraInfo && <div className="fc-card__extra-info" ref={extraInfoRef}>{extraInfo}</div>}
+                {actions && <div className="fc-card__actions" ref={actionsRef}>{actions}</div>}
             </div>
         </div>
     );

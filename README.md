@@ -161,13 +161,6 @@ import './theme-override.css'
 
 用途：判断 `targetKey` 是否为 `ancestorKey` 的后代。
 
-### `mockLayoutProvider`
-
-用途：为 `Relation` 提供默认 mock 布局能力，适合 demo、Storybook 和本地联调。
-
-### `useBackendLayout(options)`
-
-用途：在关系图中驱动异步布局请求、视口拟合和加载状态同步。
 
 ## 辅助数据结构
 
@@ -228,42 +221,70 @@ import './theme-override.css'
 - `description?: string`：事件说明
 - `color?: string`：事件点颜色
 
-### `RelationNodeData`
+### `RelationNodeInput`
 
-- `id: string`：节点 ID
-- `name?: string`：节点名称
-- `title?: string`：节点标题
-- `type?: string`：节点类型
-- `group?: string`：分组标识
-- `categoryId?: string`：分类标识
-- `summary?: string`：摘要
-- `description?: string`：描述
-- `content?: string`：正文内容
-- `avatar?: string`：头像 URL
-- `importance?: number`：重要度
-- `color?: string`：节点颜色
-- `icon?: string`：节点图标文本
+RelationGraph 节点输入数据。
 
-### `RelationEdgeData`
+- `id: string`：节点 ID（必填，唯一）
+- `label?: string`：节点标签，缺省时显示 id
+- `[key: string]: unknown`：宿主可携带任意扩展字段
 
+### `RelationEdgeInput`
+
+RelationGraph 边输入数据。
+
+- `id?: string`：边 ID，缺省时由 source + target + index 自动生成
 - `source: string`：起点节点 ID
 - `target: string`：终点节点 ID
 - `label?: string`：边标签
-- `content?: string`：边说明
-- `type?: string`：边类型
-- `relation?: 'one_way' | 'two_way'`：关系方向
-- `direction?: 'one_way' | 'two_way'`：方向字段别名
-- `strength?: number`：边强度
-- `important?: boolean`：是否为重要边
+- `kind?: 'one_way' | 'two_way'`：方向性，默认 `'one_way'`
+- `sourceHandle?: string`：起点连接点 ID
+- `targetHandle?: string`：终点连接点 ID
 
-### `RelationTypeStyle`
+### `LayoutRequest`
 
-- `color?: string`：节点类型颜色
-- `icon?: string`：节点类型图标文本
+前端向布局函数传入的请求体（字段名固定，不可修改）。
 
-### `LayoutProvider`
+- `nodeOrigin?: [number, number]`：节点坐标原点，默认 `[0, 0]`
+- `nodes: LayoutNode[]`：已测量尺寸的节点列表
+- `edges: LayoutEdge[]`：边列表
 
-- `computeLayout(request): Promise<LayoutResponse>`：执行布局计算并返回节点坐标和可选边界框
+#### `LayoutNode`
+
+- `id: string`：节点 ID
+- `width: number`：DOM 测量宽度（像素，不得猜测）
+- `height: number`：DOM 测量高度（像素，不得猜测）
+
+#### `LayoutEdge`
+
+- `id?: string`
+- `source: string`
+- `target: string`
+- `sourceHandle?: string`
+- `targetHandle?: string`
+- `kind?: 'one_way' | 'two_way'`
+
+### `LayoutResponse`
+
+布局函数返回的响应体（字段名固定，不可修改）。
+
+- `positions: Record<string, { x: number; y: number }>`：按节点 ID 索引的坐标；缺失的节点保留当前坐标
+- `bounds?: { x: number; y: number; width: number; height: number }`：图的外接矩形，用于首轮 `fitBounds`
+- `layoutHash?: string`：可选的不透明哈希，前端不解析
+
+### `LayoutFunction`
+
+```ts
+type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
+```
+
+宿主注入给 RelationGraph 的异步布局函数。组件只调用这个函数，内部不写任何 `invoke` 或 HTTP 请求。
+
+### `RelationLayoutState`
+
+- `layoutReady: boolean`：首轮布局已成功应用
+- `layoutLoading: boolean`：正在等待布局响应
+- `layoutError: Error | null`：最近一次布局调用的错误
 
 ## 组件文档
 
@@ -659,7 +680,102 @@ import './theme-override.css'
 
 ### `Tree`
 
-用途：树形结构组件，支持搜索、选择、重命名、新建、删除和拖拽移动。
+用途：树形结构组件，支持搜索、选择、受控展开、重命名、新建、删除、拖拽移动，以及标题 / 动作 / 颜色 token 定制。
+
+示例：
+
+```tsx
+import {
+  Tree,
+  flatToTree,
+  type CategoryTreeNode,
+  type TreeActionItem,
+  type TreeNodeActionHelpers,
+  type TreeNodeRenderState,
+} from 'flowcloudai-ui'
+
+const { roots } = flatToTree(rows)
+
+function getNodeActions(
+  node: CategoryTreeNode,
+  state: TreeNodeRenderState,
+  helpers: TreeNodeActionHelpers,
+): TreeActionItem[] {
+  const actions: TreeActionItem[] = [
+    {
+      key: 'inspect',
+      label: '查看',
+      icon: '👁',
+      onClick: () => console.log('inspect', node.key),
+      showInline: !state.isCompactActions,
+    },
+  ]
+
+  if (state.canRename) {
+    actions.push({
+      key: 'rename',
+      label: '重命名',
+      icon: '✏',
+      onClick: helpers.startEdit,
+    })
+  }
+
+  if (state.canCreate || state.canDelete) {
+    actions.push({ type: 'divider', key: 'ops' })
+  }
+
+  if (state.canCreate) {
+    actions.push({
+      key: 'create',
+      label: '添加子项',
+      icon: '+',
+      onClick: helpers.requestCreate,
+    })
+  }
+
+  if (state.canDelete) {
+    actions.push({
+      key: 'delete',
+      label: '删除',
+      icon: '🗑',
+      danger: true,
+      onClick: helpers.requestDelete,
+    })
+  }
+
+  return actions
+}
+
+<Tree
+  treeData={roots}
+  selectedKey={selectedKey}
+  expandedKeys={expandedKeys}
+  onExpandedKeysChange={setExpandedKeys}
+  searchValue={searchValue}
+  onSearchChange={setSearchValue}
+  searchable
+  renderTitle={(node) => <span>{node.title}</span>}
+  getNodeActions={getNodeActions}
+  canRename={(node) => node.raw.parent_id !== null}
+  canDelete={(node) => node.raw.parent_id !== null}
+  canCreate={(node) => node === null || node.raw.parent_id !== null}
+  canDrag={(node) => node.raw.parent_id !== null}
+  canDrop={(source, target, position) => !(source.raw.parent_id === null && position === 'into')}
+  indentSize={20}
+  actionDisplayMode="auto"
+  actionCollapseThreshold={240}
+  colorTokens={{
+    primary: '#6ea8fe',
+    bgHover: '#16213d',
+    bgSelected: '#1d2d57',
+  }}
+  onSelect={setSelectedKey}
+  onRename={handleRename}
+  onCreate={handleCreate}
+  onDelete={handleDelete}
+  onMove={handleMove}
+/>
+```
 
 参数：
 
@@ -671,8 +787,33 @@ import './theme-override.css'
 - `onMove?: (key: string, targetKey: string, position: 'before' | 'after' | 'into') => Promise<void>`：拖拽移动回调
 - `onSelect?: (key: string) => void`：选中节点回调
 - `selectedKey?: string`：受控选中 key
+- `expandedKeys?: string[]`：受控展开节点 key 列表
+- `defaultExpandedKeys?: string[]`：非受控初始展开节点 key 列表
+- `onExpandedKeysChange?: (keys: string[]) => void`：展开状态变化回调
 - `searchable?: boolean`：是否显示搜索框
+- `searchValue?: string`：受控搜索值
+- `defaultSearchValue?: string`：非受控初始搜索值
+- `onSearchChange?: (value: string) => void`：搜索值变化回调
+- `searchPlaceholder?: string`：搜索框占位文本
+- `renderTitle?: (node: CategoryTreeNode, state: TreeNodeRenderState) => ReactNode`：自定义节点标题渲染
+- `getNodeActions?: (node: CategoryTreeNode, state: TreeNodeRenderState, helpers: TreeNodeActionHelpers) => TreeActionItem[]`：自定义节点 hover / 菜单动作
+- `canDrag?: (node: CategoryTreeNode) => boolean`：按节点控制是否允许拖拽
+- `canDrop?: (source: CategoryTreeNode, target: CategoryTreeNode, position: 'before' | 'after' | 'into') => boolean`：按拖拽来源、目标和位置控制是否允许放下
+- `canRename?: (node: CategoryTreeNode) => boolean`：按节点控制是否允许重命名
+- `canDelete?: (node: CategoryTreeNode) => boolean`：按节点控制是否允许删除
+- `canCreate?: (node: CategoryTreeNode | null) => boolean`：按节点控制是否允许添加子项；传 `null` 表示根级创建
+- `indentSize?: number`：每层缩进宽度，默认 `20`
+- `actionDisplayMode?: 'auto' | 'inline' | 'overflow'`：动作区显示模式；`auto` 会在窄宽度下自动折叠为 `⋯`
+- `actionCollapseThreshold?: number`：`auto` 模式下折叠阈值，单位像素
+- `colorTokens?: TreeColorTokens`：树组件局部颜色 token 覆盖
 - `scrollHeight?: string`：滚动区域高度
+
+相关类型：
+
+- `TreeNodeRenderState`：节点当前层级、选中、展开、编辑、权限和动作折叠状态
+- `TreeNodeActionHelpers`：节点动作辅助方法，包含 `select`、`toggleExpand`、`expandSubtree`、`collapseSubtree`、`startEdit`、`requestCreate`、`requestDelete`
+- `TreeActionItem`：自定义动作项，支持 `divider`、危险态、禁用态，以及 `showInline` / `showInMenu` 两套展示控制
+- `TreeColorTokens`：树组件颜色 token，包含 `text`、`textMuted`、`bgHover`、`bgSelected`、`border`、`borderFocus`、`primary`、`primarySubtle`、`danger`、`actionHoverBg`、`dropIndicator`
 
 ### `DeleteDialog`
 
@@ -696,25 +837,54 @@ import './theme-override.css'
 
 ## 图谱组件
 
-### `Relation`
+### `RelationGraph`
 
-用途：关系图谱组件，基于 React Flow 渲染节点与边，并通过 `layoutProvider` 计算布局。
+用途：关系图谱组件，基于 React Flow 渲染节点与边。**不含任何布局算法**——宿主通过 `layoutFn` 注入异步布局函数（可调用 Tauri `invoke`、HTTP 接口或任意后端）。
+
+快速示例：
+
+```tsx
+import { RelationGraph } from 'flowcloudai-ui'
+import type { LayoutFunction } from 'flowcloudai-ui'
+
+// 宿主注入的布局函数，例如调用 Tauri Rust 后端
+const layoutFn: LayoutFunction = (req) => invoke('graph_layout', { request: req })
+
+<RelationGraph
+  nodes={[
+    { id: 'a', label: 'Alice' },
+    { id: 'b', label: 'Bob' },
+  ]}
+  edges={[
+    { source: 'a', target: 'b', label: '认识', kind: 'two_way' },
+    { source: 'b', target: 'a', kind: 'two_way' },
+  ]}
+  layoutFn={layoutFn}
+  height={480}
+  onLayoutStateChange={(s) => console.log(s)}
+/>
+```
 
 参数：
 
-- `data?: { nodes: RelationNodeData[]; edges: RelationEdgeData[] }`：图谱数据
-- `layoutProvider: LayoutProvider`：布局提供器
-- `nodeOrigin?: [number, number]`：节点原点
-- `onNodeClick?: (node: RelationNodeData) => void`：节点点击回调
-- `onEdgeClick?: (edge: RelationEdgeData) => void`：边点击回调
-- `theme?: 'dark' | 'light'`：图谱主题
-- `height?: string | number`：图谱高度
-- `width?: string | number`：图谱宽度
-- `enableRefresh?: boolean`：是否显示重新布局/刷新能力
-- `autoFitContainer?: boolean`：布局完成后是否自动适配视口
-- `labelMode?: 'always' | 'selected' | 'hover' | 'important' | 'never'`：边标签显示策略
-- `typeStyles?: Record<string, RelationTypeStyle>`：节点类型样式映射
-- `renderLayoutStatus?: (state: RelationLayoutState) => ReactNode`：自定义布局状态渲染
+- `nodes: RelationNodeInput[]`：节点数组，建议用 `useMemo` 保持引用稳定
+- `edges: RelationEdgeInput[]`：边数组，建议用 `useMemo` 保持引用稳定
+- `layoutFn: LayoutFunction`：**必填**，宿主注入的异步布局函数
+- `nodeOrigin?: [number, number]`：React Flow 节点坐标原点，默认 `[0, 0]`
+- `fitPadding?: number`：`fitBounds` 视口边距（占比 0–1），默认 `0.1`
+- `fitDuration?: number`：`fitBounds` 动画时长（ms），默认 `500`
+- `onLayoutStateChange?: (state: RelationLayoutState) => void`：布局状态变化回调
+- `height?: string | number`：容器高度，React Flow 渲染要求此值为有限值，默认 `'100%'`
+- `width?: string | number`：容器宽度，默认 `'100%'`
+
+布局状态流程：
+
+1. 首轮布局前：`layoutReady = false`
+2. 布局进行中：`layoutLoading = true`
+3. 布局成功：`layoutReady = true`，执行一次 `fitBounds`（后续不再自动 fit）
+4. 布局失败：`layoutError` 被设置，图面板显示错误提示
+
+双向边：若同时存在 `A→B` 和 `B→A`，两条边会自动向两侧偏移，避免完全重叠。
 
 ## 发布信息
 
@@ -730,5 +900,5 @@ import './theme-override.css'
 - 基础组件：`ui/src/components/Button/`
 - 表单组件：`ui/src/components/Input/`、`Select/`、`Slider/`
 - 树组件：`ui/src/components/Tree/`
-- 图谱组件：`ui/src/components/Relation/`
+- 图谱组件：`ui/src/components/RelationGraph/`
 - 时间线：`ui/src/components/Time/`

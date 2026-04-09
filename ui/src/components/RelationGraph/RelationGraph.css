@@ -1,0 +1,156 @@
+/* ui/src/components/RelationGraph/RelationGraph.css */
+
+/* ─── Design tokens (override to theme the graph) ─────────────────────────── */
+.fc-rg {
+    --fc-rg-node-bg:           var(--fc-color-bg-elevated, #fff);
+    --fc-rg-node-border:       var(--fc-color-border, #d0d0d0);
+    --fc-rg-node-border-hover: var(--fc-color-border-hover, #5f5f5f);
+    --fc-rg-node-border-sel:   var(--fc-color-primary, #378add);
+    --fc-rg-node-text:         var(--fc-color-text, #1a1a1a);
+    --fc-rg-node-radius:       var(--fc-radius-md, 8px);
+    --fc-rg-node-shadow:       var(--fc-shadow-sm, 0 1px 4px rgba(0,0,0,.12));
+    --fc-rg-node-min-width:    80px;
+    --fc-rg-node-padding:      var(--fc-space-sm, 8px) var(--fc-space-md, 12px);
+
+    --fc-rg-edge-color:         var(--fc-gray-400, #b3b3b3);
+    --fc-rg-edge-selected-color: var(--fc-color-primary, #378add);
+
+    --fc-rg-overlay-bg:        rgba(255, 255, 255, 0.82);
+    --fc-rg-overlay-error-bg:  rgba(253, 237, 237, 0.92);
+    --fc-rg-spinner-color:     var(--fc-color-primary, #378add);
+}
+
+[data-theme="dark"] .fc-rg {
+    --fc-rg-node-bg:           var(--fc-color-bg-elevated, #2c2c2c);
+    --fc-rg-node-border:       var(--fc-color-border, #3d3d3a);
+    --fc-rg-node-border-hover: var(--fc-gray-400, #b3b3b3);
+    --fc-rg-node-text:         var(--fc-color-text, #fafafa);
+    --fc-rg-overlay-bg:        rgba(26, 26, 26, 0.82);
+    --fc-rg-overlay-error-bg:  rgba(60, 20, 20, 0.92);
+}
+
+/* ─── Outer container ─────────────────────────────────────────────────────── */
+.fc-rg {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--fc-radius-md, 8px);
+    background-color: var(--fc-color-bg-secondary, #f5f5f5);
+}
+
+/* ─── Canvas wrapper (fills the outer container) ──────────────────────────── */
+.fc-rg__canvas {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* ─── React Flow root override ────────────────────────────────────────────── */
+.fc-rg .react-flow {
+    width: 100%;
+    height: 100%;
+}
+
+.fc-rg .react-flow__background {
+    background-color: transparent;
+}
+
+/* ─── Custom node ─────────────────────────────────────────────────────────── */
+.fc-rg-node {
+    background-color: var(--fc-rg-node-bg);
+    border: 1.5px solid var(--fc-rg-node-border);
+    border-radius: var(--fc-rg-node-radius);
+    padding: var(--fc-rg-node-padding);
+    min-width: var(--fc-rg-node-min-width);
+    box-shadow: var(--fc-rg-node-shadow);
+    color: var(--fc-rg-node-text);
+    font-size: var(--fc-font-size-sm, 13px);
+    font-family: var(--fc-font-family, sans-serif);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    cursor: default;
+    user-select: none;
+    position: relative;
+}
+
+.fc-rg-node:hover {
+    border-color: var(--fc-rg-node-border-hover);
+}
+
+.fc-rg-node--selected {
+    border-color: var(--fc-rg-node-border-sel);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fc-rg-node-border-sel) 25%, transparent);
+}
+
+.fc-rg-node__label {
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    font-weight: var(--fc-font-weight-medium, 500);
+    line-height: var(--fc-line-height-tight, 1.25);
+}
+
+/* Hide the default React Flow handle dots; keep handles functional */
+.fc-rg-node .react-flow__handle {
+    background: transparent;
+    border: none;
+    width: 8px;
+    height: 8px;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* ─── Edge label ──────────────────────────────────────────────────────────── */
+.fc-rg-edge-label {
+    position: absolute;
+    pointer-events: all;
+    background-color: var(--fc-rg-node-bg);
+    border: 1px solid var(--fc-rg-node-border);
+    border-radius: var(--fc-radius-sm, 4px);
+    padding: 1px 5px;
+    font-size: var(--fc-font-size-xs, 11px);
+    color: var(--fc-color-text-secondary, #5f5f5f);
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+/* ─── Loading / error overlays ────────────────────────────────────────────── */
+.fc-rg__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fc-space-sm, 8px);
+    font-size: var(--fc-font-size-sm, 13px);
+    font-family: var(--fc-font-family, sans-serif);
+    pointer-events: none;
+}
+
+.fc-rg__overlay--loading {
+    background-color: var(--fc-rg-overlay-bg);
+    color: var(--fc-color-text-secondary, #5f5f5f);
+    backdrop-filter: blur(2px);
+}
+
+.fc-rg__overlay--error {
+    background-color: var(--fc-rg-overlay-error-bg);
+    color: var(--fc-color-danger, #e24b4a);
+    backdrop-filter: blur(2px);
+}
+
+/* ─── Spinner ─────────────────────────────────────────────────────────────── */
+.fc-rg__spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid color-mix(in srgb, var(--fc-rg-spinner-color) 25%, transparent);
+    border-top-color: var(--fc-rg-spinner-color);
+    border-radius: 50%;
+    animation: fc-rg-spin 0.7s linear infinite;
+}
+
+@keyframes fc-rg-spin {
+    to { transform: rotate(360deg); }
+}

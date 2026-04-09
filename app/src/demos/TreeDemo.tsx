@@ -1,5 +1,14 @@
-import {useState} from 'react'
-import {Tree, flatToTree, type CategoryTreeNode, type DropPosition} from 'flowcloudai-ui'
+import {useMemo, useState, type CSSProperties} from 'react'
+import {
+    Tree,
+    flatToTree,
+    type CategoryTreeNode,
+    type DropPosition,
+    type TreeActionItem,
+    type TreeColorTokens,
+    type TreeNodeActionHelpers,
+    type TreeNodeRenderState,
+} from 'flowcloudai-ui'
 
 const NAV_MIN = 180
 const NAV_MAX = 600
@@ -20,6 +29,11 @@ export function TreeDemo() {
     const [selectedKey, setSelectedKey] = useState<string | undefined>(undefined)
     const [log, setLog] = useState<string[]>([])
     const [navWidth, setNavWidth] = useState(NAV_DEFAULT)
+    const [expandedKeys, setExpandedKeys] = useState<string[]>(['1', '2', '89'])
+    const [searchValue, setSearchValue] = useState('')
+    const [indentSize, setIndentSize] = useState(20)
+    const [actionDisplayMode, setActionDisplayMode] = useState<'auto' | 'inline' | 'overflow'>('auto')
+    const [customColors, setCustomColors] = useState(true)
 
     const handleDividerMouseDown = (e: React.MouseEvent) => {
         e.preventDefault()
@@ -43,6 +57,24 @@ export function TreeDemo() {
     const {roots} = flatToTree(
         rows.map(r => ({id: r.id, parent_id: r.parent_id, name: r.name, sort_order: r.sort_order}))
     )
+
+    const rootKeys = useMemo(() => roots.map(node => node.key), [roots])
+    const customColorTokens = useMemo<TreeColorTokens | undefined>(() => {
+        if (!customColors) return undefined
+        return {
+            text: '#dbe4ff',
+            textMuted: '#8ea0c9',
+            bgHover: '#16213d',
+            bgSelected: '#1d2d57',
+            border: '#2a3a68',
+            borderFocus: '#6ea8fe',
+            primary: '#6ea8fe',
+            primarySubtle: '#18294a',
+            danger: '#ff6b81',
+            actionHoverBg: '#243765',
+            dropIndicator: '#8ab4ff',
+        }
+    }, [customColors])
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
 
@@ -85,6 +117,11 @@ export function TreeDemo() {
 
     const handleDeleteRequest = (node: CategoryTreeNode) => {
         addLog(`请求删除 [${node.key}] "${node.title}"`)
+    }
+
+    const handleInspect = (node: CategoryTreeNode) => {
+        setSelectedKey(node.key)
+        addLog(`查看节点 [${node.key}]，包含 ${node.children.length} 个子节点`)
     }
 
     // Drop on target = become target's last child
@@ -169,11 +206,169 @@ export function TreeDemo() {
         }
     }
 
+    const renderTreeTitle = (node: CategoryTreeNode, state: TreeNodeRenderState) => (
+        <span style={{display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0}}>
+            <span style={{
+                width: 8,
+                height: 8,
+                flexShrink: 0,
+                borderRadius: 999,
+                background: state.isSelected ? 'var(--fc-color-primary, #60a5fa)' : 'var(--fc-color-text-tertiary, #94a3b8)',
+            }}/>
+            <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                {node.title}
+            </span>
+            {state.hasChildren && (
+                <span style={{
+                    flexShrink: 0,
+                    padding: '0 6px',
+                    borderRadius: 999,
+                    fontSize: 11,
+                    lineHeight: '18px',
+                    background: 'color-mix(in srgb, var(--fc-color-primary, #60a5fa) 12%, transparent)',
+                    color: 'var(--fc-color-text-secondary, #94a3b8)',
+                }}>
+                    {node.children.length}
+                </span>
+            )}
+        </span>
+    )
+
+    const getNodeActions = (
+        node: CategoryTreeNode,
+        state: TreeNodeRenderState,
+        helpers: TreeNodeActionHelpers
+    ): TreeActionItem[] => {
+        const actions: TreeActionItem[] = [
+            {
+                key: 'inspect',
+                label: '查看',
+                title: '查看节点',
+                icon: '👁',
+                onClick: () => handleInspect(node),
+                showInline: !state.isCompactActions,
+            },
+        ]
+
+        if (state.canRename) {
+            actions.push({
+                key: 'rename',
+                label: '重命名',
+                title: '重命名（双击也可）',
+                icon: '✏',
+                onClick: helpers.startEdit,
+            })
+        }
+
+        if (state.canCreate || state.canDelete) {
+            actions.push({type: 'divider', key: 'divider-ops'})
+        }
+
+        if (state.canCreate) {
+            actions.push({
+                key: 'create',
+                label: '添加子项',
+                title: '新建子分类',
+                icon: '+',
+                onClick: helpers.requestCreate,
+            })
+        }
+
+        if (state.canDelete) {
+            actions.push({
+                key: 'delete',
+                label: '删除',
+                icon: '🗑',
+                danger: true,
+                onClick: helpers.requestDelete,
+            })
+        }
+
+        return actions
+    }
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <div className="demo-section">
             <h4>分类树（拖拽排序 / 重命名 / 增删）</h4>
+            <div style={{
+                display: 'flex',
+                gap: 12,
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                marginBottom: 12,
+                padding: 12,
+                border: '1px solid var(--fc-color-border, #e2e8f0)',
+                borderRadius: 8,
+                background: 'var(--fc-color-bg-secondary, #f8fafc)',
+            }}>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12}}>
+                    外部搜索
+                    <input
+                        value={searchValue}
+                        onChange={e => setSearchValue(e.target.value)}
+                        placeholder="受控搜索"
+                        style={{
+                            width: 180,
+                            padding: '6px 8px',
+                            borderRadius: 6,
+                            border: '1px solid var(--fc-color-border, #cbd5e1)',
+                            background: 'var(--fc-color-bg, #fff)',
+                            color: 'var(--fc-color-text, #0f172a)',
+                        }}
+                    />
+                </label>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12}}>
+                    缩进
+                    <input
+                        type="range"
+                        min={12}
+                        max={32}
+                        value={indentSize}
+                        onChange={e => setIndentSize(Number(e.target.value))}
+                    />
+                    <span>{indentSize}px</span>
+                </label>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12}}>
+                    动作模式
+                    <select
+                        value={actionDisplayMode}
+                        onChange={e => setActionDisplayMode(e.target.value as 'auto' | 'inline' | 'overflow')}
+                        style={{
+                            padding: '6px 8px',
+                            borderRadius: 6,
+                            border: '1px solid var(--fc-color-border, #cbd5e1)',
+                            background: 'var(--fc-color-bg, #fff)',
+                            color: 'var(--fc-color-text, #0f172a)',
+                        }}
+                    >
+                        <option value="auto">auto</option>
+                        <option value="inline">inline</option>
+                        <option value="overflow">overflow</option>
+                    </select>
+                </label>
+                <button
+                    onClick={() => setExpandedKeys(rootKeys)}
+                    style={demoButtonStyle}
+                >
+                    展开顶层
+                </button>
+                <button
+                    onClick={() => setExpandedKeys([])}
+                    style={demoButtonStyle}
+                >
+                    全部收起
+                </button>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12}}>
+                    <input
+                        type="checkbox"
+                        checked={customColors}
+                        onChange={e => setCustomColors(e.target.checked)}
+                    />
+                    启用颜色 tokens
+                </label>
+            </div>
             <div style={{display: 'flex', height: 600, overflow: 'hidden', border: '1px solid var(--fc-color-border, #e2e8f0)', borderRadius: 8}}>
 
                 {/* 导航区 */}
@@ -181,6 +376,26 @@ export function TreeDemo() {
                     <Tree
                         treeData={roots}
                         selectedKey={selectedKey}
+                        expandedKeys={expandedKeys}
+                        onExpandedKeysChange={setExpandedKeys}
+                        searchValue={searchValue}
+                        onSearchChange={setSearchValue}
+                        searchPlaceholder="搜索分类 / 人物 / 物品"
+                        renderTitle={renderTreeTitle}
+                        getNodeActions={getNodeActions}
+                        canRename={node => node.raw.parent_id !== null}
+                        canDelete={node => node.raw.parent_id !== null}
+                        canCreate={node => node === null || node.raw.parent_id !== null}
+                        canDrag={node => node.raw.parent_id !== null}
+                        canDrop={(source, target, position) => {
+                            if (source.raw.parent_id === null && position === 'into') return false
+                            if (source.raw.parent_id === null && target.raw.parent_id !== null) return false
+                            return true
+                        }}
+                        indentSize={indentSize}
+                        actionDisplayMode={actionDisplayMode}
+                        actionCollapseThreshold={240}
+                        colorTokens={customColorTokens}
                         scrollHeight="600px"
                         onSelect={key => {
                             setSelectedKey(key)
@@ -251,6 +466,15 @@ export function TreeDemo() {
             </div>
         </div>
     )
+}
+
+const demoButtonStyle: CSSProperties = {
+    padding: '6px 10px',
+    borderRadius: 6,
+    border: '1px solid var(--fc-color-border, #cbd5e1)',
+    background: 'var(--fc-color-bg, #fff)',
+    color: 'var(--fc-color-text, #0f172a)',
+    cursor: 'pointer',
 }
 
 export const INITIAL_ROWS: FlatRow[] = [

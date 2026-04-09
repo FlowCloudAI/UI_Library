@@ -22,8 +22,8 @@ import ChatDemo from './demos/ChatDemo'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
 import { SmartMessageDemo }   from './demos/SmartMessageDemo'
 import { TreeDemo }           from './demos/TreeDemo'
-import { RelationDemo }       from './demos/RelationDemo'
 import TimeDemo               from './demos/TimeDemo'
+import { RelationGraphDemo }  from './demos/RelationGraphDemo'
 
 /* ===== 导航注册表 ===== */
 
@@ -100,8 +100,8 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Chat:        ChatDemo,
     LazyLoad:    LazyLoadDemo,
     SmartMessage: SmartMessageDemo,
-    Relation:    RelationDemo,
     Time:        TimeDemo,
+    Relation:    RelationGraphDemo,
 }
 
 const ALL_ITEMS = NAV_GROUPS.flatMap(g => g.items)

@@ -3,11 +3,12 @@
 .fc-card {
     --fc-card-content-ratio: 0.36;
     --fc-card-content-ratio-hover: 0.7;
+    --fc-card-current-ratio: var(--fc-card-content-ratio);
     --fc-card-media-height: 200px;
     --fc-card-overlay-start-opacity: 0;
     --fc-card-overlay-mid-opacity: 0.46;
     --fc-card-overlay-end-opacity: 0.92;
-    --fc-card-content-height: calc(var(--fc-card-media-height) * var(--fc-card-content-ratio));
+    --fc-card-content-height: calc(var(--fc-card-media-height) * var(--fc-card-current-ratio));
     --fc-card-content-motion: 0.1s ease;
 
     display: flex;
@@ -42,10 +43,18 @@
     background-color: var(--fc-color-bg-tertiary);
 }
 
+.fc-card[data-has-media="false"] {
+    justify-content: flex-end;
+}
+
 .fc-card--hoverable:hover {
     transform: translateY(-4px);
     box-shadow: var(--fc-shadow-md);
     cursor: pointer;
+}
+
+.fc-card[data-expand-on-hover="true"]:hover {
+    --fc-card-current-ratio: var(--fc-card-content-ratio-hover);
 }
 
 .fc-card--clickable {
@@ -91,12 +100,13 @@
     left: 0;
     right: 0;
     bottom: 0;
-    min-height: var(--fc-card-content-height);
+    height: var(--fc-card-content-height);
     padding: var(--fc-space-lg);
     z-index: 1;
     color: #fff;
+    overflow: hidden;
     transition:
-        min-height var(--fc-card-content-motion),
+        height var(--fc-card-content-motion),
         padding var(--fc-card-content-motion),
         background var(--fc-card-content-motion),
         gap var(--fc-card-content-motion);
@@ -110,17 +120,12 @@
 
 .fc-card[data-has-media="false"] .fc-card__content {
     position: relative;
-    min-height: auto;
-    height: 100%;
-    background: linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--fc-color-bg) 64%, transparent) 0%,
-        color-mix(in srgb, var(--fc-color-bg) 90%, black 10%) 100%
-    );
+    min-height: var(--fc-card-media-height);
+    width: 100%;
 }
 
 .fc-card[data-expand-on-hover="true"]:hover .fc-card__content {
-    min-height: calc(var(--fc-card-media-height) * var(--fc-card-content-ratio-hover));
+    height: var(--fc-card-content-height);
 }
 
 .fc-card__tag {
@@ -157,10 +162,6 @@
     color: inherit;
     line-height: var(--fc-line-height-tight);
     overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
 }
 
 .fc-card__description {
@@ -170,7 +171,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
 }
 
@@ -179,7 +179,6 @@
 }
 
 .fc-card[data-expand-on-hover="true"]:hover .fc-card__description {
-    -webkit-line-clamp: 6;
     opacity: 1;
 }
 

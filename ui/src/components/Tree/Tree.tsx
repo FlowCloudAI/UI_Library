@@ -24,10 +24,68 @@ import { RollingBox } from '../Box/RollingBox'
 import { useContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenuContext'
 import { DeleteDialog } from './DeleteDialog'
 import type { DeleteMode } from './DeleteDialog'
-import { CategoryTreeNode, isDescendantOf } from './flatToTree'
+import { CategoryTreeNode, findNodeInfo, isDescendantOf } from './flatToTree'
 import './Tree.css'
 
 export type DropPosition = 'before' | 'after' | 'into'
+export type TreeActionDisplayMode = 'auto' | 'inline' | 'overflow'
+
+export interface TreeColorTokens {
+    text?: string
+    textMuted?: string
+    bgHover?: string
+    bgSelected?: string
+    border?: string
+    borderFocus?: string
+    primary?: string
+    primarySubtle?: string
+    danger?: string
+    actionHoverBg?: string
+    dropIndicator?: string
+}
+
+export interface TreeNodeRenderState {
+    level: number
+    hidden: boolean
+    isExpanded: boolean
+    isSelected: boolean
+    isEditing: boolean
+    hasChildren: boolean
+    isCompactActions: boolean
+    canDrag: boolean
+    canRename: boolean
+    canDelete: boolean
+    canCreate: boolean
+}
+
+export interface TreeNodeActionHelpers {
+    select: () => void
+    toggleExpand: () => void
+    expandSubtree: () => void
+    collapseSubtree: () => void
+    startEdit: () => void
+    requestCreate: () => Promise<void>
+    requestDelete: () => void
+}
+
+export type TreeActionItem =
+    | {
+        type?: 'action'
+        key: string
+        label: string
+        icon?: React.ReactNode
+        title?: string
+        onClick: () => void | Promise<void>
+        danger?: boolean
+        disabled?: boolean
+        showInline?: boolean
+        showInMenu?: boolean
+    }
+    | {
+        type: 'divider'
+        key?: string
+        showInMenu?: boolean
+    }
 
 // ── Contexts (split: stable actions / tree state / high-freq dnd state) ─────
 
@@ -55,9 +113,31 @@ interface DndStateValue {
     dragKey: string | null
 }
 
+interface TreeOptionsValue {
+    indentSize: number
+    actionDisplayMode: TreeActionDisplayMode
+    actionCollapseThreshold: number
+    renderTitle?: (node: CategoryTreeNode, state: TreeNodeRenderState) => React.ReactNode
+    getNodeActions?: (
+        node: CategoryTreeNode,
+        state: TreeNodeRenderState,
+        helpers: TreeNodeActionHelpers
+    ) => TreeActionItem[]
+    canDrag?: (node: CategoryTreeNode) => boolean
+    canDrop?: (source: CategoryTreeNode, target: CategoryTreeNode, position: DropPosition) => boolean
+    canRename?: (node: CategoryTreeNode) => boolean
+    canDelete?: (node: CategoryTreeNode) => boolean
+    canCreate?: (node: CategoryTreeNode | null) => boolean
+    dragEnabled: boolean
+    renameEnabled: boolean
+    deleteEnabled: boolean
+    createEnabled: boolean
+}
+
 const TreeActionsCtx = createContext<TreeActionsValue>(null!)
 const TreeStateCtx   = createContext<TreeStateValue>(null!)
 const DndStateCtx    = createContext<DndStateValue>(null!)
+const TreeOptionsCtx = createContext<TreeOptionsValue>(null!)
 
 // ── CollapsePanel ─────────────────────────────────────────────────────────────
 
@@ -140,6 +220,32 @@ function collectExpandableKeys(node: CategoryTreeNode): string[] {
     return keys
 }
 
+function isTreeActionDivider(item: TreeActionItem): item is Extract<TreeActionItem, { type: 'divider' }> {
+    return item.type === 'divider'
+}
+
+function normaliseContextMenuItems(items: ContextMenuItem[]): ContextMenuItem[] {
+    const result: ContextMenuItem[] = []
+
+    for (const item of items) {
+        if ('type' in item && item.type === 'divider') {
+            if (result.length === 0) continue
+            const last = result[result.length - 1]
+            if ('type' in last && last.type === 'divider') continue
+        }
+
+        result.push(item)
+    }
+
+    while (result.length > 0) {
+        const last = result[result.length - 1]
+        if (!('type' in last) || last.type !== 'divider') break
+        result.pop()
+    }
+
+    return result
+}
+
 // ── TreeNodeItem (memo — skips re-render unless own props change) ────────────
 
 interface TreeNodeItemProps {
@@ -151,24 +257,190 @@ interface TreeNodeItemProps {
 const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }: TreeNodeItemProps) {
     const actions = useContext(TreeActionsCtx)   // stable — never triggers re-render
     const state   = useContext(TreeStateCtx)     // changes on expand/select/edit
+    const options = useContext(TreeOptionsCtx)
     const { showContextMenu } = useContextMenu()
 
     const isExpanded  = state.expandedKeys.has(node.key)
     const isSelected  = state.selectedKey === node.key
     const isEditing   = state.editingKey === node.key
     const hasChildren = node.children.length > 0
-    const indent      = level * 20 + 12
+    const indent      = level * options.indentSize + 12
+    const canDragNode   = options.dragEnabled && (!options.canDrag || options.canDrag(node))
+    const canRenameNode = options.renameEnabled && (!options.canRename || options.canRename(node))
+    const canDeleteNode = options.deleteEnabled && (!options.canDelete || options.canDelete(node))
+    const canCreateNode = options.createEnabled && (!options.canCreate || options.canCreate(node))
 
     const [localEdit, setLocalEdit] = useState('')
+    const itemRef = useRef<HTMLDivElement | null>(null)
+    const [isAutoCompact, setIsAutoCompact] = useState(false)
+
     useEffect(() => {
         if (isEditing) setLocalEdit(node.title)
     }, [isEditing, node.title])
+
+    useEffect(() => {
+        if (options.actionDisplayMode !== 'auto') {
+            setIsAutoCompact(false)
+            return
+        }
+
+        const el = itemRef.current
+        if (!el) return
+
+        const updateCompactActions = () => {
+            const style = window.getComputedStyle(el)
+            const innerWidth =
+                el.clientWidth
+                - Number.parseFloat(style.paddingLeft || '0')
+                - Number.parseFloat(style.paddingRight || '0')
+
+            setIsAutoCompact(innerWidth < options.actionCollapseThreshold)
+        }
+
+        const observer = new ResizeObserver(updateCompactActions)
+        observer.observe(el)
+        updateCompactActions()
+
+        return () => observer.disconnect()
+    }, [indent, options.actionCollapseThreshold, options.actionDisplayMode])
 
     const handleEditKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         e.stopPropagation()
         if (e.key === 'Enter')  actions.commitEdit(node.key, localEdit).then()
         if (e.key === 'Escape') actions.cancelEdit()
     }, [actions, node.key, localEdit])
+
+    const requestedCompactActions = options.actionDisplayMode === 'overflow'
+        || (options.actionDisplayMode === 'auto' && isAutoCompact)
+
+    const renderState = useMemo<TreeNodeRenderState>(() => ({
+        level,
+        hidden,
+        isExpanded,
+        isSelected,
+        isEditing,
+        hasChildren,
+        isCompactActions: requestedCompactActions,
+        canDrag: canDragNode,
+        canRename: canRenameNode,
+        canDelete: canDeleteNode,
+        canCreate: canCreateNode,
+    }), [
+        level,
+        hidden,
+        isExpanded,
+        isSelected,
+        isEditing,
+        hasChildren,
+        requestedCompactActions,
+        canDragNode,
+        canRenameNode,
+        canDeleteNode,
+        canCreateNode,
+    ])
+
+    const actionHelpers = useMemo<TreeNodeActionHelpers>(() => ({
+        select: () => actions.select(node.key),
+        toggleExpand: () => actions.toggleExpand(node.key),
+        expandSubtree: () => actions.expandSubtree(node),
+        collapseSubtree: () => actions.collapseSubtree(node),
+        startEdit: () => actions.startEdit(node.key),
+        requestCreate: () => actions.requestCreate(node.key),
+        requestDelete: () => actions.requestDelete(node),
+    }), [actions, node])
+
+    const defaultNodeActions = useMemo<TreeActionItem[]>(() => {
+        const next: TreeActionItem[] = []
+
+        if (canRenameNode) {
+            next.push({
+                key: 'rename',
+                label: '重命名',
+                icon: '✏',
+                title: '重命名（双击也可）',
+                onClick: actionHelpers.startEdit,
+            })
+        }
+
+        if (hasChildren) {
+            next.push(
+                {
+                    key: 'expand',
+                    label: '全部展开',
+                    icon: '▾',
+                    onClick: actionHelpers.expandSubtree,
+                    disabled: !hasChildren,
+                    showInline: false,
+                },
+                {
+                    key: 'collapse',
+                    label: '全部收起',
+                    icon: '▸',
+                    onClick: actionHelpers.collapseSubtree,
+                    disabled: !hasChildren,
+                    showInline: false,
+                }
+            )
+        }
+
+        const hasSecondaryGroup = canCreateNode || canDeleteNode
+        if (hasSecondaryGroup && next.length > 0) {
+            next.push({ type: 'divider', key: 'divider-main' })
+        }
+
+        if (canCreateNode) {
+            next.push({
+                key: 'create',
+                label: '添加子项',
+                icon: '+',
+                title: '新建子分类',
+                onClick: actionHelpers.requestCreate,
+            })
+        }
+
+        if (canDeleteNode) {
+            next.push({
+                key: 'delete',
+                label: '删除',
+                icon: '🗑',
+                onClick: actionHelpers.requestDelete,
+                danger: true,
+            })
+        }
+
+        return next
+    }, [actionHelpers, canCreateNode, canDeleteNode, canRenameNode, hasChildren])
+
+    const nodeActions = useMemo<TreeActionItem[]>(() => {
+        return options.getNodeActions?.(node, renderState, actionHelpers) ?? defaultNodeActions
+    }, [actionHelpers, defaultNodeActions, node, options, renderState])
+
+    const contextMenuItems = useMemo<ContextMenuItem[]>(() => {
+        const menuItems = nodeActions
+            .filter(item => item.showInMenu !== false)
+            .map<ContextMenuItem>(item => {
+                if (isTreeActionDivider(item)) return { type: 'divider' }
+                return {
+                    label: item.label,
+                    icon: item.icon,
+                    onClick: item.onClick,
+                    danger: item.danger,
+                    disabled: item.disabled,
+                }
+            })
+
+        return normaliseContextMenuItems(menuItems)
+    }, [nodeActions])
+
+    const compactActions = requestedCompactActions && contextMenuItems.length > 0
+
+    const inlineActions = useMemo(() => {
+        if (compactActions) return []
+        return nodeActions.filter(
+            (item): item is Extract<TreeActionItem, { type?: 'action' }> =>
+                !isTreeActionDivider(item) && item.showInline !== false
+        )
+    }, [compactActions, nodeActions])
 
     const handleItemClick = useCallback(() => {
         if (!isSelected) {
@@ -183,48 +455,23 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
         if (hasChildren) actions.toggleExpand(node.key)
     }, [actions, hasChildren, node.key])
 
-    const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    const openNodeMenu = useCallback((e: React.MouseEvent) => {
+        if (contextMenuItems.length === 0) return
         actions.select(node.key)
-        const items: ContextMenuItem[] = [
-            {
-                label: '重命名',
-                icon: '✏',
-                onClick: () => actions.startEdit(node.key),
-            },
-            {
-                label: '全部展开',
-                icon: '▾',
-                onClick: () => actions.expandSubtree(node),
-                disabled: !hasChildren,
-            },
-            {
-                label: '全部收起',
-                icon: '▸',
-                onClick: () => actions.collapseSubtree(node),
-                disabled: !hasChildren,
-            },
-            { type: 'divider' },
-            {
-                label: '添加子项',
-                icon: '+',
-                onClick: () => { actions.requestCreate(node.key).then() },
-            },
-            {
-                label: '删除',
-                icon: '🗑',
-                onClick: () => actions.requestDelete(node),
-                danger: true,
-            },
-        ]
-        showContextMenu(e, items)
-    }, [actions, hasChildren, node, showContextMenu])
+        showContextMenu(e, contextMenuItems)
+    }, [actions, contextMenuItems, node.key, showContextMenu])
+
+    const titleContent = options.renderTitle?.(node, renderState) ?? node.title
 
     return (
-        <DndSlot nodeKey={node.key} disabled={isEditing || hidden}>
+        <DndSlot nodeKey={node.key} disabled={isEditing || hidden || !canDragNode}>
             {({ setRef, handleProps, isDragging, isDragSource, dropPosition }) => (
                 <div className={`fc-tree__node ${isDragging ? 'is-dragging' : ''}`}>
                     <div
-                        ref={setRef}
+                        ref={el => {
+                            itemRef.current = el
+                            setRef(el)
+                        }}
                         className={[
                             'fc-tree__item',
                             isSelected               && 'fc-tree__item--selected',
@@ -238,13 +485,16 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
                             '--fc-indent': `${indent}px`,
                         } as React.CSSProperties}
                         onClick={handleItemClick}
-                        onContextMenu={isEditing ? undefined : handleContextMenu}
+                        onContextMenu={isEditing || contextMenuItems.length === 0 ? undefined : openNodeMenu}
                     >
                         {/* Drag handle */}
                         <span
-                            className="fc-tree__drag-handle"
-                            title="拖拽移动"
-                            {...handleProps}
+                            className={[
+                                'fc-tree__drag-handle',
+                                !canDragNode && 'fc-tree__drag-handle--disabled',
+                            ].filter(Boolean).join(' ')}
+                            title={canDragNode ? '拖拽移动' : undefined}
+                            {...(canDragNode ? handleProps : {})}
                             onMouseDown={e => e.stopPropagation()}
                         >⠿</span>
 
@@ -275,34 +525,55 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
                             <span className="fc-tree__title-slot">
                                 <span
                                     className="fc-tree__title"
-                                    onDoubleClick={(e) => {
+                                    onDoubleClick={canRenameNode ? (e) => {
                                         e.stopPropagation()
                                         actions.startEdit(node.key)
-                                    }}
+                                    } : undefined}
                                 >
-                                    {node.title}
+                                    {titleContent}
                                 </span>
                             </span>
                         )}
 
                         {/* Hover actions */}
-                        {!isEditing && (
-                            <span className="fc-tree__actions">
-                                <button
-                                    className="fc-tree__action"
-                                    title="新建子分类"
-                                    onClick={e => { e.stopPropagation(); actions.requestCreate(node.key).then() }}
-                                >+</button>
-                                <button
-                                    className="fc-tree__action"
-                                    title="重命名（双击也可）"
-                                    onClick={e => { e.stopPropagation(); actions.startEdit(node.key) }}
-                                >✏</button>
-                                <button
-                                    className="fc-tree__action fc-tree__action--danger"
-                                    title="删除"
-                                    onClick={e => { e.stopPropagation(); actions.requestDelete(node) }}
-                                >🗑</button>
+                        {!isEditing && (compactActions || inlineActions.length > 0) && (
+                            <span className={[
+                                'fc-tree__actions',
+                                compactActions && 'fc-tree__actions--compact',
+                            ].filter(Boolean).join(' ')}
+                                  style={{
+                                      '--fc-tree-actions-width': compactActions
+                                          ? '22px'
+                                          : `${Math.max(1, inlineActions.length) * 24}px`,
+                                  } as React.CSSProperties}>
+                                {inlineActions.length > 0 && (
+                                    <span className="fc-tree__actions-inline">
+                                        {inlineActions.map(action => (
+                                            <button
+                                                key={action.key}
+                                                className={[
+                                                    'fc-tree__action',
+                                                    action.danger && 'fc-tree__action--danger',
+                                                ].filter(Boolean).join(' ')}
+                                                title={action.title ?? action.label}
+                                                disabled={action.disabled}
+                                                onClick={e => {
+                                                    e.stopPropagation()
+                                                    void action.onClick()
+                                                }}
+                                            >
+                                                {action.icon ?? action.label}
+                                            </button>
+                                        ))}
+                                    </span>
+                                )}
+                                {compactActions && (
+                                    <button
+                                        className="fc-tree__action fc-tree__action--more"
+                                        title="更多操作"
+                                        onClick={e => openNodeMenu(e)}
+                                    >⋯</button>
+                                )}
                             </span>
                         )}
                     </div>
@@ -332,7 +603,29 @@ export interface TreeProps {
     onMove?: (key: string, targetKey: string, position: DropPosition) => Promise<void>
     onSelect?: (key: string) => void
     selectedKey?: string
+    expandedKeys?: string[]
+    defaultExpandedKeys?: string[]
+    onExpandedKeysChange?: (keys: string[]) => void
     searchable?: boolean
+    searchValue?: string
+    defaultSearchValue?: string
+    onSearchChange?: (value: string) => void
+    searchPlaceholder?: string
+    renderTitle?: (node: CategoryTreeNode, state: TreeNodeRenderState) => React.ReactNode
+    getNodeActions?: (
+        node: CategoryTreeNode,
+        state: TreeNodeRenderState,
+        helpers: TreeNodeActionHelpers
+    ) => TreeActionItem[]
+    canDrag?: (node: CategoryTreeNode) => boolean
+    canDrop?: (source: CategoryTreeNode, target: CategoryTreeNode, position: DropPosition) => boolean
+    canRename?: (node: CategoryTreeNode) => boolean
+    canDelete?: (node: CategoryTreeNode) => boolean
+    canCreate?: (node: CategoryTreeNode | null) => boolean
+    indentSize?: number
+    actionDisplayMode?: TreeActionDisplayMode
+    actionCollapseThreshold?: number
+    colorTokens?: TreeColorTokens
     scrollHeight?: string
     className?: string
 }
@@ -346,14 +639,34 @@ export function Tree({
                          onMove,
                          onSelect,
                          selectedKey,
+                         expandedKeys: controlledExpandedKeys,
+                         defaultExpandedKeys,
+                         onExpandedKeysChange,
                          searchable = false,
+                         searchValue: controlledSearchValue,
+                         defaultSearchValue = '',
+                         onSearchChange,
+                         searchPlaceholder = '搜索分类…',
+                         renderTitle,
+                         getNodeActions,
+                         canDrag,
+                         canDrop,
+                         canRename,
+                         canDelete,
+                         canCreate,
+                         indentSize = 20,
+                         actionDisplayMode = 'auto',
+                         actionCollapseThreshold = 208,
+                         colorTokens,
                          scrollHeight = '400px',
                          className = '',
                      }: TreeProps) {
-    const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
+    const [uncontrolledExpandedKeys, setUncontrolledExpandedKeys] = useState<Set<string>>(
+        () => new Set(defaultExpandedKeys ?? [])
+    )
     const [editingKey, setEditingKey]     = useState<string | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<CategoryTreeNode | null>(null)
-    const [searchValue, setSearchValue]   = useState('')
+    const [uncontrolledSearchValue, setUncontrolledSearchValue] = useState(defaultSearchValue)
 
     // DnD state — single object so one setState = one render
     const [dndState, setDndState] = useState<DndStateValue>({
@@ -364,6 +677,16 @@ export function Tree({
 
     const dropRef     = useRef<{ key: string | null; pos: DropPosition | null }>({ key: null, pos: null })
     const pointerYRef = useRef(0)
+    const dragEnabled = Boolean(onMove)
+    const renameEnabled = Boolean(onRename)
+    const deleteEnabled = Boolean(onDelete || onDeleteRequest)
+    const createEnabled = Boolean(onCreate)
+    const currentExpandedKeys = useMemo(
+        () => new Set(controlledExpandedKeys ?? uncontrolledExpandedKeys),
+        [controlledExpandedKeys, uncontrolledExpandedKeys]
+    )
+    const currentSearchValue = controlledSearchValue ?? uncontrolledSearchValue
+    const canCreateRoot = createEnabled && (!canCreate || canCreate(null))
 
     useEffect(() => {
         const handler = (e: PointerEvent) => { pointerYRef.current = e.clientY }
@@ -377,13 +700,24 @@ export function Tree({
 
     // ── Actions (stable — deps rarely change) ────────────────────────────────
 
+    const commitExpandedKeys = useCallback((next: Set<string>) => {
+        if (controlledExpandedKeys === undefined) {
+            setUncontrolledExpandedKeys(next)
+        }
+        onExpandedKeysChange?.(Array.from(next))
+    }, [controlledExpandedKeys, onExpandedKeysChange])
+
+    const setExpandedKeys = useCallback((recipe: (prev: Set<string>) => Set<string>) => {
+        commitExpandedKeys(recipe(new Set(currentExpandedKeys)))
+    }, [commitExpandedKeys, currentExpandedKeys])
+
     const toggleExpand = useCallback((key: string) => {
         setExpandedKeys(prev => {
             const next = new Set(prev)
             next.has(key) ? next.delete(key) : next.add(key)
             return next
         })
-    }, [])
+    }, [setExpandedKeys])
 
     const expandSubtree = useCallback((node: CategoryTreeNode) => {
         const keys = collectExpandableKeys(node)
@@ -393,7 +727,7 @@ export function Tree({
             keys.forEach(key => next.add(key))
             return next
         })
-    }, [])
+    }, [setExpandedKeys])
 
     const collapseSubtree = useCallback((node: CategoryTreeNode) => {
         const keys = collectExpandableKeys(node)
@@ -403,7 +737,7 @@ export function Tree({
             keys.forEach(key => next.delete(key))
             return next
         })
-    }, [])
+    }, [setExpandedKeys])
 
     const select     = useCallback((key: string) => onSelect?.(key), [onSelect])
     const startEdit  = useCallback((key: string) => setEditingKey(key), [])
@@ -420,7 +754,7 @@ export function Tree({
         const newKey = await onCreate(parentKey)
         if (parentKey) setExpandedKeys(prev => new Set([...prev, parentKey]))
         setEditingKey(newKey)
-    }, [onCreate])
+    }, [onCreate, setExpandedKeys])
 
     const requestDelete = useCallback((node: CategoryTreeNode) => {
         onDeleteRequest?.(node)
@@ -429,11 +763,20 @@ export function Tree({
 
     // ── DnD handlers ─────────────────────────────────────────────────────────
 
-    // Use refs to avoid recreating callbacks when treeData / expandedKeys change
+    // Use refs to avoid recreating callbacks when treeData / permissions change
     const treeDataRef  = useRef(treeData)
-    const expandedRef  = useRef(expandedKeys)
+    const canDropRef   = useRef(canDrop)
     treeDataRef.current  = treeData
-    expandedRef.current  = expandedKeys
+    canDropRef.current   = canDrop
+
+    const clearDropTarget = useCallback(() => {
+        dropRef.current = { key: null, pos: null }
+        setDndState(prev => (
+            prev.dropTargetKey === null && prev.dropPosition === null
+                ? prev
+                : { ...prev, dropTargetKey: null, dropPosition: null }
+        ))
+    }, [])
 
     const handleDragStart = useCallback(({ active }: DragStartEvent) => {
         dropRef.current = { key: null, pos: null }
@@ -442,19 +785,20 @@ export function Tree({
 
     const handleDragMove = useCallback(({ over, active }: DragMoveEvent) => {
         if (!over || over.id === active.id) {
-            if (dropRef.current.key !== null) {
-                dropRef.current = { key: null, pos: null }
-                setDndState(prev => ({ ...prev, dropTargetKey: null, dropPosition: null }))
-            }
+            clearDropTarget()
             return
         }
 
         const targetKey = over.id as string
         if (isDescendantOf(treeDataRef.current, active.id as string, targetKey)) {
-            if (dropRef.current.key !== null) {
-                dropRef.current = { key: null, pos: null }
-                setDndState(prev => ({ ...prev, dropTargetKey: null, dropPosition: null }))
-            }
+            clearDropTarget()
+            return
+        }
+
+        const sourceInfo = findNodeInfo(treeDataRef.current, active.id as string)
+        const targetInfo = findNodeInfo(treeDataRef.current, targetKey)
+        if (!sourceInfo || !targetInfo) {
+            clearDropTarget()
             return
         }
 
@@ -467,12 +811,17 @@ export function Tree({
         else if (ratio > 0.8) position = 'after'
         else position = 'into'
 
+        if (canDropRef.current && !canDropRef.current(sourceInfo.node, targetInfo.node, position)) {
+            clearDropTarget()
+            return
+        }
+
         // Bail out — same target + same zone → skip setState entirely
         if (dropRef.current.key === targetKey && dropRef.current.pos === position) return
 
         dropRef.current = { key: targetKey, pos: position }
         setDndState(prev => ({ ...prev, dropTargetKey: targetKey, dropPosition: position }))
-    }, [])
+    }, [clearDropTarget])
 
     const handleDragEnd = useCallback(({ active }: DragEndEvent) => {
         const { key: target, pos: position } = dropRef.current
@@ -489,9 +838,16 @@ export function Tree({
 
     // ── Search (memoised) ────────────────────────────────────────────────────
 
+    const setSearchValue = useCallback((value: string) => {
+        if (controlledSearchValue === undefined) {
+            setUncontrolledSearchValue(value)
+        }
+        onSearchChange?.(value)
+    }, [controlledSearchValue, onSearchChange])
+
     const displayData = useMemo(() => {
-        if (!searchValue) return treeData
-        const kw = searchValue.toLowerCase()
+        if (!currentSearchValue) return treeData
+        const kw = currentSearchValue.toLowerCase()
         const filter = (nodes: CategoryTreeNode[]): CategoryTreeNode[] =>
             nodes.reduce<CategoryTreeNode[]>((acc, node) => {
                 const match = node.title.toLowerCase().includes(kw)
@@ -501,7 +857,7 @@ export function Tree({
                 return acc
             }, [])
         return filter(treeData)
-    }, [treeData, searchValue])
+    }, [currentSearchValue, treeData])
 
     // ── Context values (memoised separately) ─────────────────────────────────
 
@@ -510,10 +866,60 @@ export function Tree({
     }), [toggleExpand, expandSubtree, collapseSubtree, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete])
 
     const stateValue = useMemo<TreeStateValue>(() => ({
-        expandedKeys,
+        expandedKeys: currentExpandedKeys,
         selectedKey: selectedKey ?? null,
         editingKey,
-    }), [expandedKeys, selectedKey, editingKey])
+    }), [currentExpandedKeys, selectedKey, editingKey])
+
+    const optionsValue = useMemo<TreeOptionsValue>(() => ({
+        indentSize,
+        actionDisplayMode,
+        actionCollapseThreshold,
+        renderTitle,
+        getNodeActions,
+        canDrag,
+        canDrop,
+        canRename,
+        canDelete,
+        canCreate,
+        dragEnabled,
+        renameEnabled,
+        deleteEnabled,
+        createEnabled,
+    }), [
+        indentSize,
+        actionDisplayMode,
+        actionCollapseThreshold,
+        renderTitle,
+        getNodeActions,
+        canDrag,
+        canDrop,
+        canRename,
+        canDelete,
+        canCreate,
+        dragEnabled,
+        renameEnabled,
+        deleteEnabled,
+        createEnabled,
+    ])
+
+    const treeStyle = useMemo<React.CSSProperties>(() => {
+        const style: Record<string, string> = {}
+
+        if (colorTokens?.text) style['--fc-tree-text'] = colorTokens.text
+        if (colorTokens?.textMuted) style['--fc-tree-text-muted'] = colorTokens.textMuted
+        if (colorTokens?.bgHover) style['--fc-tree-bg-hover'] = colorTokens.bgHover
+        if (colorTokens?.bgSelected) style['--fc-tree-bg-selected'] = colorTokens.bgSelected
+        if (colorTokens?.border) style['--fc-tree-border'] = colorTokens.border
+        if (colorTokens?.borderFocus) style['--fc-tree-border-focus'] = colorTokens.borderFocus
+        if (colorTokens?.primary) style['--fc-tree-primary'] = colorTokens.primary
+        if (colorTokens?.primarySubtle) style['--fc-tree-primary-subtle'] = colorTokens.primarySubtle
+        if (colorTokens?.danger) style['--fc-tree-danger'] = colorTokens.danger
+        if (colorTokens?.actionHoverBg) style['--fc-tree-action-hover-bg'] = colorTokens.actionHoverBg
+        if (colorTokens?.dropIndicator) style['--fc-tree-drop-indicator'] = colorTokens.dropIndicator
+
+        return style as React.CSSProperties
+    }, [colorTokens])
 
     // dndState identity only changes when values actually change (single setState)
 
@@ -522,68 +928,70 @@ export function Tree({
     return (
         <TreeActionsCtx.Provider value={actionsValue}>
             <TreeStateCtx.Provider value={stateValue}>
-                <DndStateCtx.Provider value={dndState}>
-                    <DndContext
-                        sensors={sensors}
-                        onDragStart={handleDragStart}
-                        onDragMove={handleDragMove}
-                        onDragEnd={handleDragEnd}
-                        onDragCancel={handleDragCancel}
-                    >
-                        <div className={`fc-tree ${className}`}>
+                <TreeOptionsCtx.Provider value={optionsValue}>
+                    <DndStateCtx.Provider value={dndState}>
+                        <DndContext
+                            sensors={sensors}
+                            onDragStart={handleDragStart}
+                            onDragMove={handleDragMove}
+                            onDragEnd={handleDragEnd}
+                            onDragCancel={handleDragCancel}
+                        >
+                            <div className={`fc-tree ${className}`} style={treeStyle}>
 
-                            {searchable && (
-                                <div className="fc-tree__search">
-                                    <input
-                                        type="text"
-                                        value={searchValue}
-                                        onChange={e => setSearchValue(e.target.value)}
-                                        placeholder="搜索分类…"
-                                        className="fc-tree__search-input"
-                                    />
-                                    {searchValue && (
-                                        <button className="fc-tree__search-clear" onClick={() => setSearchValue('')}>
-                                            ✕
+                                {searchable && (
+                                    <div className="fc-tree__search">
+                                        <input
+                                            type="text"
+                                            value={currentSearchValue}
+                                            onChange={e => setSearchValue(e.target.value)}
+                                            placeholder={searchPlaceholder}
+                                            className="fc-tree__search-input"
+                                        />
+                                        {currentSearchValue && (
+                                            <button className="fc-tree__search-clear" onClick={() => setSearchValue('')}>
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                <RollingBox showThumb="show" style={{ height: scrollHeight }}>
+                                    <div className="fc-tree__list">
+                                        {displayData.length === 0 && (
+                                            <div className="fc-tree__empty">
+                                                {currentSearchValue ? '无匹配分类' : '暂无分类'}
+                                            </div>
+                                        )}
+                                        {displayData.map(node => (
+                                            <TreeNodeItem key={node.key} node={node} level={0} />
+                                        ))}
+                                    </div>
+                                </RollingBox>
+
+                                {onCreate && canCreateRoot && (
+                                    <div className="fc-tree__add-root">
+                                        <button
+                                            className="fc-tree__add-root-btn"
+                                            onClick={() => requestCreate(null)}
+                                        >
+                                            + 新建顶级分类
                                         </button>
-                                    )}
-                                </div>
-                            )}
+                                    </div>
+                                )}
+                            </div>
 
-                            <RollingBox showThumb="show" style={{ height: scrollHeight }}>
-                                <div className="fc-tree__list">
-                                    {displayData.length === 0 && (
-                                        <div className="fc-tree__empty">
-                                            {searchValue ? '无匹配分类' : '暂无分类'}
-                                        </div>
-                                    )}
-                                    {displayData.map(node => (
-                                        <TreeNodeItem key={node.key} node={node} level={0} />
-                                    ))}
-                                </div>
-                            </RollingBox>
-
-                            {onCreate && (
-                                <div className="fc-tree__add-root">
-                                    <button
-                                        className="fc-tree__add-root-btn"
-                                        onClick={() => requestCreate(null)}
-                                    >
-                                        + 新建顶级分类
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        <DeleteDialog
-                            node={deleteTarget}
-                            onClose={() => setDeleteTarget(null)}
-                            onDelete={async (key, mode) => {
-                                await onDelete?.(key, mode)
-                                setDeleteTarget(null)
-                            }}
-                        />
-                    </DndContext>
-                </DndStateCtx.Provider>
+                            <DeleteDialog
+                                node={deleteTarget}
+                                onClose={() => setDeleteTarget(null)}
+                                onDelete={async (key, mode) => {
+                                    await onDelete?.(key, mode)
+                                    setDeleteTarget(null)
+                                }}
+                            />
+                        </DndContext>
+                    </DndStateCtx.Provider>
+                </TreeOptionsCtx.Provider>
             </TreeStateCtx.Provider>
         </TreeActionsCtx.Provider>
     )

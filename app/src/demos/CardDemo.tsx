@@ -9,15 +9,14 @@ export function CardDemo() {
                     <Card
                         image="https://picsum.photos/id/1015/400/300"
                         title="秋日山林"
-                        description="文字区不再是纯色底，而是覆盖在图片底部的透明渐变遮罩。鼠标悬停时，内容区会向上展开，展示更多项目摘要。"
+                        description="文字区不再是纯色底，而是覆盖在图片底部的透明渐变遮罩。鼠标悬停时，内容区会向上展开，展示更多项目摘要。物理物理哇啦啦啦啦啦啦啦的俩五段五点发我的把我U盾吧u哦拜佛阿碧批发白哦比哦发吧覅不怕非法UI色股份不i紫穗槐周四发货最少支付后岁发挥hiu粉煤灰号码父爱我给发哦if吧u哦不符哦恶补哦分包"
                         variant="shadow"
                         hoverable
                         expandContentOnHover
-                        contentAreaRatio={0.28}
-                        hoverContentAreaRatio={0.62}
-                        overlayStartOpacity={0.04}
-                        overlayEndOpacity={0.96}
-                        tag="项目"
+                        contentAreaRatio={0.6}
+                        hoverContentAreaRatio={0.9}
+                        overlayStartOpacity={0}
+                        overlayEndOpacity={1}
                     />
                     <Card
                         title="纯文字卡片"
@@ -26,10 +25,10 @@ export function CardDemo() {
                         variant="bordered"
                         hoverable
                         expandContentOnHover
-                        contentAreaRatio={0.45}
-                        hoverContentAreaRatio={0.68}
-                        overlayStartOpacity={0.12}
-                        overlayEndOpacity={0.88}
+                        contentAreaRatio={0.22}
+                        hoverContentAreaRatio={0.8}
+                        overlayStartOpacity={0}
+                        overlayEndOpacity={0.96}
                         tag="简介"
                     />
                     <Card
@@ -39,10 +38,10 @@ export function CardDemo() {
                         variant="shadow"
                         hoverable
                         expandContentOnHover
-                        contentAreaRatio={0.22}
+                        contentAreaRatio={0.12}
                         hoverContentAreaRatio={0.8}
                         overlayStartOpacity={0}
-                        overlayEndOpacity={0.9}
+                        overlayEndOpacity={0.98}
                         tag={
                             <span
                                 style={{

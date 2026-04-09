@@ -1,5 +1,5 @@
 import "./ContextMenuContext.css";
-import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
+import {createContext, CSSProperties, ReactNode, useContext, useEffect, useRef, useState} from "react";
 import { useClickOutside } from '../../hooks/useClickOutside';
 
 /* ---- 菜单项类型 ---- */
@@ -45,6 +45,7 @@ export function ContextMenuProvider({
     borderColor,
     hoverBackground,
 }: ContextMenuProviderProps) {
+    const MENU_CURSOR_OVERLAP = 2;
     const [menu, setMenu] = useState<MenuState>({
         visible: false, x: 0, y: 0, items: [],
     });
@@ -69,14 +70,16 @@ export function ContextMenuProvider({
     }, [menu.visible]);
 
     /* 防止菜单超出视口 */
-    const getPosition = (): React.CSSProperties => {
+    const getPosition = (): CSSProperties => {
         const W = window.innerWidth;
         const H = window.innerHeight;
         const menuW = 180;
         const menuH = menu.items.length * 32 + 12;
+        const maxLeft = Math.max(0, W - menuW);
+        const maxTop = Math.max(0, H - menuH);
         return {
-            left: menu.x + menuW > W ? menu.x - menuW : menu.x,
-            top:  menu.y + menuH > H ? menu.y - menuH : menu.y,
+            left: Math.min(Math.max(0, menu.x - MENU_CURSOR_OVERLAP), maxLeft),
+            top:  Math.min(Math.max(0, menu.y - MENU_CURSOR_OVERLAP), maxTop),
         };
     };
 
@@ -86,7 +89,7 @@ export function ContextMenuProvider({
         "--ctx-border":        borderColor,
         "--ctx-item-hover-bg": hoverBackground,
     };
-    const overrideStyle: React.CSSProperties = { ...getPosition() };
+    const overrideStyle: CSSProperties = { ...getPosition() };
     for (const [k, v] of Object.entries(colorVars)) {
         if (v !== undefined) (overrideStyle as any)[k] = v;
     }

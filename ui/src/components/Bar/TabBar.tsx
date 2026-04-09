@@ -1,5 +1,5 @@
 // src/components/TabBar/TabBar.tsx
-import React, {useRef, useCallback, memo, useEffect, useMemo} from 'react';
+import React, {useRef, useCallback, memo, useEffect, useMemo, useState} from 'react';
 import './TabBar.css';
 import {
     DndContext,
@@ -151,6 +151,7 @@ interface TabItemViewProps {
     closable: boolean;
     draggable: boolean;
     stopMouseDown: boolean;
+    onItemMouseDown?: () => void;
     tabClassName?: string;
     activeTabClassName?: string;
     tabStyle?: React.CSSProperties;
@@ -166,6 +167,7 @@ const TabItemView = memo<TabItemViewProps>(({
     closable,
     draggable,
     stopMouseDown,
+    onItemMouseDown,
     tabClassName,
     activeTabClassName,
     tabStyle,
@@ -208,7 +210,11 @@ const TabItemView = memo<TabItemViewProps>(({
     // 将 dnd-kit 的 onMouseDown 与 Tauri stopPropagation 合并
     // dnd-kit 必须先执行（注册后续 mousemove/mouseup 监听），再阻断冒泡
     const {onMouseDown: dndMouseDown, ...restListeners} = listeners ?? {};
+    const handlePointerDown = (e: React.PointerEvent) => {
+        if (stopMouseDown) e.stopPropagation();
+    };
     const handleMouseDown = (e: React.MouseEvent) => {
+        onItemMouseDown?.();
         dndMouseDown?.(e as any);
         if (stopMouseDown) e.stopPropagation();
     };
@@ -219,6 +225,7 @@ const TabItemView = memo<TabItemViewProps>(({
             className={classes}
             style={mergedStyle}
             onClick={() => !item.disabled && onClick(item.key)}
+            onPointerDown={handlePointerDown}
             onMouseDown={handleMouseDown}
             {...attributes}
             {...restListeners}
@@ -299,7 +306,11 @@ export const TabBar = memo<TabBarProps>(({
 
     const mergedStyle: React.CSSProperties = {...overrideStyle, ...style};
     const navRef = useRef<HTMLDivElement>(null);
+    const dragRegionRestoreFrameRef = useRef<number | null>(null);
     const boundModifier = useContainerBoundModifier(navRef);
+    const [isPressingTab, setIsPressingTab] = useState(false);
+    const [isSorting, setIsSorting] = useState(false);
+    const [isRefreshingDragRegion, setIsRefreshingDragRegion] = useState(false);
 
     // 新增 tab 时自动滚动到末尾
     const prevItemsLengthRef = useRef(items.length);
@@ -325,10 +336,53 @@ export const TabBar = memo<TabBarProps>(({
         return () => nav.removeEventListener('wheel', handleWheel);
     }, []);
 
+    const clearTabPressState = useCallback(() => {
+        setIsPressingTab(false);
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener('mouseup', clearTabPressState);
+        window.addEventListener('pointerup', clearTabPressState);
+        window.addEventListener('pointercancel', clearTabPressState);
+        window.addEventListener('blur', clearTabPressState);
+        return () => {
+            window.removeEventListener('mouseup', clearTabPressState);
+            window.removeEventListener('pointerup', clearTabPressState);
+            window.removeEventListener('pointercancel', clearTabPressState);
+            window.removeEventListener('blur', clearTabPressState);
+        };
+    }, [clearTabPressState]);
+
+    const refreshDragRegion = useCallback(() => {
+        if (!tauriDragRegion) return;
+        if (dragRegionRestoreFrameRef.current !== null) {
+            cancelAnimationFrame(dragRegionRestoreFrameRef.current);
+            dragRegionRestoreFrameRef.current = null;
+        }
+        setIsRefreshingDragRegion(true);
+        dragRegionRestoreFrameRef.current = requestAnimationFrame(() => {
+            dragRegionRestoreFrameRef.current = requestAnimationFrame(() => {
+                setIsRefreshingDragRegion(false);
+                dragRegionRestoreFrameRef.current = null;
+            });
+        });
+    }, [tauriDragRegion]);
+
+    useEffect(() => () => {
+        if (dragRegionRestoreFrameRef.current !== null) {
+            cancelAnimationFrame(dragRegionRestoreFrameRef.current);
+        }
+    }, []);
+
     const handleClick = useCallback(
         (key: string) => onChange(key),
         [onChange],
     );
+
+    const handleItemMouseDown = useCallback(() => {
+        if (!tauriDragRegion) return;
+        setIsPressingTab(true);
+    }, [tauriDragRegion]);
 
     const handleClose = useCallback(
         (e: React.MouseEvent, key: string) => {
@@ -345,14 +399,31 @@ export const TabBar = memo<TabBarProps>(({
         }),
     );
 
+    const handleDragStart = useCallback(() => {
+        setIsSorting(true);
+        if (tauriDragRegion) {
+            setIsPressingTab(true);
+            setIsRefreshingDragRegion(true);
+        }
+    }, [tauriDragRegion]);
+
     const handleDragEnd = useCallback((event: DragEndEvent) => {
+        setIsSorting(false);
+        clearTabPressState();
+        refreshDragRegion();
         const {active, over} = event;
         if (!over || active.id === over.id || !onReorder) return;
         const fromIndex = items.findIndex((i) => i.key === active.id);
         const toIndex = items.findIndex((i) => i.key === over.id);
         if (fromIndex === -1 || toIndex === -1) return;
         onReorder(arrayMove(items, fromIndex, toIndex));
-    }, [items, onReorder]);
+    }, [clearTabPressState, items, onReorder, refreshDragRegion]);
+
+    const handleDragCancel = useCallback(() => {
+        setIsSorting(false);
+        clearTabPressState();
+        refreshDragRegion();
+    }, [clearTabPressState, refreshDragRegion]);
 
     /* ---- 渲染 ---- */
 
@@ -371,7 +442,8 @@ export const TabBar = memo<TabBarProps>(({
         '--tab-max-width': maxTabWidth,
     } as React.CSSProperties;
 
-    const dragRegion = tauriDragRegion ? {'data-tauri-drag-region': ''} : {};
+    const enableDragRegion = tauriDragRegion && !isPressingTab && !isSorting && !isRefreshingDragRegion;
+    const dragRegion = enableDragRegion ? {'data-tauri-drag-region': ''} : {};
 
     const tabItems = items.map((item) => (
         <TabItemView
@@ -381,6 +453,7 @@ export const TabBar = memo<TabBarProps>(({
             closable={closable}
             draggable={draggable}
             stopMouseDown={tauriDragRegion}
+            onItemMouseDown={handleItemMouseDown}
             tabClassName={tabClassName}
             activeTabClassName={activeTabClassName}
             tabStyle={tabStyle}
@@ -399,7 +472,9 @@ export const TabBar = memo<TabBarProps>(({
                         sensors={sensors}
                         collisionDetection={closestCenter}
                         modifiers={[boundModifier]}
+                        onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
+                        onDragCancel={handleDragCancel}
                     >
                         <SortableContext
                             items={items.map((i) => i.key)}

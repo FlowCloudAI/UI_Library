@@ -1,8 +1,19 @@
 /* Tree.css */
 
 .fc-tree {
+    --fc-tree-text: var(--fc-color-text);
+    --fc-tree-text-muted: var(--fc-color-text-tertiary);
+    --fc-tree-bg-hover: var(--fc-color-bg-secondary);
+    --fc-tree-bg-selected: var(--fc-color-primary-subtle);
+    --fc-tree-border: var(--fc-color-border);
+    --fc-tree-border-focus: var(--fc-color-border-focus);
+    --fc-tree-primary: var(--fc-color-primary);
+    --fc-tree-primary-subtle: var(--fc-color-primary-subtle);
+    --fc-tree-danger: #ef4444;
+    --fc-tree-action-hover-bg: var(--fc-color-border);
+    --fc-tree-drop-indicator: var(--fc-color-primary);
     font-family: var(--fc-font-family), sans-serif;
-    color: var(--fc-color-text);
+    color: var(--fc-tree-text);
     display: flex;
     flex-direction: column;
 }
@@ -12,24 +23,24 @@
 .fc-tree__search {
     position: relative;
     padding: var(--fc-space-sm) var(--fc-space-md);
-    border-bottom: 1px solid var(--fc-color-border);
+    border-bottom: 1px solid var(--fc-tree-border);
 }
 
 .fc-tree__search-input {
     width: 100%;
     padding: var(--fc-space-sm) 2rem var(--fc-space-sm) var(--fc-space-md);
-    border: 1px solid var(--fc-color-border);
+    border: 1px solid var(--fc-tree-border);
     border-radius: var(--fc-radius-md);
     font-size: var(--fc-font-size-sm);
     background: var(--fc-color-bg);
-    color: var(--fc-color-text);
+    color: var(--fc-tree-text);
     outline: none;
     transition: border-color var(--fc-transition);
     box-sizing: border-box;
 }
 
 .fc-tree__search-input:focus {
-    border-color: var(--fc-color-border-focus);
+    border-color: var(--fc-tree-border-focus);
 }
 
 .fc-tree__search-clear {
@@ -40,7 +51,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--fc-color-text-tertiary);
+    color: var(--fc-tree-text-muted);
     font-size: var(--fc-font-size-sm);
     padding: 2px 4px;
     border-radius: var(--fc-radius-sm);
@@ -49,7 +60,7 @@
 }
 
 .fc-tree__search-clear:hover {
-    color: var(--fc-color-text);
+    color: var(--fc-tree-text);
 }
 
 /* ── List ────────────────────────────────────────────────────────────────────── */
@@ -61,7 +72,7 @@
 .fc-tree__empty {
     padding: var(--fc-space-md);
     text-align: center;
-    color: var(--fc-color-text-tertiary);
+    color: var(--fc-tree-text-muted);
     font-size: var(--fc-font-size-sm);
 }
 
@@ -80,48 +91,44 @@
 
 .fc-tree__item {
     --fc-indent: 12px;
-    --fc-tree-actions-width: 74px;
-    display: flex;
+    display: grid;
+    grid-template-columns: 16px 16px minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--fc-space-sm);
+    column-gap: var(--fc-space-sm);
     padding-top: 4px;
     padding-bottom: 4px;
     padding-right: var(--fc-space-md);
+    padding-left: var(--fc-indent);
     border-radius: var(--fc-radius-sm);
     margin: 1px var(--fc-space-sm);
     min-height: 32px;
     cursor: default;
-    transition: background var(--fc-transition), padding-left 0.1s ease-out;
+    transition: background var(--fc-transition);
     position: relative;
     user-select: none;
 }
 
 .fc-tree__item:hover {
-    background: var(--fc-color-bg-secondary);
+    background: var(--fc-tree-bg-hover);
 }
 
 .fc-tree__item--selected {
-    background: var(--fc-color-primary-subtle);
+    background: var(--fc-tree-bg-selected);
 }
 
 .fc-tree__item--selected:hover {
-    background: var(--fc-color-primary-subtle);
-}
-
-.fc-tree__item:hover,
-.fc-tree__item:focus-within {
-    padding-right: calc(var(--fc-space-md) + var(--fc-tree-actions-width));
+    background: var(--fc-tree-bg-selected);
 }
 
 .fc-tree__item--drag-source {
     opacity: 0.4;
-    background: var(--fc-color-bg-secondary);
+    background: var(--fc-tree-bg-hover);
 }
 
 /* Drop target: highlight + indent hint */
 .fc-tree__item--drop-into {
-    background: var(--fc-color-primary-subtle) !important;
-    outline: 1.5px solid var(--fc-color-primary);
+    background: var(--fc-tree-primary-subtle) !important;
+    outline: 1.5px solid var(--fc-tree-primary);
     outline-offset: -1px;
 }
 
@@ -138,7 +145,7 @@
     left: var(--fc-indent, 12px);
     right: var(--fc-space-md, 12px);
     height: 2px;
-    background: var(--fc-color-primary);
+    background: var(--fc-tree-drop-indicator);
     border-radius: 1px;
     pointer-events: none;
 }
@@ -151,7 +158,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--fc-color-primary);
+    background: var(--fc-tree-drop-indicator);
     pointer-events: none;
 }
 
@@ -168,7 +175,7 @@
     left: var(--fc-indent, 12px);
     right: var(--fc-space-md, 12px);
     height: 2px;
-    background: var(--fc-color-primary);
+    background: var(--fc-tree-drop-indicator);
     border-radius: 1px;
     pointer-events: none;
 }
@@ -181,7 +188,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--fc-color-primary);
+    background: var(--fc-tree-drop-indicator);
     pointer-events: none;
 }
 
@@ -194,7 +201,7 @@
     width: 16px;
     flex-shrink: 0;
     cursor: grab;
-    color: var(--fc-color-text-tertiary);
+    color: var(--fc-tree-text-muted);
     opacity: 0;
     font-size: 14px;
     line-height: 1;
@@ -210,7 +217,13 @@
 }
 
 .fc-tree__drag-handle:hover {
-    color: var(--fc-color-text);
+    color: var(--fc-tree-text);
+}
+
+.fc-tree__drag-handle--disabled {
+    opacity: 0 !important;
+    pointer-events: none;
+    cursor: default;
 }
 
 /* ── Expand switcher ─────────────────────────────────────────────────────────── */
@@ -223,13 +236,13 @@
     height: 16px;
     flex-shrink: 0;
     font-size: 9px;
-    color: var(--fc-color-text-tertiary);
+    color: var(--fc-tree-text-muted);
     cursor: pointer;
     transition: transform var(--fc-transition), color var(--fc-transition);
 }
 
 .fc-tree__switcher:hover {
-    color: var(--fc-color-text);
+    color: var(--fc-tree-text);
 }
 
 .fc-tree__switcher--open {
@@ -244,7 +257,6 @@
 /* ── Title ───────────────────────────────────────────────────────────────────── */
 
 .fc-tree__title-slot {
-    flex: 1;
     min-width: 0;
 }
 
@@ -261,38 +273,58 @@
 /* ── Inline edit ─────────────────────────────────────────────────────────────── */
 
 .fc-tree__edit-input {
-    flex: 1;
+    width: 100%;
     font-size: var(--fc-font-size-md);
     font-family: var(--fc-font-family), sans-serif;
-    color: var(--fc-color-text);
+    color: var(--fc-tree-text);
     background: var(--fc-color-bg);
-    border: 1px solid var(--fc-color-border-focus);
+    border: 1px solid var(--fc-tree-border-focus);
     border-radius: var(--fc-radius-sm);
     padding: 2px 6px;
     outline: none;
     min-width: 0;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fc-color-primary) 15%, transparent);
+    box-sizing: border-box;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fc-tree-primary) 15%, transparent);
 }
 
 /* ── Hover actions ───────────────────────────────────────────────────────────── */
 
 .fc-tree__actions {
-    position: absolute;
-    right: var(--fc-space-md);
-    top: 50%;
-    transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
     gap: 2px;
+    justify-content: flex-end;
+    width: 0;
+    overflow: hidden;
     opacity: 0;
-    transition: opacity var(--fc-transition);
+    transition: width var(--fc-transition), opacity var(--fc-transition);
     pointer-events: none;
+    min-width: 0;
+}
+
+.fc-tree__actions-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.fc-tree__action--more {
+    display: none;
 }
 
 .fc-tree__item:hover .fc-tree__actions,
 .fc-tree__item:focus-within .fc-tree__actions {
+    width: var(--fc-tree-actions-width, 74px);
     opacity: 1;
     pointer-events: auto;
+}
+
+.fc-tree__actions--compact .fc-tree__actions-inline {
+    display: none;
+}
+
+.fc-tree__actions--compact .fc-tree__action--more {
+    display: flex;
 }
 
 .fc-tree__action {
@@ -306,27 +338,33 @@
     border-radius: var(--fc-radius-sm);
     cursor: pointer;
     font-size: 13px;
-    color: var(--fc-color-text-tertiary);
+    color: var(--fc-tree-text-muted);
     padding: 0;
     line-height: 1;
     transition: background var(--fc-transition), color var(--fc-transition);
 }
 
 .fc-tree__action:hover {
-    background: var(--fc-color-border);
-    color: var(--fc-color-text);
+    background: var(--fc-tree-action-hover-bg);
+    color: var(--fc-tree-text);
 }
 
 .fc-tree__action--danger:hover {
-    background: color-mix(in srgb, #ef4444 15%, transparent);
-    color: #ef4444;
+    background: color-mix(in srgb, var(--fc-tree-danger) 15%, transparent);
+    color: var(--fc-tree-danger);
+}
+
+.fc-tree__action:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 /* ── Add root ────────────────────────────────────────────────────────────────── */
 
 .fc-tree__add-root {
     padding: var(--fc-space-sm) var(--fc-space-md);
-    border-top: 1px solid var(--fc-color-border);
+    border-top: 1px solid var(--fc-tree-border);
     margin-top: calc(2px + 1rem);
 }
 
@@ -334,9 +372,9 @@
     width: 100%;
     padding: 6px var(--fc-space-md);
     background: none;
-    border: 1px dashed var(--fc-color-border);
+    border: 1px dashed var(--fc-tree-border);
     border-radius: var(--fc-radius-md);
-    color: var(--fc-color-text-tertiary);
+    color: var(--fc-tree-text-muted);
     font-size: var(--fc-font-size-sm);
     font-family: var(--fc-font-family), sans-serif;
     cursor: pointer;
@@ -346,9 +384,9 @@
 }
 
 .fc-tree__add-root-btn:hover {
-    border-color: var(--fc-color-primary);
-    color: var(--fc-color-primary);
-    background: var(--fc-color-primary-subtle);
+    border-color: var(--fc-tree-primary);
+    color: var(--fc-tree-primary);
+    background: var(--fc-tree-primary-subtle);
 }
 
 /* ── Dark theme ──────────────────────────────────────────────────────────────── */
