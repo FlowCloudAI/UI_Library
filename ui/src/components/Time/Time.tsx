@@ -1,12 +1,13 @@
+// Time.tsx
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import './Time.css';
 
 export interface TimelineEvent {
     id: string;
     title: string;
-    startTime: number;      // 核心定位字段，必须
-    endTime?: number;       // 可选，存在即时间段事件
-    date?: string;          // 手动覆盖显示文本，优先级高于 startTime 格式化
+    startTime: number;
+    endTime?: number;
+    date?: string;
     description?: string;
     color?: string;
 }
@@ -15,73 +16,37 @@ interface TimelineProps {
     events: TimelineEvent[];
 }
 
-// 预设配色组
 const COLOR_PALETTE = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EC4899', '#6366F1'];
 
-// 工具函数：格式化日期
 const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    return `${year}年${month}月`;
+    return `${date.getFullYear()}年${date.getMonth() + 1}月`;
 };
 
-// 工具函数：计算时间跨度文本
 const formatDuration = (start: number, end: number): string => {
     const diff = end - start;
     const msPerDay = 86400000;
     const msPerMonth = msPerDay * 30;
-    const msPerYear = msPerDay * 365;
-
-    if (diff < msPerMonth) {
-        const days = Math.floor(diff / msPerDay);
-        return `${days}天`;
-    } else if (diff < msPerYear) {
-        const months = Math.floor(diff / msPerMonth);
-        return `${months}个月`;
-    } else {
-        const years = Math.floor(diff / msPerYear);
-        return `${years}年`;
-    }
+    if (diff < msPerMonth) return `${Math.floor(diff / msPerDay)}天`;
+    return `${Math.floor(diff / msPerMonth)}个月`;
 };
 
-// 工具函数：智能刻度单位（增强版）
 const getTimeUnit = (duration: number): { unit: string; step: number } => {
-    const msPerHour = 3600000;
     const msPerDay = 86400000;
     const msPerMonth = msPerDay * 30;
     const msPerYear = msPerDay * 365;
-    const msPerMyriad = msPerYear * 10000;
-
-    if (duration < msPerDay) return { unit: 'hour', step: msPerHour };
+    if (duration < msPerDay * 3) return { unit: 'hour', step: 3600000 };
     if (duration < msPerMonth * 3) return { unit: 'day', step: msPerDay };
     if (duration < msPerYear * 5) return { unit: 'month', step: msPerMonth };
-    if (duration < msPerYear * 200) return { unit: 'year', step: msPerYear };
-    if (duration < msPerMyriad) return { unit: 'century', step: msPerYear * 100 };
-    return { unit: 'myriad', step: msPerYear * 10000 };
+    return { unit: 'year', step: msPerYear };
 };
 
-// 工具函数：格式化刻度标签（支持 BCE/CE）
 const formatTickLabel = (timestamp: number, unit: string): string => {
     const date = new Date(timestamp);
-    let year = date.getFullYear();
-    
-    if (unit === 'hour') {
-        return `${date.getHours()}:00`;
-    } else if (unit === 'day') {
-        return `${date.getMonth() + 1}/${date.getDate()}`;
-    } else if (unit === 'month') {
-        return `${year}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    } else if (unit === 'year') {
-        return year < 0 ? `${-year} BCE` : `${year} CE`;
-    } else if (unit === 'myriad') {
-        const myriadYear = Math.floor(Math.abs(year) / 10000);
-        return year < 0 ? `${myriadYear}万 BCE` : `${myriadYear}万 CE`;
-    } else {
-        // century
-        const century = Math.floor(Math.abs(year) / 100) + 1;
-        return year < 0 ? `${century}世纪 BCE` : `${century}世纪`;
-    }
+    if (unit === 'hour') return `${date.getHours()}:00`;
+    if (unit === 'day') return `${date.getDate()}日`;
+    if (unit === 'month') return `${date.getMonth() + 1}月`;
+    return `${date.getFullYear()}`;
 };
 
 export function Timeline({ events }: TimelineProps) {
@@ -90,229 +55,216 @@ export function Timeline({ events }: TimelineProps) {
     const [startX, setStartX] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
 
-    // 第一次渲染：计算基础布局
-    const baseLayout = useMemo(() => {
+    const { minTime, maxTime, trackWidth, timeRange } = useMemo(() => {
         if (!events || events.length === 0) {
-            return { minTime: 0, maxTime: 0, trackWidth: 800, timeRange: 0 };
+            return { minTime: 0, maxTime: 0, trackWidth: 1200, timeRange: 0 };
         }
-
-        const timestamps = events.map(e => e.startTime);
-        const endTimes = events.filter(e => e.endTime).map(e => e.endTime!);
-        const allTimes = [...timestamps, ...endTimes];
-        
+        const allTimes = events.flatMap(e => [e.startTime, e.endTime || e.startTime]);
         const min = Math.min(...allTimes);
         const max = Math.max(...allTimes);
-        const timeRange = max - min;
-
-        if (timeRange === 0) {
-            return { minTime: min, maxTime: max + 31536000000, trackWidth: 800, timeRange: 31536000000 };
-        }
-
-        const pixelsPerMs = 100 / (365 * 24 * 60 * 60 * 1000);
-        const width = Math.max(timeRange * pixelsPerMs, 800);
-
-        return { minTime: min, maxTime: max, trackWidth: width, timeRange };
+        const range = max - min || 31536000000;
+        const minWidth = events.length * 220;
+        const calculatedWidth = Math.max(Math.floor(range * (120 / (365 * 24 * 60 * 60 * 1000))), minWidth, 1200);
+        return { minTime: min, maxTime: max, trackWidth: calculatedWidth, timeRange: range };
     }, [events]);
 
-    const { minTime, maxTime, trackWidth, timeRange } = baseLayout;
+    const ticks = useMemo(() => {
+        if (timeRange === 0) return [];
+        const { unit } = getTimeUnit(timeRange);
+        const maxTicks = Math.floor(trackWidth / 120);
+        const step = timeRange / maxTicks;
+        return Array.from({ length: maxTicks + 1 }, (_, i) => {
+            const time = minTime + step * i;
+            return {
+                time,
+                left: Math.floor(((time - minTime) / timeRange) * 100),
+                label: formatTickLabel(time, unit)
+            };
+        });
+    }, [minTime, timeRange, trackWidth]);
 
-    // 第二次渲染：检测重叠并分组
+    const getPosition = (time: number) => {
+        if (timeRange === 0) return 0;
+        return Math.floor(((time - minTime) / timeRange) * trackWidth);
+    };
+
     const eventGroups = useMemo(() => {
         if (!events || events.length === 0) return [];
-
         const sorted = [...events].sort((a, b) => a.startTime - b.startTime);
-        
-        const getPosition = (time: number) => {
-            if (maxTime === minTime) return 0;
-            return ((time - minTime) / (maxTime - minTime)) * trackWidth;
-        };
-
-        const groups: TimelineEvent[][] = [];
-        let currentGroup: TimelineEvent[] = [sorted[0]];
+        const groups: { events: typeof sorted; leftPx: number; color: string }[] = [];
+        let currentGroup: typeof sorted = [sorted[0]];
+        let groupColor = sorted[0].color || COLOR_PALETTE[0];
 
         for (let i = 1; i < sorted.length; i++) {
             const prevPos = getPosition(sorted[i - 1].startTime);
             const currPos = getPosition(sorted[i].startTime);
             const distance = Math.abs(currPos - prevPos);
 
-            if (distance < 160) {
+            if (distance < 200) {
                 currentGroup.push(sorted[i]);
             } else {
-                groups.push(currentGroup);
+                groups.push({
+                    events: currentGroup,
+                    leftPx: getPosition(currentGroup[0].startTime),
+                    color: groupColor
+                });
                 currentGroup = [sorted[i]];
+                groupColor = sorted[i].color || COLOR_PALETTE[i % COLOR_PALETTE.length];
             }
         }
-        groups.push(currentGroup);
+        groups.push({
+            events: currentGroup,
+            leftPx: getPosition(currentGroup[0].startTime),
+            color: groupColor
+        });
 
         return groups;
-    }, [events, minTime, maxTime, trackWidth]);
+    }, [events, minTime, maxTime, trackWidth, timeRange]);
 
-    // 生成刻度（防溢出优化）
-    const ticks = useMemo(() => {
-        if (timeRange === 0) return [];
-        const { unit } = getTimeUnit(timeRange);
-        const minSpacing = 80; 
-        const maxTicks = Math.floor(trackWidth / minSpacing);
-        const timeStep = timeRange / maxTicks;
-        
-        const result = [];
-        for (let i = 0; i <= maxTicks; i++) {
-            const timestamp = minTime + (timeStep * i);
-            const position = (i / maxTicks) * 100;
-            result.push({
-                timestamp,
-                position,
-                label: formatTickLabel(timestamp, unit)
-            });
-        }
-        return result;
-    }, [minTime, timeRange, trackWidth]);
-
-    // 拖拽功能
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!scrollRef.current) return;
         setIsDragging(true);
-        setStartX(e.clientX);
+        setStartX(e.pageX - scrollRef.current.offsetLeft);
         setScrollLeft(scrollRef.current.scrollLeft);
-    };
-
-    const handleMouseLeave = () => {
-        if (isDragging) handleMouseUp();
     };
 
     const handleMouseUp = () => {
         setIsDragging(false);
-        document.body.style.userSelect = '';
         document.body.style.cursor = '';
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!isDragging || !scrollRef.current) return;
         e.preventDefault();
-        const x = e.clientX;
+        const x = e.pageX - scrollRef.current.offsetLeft;
         const walk = (x - startX) * 1.5;
         scrollRef.current.scrollLeft = scrollLeft - walk;
     };
 
     useEffect(() => {
-        if (isDragging) {
-            document.body.style.userSelect = 'none';
-            document.body.style.cursor = 'grabbing';
-        } else {
-            document.body.style.userSelect = '';
-            document.body.style.cursor = '';
-        }
-        return () => {
-            document.body.style.userSelect = '';
-            document.body.style.cursor = '';
-        };
+        document.body.style.cursor = isDragging ? 'grabbing' : '';
     }, [isDragging]);
 
-    // 组件挂载后初始化滚动位置为0
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollLeft = 0;
-        }
-    }, []);
+    const LEFT_OFFSET = 200;
 
     return (
         <div className="timeline-container">
-            <div 
+            <div
                 className="timeline-scroll-area"
                 ref={scrollRef}
                 onMouseDown={handleMouseDown}
-                onMouseLeave={handleMouseLeave}
                 onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
                 onMouseMove={handleMouseMove}
-                style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
             >
-                <div className="timeline-track" style={{ width: trackWidth }}>
-                    {/* 时间轴线 */}
-                    <div className="timeline-line"></div>
+                <div className="timeline-track" style={{ width: trackWidth + LEFT_OFFSET * 2 }}>
+                    <div className="timeline-line" style={{ left: LEFT_OFFSET, right: LEFT_OFFSET }}></div>
 
-                    {/* 刻度尺 */}
-                    <div className="timeline-ticks">
-                        {ticks.map((tick, idx) => (
+                    <div className="timeline-ticks" style={{ left: LEFT_OFFSET, right: LEFT_OFFSET }}>
+                        {ticks.map((tick) => (
                             <div
-                                key={idx}
+                                key={tick.left}
                                 className="timeline-tick"
-                                style={{ left: `${tick.position}%` }}
+                                style={{ left: `${tick.left}%` }}
                             >
-                                <div className="timeline-tick-line"></div>
-                                <span className="timeline-tick-label">{tick.label}</span>
+                                <div className="tick-line"></div>
+                                <span className="tick-label">{tick.label}</span>
                             </div>
                         ))}
                     </div>
 
-                    {/* 渲染事件组 */}
+                    {/* 持续时间范围条和结束点 - 在时间轴层级渲染 */}
                     {eventGroups.map((group, groupIndex) => {
-                        const isTop = groupIndex % 2 === 0; // 奇上偶下
-                        const color = group[0].color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length];
-                        const firstEvent = group[0];
-                        const firstPos = ((firstEvent.startTime - minTime) / (maxTime - minTime)) * 100;
+                        const firstEvent = group.events[0];
+                        if (!firstEvent.endTime) return null;
+
+                        const startPx = group.leftPx;
+                        const endPx = getPosition(firstEvent.endTime);
+                        const rangeWidth = endPx - startPx;
+
+                        if (rangeWidth <= 0) return null;
 
                         return (
-                            <div 
-                                key={groupIndex} 
-                                className={`timeline-group ${isTop ? 'top' : 'bottom'}`}
-                                style={{ 
-                                    left: `${firstPos}%`,
-                                    '--group-color': color,
-                                    '--group-index': groupIndex
-                                } as React.CSSProperties}
+                            <React.Fragment key={`range-${groupIndex}`}>
+                                {/* 范围条 */}
+                                <div
+                                    className="timeline-range-bar"
+                                    style={{
+                                        left: LEFT_OFFSET + startPx,
+                                        width: rangeWidth,
+                                        backgroundColor: group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length]
+                                    }}
+                                />
+                                {/* 结束点圆点 - 空心圆，位于范围条末端 */}
+                                <div
+                                    className="range-end-dot"
+                                    style={{
+                                        left: LEFT_OFFSET + endPx - 5, // 5px是圆点半径(10px/2)
+                                        borderColor: group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length]
+                                    }}
+                                />
+                            </React.Fragment>
+                        );
+                    })}
+
+                    {/* 事件节点分组（起始点、卡片、垂线） */}
+                    {eventGroups.map((group, groupIndex) => {
+                        const groupColor = group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length];
+                        const cardCount = group.events.length;
+                        const connectorHeight = 20 + cardCount * 25;
+
+                        return (
+                            <div
+                                key={groupIndex}
+                                className="timeline-group"
+                                style={{ left: LEFT_OFFSET + group.leftPx }}
                             >
-                                {/* 主圆点 */}
-                                <div className="timeline-main-dot" />
-                                
-                                {/* 主垂线 */}
-                                <div className="timeline-main-connector" />
+                                {/* 起始点圆点 */}
+                                <div className="group-dot" style={{
+                                    backgroundColor: groupColor,
+                                    borderColor: groupColor,
+                                    boxShadow: `0 0 0 3px white, 0 0 0 5px ${groupColor}40`
+                                }}></div>
 
-                                {/* 时间段标记（在时间轴上） */}
-                                {firstEvent.endTime && (
-                                    <div
-                                        className="timeline-range-bar"
-                                        style={{
-                                            left: `${firstPos}%`,
-                                            width: `${((firstEvent.endTime - firstEvent.startTime) / (maxTime - minTime)) * 100}%`,
-                                            backgroundColor: `${color}30`
-                                        }}
-                                    />
-                                )}
+                                {/* 垂线连接 */}
+                                <div
+                                    className="group-connector"
+                                    style={{
+                                        backgroundColor: groupColor,
+                                        height: connectorHeight
+                                    }}
+                                ></div>
 
-                                {/* 组内卡片堆叠 */}
-                                {group.map((event, indexInGroup) => {
-                                    const displayDate = event.date || formatDate(event.startTime);
-                                    const durationText = event.endTime 
-                                        ? formatDuration(event.startTime, event.endTime)
-                                        : null;
-                                    const cardColor = event.color || color;
+                                {/* 卡片堆叠 */}
+                                <div className="group-cards" style={{ marginTop: -5 }}>
+                                    {group.events.map((event) => {
+                                        const displayDate = event.date || formatDate(event.startTime);
+                                        const durationText = event.endTime
+                                            ? formatDuration(event.startTime, event.endTime)
+                                            : null;
 
-                                    return (
-                                        <div
-                                            key={event.id}
-                                            className="timeline-card-wrapper"
-                                            style={{
-                                                '--stack-index': indexInGroup,
-                                                '--card-color': cardColor
-                                            } as React.CSSProperties}
-                                        >
-                                            <div className="timeline-card">
-                                                <div className="card-header">
-                                                    <h3 className="card-title">{event.title}</h3>
-                                                </div>
+                                        return (
+                                            <div
+                                                key={event.id}
+                                                className="group-card"
+                                                style={{ borderLeftColor: event.color || groupColor }}
+                                            >
+                                                <div className="card-connector-dot" style={{ backgroundColor: event.color || groupColor }}></div>
+
+                                                <h3 className="card-title">{event.title}</h3>
                                                 {event.description && (
-                                                    <p className="card-description">{event.description}</p>
+                                                    <p className="card-desc">{event.description}</p>
                                                 )}
-                                                <div className="card-footer">
-                                                    <span className="card-date">{displayDate}</span>
+                                                <div className="card-meta">
+                                                    <span>{displayDate}</span>
                                                     {durationText && (
-                                                        <span className="card-duration">⏱️ {durationText}</span>
+                                                        <span className="duration">⏱️ {durationText}</span>
                                                     )}
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
                         );
                     })}

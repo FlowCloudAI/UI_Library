@@ -1,66 +1,61 @@
-/* Time.css - 向外辐射分支时间轴 */
-
+/* Time.css */
 .timeline-container {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f9fafb;
+    border-radius: 12px;
     padding: 20px;
-    background-color: #f9fafb;
-    border-radius: 8px;
-    max-width: 100%;
-    --group-color: #3B82F6;
-    --card-color: #3B82F6;
-    --group-index: 0;
 }
 
-/* 滚动区域 */
 .timeline-scroll-area {
-    width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 100px 0;
-    border-top: 1px solid #e5e7eb;
-    border-bottom: 1px solid #e5e7eb;
-    background: #fff;
-    position: relative;
-    scroll-behavior: smooth;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    cursor: grab;
+    padding: 180px 0 80px 0;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.timeline-scroll-area:active {
+    cursor: grabbing;
 }
 
 .timeline-scroll-area::-webkit-scrollbar {
-    display: none;
+    height: 8px;
 }
 
-/* 轨道 */
+.timeline-scroll-area::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.timeline-scroll-area::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
 .timeline-track {
-    height: 500px;
     position: relative;
-    min-width: 800px;
-    padding-left: 140px;
-    padding-right: 140px;
+    height: 280px;
+    min-width: 100%;
     box-sizing: border-box;
 }
 
-/* 时间轴线 - 4px 高度 */
 .timeline-line {
     position: absolute;
     top: 50%;
-    left: 0;
-    width: 100%;
     height: 4px;
-    background-color: #e5e7eb;
+    background: #e5e7eb;
+    border-radius: 2px;
     transform: translateY(-50%);
     z-index: 1;
-    border-radius: 2px;
 }
 
-/* 刻度尺 */
 .timeline-ticks {
     position: absolute;
     top: calc(50% + 12px);
-    left: 0;
-    width: 100%;
     height: 30px;
-    z-index: 2;
+    z-index: 1;
 }
 
 .timeline-tick {
@@ -69,183 +64,151 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 4px;
 }
 
-.timeline-tick-line {
+.tick-line {
     width: 2px;
     height: 6px;
-    background-color: #D1D5DB;
-    margin-bottom: 4px;
+    background: #d1d5db;
 }
 
-.timeline-tick-label {
-    font-size: 11px;
-    color: #9CA3AF;
-    font-weight: 500;
+.tick-label {
+    font-size: 12px;
+    color: #9ca3af;
     white-space: nowrap;
 }
 
-/* 事件组容器 */
-.timeline-group {
-    position: absolute;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 10;
-}
-
-.timeline-group.top {
-    bottom: 50%;
-    flex-direction: column-reverse;
-    margin-bottom: 40px;
-}
-
-.timeline-group.bottom {
-    top: 50%;
-    flex-direction: column;
-    margin-top: 40px;
-}
-
-/* 主圆点 - 移动到垂线末端 */
-.timeline-main-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: var(--group-color, #3B82F6);
-    border: 3px solid #fff;
-    box-shadow: 0 0 0 2px var(--group-color, #3B82F6);
-    z-index: 3;
-    /* 移除绝对定位，让它作为 flex 子元素自然排列 */
-    position: relative;
-    margin-bottom: 0;
-}
-
-/* 上方组：点在垂线下方（靠近卡片） */
-.timeline-group.top .timeline-main-dot {
-    order: 1; /* 确保顺序：垂线 -> 点 -> 卡片 */
-    margin-top: -6px; /* 稍微重叠一点，让视觉更连贯 */
-}
-
-/* 下方组：点在垂线上方（靠近卡片） */
-.timeline-group.bottom .timeline-main-dot {
-    order: 1;
-    margin-bottom: -6px;
-}
-
-/* 主垂线 */
-.timeline-main-connector {
-    width: 4px;
-    height: 34px; /* 40px 总长减去点的半径和边距 */
-    background-color: var(--group-color, #3B82F6);
-    transform-origin: top;
-    animation: connectorGrow 0.3s ease-out forwards;
-    animation-delay: calc(var(--group-index, 0) * 0.1s);
-    order: 0; /* 确保垂线在最外侧 */
-}
-
-.timeline-group.bottom .timeline-main-connector {
-    transform-origin: bottom;
-    order: 2; /* 下方组：卡片 -> 点 -> 垂线 */
-}
-
-@keyframes connectorGrow {
-    from {
-        transform: scaleY(0);
-    }
-    to {
-        transform: scaleY(1);
-    }
-}
-
-/* 时间段标记条 */
+/* 持续时间范围条 - 实色覆盖时间轴 */
 .timeline-range-bar {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    height: 6px;
-    border-radius: 3px;
-    z-index: 0;
+    height: 4px;
+    border-radius: 2px;
+    z-index: 2;
     pointer-events: none;
 }
 
-/* 卡片包装器（堆叠） */
-.timeline-card-wrapper {
-    margin: 8px 0;
-    transition: z-index 0.2s;
+/* 结束点圆点 - 空心圆，位于时间轴上 */
+.range-end-dot {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid;
+    z-index: 3;
+    box-shadow: 0 0 0 2px white;
+    pointer-events: none;
 }
 
-.timeline-card-wrapper:hover {
-    z-index: 100;
+/* 分组容器 */
+.timeline-group {
+    position: absolute;
+    bottom: 50%;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    margin-left: -6px;
+    z-index: 10;
 }
 
-/* 卡片样式 - 便签风格 */
-.timeline-card {
-    background: #fff;
+/* 起始点圆点 */
+.group-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: currentColor;
+    border: 2px solid white;
+    flex-shrink: 0;
+    z-index: 3;
+    margin-bottom: -6px;
+}
+
+/* 垂线连接 */
+.group-connector {
+    width: 2px;
+    margin-left: 5px;
+    flex-shrink: 0;
+    border-radius: 2px 2px 0 0;
+    opacity: 0.6;
+    margin-bottom: 10px;
+}
+
+/* 卡片容器 */
+.group-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 180px;
+    position: relative;
+    z-index: 5;
+}
+
+/* 卡片 */
+.group-card {
+    background: white;
     border: 1px solid #e5e7eb;
-    border-left: 4px solid var(--card-color, #3B82F6);
-    border-radius: 8px;
-    padding: 12px;
-    min-width: 180px;
-    max-width: 220px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 3px solid currentColor;
+    border-radius: 6px;
+    padding: 10px 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
     cursor: pointer;
+    position: relative;
 }
 
-.timeline-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+/* 卡片顶部连接点 */
+.card-connector-dot {
+    position: absolute;
+    top: -6px;
+    left: 14px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px currentColor;
+    z-index: 6;
 }
 
-/* 卡片头部 */
-.card-header {
-    margin-bottom: 8px;
+.group-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
 }
 
 .card-title {
-    margin: 0;
+    margin: 0 0 4px 0;
     font-size: 14px;
     font-weight: 600;
     color: #111827;
     line-height: 1.4;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-/* 卡片描述 */
-.card-description {
-    margin: 0 0 8px 0;
-    font-size: 13px;
-    font-weight: 400;
-    color: #6B7280;
+.card-desc {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    color: #6b7280;
     line-height: 1.5;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
-/* 卡片底部 */
-.card-footer {
+.card-meta {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 8px;
+    padding-top: 6px;
     border-top: 1px solid #f3f4f6;
+    font-size: 11px;
+    color: #9ca3af;
 }
 
-.card-date {
-    font-size: 11px;
+.duration {
+    color: #6b7280;
     font-weight: 500;
-    color: #9CA3AF;
-    white-space: nowrap;
-}
-
-.card-duration {
-    font-size: 11px;
-    font-weight: 500;
-    color: #9CA3AF;
-    white-space: nowrap;
 }
