@@ -54,8 +54,15 @@
     background-color: transparent;
 }
 
-/* ─── Custom node ─────────────────────────────────────────────────────────── */
+/* ─── Node wrapper (共用) ──────────────────────────────────────────────────── */
 .fc-rg-node {
+    position: relative;
+    cursor: default;
+    user-select: none;
+}
+
+/* ─── 内置默认节点样式（未传 renderNode 时生效） ──────────────────────────── */
+.fc-rg-node:not(.fc-rg-node--custom) {
     background-color: var(--fc-rg-node-bg);
     border: 1.5px solid var(--fc-rg-node-border);
     border-radius: var(--fc-rg-node-radius);
@@ -66,12 +73,9 @@
     font-size: var(--fc-font-size-sm, 13px);
     font-family: var(--fc-font-family, sans-serif);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    cursor: default;
-    user-select: none;
-    position: relative;
 }
 
-.fc-rg-node:hover {
+.fc-rg-node:not(.fc-rg-node--custom):hover {
     border-color: var(--fc-rg-node-border-hover);
 }
 
@@ -90,14 +94,26 @@
     line-height: var(--fc-line-height-tight, 1.25);
 }
 
-/* Hide the default React Flow handle dots; keep handles functional */
-.fc-rg-node .react-flow__handle {
+/* ─── 自定义节点（传入 renderNode 时） ────────────────────────────────────── */
+/* wrapper 不施加任何视觉样式，调用方完全控制外观。
+   选中状态通过 renderNode 的第二个参数 selected 由调用方自行处理。 */
+.fc-rg-node--custom {
     background: transparent;
     border: none;
-    width: 8px;
-    height: 8px;
-    min-width: 0;
-    min-height: 0;
+    padding: 0;
+}
+
+/* Ghost handles: zero-size, invisible, non-interactive.
+   Actual edge attachment points are computed by the floating-edge algorithm. */
+.fc-rg-handle--ghost.react-flow__handle {
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
 }
 
 /* ─── Edge label ──────────────────────────────────────────────────────────── */

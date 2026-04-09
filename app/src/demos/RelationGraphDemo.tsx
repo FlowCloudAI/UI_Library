@@ -8,12 +8,23 @@ import { useMemo, useState } from 'react';
 import { RelationGraph } from 'flowcloudai-ui';
 import type {
     LayoutFunction,
+    LayoutNode,
     LayoutRequest,
     LayoutResponse,
     RelationEdgeInput,
     RelationLayoutState,
     RelationNodeInput,
 } from 'flowcloudai-ui';
+
+// ─── EntryBrief-style node (mirrors the Rust struct) ─────────────────────────
+interface EntryNode extends RelationNodeInput {
+    id:           string;
+    title:        string;
+    type?:        string;
+    summary?:     string;
+    cover?:       string;
+    category_id?: string;
+}
 
 // ─── Mock layout function (grid arrangement) ─────────────────────────────────
 // This simulates a backend that takes a LayoutRequest and returns positions.
@@ -34,7 +45,7 @@ const mockGridLayout: LayoutFunction = async (
     const vGap = 120;
 
     const positions: Record<string, { x: number; y: number }> = {};
-    request.nodes.forEach((node, i) => {
+    request.nodes.forEach((node: LayoutNode, i: number) => {
         const col = i % cols;
         const row = Math.floor(i / cols);
         positions[node.id] = {
@@ -115,6 +126,28 @@ const SCENARIOS: Record<ScenarioKey, { label: string; data: typeof SCENARIO_SMAL
     empty:  { label: '空图',           data: SCENARIO_EMPTY  },
 };
 
+// ─── EntryBrief 假数据 ────────────────────────────────────────────────────────
+
+const ENTRY_NODES: EntryNode[] = [
+    { id: 'e1', title: '项目计划', type: '文档',  summary: '2026 Q2 路线图',          cover: 'https://api.dicebear.com/9.x/shapes/svg?seed=e1' },
+    { id: 'e2', title: '需求评审', type: '会议',  summary: '与产品对齐核心功能',       cover: 'https://api.dicebear.com/9.x/shapes/svg?seed=e2' },
+    { id: 'e3', title: 'UI 设计',  type: '设计',  summary: '组件库视觉规范',           cover: 'https://api.dicebear.com/9.x/shapes/svg?seed=e3' },
+    { id: 'e4', title: '前端实现', type: '任务',  summary: 'RelationGraph 组件开发',   cover: 'https://api.dicebear.com/9.x/shapes/svg?seed=e4' },
+    { id: 'e5', title: '后端接口', type: '任务',  summary: 'Tauri layout invoke',      cover: 'https://api.dicebear.com/9.x/shapes/svg?seed=e5' },
+    { id: 'e6', title: '测试报告', type: '文档',  summary: 'E2E 自动化测试结果',       cover: 'https://api.dicebear.com/9.x/shapes/svg?seed=e6' },
+];
+
+const ENTRY_EDGES: RelationEdgeInput[] = [
+    { source: 'e1', target: 'e2', kind: 'one_way', label: '触发' },
+    { source: 'e2', target: 'e3', kind: 'one_way', label: '产出' },
+    { source: 'e2', target: 'e4', kind: 'one_way', label: '产出' },
+    { source: 'e2', target: 'e5', kind: 'one_way', label: '产出' },
+    { source: 'e3', target: 'e4', kind: 'two_way', label: '对齐' },
+    { source: 'e4', target: 'e3', kind: 'two_way' },
+    { source: 'e4', target: 'e6', kind: 'one_way', label: '输入' },
+    { source: 'e5', target: 'e6', kind: 'one_way', label: '输入' },
+];
+
 // ─── Demo ─────────────────────────────────────────────────────────────────────
 
 export function RelationGraphDemo() {
@@ -181,7 +214,7 @@ export function RelationGraphDemo() {
             </div>
 
             {/* Graph canvas */}
-            <div style={{ height: 480, borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ height: 500, borderRadius: 8, overflow: 'hidden' }}>
                 <RelationGraph
                     nodes={nodes}
                     edges={edges}
@@ -194,14 +227,81 @@ export function RelationGraphDemo() {
                 />
             </div>
 
-            {/* Note about injecting a real layout function */}
-            <p style={{
-                fontSize: 'var(--fc-font-size-xs)',
-                color: 'var(--fc-color-text-tertiary)',
-                margin: 0,
-            }}>
+            <p style={{ fontSize: 'var(--fc-font-size-xs)', color: 'var(--fc-color-text-tertiary)', margin: 0 }}>
                 当前使用网格布局模拟函数。在宿主项目中替换 <code>layoutFn</code> 为真实后端调用（如 Tauri <code>invoke</code> 或 HTTP 请求）即可。
             </p>
+
+            {/* ── renderNode 示例 ── */}
+            <h4 style={{ marginTop: 8, marginBottom: 0 }}>自定义节点（renderNode）</h4>
+            <p style={{ fontSize: 'var(--fc-font-size-xs)', color: 'var(--fc-color-text-secondary)', margin: 0 }}>
+                使用 EntryBrief 结构的假数据，由调用方完全控制节点外观。
+            </p>
+            <div style={{ height: 500, borderRadius: 8, overflow: 'hidden' }}>
+                <RelationGraph
+                    nodes={ENTRY_NODES}
+                    edges={ENTRY_EDGES}
+                    layoutFn={mockGridLayout}
+                    renderNode={(data: RelationNodeInput, selected: boolean) => {
+                        const d = data as EntryNode;
+                        return (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '8px 12px',
+                                background: selected
+                                    ? 'var(--fc-color-primary-subtle)'
+                                    : 'var(--fc-color-bg-elevated)',
+                                border: `1.5px solid ${selected ? 'var(--fc-color-primary)' : 'var(--fc-color-border)'}`,
+                                borderRadius: 8,
+                                boxShadow: 'var(--fc-shadow-sm)',
+                                minWidth: 160,
+                                fontFamily: 'var(--fc-font-family)',
+                            }}>
+                                {d.cover && (
+                                    <img src={d.cover} alt="" style={{
+                                        width: 32, height: 32, borderRadius: '50%',
+                                        objectFit: 'cover', flexShrink: 0,
+                                    }} />
+                                )}
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{
+                                        fontSize: 'var(--fc-font-size-sm)',
+                                        fontWeight: 500,
+                                        color: 'var(--fc-color-text)',
+                                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                    }}>
+                                        {d.title}
+                                    </div>
+                                    {d.summary && (
+                                        <div style={{
+                                            fontSize: 'var(--fc-font-size-xs)',
+                                            color: 'var(--fc-color-text-secondary)',
+                                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                        }}>
+                                            {d.summary}
+                                        </div>
+                                    )}
+                                </div>
+                                {d.type && (
+                                    <span style={{
+                                        fontSize: 'var(--fc-font-size-xs)',
+                                        padding: '1px 6px',
+                                        borderRadius: 'var(--fc-radius-full)',
+                                        background: 'var(--fc-color-primary-subtle)',
+                                        color: 'var(--fc-color-primary)',
+                                        flexShrink: 0,
+                                        marginLeft: 'auto',
+                                    }}>
+                                        {d.type}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    }}
+                    fitPadding={0.15}
+                    width="100%"
+                    height="100%"
+                />
+            </div>
         </div>
     );
 }

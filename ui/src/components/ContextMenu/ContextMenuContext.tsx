@@ -25,7 +25,7 @@ type MenuState = {
 
 /* ---- Context ---- */
 const ContextMenuContext = createContext<{
-    showContextMenu: (e: React.MouseEvent, items: ContextMenuItem[]) => void;
+    showContextMenu: (e: MouseEvent, items: ContextMenuItem[]) => void;
 }>({
     showContextMenu: () => {},
 });
@@ -51,7 +51,7 @@ export function ContextMenuProvider({
     });
     const menuRef = useRef<HTMLUListElement>(null);
 
-    const showContextMenu = (e: React.MouseEvent, items: ContextMenuItem[]) => {
+    const showContextMenu = (e: MouseEvent, items: ContextMenuItem[]) => {
         e.preventDefault();
         e.stopPropagation();
         setMenu({ visible: true, x: e.clientX, y: e.clientY, items });

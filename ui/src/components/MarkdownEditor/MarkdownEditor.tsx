@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./MarkdownEditor.css";
 import MDEditor, { commands } from "@uiw/react-md-editor";
-import type { ICommand } from "@uiw/react-md-editor";
+import type { ICommand, MDEditorProps } from "@uiw/react-md-editor";
 import { useTheme } from "../../ThemeProvider";
 
 export interface MarkdownEditorProps {
@@ -11,6 +11,8 @@ export interface MarkdownEditorProps {
     onAiComplete?: () => void;
     minHeight?:   number;
     placeholder?: string;
+    /** 透传到底层 textarea，用于监听键盘、输入、光标等事件 */
+    textareaProps?: MDEditorProps["textareaProps"];
     /**
      * 显示模式
      * - edit:    编辑模式（工具栏含双栏切换按钮）
@@ -54,6 +56,7 @@ export function MarkdownEditor({
     onAiComplete,
     minHeight   = 200,
     placeholder = "在此输入内容...",
+    textareaProps,
     mode        = "edit",
     background,
     toolbarBackground,
@@ -119,7 +122,7 @@ export function MarkdownEditor({
                 preview={editorPreview}
                 hideToolbar={mode === 'preview'}
                 visibleDragbar={false}
-                textareaProps={{ placeholder }}
+                textareaProps={{ ...textareaProps, placeholder }}
             />
         </div>
     );

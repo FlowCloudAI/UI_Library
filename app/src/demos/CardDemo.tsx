@@ -41,7 +41,7 @@ export function CardDemo() {
                         contentAreaRatio={0.12}
                         hoverContentAreaRatio={0.8}
                         overlayStartOpacity={0}
-                        overlayEndOpacity={0.98}
+                        overlayEndOpacity={1}
                         tag={
                             <span
                                 style={{

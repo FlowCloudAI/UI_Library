@@ -573,10 +573,40 @@ type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
 - `onAiComplete?: () => void`：AI 补全回调，传入后显示 AI 按钮
 - `minHeight?: number`：最小高度
 - `placeholder?: string`：占位文本
+- `textareaProps?: MDEditorProps['textareaProps']`：透传到底层 `textarea` 的属性，可用于监听键盘、输入、光标等事件
 - `mode?: 'edit' | 'preview'`：显示模式
 - `background?: string`：编辑区背景色
 - `toolbarBackground?: string`：工具栏背景色
 - `borderColor?: string`：边框色
+
+监听输入 `[[` 并触发词条选择示例：
+
+```tsx
+import { useState } from 'react'
+import { MarkdownEditor } from 'flowcloudai-ui'
+
+function Example() {
+  const [value, setValue] = useState('')
+
+  return (
+    <MarkdownEditor
+      value={value}
+      onChange={setValue}
+      textareaProps={{
+        onKeyUp: (event) => {
+          const textarea = event.currentTarget
+          const cursor = textarea.selectionStart ?? 0
+          const beforeCursor = textarea.value.slice(0, cursor)
+
+          if (beforeCursor.endsWith('[[')) {
+            console.log('打开词条选择弹窗')
+          }
+        },
+      }}
+    />
+  )
+}
+```
 
 ### `SmartMessage`
 
@@ -807,6 +837,7 @@ function getNodeActions(
 - `actionCollapseThreshold?: number`：`auto` 模式下折叠阈值，单位像素
 - `colorTokens?: TreeColorTokens`：树组件局部颜色 token 覆盖
 - `scrollHeight?: string`：滚动区域高度
+- `collapseDuration?: number`：折叠/展开动画时长（秒），默认 `0.12`
 
 相关类型：
 
@@ -839,9 +870,9 @@ function getNodeActions(
 
 ### `RelationGraph`
 
-用途：关系图谱组件，基于 React Flow 渲染节点与边。**不含任何布局算法**——宿主通过 `layoutFn` 注入异步布局函数（可调用 Tauri `invoke`、HTTP 接口或任意后端）。
+用途：关系图谱组件，基于 React Flow 渲染节点与边，负责节点渲染、边渲染、尺寸测量、布局触发、视口适配和双向边视觉优化。**组件内部不含任何布局算法**，宿主通过 `layoutFn` 注入一个异步函数，可以是 Tauri `invoke`、HTTP 接口或任意后端调用。
 
-快速示例：
+#### 快速示例
 
 ```tsx
 import { RelationGraph } from 'flowcloudai-ui'
@@ -865,26 +896,123 @@ const layoutFn: LayoutFunction = (req) => invoke('graph_layout', { request: req 
 />
 ```
 
-参数：
+#### 参数
 
-- `nodes: RelationNodeInput[]`：节点数组，建议用 `useMemo` 保持引用稳定
-- `edges: RelationEdgeInput[]`：边数组，建议用 `useMemo` 保持引用稳定
-- `layoutFn: LayoutFunction`：**必填**，宿主注入的异步布局函数
-- `nodeOrigin?: [number, number]`：React Flow 节点坐标原点，默认 `[0, 0]`
-- `fitPadding?: number`：`fitBounds` 视口边距（占比 0–1），默认 `0.1`
-- `fitDuration?: number`：`fitBounds` 动画时长（ms），默认 `500`
-- `onLayoutStateChange?: (state: RelationLayoutState) => void`：布局状态变化回调
-- `height?: string | number`：容器高度，React Flow 渲染要求此值为有限值，默认 `'100%'`
-- `width?: string | number`：容器宽度，默认 `'100%'`
+| 参数 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `nodes` | `RelationNodeInput[]` | — | 节点数组，建议 `useMemo` 保持引用稳定，否则可能触发不必要的重排 |
+| `edges` | `RelationEdgeInput[]` | — | 边数组，同上 |
+| `layoutFn` | `LayoutFunction` | — | **必填**，宿主注入的异步布局函数 |
+| `nodeOrigin` | `[number, number]` | `[0, 0]` | React Flow 节点坐标原点，`[0,0]` 表示坐标指向节点左上角 |
+| `fitPadding` | `number` | `0.1` | `fitBounds` 视口边距，取值 0–1（0.1 = 10%） |
+| `fitDuration` | `number` | `500` | `fitBounds` 动画时长（ms） |
+| `onLayoutStateChange` | `(s: RelationLayoutState) => void` | — | 布局状态变化回调 |
+| `height` | `string \| number` | `'100%'` | 容器高度，React Flow 要求此值为有限值 |
+| `width` | `string \| number` | `'100%'` | 容器宽度 |
+| `className` | `string` | — | 根元素额外 CSS 类 |
+| `style` | `CSSProperties` | — | 根元素内联样式 |
+
+#### 注入真实布局函数
+
+组件内部只调用传入的 `layoutFn`，不写任何 `invoke` 或 `fetch`：
+
+```ts
+// Tauri（Rust 后端）
+const layoutFn: LayoutFunction = (req) =>
+  invoke<LayoutResponse>('graph_layout', { request: req })
+
+// HTTP 后端
+const layoutFn: LayoutFunction = async (req) => {
+  const res = await fetch('/api/layout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  })
+  if (!res.ok) throw new Error(`布局失败：${res.status}`)
+  return res.json() as Promise<LayoutResponse>
+}
+
+// Mock / 测试
+const layoutFn: LayoutFunction = async (req) => ({
+  positions: Object.fromEntries(req.nodes.map((n, i) => [n.id, { x: i * 200, y: 0 }])),
+  bounds: { x: 0, y: 0, width: req.nodes.length * 200, height: 100 },
+})
+```
+
+#### 通信协议
+
+字段名固定，不可修改。
+
+**LayoutRequest（前端 → 后端）**
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `nodeOrigin` | `[number, number]?` | 坐标原点，默认 `[0, 0]` |
+| `nodes` | `LayoutNode[]` | 已测量尺寸的节点列表 |
+| `edges` | `LayoutEdge[]` | 边列表 |
+
+`LayoutNode`：`id: string`、`width: number`、`height: number`（来自 DOM 真实测量，**不得猜测**）
+
+`LayoutEdge`：`id?: string`、`source: string`、`target: string`、`sourceHandle?: string`、`targetHandle?: string`、`kind?: 'one_way' | 'two_way'`
+
+**LayoutResponse（后端 → 前端）**
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `positions` | `Record<string, { x: number; y: number }>` | 按节点 ID 索引的坐标；缺失的节点保留当前坐标 |
+| `bounds` | `{ x, y, width, height }?` | 图的外接矩形（左上角坐标系），用于首轮 `fitBounds` |
+| `layoutHash` | `string?` | 可选不透明哈希，前端不解析 |
+
+#### 布局触发时机
+
+1. React Flow 挂载节点，所有节点初始坐标为 `{x:0, y:0}`
+2. React Flow 测量每个节点的 DOM 尺寸，存入 `node.measured`
+3. `useNodesInitialized()` 在**全部**节点测量完成后变为 `true`
+4. Hook 计算图签名，与上次已应用的签名比较
+5. 签名不同则构造 `LayoutRequest` 并调用 `layoutFn`
+6. 成功后通过 `setNodes` 应用坐标，仅首轮执行一次 `fitBounds`
+
+**空图快速路径**：节点数组为空时，直接标记布局完成，不调用 `layoutFn`。
 
 布局状态流程：
 
 1. 首轮布局前：`layoutReady = false`
 2. 布局进行中：`layoutLoading = true`
-3. 布局成功：`layoutReady = true`，执行一次 `fitBounds`（后续不再自动 fit）
+3. 布局成功：`layoutReady = true`，执行一次 `fitBounds`，后续不再自动 fit
 4. 布局失败：`layoutError` 被设置，图面板显示错误提示
 
-双向边：若同时存在 `A→B` 和 `B→A`，两条边会自动向两侧偏移，避免完全重叠。
+#### 图签名策略
+
+签名为以下内容拼接的确定性字符串（与顺序无关，排序后合并）：
+
+- **节点**：`id:width x height`
+- **边**：`source -> target [kind] (sourceHandle, targetHandle)`
+
+触发重排的情况：新增/删除节点、节点尺寸变化、新增/删除边。  
+**不触发**重排的情况：拖拽节点（只改坐标，不改签名）。
+
+#### 异步安全策略
+
+每次发起布局时，把当前签名写入 `pendingSigRef`。当响应返回时，与 `pendingSigRef.current` 对比：若不一致（已被更新的请求覆盖），则静默丢弃——不调用 `setNodes`，不调用 `fitBounds`。只有最新一次请求的响应会被应用。
+
+#### 双向边渲染
+
+若输入边集中同时存在 `A→B` 和 `B→A`，两条边会被标记为 `bidirectional: true`。边渲染器（`BidirectionalEdge`）使用浮动边算法：从节点中心向对端中心作射线，取射线与节点矩形 border 的交叉点作为连接锚，配合垂直偏移使两条线分居连接直线两侧，保持可读性。此优化纯属视觉层面，不影响边语义，也不影响发往后端的协议数据。
+
+#### CSS 自定义属性
+
+在 `.fc-rg` 上覆盖以下变量可定制主题：
+
+| 变量 | 浅色默认值 | 说明 |
+|---|---|---|
+| `--fc-rg-node-bg` | `var(--fc-color-bg-elevated)` | 节点背景色 |
+| `--fc-rg-node-border` | `var(--fc-color-border)` | 节点边框色 |
+| `--fc-rg-node-border-sel` | `var(--fc-color-primary)` | 选中节点边框色 |
+| `--fc-rg-node-text` | `var(--fc-color-text)` | 节点标签颜色 |
+| `--fc-rg-edge-color` | `var(--fc-gray-400)` | 边线颜色 |
+| `--fc-rg-edge-selected-color` | `var(--fc-color-primary)` | 选中边线颜色 |
+
+> **注意**：`RelationGraph` 内部引用了 `@xyflow/react/dist/style.css`。若你的打包工具不自动去重，与项目中其他 React Flow 用法同时存在时该文件可能被引入两次，但不影响功能。
 
 ## 发布信息
 

@@ -132,6 +132,7 @@ interface TreeOptionsValue {
     renameEnabled: boolean
     deleteEnabled: boolean
     createEnabled: boolean
+    collapseDuration: number
 }
 
 const TreeActionsCtx = createContext<TreeActionsValue>(null!)
@@ -144,6 +145,7 @@ const TreeOptionsCtx = createContext<TreeOptionsValue>(null!)
 const CollapsePanel = memo(function CollapsePanel(
     { open, children }: { open: boolean; children: React.ReactNode }
 ) {
+    const { collapseDuration } = useContext(TreeOptionsCtx)
     const innerRef = useRef<HTMLDivElement>(null)
     const [height, setHeight] = useState(0)
     const [ready, setReady] = useState(false)
@@ -162,7 +164,7 @@ const CollapsePanel = memo(function CollapsePanel(
         <div style={{
             height: open ? height : 0,
             overflow: 'hidden',
-            transition: ready ? 'height 0.12s ease-out' : 'none',
+            transition: ready ? `height ${collapseDuration}s ease-out` : 'none',
         }}>
             <div ref={innerRef}>{children}</div>
         </div>
@@ -458,7 +460,7 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
     const openNodeMenu = useCallback((e: React.MouseEvent) => {
         if (contextMenuItems.length === 0) return
         actions.select(node.key)
-        showContextMenu(e, contextMenuItems)
+        showContextMenu(e as unknown as MouseEvent, contextMenuItems)
     }, [actions, contextMenuItems, node.key, showContextMenu])
 
     const titleContent = options.renderTitle?.(node, renderState) ?? node.title
@@ -628,6 +630,8 @@ export interface TreeProps {
     colorTokens?: TreeColorTokens
     scrollHeight?: string
     className?: string
+    /** 折叠/展开动画时长（秒），默认 0.12 */
+    collapseDuration?: number
 }
 
 export function Tree({
@@ -660,6 +664,7 @@ export function Tree({
                          colorTokens,
                          scrollHeight = '400px',
                          className = '',
+                         collapseDuration = 0.12,
                      }: TreeProps) {
     const [uncontrolledExpandedKeys, setUncontrolledExpandedKeys] = useState<Set<string>>(
         () => new Set(defaultExpandedKeys ?? [])
@@ -886,6 +891,7 @@ export function Tree({
         renameEnabled,
         deleteEnabled,
         createEnabled,
+        collapseDuration,
     }), [
         indentSize,
         actionDisplayMode,
@@ -901,6 +907,7 @@ export function Tree({
         renameEnabled,
         deleteEnabled,
         createEnabled,
+        collapseDuration,
     ])
 
     const treeStyle = useMemo<React.CSSProperties>(() => {

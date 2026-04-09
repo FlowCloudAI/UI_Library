@@ -95,10 +95,7 @@
     grid-template-columns: 16px 16px minmax(0, 1fr) auto;
     align-items: center;
     column-gap: var(--fc-space-sm);
-    padding-top: 4px;
-    padding-bottom: 4px;
-    padding-right: var(--fc-space-md);
-    padding-left: var(--fc-indent);
+    padding: 4px var(--fc-space-md) 4px var(--fc-indent);
     border-radius: var(--fc-radius-sm);
     margin: 1px var(--fc-space-sm);
     min-height: 32px;
@@ -128,7 +125,7 @@
 /* Drop target: highlight + indent hint */
 .fc-tree__item--drop-into {
     background: var(--fc-tree-primary-subtle) !important;
-    outline: 1.5px solid var(--fc-tree-primary);
+    outline: 2px solid var(--fc-tree-primary);
     outline-offset: -1px;
 }
 
