@@ -173,12 +173,11 @@ export function Timeline({ events }: TimelineProps) {
                         ))}
                     </div>
 
-                    {/* 持续时间范围条 - 实色覆盖时间轴 */}
+                    {/* 持续时间范围条和结束点 - 在时间轴层级渲染 */}
                     {eventGroups.map((group, groupIndex) => {
                         const firstEvent = group.events[0];
                         if (!firstEvent.endTime) return null;
 
-                        // 正确计算范围：从 startTime 到 endTime
                         const startPx = group.leftPx;
                         const endPx = getPosition(firstEvent.endTime);
                         const rangeWidth = endPx - startPx;
@@ -186,22 +185,31 @@ export function Timeline({ events }: TimelineProps) {
                         if (rangeWidth <= 0) return null;
 
                         return (
-                            <div
-                                key={`range-${groupIndex}`}
-                                className="timeline-range-bar"
-                                style={{
-                                    left: LEFT_OFFSET + startPx,
-                                    width: rangeWidth,
-                                    backgroundColor: group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length]
-                                }}
-                            />
+                            <React.Fragment key={`range-${groupIndex}`}>
+                                {/* 范围条 */}
+                                <div
+                                    className="timeline-range-bar"
+                                    style={{
+                                        left: LEFT_OFFSET + startPx,
+                                        width: rangeWidth,
+                                        backgroundColor: group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length]
+                                    }}
+                                />
+                                {/* 结束点圆点 - 空心圆，位于范围条末端 */}
+                                <div
+                                    className="range-end-dot"
+                                    style={{
+                                        left: LEFT_OFFSET + endPx - 5, // 5px是圆点半径(10px/2)
+                                        borderColor: group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length]
+                                    }}
+                                />
+                            </React.Fragment>
                         );
                     })}
 
+                    {/* 事件节点分组（起始点、卡片、垂线） */}
                     {eventGroups.map((group, groupIndex) => {
                         const groupColor = group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length];
-                        const firstEvent = group.events[0];
-                        const hasDuration = !!firstEvent.endTime;
                         const cardCount = group.events.length;
                         const connectorHeight = 20 + cardCount * 25;
 
@@ -217,17 +225,6 @@ export function Timeline({ events }: TimelineProps) {
                                     borderColor: groupColor,
                                     boxShadow: `0 0 0 3px white, 0 0 0 5px ${groupColor}40`
                                 }}></div>
-
-                                {/* 如果有持续时间，显示结束点圆点（空心） */}
-                                {hasDuration && (
-                                    <div
-                                        className="range-end-dot"
-                                        style={{
-                                            left: getPosition(firstEvent.endTime!) - group.leftPx - 6,
-                                            borderColor: groupColor
-                                        }}
-                                    />
-                                )}
 
                                 {/* 垂线连接 */}
                                 <div
