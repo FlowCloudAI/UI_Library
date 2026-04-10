@@ -15,15 +15,15 @@ export interface TagItemProps {
     schema:    TagSchema;
     value?:    TagValue;
     onChange?: (value: TagValue) => void;
-    /** show：展示态，双击可内联编辑；edit：始终为编辑控件 */
+    /** show：展示态；edit：始终为编辑控件 */
     mode?:     "show" | "edit";
     /**
      * 受控编辑状态。
      * 传入时由调用方负责维护，组件不再内部管理；
-     * 不传时组件自管（双击进入、提交/取消退出）。
+     * 不传时组件自管（提交/取消退出）。
      */
     editing?:          boolean;
-    /** 编辑状态变化回调（双击进入、提交或取消时触发） */
+    /** 编辑状态变化回调（提交或取消时触发） */
     onEditingChange?:  (editing: boolean) => void;
     /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
     background?:  string;
@@ -137,25 +137,19 @@ export function TagItem({
         );
     }
 
-    // --- 展示态 ---
+    // --- 展示态（外观与编辑态一致，但不支持双击进入编辑） ---
     return (
-        <span
-            className="fc-tag-item fc-tag-item--show"
-            style={overrideStyle}
-            onDoubleClick={() => {
-                setDraft(value !== undefined ? String(value) : "");
-                setEditing(true);
-                setTimeout(() => inputRef.current?.select(), 0);
-            }}
-            title="双击编辑"
-        >
+        <span className="fc-tag-item fc-tag-item--editing fc-tag-item--show" style={overrideStyle}>
             <span className="fc-tag-item__name">{schema.name}</span>
-            {value !== undefined && (
-                <>
-                    <span className="fc-tag-item__sep">·</span>
-                    <span className="fc-tag-item__value">{String(value)}</span>
-                </>
-            )}
+            <span className="fc-tag-item__sep">·</span>
+            <input
+                className="fc-tag-item__input fc-tag-item__input--readonly"
+                type={schema.type === "number" ? "number" : "text"}
+                value={value !== undefined ? String(value) : ""}
+                readOnly
+                tabIndex={-1}
+                aria-readonly="true"
+            />
         </span>
     );
 }
