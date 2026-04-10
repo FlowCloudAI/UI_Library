@@ -43,12 +43,14 @@ const demoWrap: CSSProperties = {
 export function SideBarDemo() {
     const [selectedKey, setSelectedKey] = useState('home')
     const [collapsed, setCollapsed] = useState(false)
+    const [rightSelectedKey, setRightSelectedKey] = useState('settings')
+    const [rightCollapsed, setRightCollapsed] = useState(false)
 
     return (
         <>
             <div className="demo-section">
-                <h4>基础（可折叠）+ 底部固定项</h4>
-                <div  style={{...demoWrap, height: 400}}>
+                <h4>左侧停靠（默认）</h4>
+                <div style={{...demoWrap, height: 400}}>
                     <SideBar
                         items={menuItems}
                         bottomItems={bottomMenuItems}
@@ -63,12 +65,30 @@ export function SideBarDemo() {
                 </div>
             </div>
             <div className="demo-section">
+                <h4>右侧停靠</h4>
+                <div style={{...demoWrap, height: 400}}>
+                    <main style={{flex: 1, padding: 20, fontSize: 14, color: 'var(--fc-color-text-secondary)'}}>
+                        当前选中：{rightSelectedKey}
+                    </main>
+                    <SideBar
+                        items={menuItems}
+                        bottomItems={bottomMenuItems}
+                        selectedKey={rightSelectedKey}
+                        collapsed={rightCollapsed}
+                        placement="right"
+                        onSelect={setRightSelectedKey}
+                        onCollapse={setRightCollapsed}
+                    />
+                </div>
+            </div>
+            <div className="demo-section">
                 <h4>自定义颜色（绿色主题）</h4>
                 <div style={{...demoWrap, height: 300}}>
                     <SideBar
                         items={menuItems}
                         selectedKey={selectedKey}
                         onSelect={setSelectedKey}
+                        placement="left"
                         style={{
                             '--sidebar-item-selected-bg': '#e8f5e9',
                             '--sidebar-item-selected-color': '#2e7d32',
@@ -76,9 +96,9 @@ export function SideBarDemo() {
                             '--sidebar-item-hover-color': '#33691e',
                         } as CSSProperties}
                         collapsed={false}
-                        onCollapse={function (): void {
-                            throw new Error("Function not implemented.")
-                        }}/>
+                        onCollapse={() => {
+                        }}
+                    />
                     <main style={{flex: 1, padding: 20, fontSize: 14, color: 'var(--fc-color-text-secondary)'}}>
                         当前选中：{selectedKey}
                     </main>

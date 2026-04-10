@@ -1,12 +1,25 @@
 // ui/src/components/RelationGraph/RelationGraph.tsx
 
-import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
+import {
+    createContext,
+    forwardRef,
+    useContext,
+    useEffect,
+    useImperativeHandle,
+    useRef,
+    type CSSProperties,
+    type ForwardedRef,
+    type RefObject,
+    type ReactNode,
+} from 'react';
 import {
     Background,
     BackgroundVariant,
     MarkerType,
     ReactFlow,
     ReactFlowProvider,
+    getViewportForBounds,
+    useReactFlow,
     useEdgesState,
     useNodesState,
     type Edge,
@@ -17,6 +30,7 @@ import {
     Handle,
     Position,
 } from '@xyflow/react';
+import { toCanvas } from 'html-to-image';
 import '@xyflow/react/dist/style.css';
 import './RelationGraph.css';
 
@@ -41,6 +55,166 @@ const RenderNodeCtx = createContext<RenderNodeFn | undefined>(undefined);
 
 interface RGNodeData extends Record<string, unknown> {
     label?: string;
+}
+
+const EXPORT_MIN_ZOOM = 0.05;
+const EXPORT_MAX_ZOOM = 4;
+const DEFAULT_EXPORT_SCALE = 2;
+const DEFAULT_EXPORT_PADDING = 24;
+const DEFAULT_EXPORT_BACKGROUND = '#ffffff';
+const DEFAULT_EXPORT_FILENAME = 'relation-graph';
+
+type RelationGraphImageFormat = 'png' | 'jpeg';
+
+export interface RelationGraphExportBounds {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export interface RelationGraphExportOptions {
+    /** 导出格式，默认 `png`。 */
+    format?: RelationGraphImageFormat;
+    /** 节点 AABB 四周扩展的像素留白，默认 `24`。 */
+    padding?: number;
+    /** 清晰度倍率，默认 `2`。 */
+    scale?: number;
+    /** 导出背景色，默认白色。 */
+    backgroundColor?: string;
+    /** JPEG 质量，仅 `format='jpeg'` 时生效，范围 0–1。 */
+    quality?: number;
+    /** 下载文件名（不含扩展名时自动补后缀）。 */
+    fileName?: string;
+}
+
+export interface RelationGraphExportResult {
+    blob: Blob;
+    bounds: RelationGraphExportBounds;
+    width: number;
+    height: number;
+    fileName: string;
+}
+
+export interface RelationGraphRef {
+    exportImage: (options?: RelationGraphExportOptions) => Promise<RelationGraphExportResult>;
+    downloadImage: (options?: RelationGraphExportOptions) => Promise<RelationGraphExportResult>;
+}
+
+function clampPositiveNumber(value: number | undefined, fallback: number): number {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return fallback;
+    return value;
+}
+
+function clampUnitInterval(value: number | undefined, fallback: number): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+    if (value < 0) return 0;
+    if (value > 1) return 1;
+    return value;
+}
+
+function normalizeFileName(fileName: string | undefined, format: RelationGraphImageFormat): string {
+    const base = fileName?.trim() || DEFAULT_EXPORT_FILENAME;
+    const suffix = `.${format}`;
+    return base.toLowerCase().endsWith(suffix) ? base : `${base}${suffix}`;
+}
+
+function waitForNextFrame(): Promise<void> {
+    return new Promise(resolve => {
+        requestAnimationFrame(() => resolve());
+    });
+}
+
+async function waitForImages(container: HTMLElement): Promise<void> {
+    const images = Array.from(container.querySelectorAll('img'));
+    if (images.length === 0) return;
+
+    await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise<void>(resolve => {
+            img.addEventListener('load', () => resolve(), { once: true });
+            img.addEventListener('error', () => resolve(), { once: true });
+        });
+    }));
+}
+
+function applyCloneExportStyles(
+    cloneRoot: HTMLElement,
+    exportWidth: number,
+    exportHeight: number,
+    backgroundColor: string,
+    viewportTransform: { x: number; y: number; zoom: number },
+): void {
+    cloneRoot.style.position = 'fixed';
+    cloneRoot.style.left = '-100000px';
+    cloneRoot.style.top = '0';
+    cloneRoot.style.width = `${exportWidth}px`;
+    cloneRoot.style.height = `${exportHeight}px`;
+    cloneRoot.style.maxWidth = 'none';
+    cloneRoot.style.maxHeight = 'none';
+    cloneRoot.style.pointerEvents = 'none';
+    cloneRoot.style.zIndex = '-1';
+    cloneRoot.style.opacity = '1';
+    cloneRoot.style.backgroundColor = backgroundColor;
+
+    const canvas = cloneRoot.querySelector<HTMLElement>('.fc-rg__canvas');
+    if (canvas) {
+        canvas.style.width = `${exportWidth}px`;
+        canvas.style.height = `${exportHeight}px`;
+        canvas.style.backgroundColor = backgroundColor;
+        canvas.style.overflow = 'hidden';
+    }
+
+    const reactFlowRoot = cloneRoot.querySelector<HTMLElement>('.react-flow');
+    if (reactFlowRoot) {
+        reactFlowRoot.style.width = `${exportWidth}px`;
+        reactFlowRoot.style.height = `${exportHeight}px`;
+        reactFlowRoot.style.backgroundColor = backgroundColor;
+    }
+
+    cloneRoot.querySelectorAll<HTMLElement>('.fc-rg__overlay').forEach(node => {
+        node.style.display = 'none';
+    });
+
+    const viewport = cloneRoot.querySelector<HTMLElement>('.react-flow__viewport');
+    if (viewport) {
+        viewport.style.transform = `translate(${viewportTransform.x}px, ${viewportTransform.y}px) scale(${viewportTransform.zoom})`;
+        viewport.style.transformOrigin = '0 0';
+    }
+}
+
+function triggerBlobDownload(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
+}
+
+async function renderCloneToBlob(
+    cloneRoot: HTMLElement,
+    format: RelationGraphImageFormat,
+    backgroundColor: string,
+    scale: number,
+    quality: number,
+): Promise<Blob> {
+    const canvas = await toCanvas(cloneRoot, {
+        backgroundColor,
+        cacheBust: true,
+        pixelRatio: scale,
+    });
+
+    const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+    const blob = await new Promise<Blob | null>(resolve => {
+        canvas.toBlob(resolve, mimeType, format === 'jpeg' ? quality : undefined);
+    });
+
+    if (!blob) {
+        throw new Error('图片导出失败，未生成有效的 Blob。');
+    }
+
+    return blob;
 }
 
 function RelationNode({ data, selected }: NodeProps<Node<RGNodeData>>) {
@@ -127,6 +301,8 @@ interface RelationGraphInnerProps {
     fitDuration: number;
     renderNode?: RenderNodeFn;
     onLayoutStateChange?: (state: RelationLayoutState) => void;
+    rootRef: RefObject<HTMLDivElement | null>;
+    exportRef?: ForwardedRef<RelationGraphRef>;
 }
 
 function RelationGraphInner({
@@ -138,6 +314,8 @@ function RelationGraphInner({
     fitDuration,
     renderNode,
     onLayoutStateChange,
+    rootRef,
+    exportRef,
 }: RelationGraphInnerProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node<RGNodeData>>(
         buildRFNodes(inputNodes),
@@ -156,6 +334,88 @@ function RelationGraphInner({
     }, [inputNodes, inputEdges, setNodes, setEdges]);
 
     const layoutState = useRelationLayout({ nodes, edges, layoutFn, nodeOrigin, fitPadding, fitDuration });
+    const reactFlow = useReactFlow<Node<RGNodeData>, Edge>();
+
+    useImperativeHandle(exportRef, () => {
+        const exportImage = async (options: RelationGraphExportOptions = {}) => {
+            if (layoutState.layoutLoading) {
+                throw new Error('图谱仍在布局中，暂时无法导出图片。');
+            }
+
+            if (layoutState.layoutError) {
+                throw new Error(`图谱布局失败，无法导出图片：${layoutState.layoutError.message}`);
+            }
+
+            const rootElement = rootRef.current;
+            if (!rootElement) {
+                throw new Error('图谱根节点不存在，无法导出图片。');
+            }
+
+            const currentNodes = reactFlow.getNodes();
+            if (currentNodes.length === 0) {
+                throw new Error('当前图谱没有节点，无法导出图片。');
+            }
+
+            const measuredNodes = currentNodes.filter(node => {
+                const width = node.measured?.width ?? node.width ?? 0;
+                const height = node.measured?.height ?? node.height ?? 0;
+                return width > 0 && height > 0;
+            });
+
+            if (measuredNodes.length === 0) {
+                throw new Error('当前节点尚未完成尺寸测量，无法导出图片。');
+            }
+
+            const format = options.format ?? 'png';
+            const padding = clampPositiveNumber(options.padding, DEFAULT_EXPORT_PADDING);
+            const scale = clampPositiveNumber(options.scale, DEFAULT_EXPORT_SCALE);
+            const backgroundColor = options.backgroundColor ?? DEFAULT_EXPORT_BACKGROUND;
+            const quality = clampUnitInterval(options.quality, 0.92);
+
+            const bounds = reactFlow.getNodesBounds(measuredNodes);
+            const exportWidth = Math.max(1, Math.ceil(bounds.width + padding * 2));
+            const exportHeight = Math.max(1, Math.ceil(bounds.height + padding * 2));
+            const viewport = getViewportForBounds(bounds, exportWidth, exportHeight, EXPORT_MIN_ZOOM, EXPORT_MAX_ZOOM, 0);
+            const fileName = normalizeFileName(options.fileName, format);
+
+            const cloneRoot = rootElement.cloneNode(true) as HTMLDivElement;
+            applyCloneExportStyles(cloneRoot, exportWidth, exportHeight, backgroundColor, viewport);
+
+            document.body.appendChild(cloneRoot);
+
+            try {
+                await waitForNextFrame();
+                await waitForImages(cloneRoot);
+
+                const blob = await renderCloneToBlob(
+                    cloneRoot,
+                    format,
+                    backgroundColor,
+                    scale,
+                    quality,
+                );
+
+                return {
+                    blob,
+                    bounds,
+                    width: exportWidth,
+                    height: exportHeight,
+                    fileName,
+                };
+            } finally {
+                cloneRoot.remove();
+            }
+        };
+
+        return {
+            exportImage,
+            downloadImage: async (options: RelationGraphExportOptions = {}) => {
+                const result = await exportImage(options);
+                triggerBlobDownload(result.blob, result.fileName);
+                return result;
+            },
+        };
+    }, [layoutState.layoutError, layoutState.layoutLoading, reactFlow, rootRef]);
 
     const prevStateRef = useRef<RelationLayoutState>({ layoutReady: false, layoutLoading: false, layoutError: null });
     useEffect(() => {
@@ -233,10 +493,10 @@ export interface RelationGraphProps {
     height?: string | number;
     width?: string | number;
     className?: string;
-    style?: React.CSSProperties;
+    style?: CSSProperties;
 }
 
-export function RelationGraph({
+export const RelationGraph = forwardRef<RelationGraphRef, RelationGraphProps>(function RelationGraph({
     nodes,
     edges,
     layoutFn,
@@ -249,10 +509,13 @@ export function RelationGraph({
     width = '100%',
     className,
     style,
-}: RelationGraphProps) {
+}: RelationGraphProps, ref) {
+    const rootRef = useRef<HTMLDivElement>(null);
+
     return (
         <div
             className={`fc-rg${className ? ` ${className}` : ''}`}
+            ref={rootRef}
             style={{ width, height, ...style }}
         >
             <ReactFlowProvider>
@@ -265,8 +528,12 @@ export function RelationGraph({
                     fitPadding={fitPadding}
                     fitDuration={fitDuration}
                     onLayoutStateChange={onLayoutStateChange}
+                    rootRef={rootRef}
+                    exportRef={ref}
                 />
             </ReactFlowProvider>
         </div>
     );
-}
+});
+
+RelationGraph.displayName = 'RelationGraph';

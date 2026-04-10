@@ -153,9 +153,13 @@ const CollapsePanel = memo(function CollapsePanel(
     useEffect(() => {
         const el = innerRef.current
         if (!el) return
-        const ro = new ResizeObserver(() => setHeight(el.offsetHeight))
+        const ro = new ResizeObserver((entries) => {
+            // 使用 entry 数据，避免读取 el.offsetHeight 触发同步 layout
+            const h = entries[0]?.contentRect.height
+            if (h !== undefined) setHeight(h)
+        })
         ro.observe(el)
-        setHeight(el.offsetHeight)
+        setHeight(el.offsetHeight) // 挂载时一次性读取，可以接受
         requestAnimationFrame(() => requestAnimationFrame(() => setReady(true)))
         return () => ro.disconnect()
     }, [])
@@ -289,19 +293,21 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
         const el = itemRef.current
         if (!el) return
 
-        const updateCompactActions = () => {
-            const style = window.getComputedStyle(el)
-            const innerWidth =
-                el.clientWidth
-                - Number.parseFloat(style.paddingLeft || '0')
-                - Number.parseFloat(style.paddingRight || '0')
+        // 初始化时一次性同步读取（挂载时可接受）
+        const style = window.getComputedStyle(el)
+        const initialWidth =
+            el.clientWidth
+            - Number.parseFloat(style.paddingLeft || '0')
+            - Number.parseFloat(style.paddingRight || '0')
+        setIsAutoCompact(initialWidth < options.actionCollapseThreshold)
 
-            setIsAutoCompact(innerWidth < options.actionCollapseThreshold)
-        }
-
-        const observer = new ResizeObserver(updateCompactActions)
+        const observer = new ResizeObserver((entries) => {
+            // 用 entry.contentRect.width 替代 getComputedStyle + clientWidth，
+            // 避免 ResizeObserver 回调内触发同步强制 layout
+            const w = entries[0]?.contentRect.width
+            if (w !== undefined) setIsAutoCompact(w < options.actionCollapseThreshold)
+        })
         observer.observe(el)
-        updateCompactActions()
 
         return () => observer.disconnect()
     }, [indent, options.actionCollapseThreshold, options.actionDisplayMode])

@@ -1,18 +1,37 @@
-import React, { useState } from "react";
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import "./MarkdownEditor.css";
 import MDEditor, { commands } from "@uiw/react-md-editor";
 import type { ICommand, MDEditorProps } from "@uiw/react-md-editor";
 import { useTheme } from "../../ThemeProvider";
 
+type MarkdownPreviewOptions = MDEditorProps["previewOptions"];
+type MarkdownPreviewRenderer = NonNullable<MDEditorProps["components"]>["preview"];
+
 export interface MarkdownEditorProps {
     value:        string;
     onChange:     (v: string) => void;
-    /** AI 补全回调，传入时显示 AI 按钮，不传则隐藏 */
+    /** AI 补全回调 */
     onAiComplete?: () => void;
     minHeight?:   number;
+    height?:      number | string;
+    maxHeight?:   number;
+    autoHeight?:  boolean;
     placeholder?: string;
+    disabled?:    boolean;
+    className?:   string;
+    style?:       React.CSSProperties;
     /** 透传到底层 textarea，用于监听键盘、输入、光标等事件 */
     textareaProps?: MDEditorProps["textareaProps"];
+    onFocus?: MDEditorProps["textareaProps"] extends infer T
+        ? T extends { onFocus?: infer F }
+            ? F
+            : never
+        : never;
+    onBlur?: MDEditorProps["textareaProps"] extends infer T
+        ? T extends { onBlur?: infer F }
+            ? F
+            : never
+        : never;
     /**
      * 显示模式
      * - edit:    编辑模式（工具栏含双栏切换按钮）
@@ -20,10 +39,33 @@ export interface MarkdownEditorProps {
      * @default 'edit'
      */
     mode?: 'edit' | 'preview';
+    showSplitToggle?: boolean;
+    defaultSplitView?: boolean;
+    splitView?: boolean;
+    onSplitChange?: (split: boolean) => void;
+    showAiButton?: boolean;
+    toolbarCommands?: ICommand[];
+    extraCommands?: ICommand[];
+    hideFullscreen?: boolean;
+    previewOptions?: MarkdownPreviewOptions;
+    previewRender?: MarkdownPreviewRenderer;
     /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
     background?:      string;
     toolbarBackground?: string;
     borderColor?:     string;
+    textColor?:       string;
+    mutedTextColor?:  string;
+    toolbarButtonHoverBackground?: string;
+    toolbarButtonHoverColor?: string;
+    primaryColor?:    string;
+    primaryBackground?: string;
+    editorTextBackground?: string;
+    previewBackground?: string;
+    fontSizeScale?: number;
+    codeInlineBackground?: string;
+    codeBlockBackground?: string;
+    blockquoteBorderColor?: string;
+    selectionBackground?: string;
 }
 
 function withTitle(cmd: ICommand, title: string): ICommand {
@@ -55,23 +97,78 @@ export function MarkdownEditor({
     onChange,
     onAiComplete,
     minHeight   = 200,
+    height,
+    maxHeight,
+    autoHeight  = true,
     placeholder = "在此输入内容...",
+    disabled,
+    className,
+    style,
     textareaProps,
+    onFocus,
+    onBlur,
     mode        = "edit",
+    showSplitToggle = true,
+    defaultSplitView = false,
+    splitView,
+    onSplitChange,
+    showAiButton,
+    toolbarCommands,
+    extraCommands,
+    hideFullscreen = false,
+    previewOptions,
+    previewRender,
     background,
     toolbarBackground,
     borderColor,
+    textColor,
+    mutedTextColor,
+    toolbarButtonHoverBackground,
+    toolbarButtonHoverColor,
+    primaryColor,
+    primaryBackground,
+    editorTextBackground,
+    previewBackground,
+    fontSizeScale,
+    codeInlineBackground,
+    codeBlockBackground,
+    blockquoteBorderColor,
+    selectionBackground,
 }: MarkdownEditorProps) {
     const { resolvedTheme } = useTheme();
-    const [showSplit, setShowSplit] = useState(false);
+    const [uncontrolledSplit, setUncontrolledSplit] = useState(defaultSplitView);
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const [editorHeight, setEditorHeight] = useState(minHeight);
+    const isSplitControlled = splitView !== undefined;
+    const showSplit = isSplitControlled ? splitView : uncontrolledSplit;
+    const resolvedShowAiButton = showAiButton ?? !!onAiComplete;
+
+    const setShowSplit = (next: boolean | ((prev: boolean) => boolean)) => {
+        const nextValue = typeof next === "function" ? next(showSplit) : next;
+        if (!isSplitControlled) setUncontrolledSplit(nextValue);
+        onSplitChange?.(nextValue);
+    };
 
     // --- CSS 变量注入 ---
     const colorVars: Record<string, string | undefined> = {
-        "--md-bg":         background,
-        "--md-toolbar-bg": toolbarBackground,
-        "--md-border":     borderColor,
+        "--md-bg":                         background,
+        "--md-toolbar-bg":                 toolbarBackground,
+        "--md-border":                     borderColor,
+        "--md-text":                       textColor,
+        "--md-text-muted":                 mutedTextColor,
+        "--md-toolbar-hover-bg":           toolbarButtonHoverBackground,
+        "--md-toolbar-hover-color":        toolbarButtonHoverColor,
+        "--md-primary":                    primaryColor,
+        "--md-primary-bg":                 primaryBackground,
+        "--md-editor-text-bg":             editorTextBackground,
+        "--md-preview-bg":                 previewBackground,
+        "--md-font-size-scale":            fontSizeScale?.toString(),
+        "--md-code-inline-bg":             codeInlineBackground,
+        "--md-code-block-bg":              codeBlockBackground,
+        "--md-blockquote-border":          blockquoteBorderColor,
+        "--md-selection-bg":               selectionBackground,
     };
-    const overrideStyle: React.CSSProperties = {};
+    const overrideStyle: React.CSSProperties = { ...style };
     for (const [k, v] of Object.entries(colorVars)) {
         if (v !== undefined) (overrideStyle as any)[k] = v;
     }
@@ -85,7 +182,7 @@ export function MarkdownEditor({
         execute:     () => onAiComplete?.(),
     };
 
-    // --- 双栏切换按钮（内置，对外不暴露） ---
+    // --- 双栏切换按钮 ---
     const splitCommand: ICommand = {
         name:        "split-view",
         keyCommand:  "split-view",
@@ -98,31 +195,124 @@ export function MarkdownEditor({
         execute: () => setShowSplit(p => !p),
     };
 
-    const extraCommands: ICommand[] = [
-        splitCommand,
-        ...(onAiComplete ? [commands.divider, aiCommand] : []),
-        withTitle(commands.fullscreen, '全屏'),
-    ];
+    const mergedExtraCommands = useMemo(() => {
+        const result: ICommand[] = [];
+        if (showSplitToggle && mode === "edit") {
+            result.push(splitCommand);
+        }
+        if (resolvedShowAiButton) {
+            if (result.length > 0) result.push(commands.divider);
+            result.push(aiCommand);
+        }
+        if (!hideFullscreen) {
+            if (result.length > 0) result.push(commands.divider);
+            result.push(withTitle(commands.fullscreen, "全屏"));
+        }
+        if (extraCommands?.length) {
+            if (result.length > 0) result.push(commands.divider);
+            result.push(...extraCommands);
+        }
+        return result;
+    }, [showSplitToggle, mode, resolvedShowAiButton, onAiComplete, hideFullscreen, extraCommands, showSplit]);
 
     // 实际传给 MDEditor 的 preview 值
     const editorPreview = mode === 'preview' ? 'preview' : showSplit ? 'live' : 'edit';
 
+    const mergedTextareaProps: MDEditorProps["textareaProps"] = {
+        ...textareaProps,
+        placeholder,
+        disabled,
+        onFocus: event => {
+            textareaProps?.onFocus?.(event);
+            onFocus?.(event);
+        },
+        onBlur: event => {
+            textareaProps?.onBlur?.(event);
+            onBlur?.(event);
+        },
+    };
+
+    useLayoutEffect(() => {
+        if (!autoHeight) {
+            const baseHeight = height ?? minHeight;
+            setEditorHeight(typeof baseHeight === "number" ? baseHeight : minHeight);
+            return;
+        }
+
+        const root = wrapRef.current;
+        if (!root) return;
+
+        const measure = () => {
+            const toolbarHeight =
+                mode === 'preview'
+                    ? 0
+                    : root.querySelector<HTMLElement>('.w-md-editor-toolbar')?.getBoundingClientRect().height ?? 0;
+            const textareaHeight =
+                root.querySelector<HTMLTextAreaElement>('.w-md-editor-text-input')?.scrollHeight ?? 0;
+            const previewHeight =
+                root.querySelector<HTMLElement>('.w-md-editor-preview')?.scrollHeight ??
+                root.querySelector<HTMLElement>('.wmde-markdown')?.scrollHeight ??
+                0;
+
+            const bodyHeight =
+                mode === 'preview'
+                    ? previewHeight
+                    : showSplit
+                        ? Math.max(textareaHeight, previewHeight)
+                        : textareaHeight;
+
+            let nextHeight = Math.max(minHeight, Math.ceil(toolbarHeight + bodyHeight));
+            if (typeof maxHeight === "number") {
+                nextHeight = Math.min(nextHeight, maxHeight);
+            }
+            setEditorHeight(prev => (Math.abs(prev - nextHeight) > 1 ? nextHeight : prev));
+        };
+
+        const rafId = window.requestAnimationFrame(measure);
+        const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+
+        const toolbar = root.querySelector<HTMLElement>('.w-md-editor-toolbar');
+        const textarea = root.querySelector<HTMLTextAreaElement>('.w-md-editor-text-input');
+        const preview = root.querySelector<HTMLElement>('.w-md-editor-preview');
+        const markdown = root.querySelector<HTMLElement>('.wmde-markdown');
+
+        [toolbar, textarea, preview, markdown].forEach(node => {
+            if (node && resizeObserver) resizeObserver.observe(node);
+        });
+
+        window.addEventListener('resize', measure);
+
+        return () => {
+            window.cancelAnimationFrame(rafId);
+            resizeObserver?.disconnect();
+            window.removeEventListener('resize', measure);
+        };
+    }, [autoHeight, value, mode, showSplit, minHeight, maxHeight, height]);
+
+    const editorHeightValue = autoHeight ? editorHeight : (height ?? minHeight);
+    const editorCommands = toolbarCommands ?? TOOLBAR_COMMANDS;
+    const editorComponents = previewRender ? { preview: previewRender } : undefined;
+
     return (
         <div
-            className="fc-md-wrap"
+            ref={wrapRef}
+            className={["fc-md-wrap", className].filter(Boolean).join(" ")}
             style={overrideStyle}
             data-color-mode={resolvedTheme}
         >
             <MDEditor
                 value={value}
                 onChange={v => onChange(v ?? "")}
-                commands={TOOLBAR_COMMANDS}
-                extraCommands={extraCommands}
-                height={minHeight}
+                commands={editorCommands}
+                extraCommands={mergedExtraCommands}
+                height={editorHeightValue}
                 preview={editorPreview}
                 hideToolbar={mode === 'preview'}
                 visibleDragbar={false}
-                textareaProps={{ ...textareaProps, placeholder }}
+                textareaProps={mergedTextareaProps}
+                previewOptions={previewOptions}
+                components={editorComponents}
+                className={disabled ? "fc-md-editor--disabled" : undefined}
             />
         </div>
     );

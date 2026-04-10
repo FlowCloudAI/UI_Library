@@ -1,4 +1,4 @@
-import {useMemo, useState, type CSSProperties} from 'react'
+import {useMemo, useState, type CSSProperties, type MouseEvent as ReactMouseEvent} from 'react'
 import {
     Tree,
     flatToTree,
@@ -22,7 +22,7 @@ interface FlatRow {
     parent_id: string | null
     name: string
     sort_order: number
-};
+}
 
 export function TreeDemo() {
     const [rows, setRows] = useState<FlatRow[]>(INITIAL_ROWS)
@@ -35,7 +35,7 @@ export function TreeDemo() {
     const [actionDisplayMode, setActionDisplayMode] = useState<'auto' | 'inline' | 'overflow'>('auto')
     const [customColors, setCustomColors] = useState(true)
 
-    const handleDividerMouseDown = (e: React.MouseEvent) => {
+    const handleDividerMouseDown = (e: ReactMouseEvent<HTMLDivElement>) => {
         e.preventDefault()
         const startX = e.clientX
         const startWidth = navWidth
@@ -117,11 +117,6 @@ export function TreeDemo() {
 
     const handleDeleteRequest = (node: CategoryTreeNode) => {
         addLog(`请求删除 [${node.key}] "${node.title}"`)
-    }
-
-    const handleInspect = (node: CategoryTreeNode) => {
-        setSelectedKey(node.key)
-        addLog(`查看节点 [${node.key}]，包含 ${node.children.length} 个子节点`)
     }
 
     // Drop on target = become target's last child
@@ -235,20 +230,11 @@ export function TreeDemo() {
     )
 
     const getNodeActions = (
-        node: CategoryTreeNode,
+        _node: CategoryTreeNode,
         state: TreeNodeRenderState,
         helpers: TreeNodeActionHelpers
     ): TreeActionItem[] => {
-        const actions: TreeActionItem[] = [
-            {
-                key: 'inspect',
-                label: '查看',
-                title: '查看节点',
-                icon: '👁',
-                onClick: () => handleInspect(node),
-                showInline: !state.isCompactActions,
-            },
-        ]
+        const actions: TreeActionItem[] = []
 
         if (state.canRename) {
             actions.push({
@@ -389,8 +375,8 @@ export function TreeDemo() {
                         canDrag={node => node.raw.parent_id !== null}
                         canDrop={(source, target, position) => {
                             if (source.raw.parent_id === null && position === 'into') return false
-                            if (source.raw.parent_id === null && target.raw.parent_id !== null) return false
-                            return true
+                            return !(source.raw.parent_id === null && target.raw.parent_id !== null);
+
                         }}
                         indentSize={indentSize}
                         actionDisplayMode={actionDisplayMode}

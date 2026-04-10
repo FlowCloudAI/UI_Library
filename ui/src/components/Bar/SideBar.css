@@ -26,6 +26,11 @@
     transition: width var(--fc-transition-slow, 250ms ease);
 }
 
+.fc-sidebar--right {
+    border-right: none;
+    border-left: 1px solid var(--fc-color-border);
+}
+
 /* ========== Header ========== */
 .fc-sidebar__header {
     position: relative;
@@ -54,6 +59,10 @@
     transition: background var(--fc-transition, 150ms ease),
     color var(--fc-transition, 150ms ease),
     left var(--fc-transition-slow, 250ms ease);
+}
+
+.fc-sidebar--right .fc-sidebar__collapse-btn {
+    left: var(--fc-space-md, 12px);
 }
 
 .fc-sidebar__collapse-btn:hover {
@@ -173,6 +182,10 @@
 [data-theme="dark"] .fc-sidebar {
     background: var(--fc-color-bg-secondary);
     border-right-color: var(--fc-color-border);
+}
+
+[data-theme="dark"] .fc-sidebar--right {
+    border-left-color: var(--fc-color-border);
 }
 
 [data-theme="dark"] .fc-sidebar__item--selected {

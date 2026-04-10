@@ -4,14 +4,15 @@
 // layout algorithm.  In production the host would supply a Tauri invoke or HTTP
 // call that runs a real graph-layout backend.
 
-import { useMemo, useState } from 'react';
-import { RelationGraph } from 'flowcloudai-ui';
+import { useMemo, useRef, useState } from 'react';
+import { Button, RelationGraph } from 'flowcloudai-ui';
 import type {
     LayoutFunction,
     LayoutNode,
     LayoutRequest,
     LayoutResponse,
     RelationEdgeInput,
+    RelationGraphRef,
     RelationLayoutState,
     RelationNodeInput,
 } from 'flowcloudai-ui';
@@ -151,7 +152,12 @@ const ENTRY_EDGES: RelationEdgeInput[] = [
 // ─── Demo ─────────────────────────────────────────────────────────────────────
 
 export function RelationGraphDemo() {
+    const graphRef = useRef<RelationGraphRef>(null);
     const [scenario, setScenario] = useState<ScenarioKey>('small');
+    const [exportPadding, setExportPadding] = useState('32');
+    const [exportScale, setExportScale] = useState('2');
+    const [exporting, setExporting] = useState(false);
+    const [exportMessage, setExportMessage] = useState<string>('');
     const [status, setStatus] = useState<RelationLayoutState>({
         layoutReady: false,
         layoutLoading: false,
@@ -162,6 +168,31 @@ export function RelationGraphDemo() {
         () => SCENARIOS[scenario].data,
         [scenario],
     );
+
+    const runExport = async (format: 'png' | 'jpeg') => {
+        if (!graphRef.current) return;
+
+        try {
+            setExporting(true);
+            setExportMessage('');
+
+            const result = await graphRef.current.downloadImage({
+                format,
+                padding: Number(exportPadding) || 32,
+                scale: Number(exportScale) || 2,
+                backgroundColor: '#ffffff',
+                fileName: `relation-graph-${scenario}`,
+            });
+
+            setExportMessage(
+                `已导出 ${result.fileName}，AABB: x=${Math.round(result.bounds.x)}, y=${Math.round(result.bounds.y)}, width=${Math.round(result.bounds.width)}, height=${Math.round(result.bounds.height)}`,
+            );
+        } catch (error) {
+            setExportMessage(error instanceof Error ? error.message : String(error));
+        } finally {
+            setExporting(false);
+        }
+    };
 
     return (
         <div className="demo-section" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -189,6 +220,62 @@ export function RelationGraphDemo() {
                     </button>
                 ))}
 
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fc-font-size-xs)' }}>
+                    <span>导出留白</span>
+                    <input
+                        type="number"
+                        min={0}
+                        step={4}
+                        value={exportPadding}
+                        onChange={e => setExportPadding(e.target.value)}
+                        style={{
+                            width: 84,
+                            padding: '4px 8px',
+                            borderRadius: 6,
+                            border: '1px solid var(--fc-color-border)',
+                            background: 'var(--fc-color-bg-elevated)',
+                            color: 'var(--fc-color-text)',
+                        }}
+                    />
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fc-font-size-xs)' }}>
+                    <span>清晰度</span>
+                    <input
+                        type="number"
+                        min={1}
+                        max={4}
+                        step={0.5}
+                        value={exportScale}
+                        onChange={e => setExportScale(e.target.value)}
+                        style={{
+                            width: 72,
+                            padding: '4px 8px',
+                            borderRadius: 6,
+                            border: '1px solid var(--fc-color-border)',
+                            background: 'var(--fc-color-bg-elevated)',
+                            color: 'var(--fc-color-text)',
+                        }}
+                    />
+                </label>
+
+                <Button
+                    size="sm"
+                    onClick={() => void runExport('png')}
+                    disabled={exporting || status.layoutLoading || !status.layoutReady}
+                >
+                    导出 PNG
+                </Button>
+
+                <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void runExport('jpeg')}
+                    disabled={exporting || status.layoutLoading || !status.layoutReady}
+                >
+                    导出 JPEG
+                </Button>
+
                 {/* Layout status badge */}
                 <span
                     style={{
@@ -213,9 +300,19 @@ export function RelationGraphDemo() {
                 </span>
             </div>
 
+            <p style={{ fontSize: 'var(--fc-font-size-xs)', color: 'var(--fc-color-text-secondary)', margin: 0 }}>
+                导出会自动读取当前所有节点的 AABB，并按上面的留白和清晰度参数生成图片。
+            </p>
+            {exportMessage && (
+                <p style={{ fontSize: 'var(--fc-font-size-xs)', color: 'var(--fc-color-text-secondary)', margin: 0 }}>
+                    {exportMessage}
+                </p>
+            )}
+
             {/* Graph canvas */}
             <div style={{ height: 500, borderRadius: 8, overflow: 'hidden' }}>
                 <RelationGraph
+                    ref={graphRef}
                     nodes={nodes}
                     edges={edges}
                     layoutFn={mockGridLayout}

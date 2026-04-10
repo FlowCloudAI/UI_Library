@@ -17,6 +17,8 @@ export interface SideBarItem {
     href?: string;
 }
 
+export type SideBarPlacement = 'left' | 'right';
+
 export interface SideBarProps {
     /** 菜单项列表（受控） */
     items: SideBarItem[];
@@ -31,6 +33,8 @@ export interface SideBarProps {
     width?: number;
     /** 折叠时宽度，默认 64 */
     collapsedWidth?: number;
+    /** 停靠位置，默认 left */
+    placement?: SideBarPlacement;
 
     /* ---- 回调 ---- */
 
@@ -97,6 +101,7 @@ export const SideBar = memo<SideBarProps>(({
                                                collapsed,
                                                width = 240,
                                                collapsedWidth = 64,
+                                               placement = 'left',
                                                onSelect,
                                                onCollapse,
                                                className = '',
@@ -115,8 +120,13 @@ export const SideBar = memo<SideBarProps>(({
     const rootClasses = [
         'fc-sidebar',
         collapsed && 'fc-sidebar--collapsed',
+        `fc-sidebar--${placement}`,
         className,
     ].filter(Boolean).join(' ');
+
+    const collapseIconPath = placement === 'right'
+        ? (collapsed ? 'M10 3L5 8L10 13' : 'M6 3L11 8L6 13')
+        : (collapsed ? 'M6 3L11 8L6 13' : 'M10 3L5 8L10 13');
 
     const rootStyle: React.CSSProperties = {
         '--sidebar-width': `${collapsed ? collapsedWidth : width}px`,
@@ -140,10 +150,7 @@ export const SideBar = memo<SideBarProps>(({
                         xmlns="http://www.w3.org/2000/svg"
                     >
                         <path
-                            d={collapsed
-                                ? 'M6 3L11 8L6 13'   /* → 展开箭头 */
-                                : 'M10 3L5 8L10 13'   /* ← 收起箭头 */
-                            }
+                            d={collapseIconPath}
                             stroke="currentColor"
                             strokeWidth="1.5"
                             strokeLinecap="round"

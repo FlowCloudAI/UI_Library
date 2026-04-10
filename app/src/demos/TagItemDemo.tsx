@@ -5,34 +5,44 @@ export function TagItemDemo() {
     const [numVal, setNumVal] = useState<TagValue>(50)
     const [strVal, setStrVal] = useState<TagValue>("示例文本")
     const [boolVal, setBoolVal] = useState<TagValue>(true)
+    const [numMode, setNumMode] = useState<'show' | 'edit'>('show')
+    const [strMode, setStrMode] = useState<'show' | 'edit'>('show')
+
+    // 受控编辑状态演示
+    const [ctrlEditing, setCtrlEditing] = useState(false)
+    const [ctrlVal, setCtrlVal] = useState<TagValue>("受控文本")
 
     return (
         <>
             <div className="demo-section">
-                <h4>数字（range 0–100）</h4>
+                <h4>数字（range 0–100，可切换模式）</h4>
                 <div className="demo-row" style={{ alignItems: 'center' }}>
                     <TagItem
                         schema={{ id: 'hp', name: '生命值', type: 'number', range_min: 0, range_max: 100 } as TagSchema}
-                        value={numVal} onChange={setNumVal} mode="show"
+                        value={numVal}
+                        onChange={setNumVal}
+                        mode={numMode}
                     />
-                    <TagItem
-                        schema={{ id: 'hp', name: '生命值', type: 'number', range_min: 0, range_max: 100 } as TagSchema}
-                        value={numVal} onChange={setNumVal} mode="edit"
-                    />
+                    <button onClick={() => setNumMode(v => v === 'show' ? 'edit' : 'show')} style={{ fontSize: 12 }}>
+                        切换为{numMode === 'show' ? '编辑态' : '展示态'}
+                    </button>
+                    <span style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)' }}>模式：{numMode}</span>
                     <span style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)' }}>当前：{String(numVal)}</span>
                 </div>
             </div>
             <div className="demo-section">
-                <h4>字符串</h4>
+                <h4>字符串（可切换模式）</h4>
                 <div className="demo-row" style={{ alignItems: 'center' }}>
                     <TagItem
                         schema={{ id: 'desc', name: '描述', type: 'string' } as TagSchema}
-                        value={strVal} onChange={setStrVal} mode="show"
+                        value={strVal}
+                        onChange={setStrVal}
+                        mode={strMode}
                     />
-                    <TagItem
-                        schema={{ id: 'desc', name: '描述', type: 'string' } as TagSchema}
-                        value={strVal} onChange={setStrVal} mode="edit"
-                    />
+                    <button onClick={() => setStrMode(v => v === 'show' ? 'edit' : 'show')} style={{ fontSize: 12 }}>
+                        切换为{strMode === 'show' ? '编辑态' : '展示态'}
+                    </button>
+                    <span style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)' }}>模式：{strMode}</span>
                     <span style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)' }}>当前：{String(strVal)}</span>
                 </div>
             </div>
@@ -48,6 +58,22 @@ export function TagItemDemo() {
                         value={boolVal} onChange={setBoolVal} mode="edit"
                     />
                     <span style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)' }}>当前：{String(boolVal)}</span>
+                </div>
+            </div>
+            <div className="demo-section">
+                <h4>受控编辑状态</h4>
+                <div className="demo-row" style={{ alignItems: 'center' }}>
+                    <TagItem
+                        schema={{ id: 'ctrl', name: '名称', type: 'string' } as TagSchema}
+                        value={ctrlVal}
+                        onChange={setCtrlVal}
+                        editing={ctrlEditing}
+                        onEditingChange={setCtrlEditing}
+                    />
+                    <button onClick={() => setCtrlEditing(v => !v)} style={{ fontSize: 12 }}>
+                        {ctrlEditing ? '退出编辑' : '进入编辑'}
+                    </button>
+                    <span style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)' }}>当前：{String(ctrlVal)}</span>
                 </div>
             </div>
             <div className="demo-section">

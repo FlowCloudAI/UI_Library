@@ -286,6 +286,28 @@ type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
 - `layoutLoading: boolean`：正在等待布局响应
 - `layoutError: Error | null`：最近一次布局调用的错误
 
+### `RelationGraphRef`
+
+- `exportImage(options?)`：按当前所有节点的 AABB 自动导出图片，返回 `Promise<RelationGraphExportResult>`
+- `downloadImage(options?)`：按当前所有节点的 AABB 自动下载图片，返回 `Promise<RelationGraphExportResult>`
+
+### `RelationGraphExportOptions`
+
+- `format?: 'png' | 'jpeg'`：导出格式，默认 `'png'`
+- `padding?: number`：节点 AABB 四周扩展的像素留白，默认 `24`
+- `scale?: number`：清晰度倍率，默认 `2`
+- `backgroundColor?: string`：导出背景色，默认 `#ffffff`
+- `quality?: number`：JPEG 质量，范围 `0–1`，默认 `0.92`
+- `fileName?: string`：下载文件名，不带扩展名时会自动补齐
+
+### `RelationGraphExportResult`
+
+- `blob: Blob`：导出的图片数据
+- `bounds: { x: number; y: number; width: number; height: number }`：本次导出的节点 AABB
+- `width: number`：导出区域宽度（含 padding，像素）
+- `height: number`：导出区域高度（含 padding，像素）
+- `fileName: string`：最终文件名
+
 ## 组件文档
 
 ## Providers
@@ -466,6 +488,8 @@ type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
 - `value?: number | string | boolean`：当前值
 - `onChange?: (value) => void`：值变更回调
 - `mode?: 'show' | 'edit'`：显示模式，`show` 可双击进入编辑，`edit` 始终编辑
+- `editing?: boolean`：受控编辑状态；传入时由调用方负责维护，组件不再内部管理；不传时组件自管（双击进入、提交/取消退出）
+- `onEditingChange?: (editing: boolean) => void`：编辑状态变化回调（双击进入、提交或取消时触发）
 - `background?: string`：背景色
 - `color?: string`：文字色
 - `borderColor?: string`：边框色
@@ -564,34 +588,85 @@ type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
 
 ### `MarkdownEditor`
 
-用途：Markdown 编辑与预览组件，可选 AI 完成功能入口。
+用途：Markdown 编辑与预览组件，支持受控双栏、工具栏扩展、自定义预览渲染和颜色覆盖。
 
 参数：
 
 - `value: string`：编辑器内容
 - `onChange: (value: string) => void`：内容变化回调
-- `onAiComplete?: () => void`：AI 补全回调，传入后显示 AI 按钮
+- `onAiComplete?: () => void`：AI 补全回调
 - `minHeight?: number`：最小高度
+- `height?: number | string`：固定高度；`autoHeight=false` 时优先生效
+- `maxHeight?: number`：自动高度模式下的最大高度
+- `autoHeight?: boolean`：是否根据内容自动撑高，默认 `true`
 - `placeholder?: string`：占位文本
+- `disabled?: boolean`：是否禁用输入
+- `className?: string`：根容器额外类名
+- `style?: CSSProperties`：根容器内联样式
 - `textareaProps?: MDEditorProps['textareaProps']`：透传到底层 `textarea` 的属性，可用于监听键盘、输入、光标等事件
+- `onFocus?: FocusEventHandler<HTMLTextAreaElement>`：编辑区获得焦点回调
+- `onBlur?: FocusEventHandler<HTMLTextAreaElement>`：编辑区失去焦点回调
 - `mode?: 'edit' | 'preview'`：显示模式
+- `showSplitToggle?: boolean`：是否显示双栏切换按钮
+- `defaultSplitView?: boolean`：非受控模式下的初始双栏状态
+- `splitView?: boolean`：受控双栏状态
+- `onSplitChange?: (split: boolean) => void`：双栏状态变化回调
+- `showAiButton?: boolean`：是否显示 AI 按钮；默认跟随 `onAiComplete` 是否存在
+- `toolbarCommands?: ICommand[]`：覆盖默认工具栏命令
+- `extraCommands?: ICommand[]`：追加右侧扩展命令
+- `hideFullscreen?: boolean`：是否隐藏全屏按钮
+- `previewOptions?: MDEditorProps['previewOptions']`：透传到底层 Markdown 预览配置
+- `previewRender?: MDEditorProps['components']['preview']`：自定义预览区渲染函数
 - `background?: string`：编辑区背景色
 - `toolbarBackground?: string`：工具栏背景色
 - `borderColor?: string`：边框色
+- `textColor?: string`：正文文字色
+- `mutedTextColor?: string`：次级文字色、工具栏按钮默认色
+- `toolbarButtonHoverBackground?: string`：工具栏按钮 hover 背景色
+- `toolbarButtonHoverColor?: string`：工具栏按钮 hover 文字色
+- `primaryColor?: string`：主色，用于 AI 按钮、双栏激活态、引用强调线等
+- `primaryBackground?: string`：主色浅底，用于 AI / 双栏按钮激活态背景
+- `editorTextBackground?: string`：编辑区正文背景色
+- `previewBackground?: string`：预览区背景色
+- `fontSizeScale?: number`：字号缩放倍率，`1` 为默认字号
+- `codeInlineBackground?: string`：行内代码背景色
+- `codeBlockBackground?: string`：代码块背景色
+- `blockquoteBorderColor?: string`：引用块左侧边框色
+- `selectionBackground?: string`：文本选中背景色
 
-监听输入 `[[` 并触发词条选择示例：
+受控双栏、颜色覆盖与自定义预览示例：
 
 ```tsx
 import { useState } from 'react'
 import { MarkdownEditor } from 'flowcloudai-ui'
+import MDEditor from '@uiw/react-md-editor'
 
 function Example() {
   const [value, setValue] = useState('')
+  const [splitView, setSplitView] = useState(true)
 
   return (
     <MarkdownEditor
       value={value}
       onChange={setValue}
+      splitView={splitView}
+      onSplitChange={setSplitView}
+      showSplitToggle
+      showAiButton
+      autoHeight
+      minHeight={220}
+      maxHeight={420}
+      previewRender={(source, state) => (
+        <div style={{ padding: 12 }}>
+          <div style={{ marginBottom: 8, fontSize: 12, opacity: 0.75 }}>
+            自定义预览头部
+          </div>
+          <MDEditor.Markdown
+            source={source}
+            data-color-mode="light"
+          />
+        </div>
+      )}
       textareaProps={{
         onKeyUp: (event) => {
           const textarea = event.currentTarget
@@ -603,6 +678,22 @@ function Example() {
           }
         },
       }}
+      background="#0f172a"
+      toolbarBackground="#111827"
+      borderColor="#334155"
+      textColor="#e5eefb"
+      mutedTextColor="#94a3b8"
+      toolbarButtonHoverBackground="rgba(59, 130, 246, 0.18)"
+      toolbarButtonHoverColor="#f8fafc"
+      primaryColor="#38bdf8"
+      primaryBackground="rgba(56, 189, 248, 0.16)"
+      editorTextBackground="#0f172a"
+      previewBackground="#0b1120"
+      fontSizeScale={1.1}
+      codeInlineBackground="rgba(148, 163, 184, 0.16)"
+      codeBlockBackground="#020617"
+      blockquoteBorderColor="#38bdf8"
+      selectionBackground="rgba(56, 189, 248, 0.28)"
     />
   )
 }
@@ -695,7 +786,38 @@ function Example() {
 
 ### `SideBar`
 
-用途：侧边栏导航组件，支持折叠、底部固定项和样式变量覆盖。
+用途：侧边栏导航组件，支持左右停靠、折叠、底部固定项和样式变量覆盖。
+
+示例：
+
+```tsx
+import { useState } from 'react'
+import { SideBar, type SideBarItem } from 'flowcloudai-ui'
+
+const items: SideBarItem[] = [
+  { key: 'home', label: '首页' },
+  { key: 'search', label: '搜索' },
+]
+
+function Example() {
+  const [selectedKey, setSelectedKey] = useState('home')
+  const [collapsed, setCollapsed] = useState(false)
+
+  return (
+    <div style={{ display: 'flex', height: 320 }}>
+      <main style={{ flex: 1 }}>内容区域</main>
+      <SideBar
+        items={items}
+        selectedKey={selectedKey}
+        collapsed={collapsed}
+        placement="right"
+        onSelect={setSelectedKey}
+        onCollapse={setCollapsed}
+      />
+    </div>
+  )
+}
+```
 
 参数：
 
@@ -705,6 +827,7 @@ function Example() {
 - `collapsed: boolean`：是否折叠
 - `width?: number`：展开宽度
 - `collapsedWidth?: number`：折叠宽度
+- `placement?: 'left' | 'right'`：停靠位置，默认 `'left'`
 - `onSelect: (key: string) => void`：选中项变更回调
 - `onCollapse: (collapsed: boolean) => void`：折叠状态变化回调
 
@@ -875,25 +998,48 @@ function getNodeActions(
 #### 快速示例
 
 ```tsx
-import { RelationGraph } from 'flowcloudai-ui'
+import { useRef } from 'react'
+import { Button, RelationGraph } from 'flowcloudai-ui'
 import type { LayoutFunction } from 'flowcloudai-ui'
+import type { RelationGraphRef } from 'flowcloudai-ui'
 
 // 宿主注入的布局函数，例如调用 Tauri Rust 后端
 const layoutFn: LayoutFunction = (req) => invoke('graph_layout', { request: req })
 
-<RelationGraph
-  nodes={[
-    { id: 'a', label: 'Alice' },
-    { id: 'b', label: 'Bob' },
-  ]}
-  edges={[
-    { source: 'a', target: 'b', label: '认识', kind: 'two_way' },
-    { source: 'b', target: 'a', kind: 'two_way' },
-  ]}
-  layoutFn={layoutFn}
-  height={480}
-  onLayoutStateChange={(s) => console.log(s)}
-/>
+function Demo() {
+  const graphRef = useRef<RelationGraphRef>(null)
+
+  return (
+    <>
+      <Button
+        onClick={() =>
+          graphRef.current?.downloadImage({
+            padding: 40,
+            scale: 2,
+            fileName: '人物关系图',
+          })
+        }
+      >
+        导出图片
+      </Button>
+
+      <RelationGraph
+        ref={graphRef}
+        nodes={[
+          { id: 'a', label: 'Alice' },
+          { id: 'b', label: 'Bob' },
+        ]}
+        edges={[
+          { source: 'a', target: 'b', label: '认识', kind: 'two_way' },
+          { source: 'b', target: 'a', kind: 'two_way' },
+        ]}
+        layoutFn={layoutFn}
+        height={480}
+        onLayoutStateChange={(s) => console.log(s)}
+      />
+    </>
+  )
+}
 ```
 
 #### 参数
@@ -911,6 +1057,26 @@ const layoutFn: LayoutFunction = (req) => invoke('graph_layout', { request: req 
 | `width` | `string \| number` | `'100%'` | 容器宽度 |
 | `className` | `string` | — | 根元素额外 CSS 类 |
 | `style` | `CSSProperties` | — | 根元素内联样式 |
+
+#### 导出图片
+
+组件支持通过 `ref` 导出 PNG/JPEG。导出时会自动：
+
+1. 等待布局完成；若仍在布局中或布局失败，会直接抛错
+2. 读取当前所有已测量节点，计算节点 AABB
+3. 基于 `padding` 扩展导出区域
+4. 按 `scale` 输出更高清的图片
+
+```tsx
+const result = await graphRef.current?.exportImage({
+  format: 'png',
+  padding: 32,
+  scale: 3,
+  backgroundColor: '#ffffff',
+})
+
+console.log(result?.bounds)
+```
 
 #### 注入真实布局函数
 

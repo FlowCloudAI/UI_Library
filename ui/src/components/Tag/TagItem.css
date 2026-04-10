@@ -26,9 +26,12 @@
 /* ---------- show 模式 ---------- */
 .fc-tag-item--show {
     cursor: default;
+    border: 1px solid var(--tag-border);
+    background: var(--tag-bg);
 }
 
 .fc-tag-item--show:hover {
+    background: var(--tag-bg);
     border-color: var(--fc-color-border-hover, var(--tag-border));
 }
 

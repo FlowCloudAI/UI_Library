@@ -17,6 +17,14 @@ export interface TagItemProps {
     onChange?: (value: TagValue) => void;
     /** show：展示态，双击可内联编辑；edit：始终为编辑控件 */
     mode?:     "show" | "edit";
+    /**
+     * 受控编辑状态。
+     * 传入时由调用方负责维护，组件不再内部管理；
+     * 不传时组件自管（双击进入、提交/取消退出）。
+     */
+    editing?:          boolean;
+    /** 编辑状态变化回调（双击进入、提交或取消时触发） */
+    onEditingChange?:  (editing: boolean) => void;
     /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
     background?:  string;
     color?:       string;
@@ -28,18 +36,28 @@ export function TagItem({
     value,
     onChange,
     mode = "show",
+    editing:          editingProp,
+    onEditingChange,
     background,
     color,
     borderColor,
 }: TagItemProps) {
-    const [editing, setEditing] = useState(false);
-    const [draft,   setDraft]   = useState(() => (value !== undefined ? String(value) : ""));
+    const isControlled = editingProp !== undefined;
+    const [internalEditing, setInternalEditing] = useState(false);
+    const activeEditing = isControlled ? editingProp! : internalEditing;
+
+    const setEditing = (next: boolean) => {
+        if (!isControlled) setInternalEditing(next);
+        onEditingChange?.(next);
+    };
+
+    const [draft, setDraft] = useState(() => (value !== undefined ? String(value) : ""));
     const inputRef = useRef<HTMLInputElement>(null);
 
     // value 从外部更新时同步 draft（仅非编辑态）
     useEffect(() => {
-        if (!editing) setDraft(value !== undefined ? String(value) : "");
-    }, [value, editing]);
+        if (!activeEditing) setDraft(value !== undefined ? String(value) : "");
+    }, [value, activeEditing]);
 
     // --- CSS 变量注入 ---
     const colorVars: Record<string, string | undefined> = {
@@ -84,16 +102,16 @@ export function TagItem({
         } else {
             onChange?.(draft);
         }
-        if (mode === "show") setEditing(false);
+        if (mode !== "edit") setEditing(false);
     };
 
     const cancel = () => {
         setDraft(value !== undefined ? String(value) : "");
-        if (mode === "show") setEditing(false);
+        if (mode !== "edit") setEditing(false);
     };
 
-    // --- 编辑态（mode="edit" 或 双击后进入） ---
-    const isEditing = mode === "edit" || editing;
+    // --- 编辑态（mode="edit" 或 activeEditing） ---
+    const isEditing = mode === "edit" || activeEditing;
 
     if (isEditing) {
         return (
