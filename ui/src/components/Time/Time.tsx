@@ -1,5 +1,5 @@
 // Time.tsx
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import './Time.css';
 
 export interface TimelineEvent {
@@ -63,15 +63,15 @@ export function Timeline({ events }: TimelineProps) {
         const min = Math.min(...allTimes);
         const max = Math.max(...allTimes);
         const range = max - min || 31536000000;
-        const minWidth = events.length * 220;
-        const calculatedWidth = Math.max(Math.floor(range * (120 / (365 * 24 * 60 * 60 * 1000))), minWidth, 1200);
+        const minWidth = events.length * 260;
+        const calculatedWidth = Math.max(Math.floor(range * (160 / (365 * 24 * 60 * 60 * 1000))), minWidth, 1200);
         return { minTime: min, maxTime: max, trackWidth: calculatedWidth, timeRange: range };
     }, [events]);
 
     const ticks = useMemo(() => {
         if (timeRange === 0) return [];
         const { unit } = getTimeUnit(timeRange);
-        const maxTicks = Math.floor(trackWidth / 120);
+        const maxTicks = Math.floor(trackWidth / 160);
         const step = timeRange / maxTicks;
         return Array.from({ length: maxTicks + 1 }, (_, i) => {
             const time = minTime + step * i;
@@ -88,9 +88,12 @@ export function Timeline({ events }: TimelineProps) {
         return Math.floor(((time - minTime) / timeRange) * trackWidth);
     };
 
-    const eventGroups = useMemo(() => {
+    // 智能布局：计算每个事件的垂直层级（上下交替 + 防重叠）
+    const eventsWithLayout = useMemo(() => {
         if (!events || events.length === 0) return [];
         const sorted = [...events].sort((a, b) => a.startTime - b.startTime);
+
+        // 先分组
         const groups: { events: typeof sorted; leftPx: number; color: string }[] = [];
         let currentGroup: typeof sorted = [sorted[0]];
         let groupColor = sorted[0].color || COLOR_PALETTE[0];
@@ -100,7 +103,7 @@ export function Timeline({ events }: TimelineProps) {
             const currPos = getPosition(sorted[i].startTime);
             const distance = Math.abs(currPos - prevPos);
 
-            if (distance < 200) {
+            if (distance < 260) {
                 currentGroup.push(sorted[i]);
             } else {
                 groups.push({
@@ -118,7 +121,12 @@ export function Timeline({ events }: TimelineProps) {
             color: groupColor
         });
 
-        return groups;
+        // 为每个组分配垂直方向（上下交替）
+        return groups.map((group, index) => ({
+            ...group,
+            isTop: index % 2 === 0, // 偶数在上，奇数在下
+            level: 0 // 同组内堆叠层级
+        }));
     }, [events, minTime, maxTime, trackWidth, timeRange]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -130,27 +138,23 @@ export function Timeline({ events }: TimelineProps) {
 
     const handleMouseUp = () => {
         setIsDragging(false);
-        document.body.style.cursor = '';
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!isDragging || !scrollRef.current) return;
         e.preventDefault();
         const x = e.pageX - scrollRef.current.offsetLeft;
-        const walk = (x - startX) * 1.5;
+        const walk = (x - startX) * 2; // 增加灵敏度
         scrollRef.current.scrollLeft = scrollLeft - walk;
     };
 
-    useEffect(() => {
-        document.body.style.cursor = isDragging ? 'grabbing' : '';
-    }, [isDragging]);
-
-    const LEFT_OFFSET = 200;
+    // 动态计算左侧偏移（确保内容居中）
+    const LEFT_OFFSET = Math.max(200, Math.min(300, trackWidth * 0.15));
 
     return (
         <div className="timeline-container">
             <div
-                className="timeline-scroll-area"
+                className={`timeline-scroll-area ${isDragging ? 'dragging' : ''}`}
                 ref={scrollRef}
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
@@ -158,6 +162,7 @@ export function Timeline({ events }: TimelineProps) {
                 onMouseMove={handleMouseMove}
             >
                 <div className="timeline-track" style={{ width: trackWidth + LEFT_OFFSET * 2 }}>
+                    {/* 渐变轴线 */}
                     <div className="timeline-line" style={{ left: LEFT_OFFSET, right: LEFT_OFFSET }}></div>
 
                     <div className="timeline-ticks" style={{ left: LEFT_OFFSET, right: LEFT_OFFSET }}>
@@ -173,8 +178,8 @@ export function Timeline({ events }: TimelineProps) {
                         ))}
                     </div>
 
-                    {/* 持续时间范围条和结束点 - 在时间轴层级渲染 */}
-                    {eventGroups.map((group, groupIndex) => {
+                    {/* 持续时间范围条 */}
+                    {eventsWithLayout.map((group, groupIndex) => {
                         const firstEvent = group.events[0];
                         if (!firstEvent.endTime) return null;
 
@@ -186,57 +191,57 @@ export function Timeline({ events }: TimelineProps) {
 
                         return (
                             <React.Fragment key={`range-${groupIndex}`}>
-                                {/* 范围条 */}
                                 <div
                                     className="timeline-range-bar"
                                     style={{
                                         left: LEFT_OFFSET + startPx,
                                         width: rangeWidth,
-                                        backgroundColor: group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length]
+                                        backgroundColor: group.color
                                     }}
                                 />
-                                {/* 结束点圆点 - 空心圆，位于范围条末端 */}
                                 <div
                                     className="range-end-dot"
                                     style={{
-                                        left: LEFT_OFFSET + endPx - 5, // 5px是圆点半径(10px/2)
-                                        borderColor: group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length]
+                                        left: LEFT_OFFSET + endPx - 5,
+                                        borderColor: group.color
                                     }}
                                 />
                             </React.Fragment>
                         );
                     })}
 
-                    {/* 事件节点分组（起始点、卡片、垂线） */}
-                    {eventGroups.map((group, groupIndex) => {
+                    {/* 事件节点 - 上下交替布局 */}
+                    {eventsWithLayout.map((group, groupIndex) => {
                         const groupColor = group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length];
                         const cardCount = group.events.length;
-                        const connectorHeight = 20 + cardCount * 25;
+                        const isTop = group.isTop;
 
                         return (
                             <div
                                 key={groupIndex}
-                                className="timeline-group"
+                                className={`timeline-group ${isTop ? 'group-top' : 'group-bottom'}`}
                                 style={{ left: LEFT_OFFSET + group.leftPx }}
                             >
-                                {/* 起始点圆点 */}
-                                <div className="group-dot" style={{
-                                    backgroundColor: groupColor,
-                                    borderColor: groupColor,
-                                    boxShadow: `0 0 0 3px white, 0 0 0 5px ${groupColor}40`
-                                }}></div>
+                                {/* 圆点 - 带呼吸动画 */}
+                                <div className="group-dot-wrapper">
+                                    <div className="group-dot-pulse" style={{ backgroundColor: groupColor }}></div>
+                                    <div className="group-dot" style={{
+                                        backgroundColor: groupColor,
+                                        borderColor: groupColor
+                                    }}></div>
+                                </div>
 
-                                {/* 垂线连接 */}
+                                {/* 垂线 */}
                                 <div
                                     className="group-connector"
                                     style={{
                                         backgroundColor: groupColor,
-                                        height: connectorHeight
+                                        height: 20 + cardCount * 26
                                     }}
                                 ></div>
 
-                                {/* 卡片堆叠 */}
-                                <div className="group-cards" style={{ marginTop: -5 }}>
+                                {/* 玻璃拟态卡片 */}
+                                <div className="group-cards">
                                     {group.events.map((event) => {
                                         const displayDate = event.date || formatDate(event.startTime);
                                         const durationText = event.endTime
@@ -249,18 +254,26 @@ export function Timeline({ events }: TimelineProps) {
                                                 className="group-card"
                                                 style={{ borderLeftColor: event.color || groupColor }}
                                             >
-                                                <div className="card-connector-dot" style={{ backgroundColor: event.color || groupColor }}></div>
+                                                <div className="card-glow" style={{ backgroundColor: event.color || groupColor }}></div>
+
+                                                <div className="card-header">
+                                                    <span className="card-badge" style={{
+                                                        backgroundColor: `${event.color || groupColor}15`,
+                                                        color: event.color || groupColor
+                                                    }}>
+                                                        {displayDate}
+                                                    </span>
+                                                    {durationText && (
+                                                        <span className="card-duration-badge">
+                                                            ⏱ {durationText}
+                                                        </span>
+                                                    )}
+                                                </div>
 
                                                 <h3 className="card-title">{event.title}</h3>
                                                 {event.description && (
                                                     <p className="card-desc">{event.description}</p>
                                                 )}
-                                                <div className="card-meta">
-                                                    <span>{displayDate}</span>
-                                                    {durationText && (
-                                                        <span className="duration">⏱️ {durationText}</span>
-                                                    )}
-                                                </div>
                                             </div>
                                         );
                                     })}
