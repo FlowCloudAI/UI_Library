@@ -1,49 +1,23 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import SmartMessage, { type MessageRole } from '../SmartMessage/SmartMessage';
-import { useClickOutside } from '../../hooks/useClickOutside';
+import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import './Chat.css';
 
-// 消息接口
 export interface Message {
     id: string;
     content: string;
-    type: MessageRole;
-    timestamp: Date;
+    type: 'user' | 'assistant' | 'system' | 'tool';
+    timestamp?: Date;
     status?: 'sending' | 'sent' | 'error';
     toolName?: string;
     toolResult?: any;
 }
 
-// 对话历史接口
-export interface Conversation {
-    id: string;
-    title: string;
-    lastMessage: string;
-    timestamp: Date;
-    messages: Message[];
-}
-
-// Chat 组件 Props
 export interface ChatProps {
     messages?: Message[];
     title?: string;
     loading?: boolean;
-    conversations?: Conversation[];
-    currentConversationId?: string;
-    emptyText?: string;
-    newConversationText?: string;
-    historyTitle?: string;
-    showHistoryButton?: boolean;
-    showMinimizeButton?: boolean;
     showHeader?: boolean;
     showFooter?: boolean;
     autoScroll?: boolean;
-    onSwitchConversation?: (conversationId: string) => void;
-    onNewConversation?: () => void;
-    onDeleteConversation?: (conversationId: string) => void;
-    onMinimize?: () => void;
-    onRestore?: () => void;
-    onMessageCopy?: (message: Message) => void;
     className?: string;
     style?: React.CSSProperties;
     headerClassName?: string;
@@ -53,28 +27,16 @@ export interface ChatProps {
     bubbleClassName?: string;
     height?: string;
     width?: string;
+    onCopy?: (content: string, messageId: string) => void;
 }
 
 export const Chat: React.FC<ChatProps> = ({
                                               messages = [],
                                               title = "流云AI",
                                               loading = false,
-                                              conversations = [],
-                                              currentConversationId,
-                                              emptyText = "暂无历史对话",
-                                              newConversationText = "新建对话",
-                                              historyTitle = "历史对话",
-                                              showHistoryButton = true,
-                                              showMinimizeButton = true,
                                               showHeader = true,
                                               showFooter = false,
                                               autoScroll = true,
-                                              onSwitchConversation,
-                                              onNewConversation,
-                                              onDeleteConversation,
-                                              onMinimize,
-                                              onRestore,
-                                              onMessageCopy,
                                               className = "",
                                               style = {},
                                               headerClassName = "",
@@ -84,255 +46,157 @@ export const Chat: React.FC<ChatProps> = ({
                                               bubbleClassName = "",
                                               height = "600px",
                                               width,
+                                              onCopy,
                                           }) => {
-    const [showHistory, setShowHistory] = useState(false);
-    const [isMinimized, setIsMinimized] = useState(false);
-
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const historyPanelRef = useRef<HTMLDivElement>(null);
-
-    const currentConversation = useMemo(() =>
-            conversations.find(c => c.id === currentConversationId),
-        [conversations, currentConversationId]
-    );
-    const currentTitle = currentConversation?.title || title;
+    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
     useEffect(() => {
-        if (autoScroll && messagesContainerRef.current && !showHistory && !isMinimized) {
+        if (autoScroll && messagesContainerRef.current) {
             messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
-    }, [messages, loading, showHistory, isMinimized, autoScroll]);
-
-    useClickOutside(historyPanelRef, () => setShowHistory(false), showHistory);
-
-    const handleDeleteConversation = useCallback((conversationId: string) => {
-        onDeleteConversation?.(conversationId);
-    }, [onDeleteConversation]);
-
-    const handleMinimize = useCallback(() => {
-        setIsMinimized(true);
-        onMinimize?.();
-    }, [onMinimize]);
-
-    const handleRestore = useCallback(() => {
-        setIsMinimized(false);
-        onRestore?.();
-    }, [onRestore]);
-
-    const handleCopy = useCallback((content: string) => {
-        const message = messages.find(m => m.content === content);
-        if (message) {
-            onMessageCopy?.(message);
-        }
-    }, [messages, onMessageCopy]);
+    }, [messages, loading, autoScroll]);
 
     const containerStyle = useMemo(() => ({
-        height: height,
-        width: width,
+        height,
+        width,
         ...style
     }), [height, width, style]);
 
-    // 渲染系统消息（直接渲染，不使用 wrapper）
-    const renderSystemMessage = (message: Message) => {
+    const handleCopy = useCallback(async (content: string, messageId: string) => {
+        try {
+            await navigator.clipboard.writeText(content);
+            setCopiedMessageId(messageId);
+            onCopy?.(content, messageId);
+            setTimeout(() => {
+                setCopiedMessageId(null);
+            }, 2000);
+        } catch (err) {
+            console.error('复制失败:', err);
+        }
+    }, [onCopy]);
+
+    // 复制按钮组件 - 纯图标无文字，左右对齐区分
+    const CopyButton = ({ content, messageId, align }: { content: string; messageId: string; align: 'left' | 'right' }) => {
+        const isCopied = copiedMessageId === messageId;
+
         return (
-            <div key={message.id} className="system-message-container">
-                <SmartMessage
-                    id={message.id}
-                    content={message.content}
-                    role={message.type}
-                    timestamp={message.timestamp}
-                    status={message.status}
-                    toolName={message.toolName}
-                    toolResult={message.toolResult}
-                    onCopy={handleCopy}
-                    className={bubbleClassName}
-                />
-            </div>
+            <button
+                className={`chat-copy-btn chat-copy-btn--${align} ${isCopied ? 'is-copied' : ''}`}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopy(content, messageId);
+                }}
+                title={isCopied ? '已复制' : '复制内容'}
+                aria-label={isCopied ? '已复制' : '复制内容'}
+            >
+                {isCopied ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                )}
+            </button>
         );
     };
 
-    // 渲染用户和助手消息（带外部复制按钮）
-    const renderUserAssistantMessage = (message: Message) => {
-        const isUser = message.type === 'user';
-        const showCopyButton = message.type === 'user' || message.type === 'assistant';
+    const renderSystemMessage = (msg: Message) => (
+        <div key={msg.id} className="chat-message chat-message--system">
+            <div className="chat-message-bubble chat-message-bubble--system">
+                {msg.content}
+            </div>
+        </div>
+    );
+
+    const renderToolMessage = (msg: Message) => (
+        <div key={msg.id} className="chat-message chat-message--tool">
+            {msg.toolName && (
+                <div className="chat-message-tool-info">
+                    <span className="chat-message-tool-icon">🔧</span>
+                    <span className="chat-message-tool-name">{msg.toolName}</span>
+                </div>
+            )}
+            <div className="chat-message-bubble chat-message-bubble--tool">
+                <pre className="chat-message-tool-result">
+                    {(() => {
+                        try {
+                            return JSON.stringify(msg.toolResult || msg.content, null, 2);
+                        } catch {
+                            return '[序列化失败]';
+                        }
+                    })()}
+                </pre>
+            </div>
+        </div>
+    );
+
+    const renderUserAssistantMessage = (msg: Message) => {
+        const isUser = msg.type === 'user';
+        const btnAlign = isUser ? 'right' : 'left';
 
         return (
             <div
-                key={message.id}
-                className={`message-wrapper message-wrapper--${isUser ? 'user' : 'assistant'}`}
+                key={msg.id}
+                className={`chat-message chat-message--${isUser ? 'user' : 'assistant'}`}
             >
-                {/* 消息气泡 */}
-                <SmartMessage
-                    id={message.id}
-                    content={message.content}
-                    role={message.type}
-                    timestamp={message.timestamp}
-                    status={message.status}
-                    toolName={message.toolName}
-                    toolResult={message.toolResult}
-                    onCopy={handleCopy}
-                    className={bubbleClassName}
-                />
-
-                {/* 外部复制按钮 */}
-                {showCopyButton && (
-                    <div className={`message-copy-wrapper message-copy-wrapper--${isUser ? 'user' : 'assistant'}`}>
-                        <button
-                            className="message-copy-btn"
-                            onClick={() => handleCopy(message.content)}
-                            title="复制内容"
-                        >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"
-                                      fill="currentColor"/>
-                            </svg>
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    // 渲染工具消息
-    const renderToolMessage = (message: Message) => {
-        return (
-            <div key={message.id} className="tool-message-container">
-                <SmartMessage
-                    id={message.id}
-                    content={message.content}
-                    role={message.type}
-                    timestamp={message.timestamp}
-                    status={message.status}
-                    toolName={message.toolName}
-                    toolResult={message.toolResult}
-                    onCopy={handleCopy}
-                    className={bubbleClassName}
+                <div className={`chat-message-bubble chat-message-bubble--${isUser ? 'user' : 'assistant'} ${bubbleClassName}`}>
+                    <div className="chat-message-text">{msg.content}</div>
+                    {msg.status === 'sending' && (
+                        <span className="chat-message-status sending">发送中...</span>
+                    )}
+                    {msg.status === 'error' && (
+                        <span className="chat-message-status error">发送失败</span>
+                    )}
+                </div>
+                <CopyButton
+                    content={msg.content}
+                    messageId={msg.id}
+                    align={btnAlign}
                 />
             </div>
         );
     };
 
-    // 根据消息类型选择渲染方式
-    const renderMessage = (message: Message) => {
-        switch (message.type) {
-            case 'system':
-                return renderSystemMessage(message);
-            case 'tool':
-                return renderToolMessage(message);
-            default:
-                return renderUserAssistantMessage(message);
+    const renderMessage = (msg: Message) => {
+        switch (msg.type) {
+            case 'system': return renderSystemMessage(msg);
+            case 'tool': return renderToolMessage(msg);
+            default: return renderUserAssistantMessage(msg);
         }
     };
 
-    if (isMinimized) {
-        return (
-            <div className={`chat-container-minimized ${className}`} style={containerStyle}>
-                <button className="restore-btn-only" onClick={handleRestore} title="展开">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                </button>
-            </div>
-        );
-    }
-
     return (
-        <div className={`chat-container ${className}`} style={containerStyle}>
-            {showHeader && (
-                <div className={`chat-header ${headerClassName}`} style={headerStyle}>
-                    <div className="chat-title">{currentTitle}</div>
-                    <div className="chat-header-actions">
-                        {showHistoryButton && (
-                            <button className="history-btn" onClick={() => setShowHistory(!showHistory)} title="历史对话">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 8V12L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
-                                </svg>
-                            </button>
-                        )}
-                        {showMinimizeButton && (
-                            <button className="minimize-btn" onClick={handleMinimize} title="最小化">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                    <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                </svg>
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            <div className={`chat-messages ${messagesClassName}`} ref={messagesContainerRef} style={messagesStyle}>
-                {messages.map(message => renderMessage(message))}
-                {loading && (
-                    <div className="typing-wrapper">
-                        <div className="typing-indicator">
-                            <span></span><span></span><span></span>
-                        </div>
+        <div className="chat-frame" style={{ height, width }}>
+            <div className={`chat-container ${className}`} style={containerStyle}>
+                {showHeader && (
+                    <div className={`chat-header ${headerClassName}`} style={headerStyle}>
+                        <div className="chat-title">{title}</div>
                     </div>
                 )}
-                <div ref={messagesEndRef} />
-            </div>
 
-            {showFooter && <div className="chat-footer" />}
-
-            {showHistory && (
-                <div className="history-panel" ref={historyPanelRef}>
-                    <div className="history-header">
-                        <h3>{historyTitle}</h3>
-                        <button className="close-history-btn" onClick={() => setShowHistory(false)}>✕</button>
-                    </div>
-                    <div className="history-list">
-                        <button className="new-conversation-btn-large" onClick={() => { onNewConversation?.(); setShowHistory(false); }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                            </svg>
-                            <span>{newConversationText}</span>
-                        </button>
-                        {conversations.length === 0 ? (
-                            <div className="empty-history"><p>{emptyText}</p></div>
-                        ) : (
-                            conversations.map(conv => (
-                                <div
-                                    key={conv.id}
-                                    className={`history-item ${currentConversationId === conv.id ? 'active' : ''}`}
-                                    onClick={() => {
-                                        onSwitchConversation?.(conv.id);
-                                        setShowHistory(false);
-                                    }}
-                                >
-                                    <div className="history-item-content">
-                                        <div className="history-item-title">
-                                            <span>{conv.title}</span>
-                                        </div>
-                                        <div className="history-item-preview">{conv.lastMessage}</div>
-                                        <div className="history-item-meta">
-                                            <span>{new Date(conv.timestamp).toLocaleDateString()}</span>
-                                            <span>{conv.messages.length}条消息</span>
-                                        </div>
-                                    </div>
-                                    <div className="history-item-actions">
-                                        <button
-                                            className="delete-conversation-btn"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteConversation(conv.id);
-                                            }}
-                                            title="删除对话"
-                                        >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                                <path d="M3 6H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                                <path d="M19 6V20C19 21.1 18.1 22 17 22H7C5.9 22 5 21.1 5 20V6" stroke="currentColor" strokeWidth="2"/>
-                                                <path d="M8 6V4C8 2.9 8.9 2 10 2H14C15.1 2 16 2.9 16 4V6" stroke="currentColor" strokeWidth="2"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
+                <div
+                    className={`chat-messages ${messagesClassName}`}
+                    ref={messagesContainerRef}
+                    style={messagesStyle}
+                >
+                    {messages.map(renderMessage)}
+                    {loading && (
+                        <div className="typing-wrapper">
+                            <div className="typing-indicator">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
                 </div>
-            )}
+
+                {showFooter && <div className="chat-footer" />}
+            </div>
         </div>
     );
 };
