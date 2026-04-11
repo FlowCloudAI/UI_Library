@@ -1,4 +1,3 @@
-// Time.tsx
 import React, { useMemo, useRef, useState } from 'react';
 import './Time.css';
 
@@ -7,127 +6,97 @@ export interface TimelineEvent {
     title: string;
     startTime: number;
     endTime?: number;
-    date?: string;
     description?: string;
-    color?: string;
+    parentId?: string;
 }
 
 interface TimelineProps {
     events: TimelineEvent[];
+    yearStart: number;
+    yearEnd: number;
 }
 
-const COLOR_PALETTE = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EC4899', '#6366F1'];
-
-const formatDate = (timestamp: number): string => {
-    const date = new Date(timestamp);
-    return `${date.getFullYear()}年${date.getMonth() + 1}月`;
-};
-
-const formatDuration = (start: number, end: number): string => {
-    const diff = end - start;
-    const msPerDay = 86400000;
-    const msPerMonth = msPerDay * 30;
-    if (diff < msPerMonth) return `${Math.floor(diff / msPerDay)}天`;
-    return `${Math.floor(diff / msPerMonth)}个月`;
-};
-
-const getTimeUnit = (duration: number): { unit: string; step: number } => {
-    const msPerDay = 86400000;
-    const msPerMonth = msPerDay * 30;
-    const msPerYear = msPerDay * 365;
-    if (duration < msPerDay * 3) return { unit: 'hour', step: 3600000 };
-    if (duration < msPerMonth * 3) return { unit: 'day', step: msPerDay };
-    if (duration < msPerYear * 5) return { unit: 'month', step: msPerMonth };
-    return { unit: 'year', step: msPerYear };
-};
-
-const formatTickLabel = (timestamp: number, unit: string): string => {
-    const date = new Date(timestamp);
-    if (unit === 'hour') return `${date.getHours()}:00`;
-    if (unit === 'day') return `${date.getDate()}日`;
-    if (unit === 'month') return `${date.getMonth() + 1}月`;
-    return `${date.getFullYear()}`;
-};
-
-export function Timeline({ events }: TimelineProps) {
+export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
 
-    const { minTime, maxTime, trackWidth, timeRange } = useMemo(() => {
-        if (!events || events.length === 0) {
-            return { minTime: 0, maxTime: 0, trackWidth: 1200, timeRange: 0 };
-        }
-        const allTimes = events.flatMap(e => [e.startTime, e.endTime || e.startTime]);
-        const min = Math.min(...allTimes);
-        const max = Math.max(...allTimes);
-        const range = max - min || 31536000000;
-        const minWidth = events.length * 260;
-        const calculatedWidth = Math.max(Math.floor(range * (160 / (365 * 24 * 60 * 60 * 1000))), minWidth, 1200);
-        return { minTime: min, maxTime: max, trackWidth: calculatedWidth, timeRange: range };
-    }, [events]);
+    const trackWidth = useMemo(() => {
+        const range = yearEnd - yearStart;
+        return Math.max(range * 12, events.length * 200, 1200);
+    }, [yearStart, yearEnd, events.length]);
+
+    const getX = (year: number) => ((year - yearStart) / (yearEnd - yearStart)) * trackWidth;
 
     const ticks = useMemo(() => {
-        if (timeRange === 0) return [];
-        const { unit } = getTimeUnit(timeRange);
-        const maxTicks = Math.floor(trackWidth / 160);
-        const step = timeRange / maxTicks;
-        return Array.from({ length: maxTicks + 1 }, (_, i) => {
-            const time = minTime + step * i;
-            return {
-                time,
-                left: Math.floor(((time - minTime) / timeRange) * 100),
-                label: formatTickLabel(time, unit)
-            };
-        });
-    }, [minTime, timeRange, trackWidth]);
+        const range = yearEnd - yearStart;
+        let step: number;
+        if (range > 1000) step = 100;
+        else if (range > 500) step = 50;
+        else if (range > 200) step = 20;
+        else step = 10;
 
-    const getPosition = (time: number) => {
-        if (timeRange === 0) return 0;
-        return Math.floor(((time - minTime) / timeRange) * trackWidth);
-    };
+        const ticks = [];
+        const start = Math.floor(yearStart / step) * step;
+        const end = Math.ceil(yearEnd / step) * step;
 
-    // 智能布局：计算每个事件的垂直层级（上下交替 + 防重叠）
-    const eventsWithLayout = useMemo(() => {
-        if (!events || events.length === 0) return [];
-        const sorted = [...events].sort((a, b) => a.startTime - b.startTime);
-
-        // 先分组
-        const groups: { events: typeof sorted; leftPx: number; color: string }[] = [];
-        let currentGroup: typeof sorted = [sorted[0]];
-        let groupColor = sorted[0].color || COLOR_PALETTE[0];
-
-        for (let i = 1; i < sorted.length; i++) {
-            const prevPos = getPosition(sorted[i - 1].startTime);
-            const currPos = getPosition(sorted[i].startTime);
-            const distance = Math.abs(currPos - prevPos);
-
-            if (distance < 260) {
-                currentGroup.push(sorted[i]);
-            } else {
-                groups.push({
-                    events: currentGroup,
-                    leftPx: getPosition(currentGroup[0].startTime),
-                    color: groupColor
+        for (let y = start; y <= end; y += step) {
+            if (y >= yearStart && y <= yearEnd) {
+                ticks.push({
+                    year: y,
+                    left: ((y - yearStart) / range) * 100,
+                    label: y < 0 ? `${Math.abs(y)}` : `${y}`
                 });
-                currentGroup = [sorted[i]];
-                groupColor = sorted[i].color || COLOR_PALETTE[i % COLOR_PALETTE.length];
             }
         }
-        groups.push({
-            events: currentGroup,
-            leftPx: getPosition(currentGroup[0].startTime),
-            color: groupColor
-        });
+        return ticks;
+    }, [yearStart, yearEnd]);
 
-        // 为每个组分配垂直方向（上下交替）
-        return groups.map((group, index) => ({
-            ...group,
-            isTop: index % 2 === 0, // 偶数在上，奇数在下
-            level: 0 // 同组内堆叠层级
-        }));
-    }, [events, minTime, maxTime, trackWidth, timeRange]);
+    // 计算事件位置（仅Y轴防重叠，X轴由时间决定）
+    const processedEvents = useMemo(() => {
+        if (!events.length) return [];
+
+        // 按时间排序
+        const sorted = [...events].sort((a, b) => a.startTime - b.startTime);
+
+        // 记录每行（Y层级）的结束X位置
+        const rows: { endX: number; y: number }[] = [];
+
+        return sorted.map((e) => {
+            const x = getX(e.startTime);
+            const width = e.endTime ? Math.max(getX(e.endTime) - x, 160) : 160;
+            const endX = x + width;
+
+            // 找第一个不重叠的行
+            let y = 20; // 基础Y位置（距离顶部）
+            let found = false;
+
+            for (let i = 0; i < rows.length; i++) {
+                // 检查水平是否重叠（留出30px间隙）
+                if (rows[i].endX + 30 <= x) {
+                    // 可以使用这一行，更新结束位置
+                    rows[i].endX = endX;
+                    y = rows[i].y;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                // 新增一行
+                y = 20 + rows.length * 90; // 每行间隔90px
+                rows.push({ endX, y });
+            }
+
+            return {
+                ...e,
+                x,
+                width,
+                y, // 旗帜顶部Y坐标
+            };
+        });
+    }, [events, yearStart, yearEnd, trackWidth]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!scrollRef.current) return;
@@ -136,23 +105,20 @@ export function Timeline({ events }: TimelineProps) {
         setScrollLeft(scrollRef.current.scrollLeft);
     };
 
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
-
+    const handleMouseUp = () => setIsDragging(false);
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!isDragging || !scrollRef.current) return;
         e.preventDefault();
         const x = e.pageX - scrollRef.current.offsetLeft;
-        const walk = (x - startX) * 2; // 增加灵敏度
-        scrollRef.current.scrollLeft = scrollLeft - walk;
+        scrollRef.current.scrollLeft = scrollLeft - (x - startX) * 1.5;
     };
 
-    // 动态计算左侧偏移（确保内容居中）
-    const LEFT_OFFSET = Math.max(200, Math.min(300, trackWidth * 0.15));
+    const LEFT_OFFSET = 50;
+    const AXIS_Y = 380; // 轴线位置
+    const FLAG_HEIGHT = 70; // 旗帜高度（卡片高度）
 
     return (
-        <div className="timeline-container">
+        <div className="timeline-flag">
             <div
                 className={`timeline-scroll-area ${isDragging ? 'dragging' : ''}`}
                 ref={scrollRef}
@@ -161,122 +127,77 @@ export function Timeline({ events }: TimelineProps) {
                 onMouseLeave={handleMouseUp}
                 onMouseMove={handleMouseMove}
             >
-                <div className="timeline-track" style={{ width: trackWidth + LEFT_OFFSET * 2 }}>
-                    {/* 渐变轴线 */}
-                    <div className="timeline-line" style={{ left: LEFT_OFFSET, right: LEFT_OFFSET }}></div>
-
-                    <div className="timeline-ticks" style={{ left: LEFT_OFFSET, right: LEFT_OFFSET }}>
-                        {ticks.map((tick) => (
-                            <div
-                                key={tick.left}
-                                className="timeline-tick"
-                                style={{ left: `${tick.left}%` }}
-                            >
-                                <div className="tick-line"></div>
-                                <span className="tick-label">{tick.label}</span>
-                            </div>
-                        ))}
+                <div
+                    className="flag-track"
+                    style={{
+                        width: trackWidth + LEFT_OFFSET * 2,
+                        height: AXIS_Y + 80
+                    }}
+                >
+                    {/* 轴线 */}
+                    <div
+                        className="flag-axis"
+                        style={{ left: LEFT_OFFSET, right: LEFT_OFFSET, top: AXIS_Y }}
+                    >
+                        <div className="flag-axis-line" />
+                        <div className="flag-ticks">
+                            {ticks.map((t, i) => (
+                                <div
+                                    key={i}
+                                    className="flag-tick"
+                                    style={{ left: `${t.left}%` }}
+                                >
+                                    <div className="flag-tick-mark" />
+                                    <span className="flag-tick-label">{t.label}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* 持续时间范围条 */}
-                    {eventsWithLayout.map((group, groupIndex) => {
-                        const firstEvent = group.events[0];
-                        if (!firstEvent.endTime) return null;
-
-                        const startPx = group.leftPx;
-                        const endPx = getPosition(firstEvent.endTime);
-                        const rangeWidth = endPx - startPx;
-
-                        if (rangeWidth <= 0) return null;
-
-                        return (
-                            <React.Fragment key={`range-${groupIndex}`}>
-                                <div
-                                    className="timeline-range-bar"
-                                    style={{
-                                        left: LEFT_OFFSET + startPx,
-                                        width: rangeWidth,
-                                        backgroundColor: group.color
-                                    }}
-                                />
-                                <div
-                                    className="range-end-dot"
-                                    style={{
-                                        left: LEFT_OFFSET + endPx - 5,
-                                        borderColor: group.color
-                                    }}
-                                />
-                            </React.Fragment>
-                        );
-                    })}
-
-                    {/* 事件节点 - 上下交替布局 */}
-                    {eventsWithLayout.map((group, groupIndex) => {
-                        const groupColor = group.color || COLOR_PALETTE[groupIndex % COLOR_PALETTE.length];
-                        const cardCount = group.events.length;
-                        const isTop = group.isTop;
+                    {/* 事件旗帜 */}
+                    {processedEvents.map((e) => {
+                        const flagBottom = e.y + FLAG_HEIGHT; // 旗帜底部Y
+                        const lineHeight = AXIS_Y - flagBottom; // 垂线从旗帜底部到轴线
 
                         return (
                             <div
-                                key={groupIndex}
-                                className={`timeline-group ${isTop ? 'group-top' : 'group-bottom'}`}
-                                style={{ left: LEFT_OFFSET + group.leftPx }}
+                                key={e.id}
+                                className="flag-event"
+                                style={{
+                                    left: LEFT_OFFSET + e.x,
+                                    top: e.y
+                                }}
                             >
-                                {/* 圆点 - 带呼吸动画 */}
-                                <div className="group-dot-wrapper">
-                                    <div className="group-dot-pulse" style={{ backgroundColor: groupColor }}></div>
-                                    <div className="group-dot" style={{
-                                        backgroundColor: groupColor,
-                                        borderColor: groupColor
-                                    }}></div>
+                                {/* 旗帜主体 */}
+                                <div className="flag-body">
+                                    <div className="flag-year">
+                                        {e.startTime < 0 ? `前${Math.abs(e.startTime)}年` : `${e.startTime}年`}
+                                        {e.endTime && ` → ${e.endTime}年`}
+                                    </div>
+                                    <h3 className="flag-title">{e.title}</h3>
+                                    {e.description && (
+                                        <p className="flag-desc">{e.description}</p>
+                                    )}
                                 </div>
 
-                                {/* 垂线 */}
-                                <div
-                                    className="group-connector"
-                                    style={{
-                                        backgroundColor: groupColor,
-                                        height: 20 + cardCount * 26
-                                    }}
-                                ></div>
+                                {/* 垂线容器 - 从旗帜底部开始 */}
+                                <div className="flag-pole-container" style={{ height: lineHeight }}>
+                                    {/* 顶部小横线（连接旗帜） */}
+                                    <div className="flag-top-bar" />
 
-                                {/* 玻璃拟态卡片 */}
-                                <div className="group-cards">
-                                    {group.events.map((event) => {
-                                        const displayDate = event.date || formatDate(event.startTime);
-                                        const durationText = event.endTime
-                                            ? formatDuration(event.startTime, event.endTime)
-                                            : null;
+                                    {/* 垂线 */}
+                                    <div className="flag-pole" />
 
-                                        return (
-                                            <div
-                                                key={event.id}
-                                                className="group-card"
-                                                style={{ borderLeftColor: event.color || groupColor }}
-                                            >
-                                                <div className="card-glow" style={{ backgroundColor: event.color || groupColor }}></div>
+                                    {/* 轴线上的圆点 */}
+                                    <div className="flag-pole-dot" />
 
-                                                <div className="card-header">
-                                                    <span className="card-badge" style={{
-                                                        backgroundColor: `${event.color || groupColor}15`,
-                                                        color: event.color || groupColor
-                                                    }}>
-                                                        {displayDate}
-                                                    </span>
-                                                    {durationText && (
-                                                        <span className="card-duration-badge">
-                                                            ⏱ {durationText}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <h3 className="card-title">{event.title}</h3>
-                                                {event.description && (
-                                                    <p className="card-desc">{event.description}</p>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
+                                    {/* 持续时间条（如果有） */}
+                                    {e.width > 160 && (
+                                        <div
+                                            className="flag-duration"
+                                            style={{ width: e.width }}
+                                        />
+                                    )}
                                 </div>
                             </div>
                         );

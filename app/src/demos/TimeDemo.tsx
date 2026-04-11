@@ -1,62 +1,55 @@
-// TimeDemo.tsx（保持不变）
 import React from 'react';
 import { Timeline, type TimelineEvent } from 'flowcloudai-ui';
 
 const TimeDemo: React.FC = () => {
+    // 从外部/后端获取的时间范围
+    const timeRange = {
+        start: -150,  // 公元前150年
+        end: 650,     // 公元650年
+    };
+
     const events: TimelineEvent[] = [
         {
             id: '1',
-            title: '项目启动',
-            startTime: new Date('2023-01-15').getTime(),
-            date: '2023年1月',
-            description: '项目正式立项，确定核心目标与范围。',
-            color: '#3b82f6',
+            title: '圣火教的建立',
+            startTime: -100,
+            description: '第二帝国 1400年',
         },
         {
             id: '2',
-            title: '原型设计完成',
-            startTime: new Date('2023-04-20').getTime(),
-            date: '2023年4月',
-            description: '完成高保真原型设计，通过初步评审。',
-            color: '#8b5cf6',
+            title: '第二帝国完全体',
+            startTime: -30,
+            endTime: 0,
+            description: '第二帝国 147年',
         },
         {
             id: '3',
-            title: 'Alpha 版本发布',
-            startTime: new Date('2023-08-10').getTime(),
-            date: '2023年8月',
-            description: '内部测试版本上线，开始小范围功能验证。',
-            color: '#10b981',
+            title: '神圣王国建立',
+            startTime: 0,
+            description: '从圣国诞生至大异变 元年',
         },
         {
             id: '4',
-            title: '公测开始',
-            startTime: new Date('2024-01-05').getTime(),
-            date: '2024年1月',
-            description: '向公众开放测试，收集用户反馈并优化体验。',
-            color: '#f59e0b',
+            title: '黑色沙漠城与蜂巢族出现',
+            startTime: 10,
+            description: '从圣国诞生至大异变 10年',
         },
         {
             id: '5',
-            title: '2.0 版本迭代',
-            startTime: new Date('2024-06-15').getTime(),
-            endTime: new Date('2024-12-31').getTime(),
-            date: '2024年6月',
-            description: '重大功能更新，引入 AI 辅助模块。',
-            color: '#ec4899',
+            title: '联合都市的建立',
+            startTime: 30,
+            endTime: 600,
+            description: '从圣国诞生至大异变 30年 → 600年',
         },
-        {
-            id: '6',
-            title: '年度总结大会',
-            startTime: new Date('2024-12-20').getTime(),
-            description: '回顾全年成果，规划下一年度战略方向。',
-            color: '#6366F1',
-        }
     ];
 
     return (
-        <div className="w-full">
-            <Timeline events={events} />
+        <div className="w-full p-4">
+            <Timeline
+                events={events}
+                yearStart={timeRange.start}
+                yearEnd={timeRange.end}
+            />
         </div>
     );
 };
