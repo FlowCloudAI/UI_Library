@@ -65,6 +65,8 @@ export function RollingBox({
     const containerRef = React.useRef<HTMLDivElement>(null);
     const [isScrolling, setIsScrolling] = React.useState(false);
     const scrollTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const animationFrameRef = React.useRef<number | null>(null);
+    const targetScrollLeftRef = React.useRef<number | null>(null);
 
     const handleScroll = React.useCallback(() => {
         if (showThumb !== 'auto') return;
@@ -85,21 +87,71 @@ export function RollingBox({
             if (scrollTimeoutRef.current) {
                 clearTimeout(scrollTimeoutRef.current);
             }
+            if (animationFrameRef.current !== null) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
         };
     }, []);
 
-    // 水平模式：将鼠标滚轮的纵向滚动映射为横向滚动
-    // wheel 事件需要 passive: false 才能 preventDefault()
+    // 水平模式：将鼠标滚轮的纵向滚动映射为横向滚动，并用 rAF 做平滑过渡
     React.useEffect(() => {
         const el = containerRef.current;
         if (!el || !horizontal) return;
-        const handler = (e: WheelEvent) => {
-            if (e.deltaY === 0) return;
-            e.preventDefault();
-            el.scrollLeft += e.deltaY;
+
+        const clampTarget = (value: number) => {
+            const maxScrollLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+            return Math.min(Math.max(0, value), maxScrollLeft);
         };
+
+        const animate = () => {
+            const target = targetScrollLeftRef.current;
+            if (target === null) {
+                animationFrameRef.current = null;
+                return;
+            }
+
+            const current = el.scrollLeft;
+            const diff = target - current;
+
+            if (Math.abs(diff) < 0.5) {
+                el.scrollLeft = target;
+                animationFrameRef.current = null;
+                targetScrollLeftRef.current = null;
+                return;
+            }
+
+            el.scrollLeft = current + diff * 0.18;
+            animationFrameRef.current = requestAnimationFrame(animate);
+        };
+
+        const handler = (e: WheelEvent) => {
+            const rawDelta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+            if (rawDelta === 0) return;
+            e.preventDefault();
+
+            const delta = e.deltaMode === WheelEvent.DOM_DELTA_LINE
+                ? rawDelta * 16
+                : e.deltaMode === WheelEvent.DOM_DELTA_PAGE
+                    ? rawDelta * el.clientWidth
+                    : rawDelta;
+
+            const currentTarget = targetScrollLeftRef.current ?? el.scrollLeft;
+            targetScrollLeftRef.current = clampTarget(currentTarget + delta);
+
+            if (animationFrameRef.current === null) {
+                animationFrameRef.current = requestAnimationFrame(animate);
+            }
+        };
+
         el.addEventListener('wheel', handler, { passive: false });
-        return () => el.removeEventListener('wheel', handler);
+        return () => {
+            el.removeEventListener('wheel', handler);
+            if (animationFrameRef.current !== null) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
+            targetScrollLeftRef.current = null;
+        };
     }, [horizontal]);
 
     const resolvedDirection = horizontal ? 'horizontal' : 'vertical';

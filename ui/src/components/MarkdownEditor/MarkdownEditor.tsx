@@ -142,6 +142,7 @@ export function MarkdownEditor({
     const isSplitControlled = splitView !== undefined;
     const showSplit = isSplitControlled ? splitView : uncontrolledSplit;
     const resolvedShowAiButton = showAiButton ?? !!onAiComplete;
+    const isPreviewMode = mode === "preview";
 
     const setShowSplit = (next: boolean | ((prev: boolean) => boolean)) => {
         const nextValue = typeof next === "function" ? next(showSplit) : next;
@@ -216,7 +217,7 @@ export function MarkdownEditor({
     }, [showSplitToggle, mode, resolvedShowAiButton, onAiComplete, hideFullscreen, extraCommands, showSplit]);
 
     // 实际传给 MDEditor 的 preview 值
-    const editorPreview = mode === 'preview' ? 'preview' : showSplit ? 'live' : 'edit';
+    const editorPreview = isPreviewMode ? 'preview' : showSplit ? 'live' : 'edit';
 
     const mergedTextareaProps: MDEditorProps["textareaProps"] = {
         ...textareaProps,
@@ -242,24 +243,43 @@ export function MarkdownEditor({
         const root = wrapRef.current;
         if (!root) return;
 
+        const getScrollHeight = (selector: string) =>
+            root.querySelector<HTMLElement>(selector)?.scrollHeight ?? 0;
+
         const measure = () => {
             const toolbarHeight =
-                mode === 'preview'
+                isPreviewMode
                     ? 0
                     : root.querySelector<HTMLElement>('.w-md-editor-toolbar')?.getBoundingClientRect().height ?? 0;
-            const textareaHeight =
-                root.querySelector<HTMLTextAreaElement>('.w-md-editor-text-input')?.scrollHeight ?? 0;
-            const previewHeight =
-                root.querySelector<HTMLElement>('.w-md-editor-preview')?.scrollHeight ??
-                root.querySelector<HTMLElement>('.wmde-markdown')?.scrollHeight ??
-                0;
+            const editorText = root.querySelector<HTMLElement>('.w-md-editor-text');
+            const textarea = root.querySelector<HTMLTextAreaElement>('.w-md-editor-text-input');
+            const textPre = root.querySelector<HTMLElement>('.w-md-editor-text-pre');
+            const textPreCode = root.querySelector<HTMLElement>('.w-md-editor-text-pre > code');
+            const preview = root.querySelector<HTMLElement>('.w-md-editor-preview');
+            const markdown = root.querySelector<HTMLElement>('.wmde-markdown');
+
+            const getVerticalPadding = (node: HTMLElement | null) => {
+                if (!node) return 0;
+                const styles = window.getComputedStyle(node);
+                return (parseFloat(styles.paddingTop) || 0) + (parseFloat(styles.paddingBottom) || 0);
+            };
+
+            const inputHeight = Math.max(
+                textarea?.scrollHeight ?? 0,
+                (textPre?.scrollHeight ?? 0) + getVerticalPadding(editorText),
+                (textPreCode?.scrollHeight ?? 0) + getVerticalPadding(editorText),
+            );
+            const previewHeight = Math.max(
+                (markdown?.scrollHeight ?? 0) + getVerticalPadding(preview),
+                getScrollHeight('.wmde-markdown'),
+            );
 
             const bodyHeight =
-                mode === 'preview'
+                isPreviewMode
                     ? previewHeight
                     : showSplit
-                        ? Math.max(textareaHeight, previewHeight)
-                        : textareaHeight;
+                        ? Math.max(inputHeight, previewHeight)
+                        : inputHeight;
 
             let nextHeight = Math.max(minHeight, Math.ceil(toolbarHeight + bodyHeight));
             if (typeof maxHeight === "number") {
@@ -272,11 +292,15 @@ export function MarkdownEditor({
         const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
 
         const toolbar = root.querySelector<HTMLElement>('.w-md-editor-toolbar');
+        const inputArea = root.querySelector<HTMLElement>('.w-md-editor-area');
+        const inputBody = root.querySelector<HTMLElement>('.w-md-editor-text');
         const textarea = root.querySelector<HTMLTextAreaElement>('.w-md-editor-text-input');
+        const textPre = root.querySelector<HTMLElement>('.w-md-editor-text-pre');
+        const textPreCode = root.querySelector<HTMLElement>('.w-md-editor-text-pre > code');
         const preview = root.querySelector<HTMLElement>('.w-md-editor-preview');
         const markdown = root.querySelector<HTMLElement>('.wmde-markdown');
 
-        [toolbar, textarea, preview, markdown].forEach(node => {
+        [toolbar, inputArea, inputBody, textarea, textPre, textPreCode, preview, markdown].forEach(node => {
             if (node && resizeObserver) resizeObserver.observe(node);
         });
 
@@ -287,7 +311,7 @@ export function MarkdownEditor({
             resizeObserver?.disconnect();
             window.removeEventListener('resize', measure);
         };
-    }, [autoHeight, value, mode, showSplit, minHeight, maxHeight, height]);
+    }, [autoHeight, value, isPreviewMode, showSplit, minHeight, maxHeight, height]);
 
     const editorHeightValue = autoHeight ? editorHeight : (height ?? minHeight);
     const editorCommands = toolbarCommands ?? TOOLBAR_COMMANDS;
@@ -299,6 +323,8 @@ export function MarkdownEditor({
             className={["fc-md-wrap", className].filter(Boolean).join(" ")}
             style={overrideStyle}
             data-color-mode={resolvedTheme}
+            data-auto-height={autoHeight ? "true" : "false"}
+            data-mode={mode}
         >
             <MDEditor
                 value={value}

@@ -53,6 +53,7 @@ export function TagItem({
 
     const [draft, setDraft] = useState(() => (value !== undefined ? String(value) : ""));
     const inputRef = useRef<HTMLInputElement>(null);
+    const getInputSize = (text: string) => Math.max(4, Math.min(20, text.length || 1));
 
     // value 从外部更新时同步 draft（仅非编辑态）
     useEffect(() => {
@@ -123,6 +124,7 @@ export function TagItem({
                     className="fc-tag-item__input"
                     type={schema.type === "number" ? "number" : "text"}
                     value={draft}
+                    size={getInputSize(draft)}
                     min={schema.range_min ?? undefined}
                     max={schema.range_max ?? undefined}
                     autoFocus
@@ -146,6 +148,7 @@ export function TagItem({
                 className="fc-tag-item__input fc-tag-item__input--readonly"
                 type={schema.type === "number" ? "number" : "text"}
                 value={value !== undefined ? String(value) : ""}
+                size={getInputSize(value !== undefined ? String(value) : "")}
                 readOnly
                 tabIndex={-1}
                 aria-readonly="true"

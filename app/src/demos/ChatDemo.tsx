@@ -25,6 +25,19 @@ export default function ChatDemo() {
             type: 'user',
             timestamp: new Date(),
         },
+        {
+            id: '3',
+            content: '你dqwiygdai ',
+            type: 'system',
+            timestamp: new Date(),
+        },
+        {
+            id: '4',
+            content:"",
+            toolName: '百度翻译',
+            type: 'tool',
+            timestamp: new Date(),
+        },
     ])
     const [loading] = useState(false)
 

@@ -202,7 +202,9 @@ const TabItemView = memo<TabItemViewProps>(({
 
     const mergedStyle: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
-        transition,
+        transition: isDragging ? 'none' : transition,
+        zIndex: isDragging ? 2 : undefined,
+        cursor: isDragging ? 'grabbing' : undefined,
         ...tabStyle,
         ...(isActive ? activeTabStyle : undefined),
     };
@@ -395,17 +397,18 @@ export const TabBar = memo<TabBarProps>(({
     // MouseSensor：Tauri/WebView2 下 pointerdown 被 Windows 吃掉，必须用 mousedown 驱动的 MouseSensor
     const sensors = useSensors(
         useSensor(MouseSensor, {
-            activationConstraint: {distance: 5},
+            activationConstraint: {distance: 2},
         }),
     );
 
-    const handleDragStart = useCallback(() => {
+    const handleDragStart = useCallback((event: {active: {id: React.Key}}) => {
         setIsSorting(true);
+        onChange(String(event.active.id));
         if (tauriDragRegion) {
             setIsPressingTab(true);
             setIsRefreshingDragRegion(true);
         }
-    }, [tauriDragRegion]);
+    }, [onChange, tauriDragRegion]);
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         setIsSorting(false);

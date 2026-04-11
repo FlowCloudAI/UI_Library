@@ -43,6 +43,27 @@
     --color-fg-muted:        var(--md-text-muted);
 }
 
+.fc-md-wrap[data-auto-height="true"] .w-md-editor {
+    height:         auto !important;
+    padding-bottom: 0 !important;
+}
+
+.fc-md-wrap[data-auto-height="true"] .w-md-editor-content {
+    height: auto !important;
+}
+
+.fc-md-wrap[data-auto-height="true"][data-mode="preview"] .w-md-editor-content {
+    overflow: visible !important;
+}
+
+.fc-md-wrap[data-auto-height="true"][data-mode="preview"] .w-md-editor-preview {
+    position:  relative !important;
+    inset:     auto !important;
+    width:     100% !important;
+    overflow:  visible !important;
+    box-shadow: none !important;
+}
+
 /* ---------- 工具栏 ---------- */
 .fc-md-wrap .w-md-editor-toolbar {
     background:    var(--md-toolbar-bg) !important;

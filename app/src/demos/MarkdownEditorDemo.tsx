@@ -69,8 +69,7 @@ export function MarkdownEditorDemo() {
                     showSplitToggle={mode === 'edit'}
                     showAiButton
                     autoHeight
-                    minHeight={240}
-                    maxHeight={420}
+                    minHeight={500}
                     className="markdown-editor-demo"
                     style={{ marginTop: 8 }}
                     previewOptions={{
@@ -81,7 +80,7 @@ export function MarkdownEditorDemo() {
                     onFocus={() => console.log('MarkdownEditor focus')}
                     onBlur={() => console.log('MarkdownEditor blur')}
                     onAiComplete={() => showAlert("AI 补全占位（待接入）", "info")}
-                    background="#0f172a"
+                    background={"#0f172a"}
                     toolbarBackground="#111827"
                     borderColor="#334155"
                     textColor="#e5eefb"
