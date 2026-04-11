@@ -24,7 +24,7 @@ import { RollingBox } from '../Box/RollingBox'
 import { useContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenuContext'
 import { DeleteDialog } from './DeleteDialog'
 import type { DeleteMode } from './DeleteDialog'
-import { CategoryTreeNode, findNodeInfo, isDescendantOf } from './flatToTree'
+import { CategoryTreeNode } from './flatToTree'
 import './Tree.css'
 
 export type DropPosition = 'before' | 'after' | 'into'
@@ -260,15 +260,20 @@ interface TreeNodeItemProps {
     hidden?: boolean
 }
 
-const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }: TreeNodeItemProps) {
+interface TreeNodeItemCoreProps extends TreeNodeItemProps {
+    isSelected: boolean
+    isExpanded: boolean
+    isEditing: boolean
+}
+
+// Core: memo'd heavy component — state comes from props so memo can intercept
+const TreeNodeItemCore = memo(function TreeNodeItemCore({
+    node, level, hidden = false, isSelected, isExpanded, isEditing,
+}: TreeNodeItemCoreProps) {
     const actions = useContext(TreeActionsCtx)   // stable — never triggers re-render
-    const state   = useContext(TreeStateCtx)     // changes on expand/select/edit
     const options = useContext(TreeOptionsCtx)
     const { showContextMenu } = useContextMenu()
 
-    const isExpanded  = state.expandedKeys.has(node.key)
-    const isSelected  = state.selectedKey === node.key
-    const isEditing   = state.editingKey === node.key
     const hasChildren = node.children.length > 0
     const indent      = level * options.indentSize + 12
     const canDragNode   = options.dragEnabled && (!options.canDrag || options.canDrag(node))
@@ -600,6 +605,22 @@ const TreeNodeItem = memo(function TreeNodeItem({ node, level, hidden = false }:
     )
 })
 
+// Connector: cheap, subscribes to TreeStateCtx, passes derived booleans to memoised core.
+// Only TreeNodeItemCore (the expensive part) re-renders when isSelected/isExpanded/isEditing unchanged.
+function TreeNodeItem({ node, level, hidden = false }: TreeNodeItemProps) {
+    const state = useContext(TreeStateCtx)
+    return (
+        <TreeNodeItemCore
+            node={node}
+            level={level}
+            hidden={hidden}
+            isSelected={state.selectedKey === node.key}
+            isExpanded={state.expandedKeys.has(node.key)}
+            isEditing={state.editingKey === node.key}
+        />
+    )
+}
+
 // ── Tree ──────────────────────────────────────────────────────────────────────
 
 export interface TreeProps {
@@ -696,6 +717,11 @@ export function Tree({
         () => new Set(controlledExpandedKeys ?? uncontrolledExpandedKeys),
         [controlledExpandedKeys, uncontrolledExpandedKeys]
     )
+    // Ref lets setExpandedKeys read the latest value without being a dep, so the
+    // whole toggleExpand/expandSubtree/collapseSubtree → actionsValue chain stays stable.
+    const expandedKeysRef = useRef(currentExpandedKeys)
+    expandedKeysRef.current = currentExpandedKeys
+
     const currentSearchValue = controlledSearchValue ?? uncontrolledSearchValue
     const canCreateRoot = createEnabled && (!canCreate || canCreate(null))
 
@@ -719,8 +745,8 @@ export function Tree({
     }, [controlledExpandedKeys, onExpandedKeysChange])
 
     const setExpandedKeys = useCallback((recipe: (prev: Set<string>) => Set<string>) => {
-        commitExpandedKeys(recipe(new Set(currentExpandedKeys)))
-    }, [commitExpandedKeys, currentExpandedKeys])
+        commitExpandedKeys(recipe(new Set(expandedKeysRef.current)))
+    }, [commitExpandedKeys])
 
     const toggleExpand = useCallback((key: string) => {
         setExpandedKeys(prev => {
@@ -780,6 +806,23 @@ export function Tree({
     treeDataRef.current  = treeData
     canDropRef.current   = canDrop
 
+    // O(1) node and parent-chain lookups — rebuilt only when treeData changes
+    const { nodeMap: _nodeMap, parentMap: _parentMap } = useMemo(() => {
+        const nodeMap   = new Map<string, CategoryTreeNode>()
+        const parentMap = new Map<string, string | null>()
+        const visit = (nodes: CategoryTreeNode[], pk: string | null) => {
+            for (const n of nodes) {
+                nodeMap.set(n.key, n)
+                parentMap.set(n.key, pk)
+                visit(n.children, n.key)
+            }
+        }
+        visit(treeData, null)
+        return { nodeMap, parentMap }
+    }, [treeData])
+    const nodeMapRef   = useRef(_nodeMap);   nodeMapRef.current   = _nodeMap
+    const parentMapRef = useRef(_parentMap); parentMapRef.current = _parentMap
+
     const clearDropTarget = useCallback(() => {
         dropRef.current = { key: null, pos: null }
         setDndState(prev => (
@@ -801,14 +844,18 @@ export function Tree({
         }
 
         const targetKey = over.id as string
-        if (isDescendantOf(treeDataRef.current, active.id as string, targetKey)) {
-            clearDropTarget()
-            return
+        const activeKey = active.id as string
+
+        // O(depth) ancestor check — walk up the parentMap instead of full tree scan
+        let ancestor = parentMapRef.current.get(targetKey)
+        while (ancestor !== undefined && ancestor !== null) {
+            if (ancestor === activeKey) { clearDropTarget(); return }
+            ancestor = parentMapRef.current.get(ancestor)
         }
 
-        const sourceInfo = findNodeInfo(treeDataRef.current, active.id as string)
-        const targetInfo = findNodeInfo(treeDataRef.current, targetKey)
-        if (!sourceInfo || !targetInfo) {
+        const sourceNode = nodeMapRef.current.get(activeKey)
+        const targetNode = nodeMapRef.current.get(targetKey)
+        if (!sourceNode || !targetNode) {
             clearDropTarget()
             return
         }
@@ -822,7 +869,7 @@ export function Tree({
         else if (ratio > 0.8) position = 'after'
         else position = 'into'
 
-        if (canDropRef.current && !canDropRef.current(sourceInfo.node, targetInfo.node, position)) {
+        if (canDropRef.current && !canDropRef.current(sourceNode, targetNode, position)) {
             clearDropTarget()
             return
         }
@@ -882,17 +929,27 @@ export function Tree({
         editingKey,
     }), [currentExpandedKeys, selectedKey, editingKey])
 
+    // Stable ref wrappers for function props — caller need not useCallback/useMemo these.
+    // optionsValue only rebuilds when a prop transitions between defined ↔ undefined.
+    const renderTitleRef    = useRef(renderTitle);    renderTitleRef.current    = renderTitle
+    const getNodeActionsRef = useRef(getNodeActions); getNodeActionsRef.current = getNodeActions
+    const canDragFnRef      = useRef(canDrag);        canDragFnRef.current      = canDrag
+    const canRenameFnRef    = useRef(canRename);      canRenameFnRef.current    = canRename
+    const canDeleteFnRef    = useRef(canDelete);      canDeleteFnRef.current    = canDelete
+    const canCreateFnRef    = useRef(canCreate);      canCreateFnRef.current    = canCreate
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- boolean flags track defined/undefined transitions only
     const optionsValue = useMemo<TreeOptionsValue>(() => ({
         indentSize,
         actionDisplayMode,
         actionCollapseThreshold,
-        renderTitle,
-        getNodeActions,
-        canDrag,
-        canDrop,
-        canRename,
-        canDelete,
-        canCreate,
+        renderTitle:    renderTitleRef.current    ? (n, s)    => renderTitleRef.current!(n, s)       : undefined,
+        getNodeActions: getNodeActionsRef.current ? (n, s, h) => getNodeActionsRef.current!(n, s, h) : undefined,
+        canDrag:        canDragFnRef.current      ? (n)       => canDragFnRef.current!(n)            : undefined,
+        canDrop:        canDropRef.current        ? (s, t, p) => canDropRef.current!(s, t, p)        : undefined,
+        canRename:      canRenameFnRef.current    ? (n)       => canRenameFnRef.current!(n)          : undefined,
+        canDelete:      canDeleteFnRef.current    ? (n)       => canDeleteFnRef.current!(n)          : undefined,
+        canCreate:      canCreateFnRef.current    ? (n)       => canCreateFnRef.current!(n)          : undefined,
         dragEnabled,
         renameEnabled,
         deleteEnabled,
@@ -902,13 +959,8 @@ export function Tree({
         indentSize,
         actionDisplayMode,
         actionCollapseThreshold,
-        renderTitle,
-        getNodeActions,
-        canDrag,
-        canDrop,
-        canRename,
-        canDelete,
-        canCreate,
+        // Boolean flags: optionsValue rebuilds only when a prop transitions defined ↔ undefined
+        !!renderTitle, !!getNodeActions, !!canDrag, !!canDrop, !!canRename, !!canDelete, !!canCreate,
         dragEnabled,
         renameEnabled,
         deleteEnabled,
