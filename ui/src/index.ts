@@ -22,7 +22,6 @@ export * from "./components/Tag/TagItem";
 export * from "./components/MarkdownEditor/MarkdownEditor";
 export * from "./components/ContextMenu/ContextMenuContext";
 export * from "./components/Chat/Chat";
-export * from "./components/SmartMessage/SmartMessage";
 export * from "./components/Time/Time";
 export * from "./components/RelationGraph/RelationGraph";
 export * from "./components/RelationGraph/types";

@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import './Time.css';
 
 export interface TimelineEvent {
@@ -14,6 +14,9 @@ interface TimelineProps {
     events: TimelineEvent[];
     yearStart: number;
     yearEnd: number;
+    syncId?: string;
+    selectedEventId?: string | null;
+    onEventSelect?: (eventId: string | null) => void;
 }
 
 const LEFT_OFFSET = 50;
@@ -21,13 +24,35 @@ const AXIS_Y = 380;
 const FLAG_HEIGHT = 70;
 const PX_PER_YEAR = 12;
 const MIN_TRACK_WIDTH = 800;
-const MIN_CARD_WIDTH = 160; // 点事件或极短时间段的最小卡片宽度
+const MIN_CARD_WIDTH = 160;
 
-export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
+const syncGroups = new Map<string, Set<React.RefObject<HTMLDivElement | null>>>();
+
+export function Timeline({
+                             events,
+                             yearStart,
+                             yearEnd,
+                             syncId,
+                             selectedEventId,
+                             onEventSelect
+                         }: TimelineProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStartX, setDragStartX] = useState(0);
     const [dragScrollLeft, setDragScrollLeft] = useState(0);
+    const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (selectedEventId !== undefined) {
+            setInternalSelectedId(selectedEventId);
+            if (selectedEventId && scrollRef.current) {
+                const cardElement = document.getElementById(`event-card-${selectedEventId}`);
+                if (cardElement) {
+                    cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+    }, [selectedEventId]);
 
     const currentStart = yearStart;
     const currentEnd = yearEnd;
@@ -67,27 +92,20 @@ export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
     const processedEvents = useMemo(() => {
         if (!events.length) return [];
 
-        // 计算每个事件的起始X、持续时间条宽度、卡片宽度
         const eventsWithCoords = events.map(e => {
             const startX = getX(e.startTime);
-            let durationWidth: number;
-            let cardWidth: number;
+            let durationWidth = 0;
+            let cardWidth = MIN_CARD_WIDTH;
             if (e.endTime !== undefined && e.endTime !== null) {
                 const endX = getX(e.endTime);
                 const rawWidth = endX - startX;
                 durationWidth = rawWidth > 0 ? Math.max(rawWidth, 1) : 0;
                 cardWidth = durationWidth > 0 ? Math.max(durationWidth, MIN_CARD_WIDTH) : MIN_CARD_WIDTH;
-            } else {
-                durationWidth = 0;
-                cardWidth = MIN_CARD_WIDTH;
             }
             return { ...e, startX, durationWidth, cardWidth };
         });
 
-        // 按起始时间排序
         const sorted = [...eventsWithCoords].sort((a, b) => a.startTime - b.startTime);
-
-        // 行布局算法（基于卡片实际宽度）
         const rows: { rightX: number; y: number }[] = [];
         return sorted.map(e => {
             const cardRightX = e.startX + e.cardWidth;
@@ -103,13 +121,12 @@ export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
             }
             if (!found) {
                 y = 20 + rows.length * 90;
-                rows.push({rightX: cardRightX, y});
+                rows.push({ rightX: cardRightX, y });
             }
-            return {...e, y, cardRightX};
+            return { ...e, y, cardRightX };
         });
     }, [events, getX]);
 
-    // 拖拽滑动
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!scrollRef.current) return;
         setIsDragging(true);
@@ -124,7 +141,6 @@ export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
         scrollRef.current.scrollLeft = dragScrollLeft - (x - dragStartX) * 1.5;
     }, [isDragging, dragScrollLeft, dragStartX]);
 
-    // 滚轮左右滑动（垂直滚轮转水平）
     const handleWheel = useCallback((e: WheelEvent) => {
         if (!scrollRef.current) return;
         e.preventDefault();
@@ -137,6 +153,45 @@ export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
         scrollEl.addEventListener('wheel', handleWheel, { passive: false });
         return () => scrollEl.removeEventListener('wheel', handleWheel);
     }, [handleWheel]);
+
+    useEffect(() => {
+        if (!syncId || !scrollRef.current) return;
+
+        if (!syncGroups.has(syncId)) {
+            syncGroups.set(syncId, new Set());
+        }
+        const group = syncGroups.get(syncId)!;
+        group.add(scrollRef);
+
+        const handleScroll = () => {
+            if (!scrollRef.current) return;
+            const currentLeft = scrollRef.current.scrollLeft;
+            group.forEach(otherRef => {
+                if (otherRef !== scrollRef && otherRef.current) {
+                    otherRef.current.scrollLeft = currentLeft;
+                }
+            });
+        };
+
+        const scrollEl = scrollRef.current;
+        scrollEl.addEventListener('scroll', handleScroll);
+
+        return () => {
+            scrollEl.removeEventListener('scroll', handleScroll);
+            group.delete(scrollRef);
+            if (group.size === 0) {
+                syncGroups.delete(syncId);
+            }
+        };
+    }, [syncId]);
+
+    const handleCardClick = (eventId: string) => {
+        if (onEventSelect) {
+            onEventSelect(eventId);
+        } else {
+            setInternalSelectedId(eventId);
+        }
+    };
 
     return (
         <div className="timeline-flag">
@@ -156,7 +211,6 @@ export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
                         position: 'relative'
                     }}
                 >
-                    {/* 时间轴线 */}
                     <div className="flag-axis" style={{ left: LEFT_OFFSET, right: LEFT_OFFSET, top: AXIS_Y }}>
                         <div className="flag-axis-line" />
                         <div className="flag-ticks">
@@ -169,7 +223,6 @@ export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
                         </div>
                     </div>
 
-                    {/* 持续时间条（轴线上的粗线） */}
                     {processedEvents.map(e => {
                         if (e.durationWidth <= 0) return null;
                         return (
@@ -191,10 +244,10 @@ export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
                         );
                     })}
 
-                    {/* 事件卡片及垂线 */}
                     {processedEvents.map((e) => {
                         const flagBottom = e.y + FLAG_HEIGHT;
                         const lineHeight = AXIS_Y - flagBottom;
+                        const isSelected = (selectedEventId !== undefined ? selectedEventId : internalSelectedId) === e.id;
                         return (
                             <div
                                 key={e.id}
@@ -206,19 +259,16 @@ export function Timeline({ events, yearStart, yearEnd }: TimelineProps) {
                                 }}
                             >
                                 <div
-                                    className="flag-body"
+                                    id={`event-card-${e.id}`}
+                                    className={`flag-body ${isSelected ? 'selected' : ''}`}
                                     style={{
                                         width: e.cardWidth,
                                         minWidth: MIN_CARD_WIDTH,
                                         maxWidth: 'none'
                                     }}
+                                    onClick={() => handleCardClick(e.id)}
                                 >
-                                    <div className="flag-year">
-                                        {e.startTime < 0 ? `前${Math.abs(e.startTime)}年` : `${e.startTime}年`}
-                                        {e.endTime !== undefined && (
-                                            <> — {e.endTime < 0 ? `前${Math.abs(e.endTime)}年` : `${e.endTime}年`}</>
-                                        )}
-                                    </div>
+                                    {/* 蓝色年份已删除 */}
                                     <h3 className="flag-title">{e.title}</h3>
                                     {e.description && <p className="flag-desc">{e.description}</p>}
                                 </div>

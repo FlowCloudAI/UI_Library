@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Timeline, type TimelineEvent } from 'flowcloudai-ui';
 
 const TimeDemo: React.FC = () => {
@@ -7,6 +7,8 @@ const TimeDemo: React.FC = () => {
         start: -150,  // 公元前150年
         end: 650,     // 公元650年
     };
+
+    const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
     const events: TimelineEvent[] = [
         {
@@ -49,6 +51,9 @@ const TimeDemo: React.FC = () => {
                 events={events}
                 yearStart={timeRange.start}
                 yearEnd={timeRange.end}
+                syncId="demo-timeline"
+                selectedEventId={selectedEventId}
+                onEventSelect={setSelectedEventId}
             />
         </div>
     );
