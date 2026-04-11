@@ -214,12 +214,14 @@ import './theme-override.css'
 
 ### `TimelineEvent`
 
-- `id: string`：事件 ID
+时间线事件数据结构。
+
+- `id: string`：事件 ID（必填，唯一）
 - `title: string`：事件标题
-- `startTime: number`：起始时间戳
-- `date: string`：显示日期文本
-- `description?: string`：事件说明
-- `color?: string`：事件点颜色
+- `startTime: number`：起始年份（支持负数表示公元前）
+- `endTime?: number`：结束年份（可选，用于持续时间段）
+- `description?: string`：事件描述文本
+- `parentId?: string`：父事件 ID（可选，用于层级关系）
 
 ### `RelationNodeInput`
 
@@ -744,11 +746,43 @@ function Example() {
 
 ### `Timeline`
 
-用途：横向时间线组件，展示带时间点的事件序列。
+用途：横向时间线组件，展示带时间点的事件序列，支持拖拽滚动、缩放、事件选择和协同滚动。
 
 参数：
 
 - `events: TimelineEvent[]`：时间线事件数组
+- `yearStart: number`：起始年份（如 -150 表示公元前150年）
+- `yearEnd: number`：结束年份（如 650 表示公元650年）
+- `syncId?: string`：同步组 ID，多个 Timeline 使用相同 syncId 可实现滚动同步
+- `selectedEventId?: string | null`：受控选中的事件 ID
+- `onEventSelect?: (eventId: string | null) => void`：事件选择回调
+
+示例：
+
+```tsx
+import { useState } from 'react'
+import { Timeline, type TimelineEvent } from 'flowcloudai-ui'
+
+function Example() {
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const events: TimelineEvent[] = [
+    { id: '1', title: '事件A', startTime: -100 },
+    { id: '2', title: '事件B', startTime: 0, endTime: 100 },
+  ]
+
+  return (
+    <Timeline
+      events={events}
+      yearStart={-150}
+      yearEnd={650}
+      syncId="my-timeline-group"
+      selectedEventId={selectedId}
+      onEventSelect={setSelectedId}
+    />
+  )
+}
+```
 
 ## 导航与结构组件
 
