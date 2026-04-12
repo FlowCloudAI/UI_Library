@@ -716,6 +716,191 @@ function Example() {
 - `toolResult?: any`：工具结果
 - `onCopy?: (content: string, role) => void`：复制回调
 
+### `MessageBox`
+
+用途：高性能 AI 聊天消息组件，支持虚拟列表、Web Worker Markdown 解析、流式内容渲染。
+
+**核心特性：**
+
+- **Web Worker Markdown 解析**：使用 micromark 在 Web Worker 中异步解析 Markdown，避免阻塞 UI
+- **虚拟列表支持**：通过 `isVisible` 和 `onHeightChange` 与虚拟列表集成，视口外降级为骨架屏
+- **流式渲染**：支持打字机光标和段落级增量解析
+- **推理区域折叠**：ReasoningSection 支持展开/折叠，已解析段落缓存复用
+- **工具调用卡片**：ToolCallCard 可展开显示参数和结果
+- **React 声明式渲染**：严格禁止 `dangerouslySetInnerHTML`（除 Worker 解析后的安全 HTML）
+
+**数据类型：**
+
+```ts
+type ContentBlock = 
+  | { id: string; type: 'text'; content: string; isStreaming?: boolean }
+  | { id: string; type: 'reasoning'; content: string; isStreaming?: boolean }
+  | { id: string; type: 'tool_call'; index: number; name: string; arguments: string; isStreaming?: boolean }
+  | { id: string; type: 'tool_result'; index: number; content: any; isError?: boolean };
+
+interface Message {
+  id: string;
+  type: 'user' | 'assistant' | 'system';
+  blocks: ContentBlock[];
+  status: 'streaming' | 'completed' | 'error';
+  createdAt: number;
+}
+```
+
+**参数：**
+
+- `message: Message`：消息数据
+- `isStreaming?: boolean`：是否正在接收流式事件（由上层缓冲池管理）
+- `streamingCursor?: boolean`：是否显示闪烁光标
+- `isVisible?: boolean`：是否在视口内（false 时降级为骨架屏）
+- `onHeightChange?: (height: number) => void`：高度变化回调，用于虚拟列表更新
+- `onReasoningToggle?: (expanded: boolean) => void`：推理区域展开/折叠回调
+- `onCopy?: () => void`：复制回调
+- `onToolCallExpand?: (index: number) => void`：工具调用卡片展开回调
+- `className?: string`：额外 CSS 类名
+- `style?: React.CSSProperties`：内联样式
+
+**示例：**
+
+```tsx
+import { useState } from 'react'
+import { MessageBox } from 'flowcloudai-ui'
+import type { Message } from 'flowcloudai-ui'
+
+function Example() {
+  const [messages] = useState<Message[]>([
+    {
+      id: 'msg-1',
+      type: 'assistant',
+      blocks: [
+        {
+          id: 'block-1',
+          type: 'reasoning',
+          content: '用户询问的是关于 React 虚拟列表的概念。\n\n虚拟列表是一种性能优化技术...',
+          isStreaming: false
+        },
+        {
+          id: 'block-2',
+          type: 'text',
+          content: '虚拟列表（Virtual List）是一种性能优化技术...'
+        }
+      ],
+      status: 'completed',
+      createdAt: Date.now()
+    }
+  ])
+
+  return (
+    <div style={{ height: '600px' }}>
+      {messages.map((message) => (
+        <MessageBox
+          key={message.id}
+          message={message}
+          isVisible={true}
+          streamingCursor={message.status === 'streaming'}
+          onHeightChange={(height) => {
+            console.log(`Message height: ${height}px`)
+          }}
+          onReasoningToggle={(expanded) => {
+            console.log('Reasoning:', expanded ? 'expanded' : 'collapsed')
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+```
+
+**配合虚拟列表示例：**
+
+```tsx
+import { VirtualList } from 'flowcloudai-ui'
+import { MessageBox } from 'flowcloudai-ui'
+
+function ChatWithVirtualList({ messages }) {
+  return (
+    <VirtualList
+      data={messages}
+      height={600}
+      itemHeight={100}
+      renderItem={(message, index) => (
+        <MessageBox
+          key={message.id}
+          message={message}
+          isVisible={true} // 虚拟列表会控制此项
+          onHeightChange={(height) => {
+            // 更新虚拟列表的 itemHeight
+          }}
+        />
+      )}
+    />
+  )
+}
+```
+
+**流式输出示例：**
+
+```tsx
+import { useState, useEffect } from 'react'
+import { MessageBox } from 'flowcloudai-ui'
+
+function StreamingExample() {
+  const [message, setMessage] = useState<Message>({
+    id: 'streaming',
+    type: 'assistant',
+    blocks: [
+      {
+        id: 'text-block',
+        type: 'text',
+        content: '',
+        isStreaming: true
+      }
+    ],
+    status: 'streaming',
+    createdAt: Date.now()
+  })
+
+  useEffect(() => {
+    const fullContent = '这是流式输出的内容...'
+    let index = 0
+    
+    const interval = setInterval(() => {
+      if (index < fullContent.length) {
+        index += 2
+        setMessage(prev => ({
+          ...prev,
+          blocks: prev.blocks.map(block =>
+            block.type === 'text'
+              ? { ...block, content: fullContent.slice(0, index) }
+              : block
+          )
+        }))
+      } else {
+        clearInterval(interval)
+        setMessage(prev => ({
+          ...prev,
+          status: 'completed',
+          blocks: prev.blocks.map(block =>
+            block.type === 'text'
+              ? { ...block, isStreaming: false }
+              : block
+          )
+        }))
+      }
+    }, 50)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <MessageBox
+      message={message}
+      streamingCursor={message.status === 'streaming'}
+    />
+  )
+}
+```
+
 ### `Chat`
 
 用途：完整聊天容器，支持历史会话、消息面板、头部和最小化状态。
