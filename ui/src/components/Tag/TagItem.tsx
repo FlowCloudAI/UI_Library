@@ -53,7 +53,7 @@ export function TagItem({
 
     const [draft, setDraft] = useState(() => (value !== undefined ? String(value) : ""));
     const inputRef = useRef<HTMLInputElement>(null);
-    const getInputSize = (text: string) => Math.max(4, Math.min(20, text.length || 1));
+    const getInputSize = (text: string) => Math.max(1, Math.min(20, text.length || 1));
 
     // value 从外部更新时同步 draft（仅非编辑态）
     useEffect(() => {

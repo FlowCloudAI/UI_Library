@@ -82,17 +82,17 @@ export function TagItemDemo() {
                     <TagItem
                         schema={{ id: 'rank', name: '等级', type: 'number', range_min: 1, range_max: 10 } as TagSchema}
                         value={7} mode="show"
-                        background="#fef3c7" color="#92400e" borderColor="#fbbf24"
+                        background={"#fef3c7"} color="#92400e" borderColor="#fbbf24"
                     />
                     <TagItem
                         schema={{ id: 'faction', name: '阵营', type: 'string' } as TagSchema}
                         value="中立" mode="show"
-                        background="#ede9fe" color="#5b21b6" borderColor="#a78bfa"
+                        background={"#ede9fe"} color="#5b21b6" borderColor="#a78bfa"
                     />
                     <TagItem
                         schema={{ id: 'boss', name: '首领', type: 'boolean' } as TagSchema}
                         value={true} mode="show"
-                        background="#fee2e2" color="#991b1b" borderColor="#fca5a5"
+                        background={"#fee2e2"} color="#991b1b" borderColor="#fca5a5"
                     />
                 </div>
             </div>

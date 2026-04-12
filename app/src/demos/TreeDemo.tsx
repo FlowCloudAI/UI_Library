@@ -393,6 +393,7 @@ export function TreeDemo() {
                         onDelete={handleDelete}
                         onMove={handleMove}
                         searchable
+                        collapseDuration={0.2}
                     />
                 </div>
 

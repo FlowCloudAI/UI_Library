@@ -80,7 +80,7 @@
     font-weight: 600;
     line-height: inherit;
     font-family: inherit;
-    min-width:   64px;
+    min-width:   1ch;
     width:       auto;
     flex:        0 1 auto;
     padding:     0;
@@ -91,7 +91,7 @@
 }
 
 .fc-tag-item__input[type="number"] {
-    min-width: 64px;
+    min-width: 1ch;
     width: auto;
     /* 去掉数字输入框的上下箭头 */
     -moz-appearance:    textfield;

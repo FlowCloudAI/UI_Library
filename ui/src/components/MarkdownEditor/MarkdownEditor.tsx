@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "./MarkdownEditor.css";
 import MDEditor, { commands } from "@uiw/react-md-editor";
 import type { ICommand, MDEditorProps } from "@uiw/react-md-editor";
@@ -136,6 +136,11 @@ export function MarkdownEditor({
     selectionBackground,
 }: MarkdownEditorProps) {
     const { resolvedTheme } = useTheme();
+    // Stable onChange wrapper — MDEditor won't see a new function reference each render
+    const onChangeRef = useRef(onChange);
+    onChangeRef.current = onChange;
+    const handleChange = useCallback((v: string | undefined) => { onChangeRef.current(v ?? ""); }, []);
+
     const [uncontrolledSplit, setUncontrolledSplit] = useState(defaultSplitView);
     const wrapRef = useRef<HTMLDivElement>(null);
     const [editorHeight, setEditorHeight] = useState(minHeight);
@@ -219,7 +224,7 @@ export function MarkdownEditor({
     // 实际传给 MDEditor 的 preview 值
     const editorPreview = isPreviewMode ? 'preview' : showSplit ? 'live' : 'edit';
 
-    const mergedTextareaProps: MDEditorProps["textareaProps"] = {
+    const mergedTextareaProps = useMemo<MDEditorProps["textareaProps"]>(() => ({
         ...textareaProps,
         placeholder,
         disabled,
@@ -231,7 +236,7 @@ export function MarkdownEditor({
             textareaProps?.onBlur?.(event);
             onBlur?.(event);
         },
-    };
+    }), [textareaProps, placeholder, disabled, onFocus, onBlur]);
 
     useLayoutEffect(() => {
         if (!autoHeight) {
@@ -328,7 +333,7 @@ export function MarkdownEditor({
         >
             <MDEditor
                 value={value}
-                onChange={v => onChange(v ?? "")}
+                onChange={handleChange}
                 commands={editorCommands}
                 extraCommands={mergedExtraCommands}
                 height={editorHeightValue}

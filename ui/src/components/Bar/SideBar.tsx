@@ -18,6 +18,7 @@ export interface SideBarItem {
 }
 
 export type SideBarPlacement = 'left' | 'right';
+export type SideBarAnchorState = 'collapse' | 'normal';
 
 export interface SideBarProps {
     /** 菜单项列表（受控） */
@@ -28,6 +29,8 @@ export interface SideBarProps {
     selectedKey: string;
     /** 是否折叠（受控） */
     collapsed: boolean;
+    /** 锚定侧边栏状态；设置后将隐藏展开/折叠按钮并固定状态 */
+    anchorState?: SideBarAnchorState;
 
     /** 展开时宽度，默认 240 */
     width?: number;
@@ -99,6 +102,7 @@ export const SideBar = memo<SideBarProps>(({
                                                bottomItems,
                                                selectedKey,
                                                collapsed,
+                                               anchorState,
                                                width = 240,
                                                collapsedWidth = 64,
                                                placement = 'left',
@@ -112,53 +116,60 @@ export const SideBar = memo<SideBarProps>(({
         [onSelect],
     );
 
+    const isAnchored = anchorState !== undefined;
+    const isCollapsed = anchorState
+        ? anchorState === 'collapse'
+        : collapsed;
+
     const toggleCollapse = useCallback(
-        () => onCollapse(!collapsed),
-        [collapsed, onCollapse],
+        () => onCollapse(!isCollapsed),
+        [isCollapsed, onCollapse],
     );
 
     const rootClasses = [
         'fc-sidebar',
-        collapsed && 'fc-sidebar--collapsed',
+        isCollapsed && 'fc-sidebar--collapsed',
         `fc-sidebar--${placement}`,
         className,
     ].filter(Boolean).join(' ');
 
     const collapseIconPath = placement === 'right'
-        ? (collapsed ? 'M10 3L5 8L10 13' : 'M6 3L11 8L6 13')
-        : (collapsed ? 'M6 3L11 8L6 13' : 'M10 3L5 8L10 13');
+        ? (isCollapsed ? 'M10 3L5 8L10 13' : 'M6 3L11 8L6 13')
+        : (isCollapsed ? 'M6 3L11 8L6 13' : 'M10 3L5 8L10 13');
 
     const rootStyle: React.CSSProperties = {
-        '--sidebar-width': `${collapsed ? collapsedWidth : width}px`,
+        '--sidebar-width': `${isCollapsed ? collapsedWidth : width}px`,
         '--sidebar-collapsed-width': `${collapsedWidth}px`,
         ...style,
     } as React.CSSProperties;
 
     return (
         <aside className={rootClasses} style={rootStyle}>
-            <div className="fc-sidebar__header">
-                <button
-                    className="fc-sidebar__collapse-btn"
-                    onClick={toggleCollapse}
-                >
-                    <svg
-                        className="fc-sidebar__collapse-icon"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
+            {!isAnchored && (
+                <div className="fc-sidebar__header">
+                    <button
+                        className="fc-sidebar__collapse-btn"
+                        onClick={toggleCollapse}
                     >
-                        <path
-                            d={collapseIconPath}
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
-                </button>
-            </div>
+                        <svg
+                            className="fc-sidebar__collapse-icon"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d={collapseIconPath}
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            )}
 
             <nav className="fc-sidebar__menu">
                 {items.map((item) => (

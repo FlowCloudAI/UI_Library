@@ -63,6 +63,8 @@ const DEFAULT_EXPORT_SCALE = 2;
 const DEFAULT_EXPORT_PADDING = 24;
 const DEFAULT_EXPORT_BACKGROUND = '#ffffff';
 const DEFAULT_EXPORT_FILENAME = 'relation-graph';
+const TRANSPARENT_PIXEL_DATA_URL =
+    'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
 type RelationGraphImageFormat = 'png' | 'jpeg';
 
@@ -188,8 +190,14 @@ function triggerBlobDownload(blob: Blob, fileName: string): void {
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = fileName;
+    anchor.rel = 'noopener';
+    document.body.appendChild(anchor);
     anchor.click();
-    URL.revokeObjectURL(url);
+    anchor.remove();
+    // 立即 revoke 在部分 WebView 中会中断下载，延迟释放更稳妥。
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 1000);
 }
 
 async function renderCloneToBlob(
@@ -199,11 +207,19 @@ async function renderCloneToBlob(
     scale: number,
     quality: number,
 ): Promise<Blob> {
-    const canvas = await toCanvas(cloneRoot, {
-        backgroundColor,
-        cacheBust: true,
-        pixelRatio: scale,
-    });
+    let canvas: HTMLCanvasElement;
+    try {
+        canvas = await toCanvas(cloneRoot, {
+            backgroundColor,
+            cacheBust: true,
+            pixelRatio: scale,
+            // 远程图片/字体跨域失败时使用占位图，避免整个导出流程直接 reject。
+            imagePlaceholder: TRANSPARENT_PIXEL_DATA_URL,
+        });
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new Error(`图片渲染失败：${reason}。请检查节点内远程图片/字体是否允许跨域访问。`);
+    }
 
     const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
     const blob = await new Promise<Blob | null>(resolve => {
