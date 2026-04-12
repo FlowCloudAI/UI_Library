@@ -1,5 +1,5 @@
 import "./TagItem.css";
-import { useEffect, useRef, useState } from "react";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
 
 export interface TagSchema {
     id:        string;
@@ -15,6 +15,7 @@ export interface TagItemProps {
     schema:    TagSchema;
     value?:    TagValue;
     onChange?: (value: TagValue) => void;
+    onDelete?: () => void;
     /** show：展示态；edit：始终为编辑控件 */
     mode?:     "show" | "edit";
     /**
@@ -35,6 +36,7 @@ export function TagItem({
     schema,
     value,
     onChange,
+                            onDelete,
     mode = "show",
     editing:          editingProp,
     onEditingChange,
@@ -53,12 +55,23 @@ export function TagItem({
 
     const [draft, setDraft] = useState(() => (value !== undefined ? String(value) : ""));
     const inputRef = useRef<HTMLInputElement>(null);
-    const getInputSize = (text: string) => Math.max(1, Math.min(20, text.length || 1));
+    const measureRef = useRef<HTMLSpanElement>(null);
+    const [inputWidth, setInputWidth] = useState<number | undefined>(undefined);
 
     // value 从外部更新时同步 draft（仅非编辑态）
     useEffect(() => {
         if (!activeEditing) setDraft(value !== undefined ? String(value) : "");
     }, [value, activeEditing]);
+
+    useLayoutEffect(() => {
+        const text = (mode === "edit" || activeEditing)
+            ? draft
+            : (value !== undefined ? String(value) : "");
+        const nextText = text || " ";
+        if (!measureRef.current) return;
+        measureRef.current.textContent = nextText;
+        setInputWidth(Math.ceil(measureRef.current.offsetWidth) + 2);
+    }, [activeEditing, draft, mode, value]);
 
     // --- CSS 变量注入 ---
     const colorVars: Record<string, string | undefined> = {
@@ -117,6 +130,7 @@ export function TagItem({
     if (isEditing) {
         return (
             <span className="fc-tag-item fc-tag-item--editing" style={overrideStyle}>
+                <span ref={measureRef} className="fc-tag-item__measure" aria-hidden="true"/>
                 <span className="fc-tag-item__name">{schema.name}</span>
                 <span className="fc-tag-item__sep">·</span>
                 <input
@@ -124,7 +138,7 @@ export function TagItem({
                     className="fc-tag-item__input"
                     type={schema.type === "number" ? "number" : "text"}
                     value={draft}
-                    size={getInputSize(draft)}
+                    style={inputWidth ? {width: `${inputWidth}px`} : undefined}
                     min={schema.range_min ?? undefined}
                     max={schema.range_max ?? undefined}
                     autoFocus
@@ -135,6 +149,16 @@ export function TagItem({
                         if (e.key === "Escape") { e.preventDefault(); cancel(); }
                     }}
                 />
+                <button
+                    type="button"
+                    className="fc-tag-item__delete"
+                    aria-label={`删除${schema.name}`}
+                    title={`删除${schema.name}`}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => onDelete?.()}
+                >
+                    x
+                </button>
             </span>
         );
     }
@@ -142,13 +166,14 @@ export function TagItem({
     // --- 展示态（外观与编辑态一致，但不支持双击进入编辑） ---
     return (
         <span className="fc-tag-item fc-tag-item--editing fc-tag-item--show" style={overrideStyle}>
+            <span ref={measureRef} className="fc-tag-item__measure" aria-hidden="true"/>
             <span className="fc-tag-item__name">{schema.name}</span>
             <span className="fc-tag-item__sep">·</span>
             <input
                 className="fc-tag-item__input fc-tag-item__input--readonly"
                 type={schema.type === "number" ? "number" : "text"}
                 value={value !== undefined ? String(value) : ""}
-                size={getInputSize(value !== undefined ? String(value) : "")}
+                style={inputWidth ? {width: `${inputWidth}px`} : undefined}
                 readOnly
                 tabIndex={-1}
                 aria-readonly="true"

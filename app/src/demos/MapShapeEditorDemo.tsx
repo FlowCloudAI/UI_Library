@@ -1,13 +1,13 @@
 import {
-    MapShapeEditor,
     buildPreviewSceneFromDraft,
     createMockMapShapeEditorApi,
+    MapShapeEditor,
     type MapShapeEditorDraft,
 } from 'flowcloudai-ui';
 
 const DEMO_CANVAS = {
     width: 1000,
-    height: 640,
+    height: 1000,
 };
 
 const DEMO_DRAFT: MapShapeEditorDraft = {

@@ -8,6 +8,7 @@
     --tag-color:       var(--fc-color-text-secondary);
     --tag-border:      var(--fc-color-border);
 
+    position: relative;
     display:     inline-flex;
     width:       fit-content;
     align-items: center;
@@ -70,6 +71,17 @@
     white-space:   nowrap;
 }
 
+.fc-tag-item__measure {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+    white-space: pre;
+    font-size: inherit;
+    font-weight: 600;
+    line-height: inherit;
+    font-family: inherit;
+}
+
 /* ---------- 编辑输入框 ---------- */
 .fc-tag-item__input {
     background:  transparent;
@@ -81,8 +93,8 @@
     line-height: inherit;
     font-family: inherit;
     min-width:   1ch;
-    width:       auto;
-    flex:        0 1 auto;
+    width: 1ch;
+    flex: 0 0 auto;
     padding:     0;
 }
 
@@ -99,6 +111,34 @@
 .fc-tag-item__input[type="number"]::-webkit-outer-spin-button,
 .fc-tag-item__input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
+}
+
+.fc-tag-item__delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--fc-color-text-tertiary);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.fc-tag-item__delete:hover {
+    background: color-mix(in srgb, var(--fc-color-danger, #ef4444) 12%, transparent);
+    color: var(--fc-color-danger, #ef4444);
+}
+
+.fc-tag-item__delete:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--fc-color-primary, #6366f1) 40%, transparent);
+    outline-offset: 1px;
 }
 
 /* ---------- boolean 点击态 ---------- */

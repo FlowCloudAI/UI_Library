@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import {type CSSProperties, useEffect, useRef, useState} from 'react';
 import DeckGL from '@deck.gl/react';
-import { OrthographicView } from '@deck.gl/core';
-import { PolygonLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers';
+import {OrthographicView} from '@deck.gl/core';
+import {PolygonLayer, ScatterplotLayer, TextLayer} from '@deck.gl/layers';
 
-import type { MapPreviewKeyLocation, MapPreviewScene, MapPreviewShape } from './types';
+import type {MapPreviewKeyLocation, MapPreviewScene, MapPreviewShape} from './types';
 
 const PREVIEW_VIEW = new OrthographicView({ id: 'fc-map-deck-preview' });
 

@@ -3,6 +3,8 @@
     --fc-mse-outline: color-mix(in srgb, var(--fc-color-border) 88%, transparent);
     --fc-mse-grid: color-mix(in srgb, var(--fc-color-border) 58%, transparent);
     --fc-mse-selected: var(--fc-color-primary);
+    --fc-mse-invalid: var(--fc-color-danger);
+    --fc-mse-invalid-fill: color-mix(in srgb, var(--fc-color-danger-bg) 72%, transparent);
     --fc-mse-selected-fill: color-mix(in srgb, var(--fc-color-primary-subtle) 90%, transparent);
     --fc-mse-shape-fill-opacity: 0.36;
     --fc-mse-selected-fill-opacity: 0.78;
@@ -70,6 +72,26 @@
         linear-gradient(180deg, color-mix(in srgb, var(--fc-color-bg-secondary) 55%, transparent) 0%, transparent 100%);
 }
 
+.fc-map-shape-editor__viewport-tools {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fc-map-shape-editor__viewport-badge {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fc-color-bg-elevated) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fc-color-border-light) 84%, transparent);
+    color: var(--fc-color-text);
+    font-size: var(--fc-font-size-xs);
+    box-shadow: var(--fc-shadow-xs);
+}
+
 .fc-map-shape-editor__canvas {
     width: 100%;
     height: 100%;
@@ -77,6 +99,14 @@
     border-radius: 14px;
     background: color-mix(in srgb, var(--fc-color-bg) 90%, transparent);
     border: 1px solid color-mix(in srgb, var(--fc-color-border-light) 84%, transparent);
+}
+
+.fc-map-shape-editor__canvas--panning {
+    cursor: grab;
+}
+
+.fc-map-shape-editor__canvas--panning:active {
+    cursor: grabbing;
 }
 
 .fc-map-shape-editor__toolbar {
@@ -107,6 +137,17 @@
 .fc-map-shape-editor__status--saving {
     background: var(--fc-color-info-bg);
     color: var(--fc-color-info);
+}
+
+.fc-map-shape-editor__status-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fc-map-shape-editor__status-label {
+    font-size: var(--fc-font-size-xs);
+    color: var(--fc-mse-muted);
 }
 
 .fc-map-shape-editor__sidebar-body {
@@ -167,6 +208,17 @@
 .fc-map-shape-editor__chip--active {
     border-color: var(--fc-mse-selected);
     background: color-mix(in srgb, var(--fc-color-primary-subtle) 78%, var(--fc-color-bg-elevated));
+}
+
+.fc-map-shape-editor__chip--invalid {
+    border-color: color-mix(in srgb, var(--fc-mse-invalid) 68%, var(--fc-color-border));
+    background: color-mix(in srgb, var(--fc-mse-invalid-fill) 30%, var(--fc-color-bg-elevated));
+}
+
+.fc-map-shape-editor__chip--active.fc-map-shape-editor__chip--invalid {
+    border-color: color-mix(in srgb, var(--fc-mse-invalid) 65%, var(--fc-mse-selected) 35%);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--fc-mse-invalid-fill) 24%, transparent) 0%, transparent 100%),
+    color-mix(in srgb, var(--fc-color-primary-subtle) 76%, var(--fc-color-bg-elevated));
 }
 
 .fc-map-shape-editor__chip-title {
@@ -307,6 +359,48 @@
     stroke-width: 3;
 }
 
+.fc-map-shape-editor__shape-polygon--invalid {
+    fill: var(--fc-mse-invalid-fill) !important;
+    fill-opacity: 0.26;
+    stroke: var(--fc-mse-invalid) !important;
+    stroke-dasharray: 8 6;
+}
+
+.fc-map-shape-editor__shape-polygon--selected.fc-map-shape-editor__shape-polygon--invalid {
+    fill: color-mix(in srgb, var(--fc-mse-invalid-fill) 60%, var(--fc-mse-selected-fill) 40%) !important;
+    fill-opacity: 0.34;
+    stroke: color-mix(in srgb, var(--fc-mse-invalid) 68%, var(--fc-mse-selected) 32%) !important;
+}
+
+.fc-map-shape-editor__draft-polygon {
+    fill: var(--fc-mse-shape-fill-color);
+    fill-opacity: 0.18;
+    stroke: var(--fc-mse-shape-stroke-color);
+    stroke-width: 2;
+    stroke-dasharray: 8 6;
+    pointer-events: none;
+}
+
+.fc-map-shape-editor__draft-line {
+    fill: none;
+    stroke: var(--fc-mse-selected);
+    stroke-width: 2;
+    stroke-dasharray: 8 6;
+    pointer-events: none;
+}
+
+.fc-map-shape-editor__draft-vertex {
+    fill: var(--fc-mse-selected);
+    stroke: #ffffff;
+    stroke-width: 2;
+    pointer-events: none;
+}
+
+.fc-map-shape-editor__draft-vertex--closable {
+    cursor: pointer;
+    pointer-events: auto;
+}
+
 .fc-map-shape-editor__edge {
     stroke: color-mix(in srgb, var(--fc-mse-selected) 90%, #ffffff 10%);
     stroke-width: 2;
@@ -347,8 +441,12 @@
 
 .fc-map-shape-editor__key-location--selected .fc-map-shape-editor__key-location-core {
     stroke: var(--fc-color-text);
-    transform: scale(1.08);
     transform-origin: center;
+}
+
+.fc-map-shape-editor__key-location--invalid .fc-map-shape-editor__key-location-core {
+    stroke: var(--fc-mse-invalid);
+    stroke-width: 3;
 }
 
 .fc-map-shape-editor__key-location-label {
@@ -357,6 +455,22 @@
     fill: var(--fc-color-text);
     user-select: none;
     pointer-events: none;
+}
+
+.fc-map-shape-editor__issue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fc-map-shape-editor__issue-item {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--fc-mse-invalid) 34%, transparent);
+    background: color-mix(in srgb, var(--fc-mse-invalid-fill) 42%, transparent);
+    color: var(--fc-color-danger);
+    font-size: var(--fc-font-size-xs);
+    line-height: 1.5;
 }
 
 .fc-map-shape-editor__hint-badge {

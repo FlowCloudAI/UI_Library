@@ -489,6 +489,7 @@ type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
 - `schema: TagSchema`：字段结构定义
 - `value?: number | string | boolean`：当前值
 - `onChange?: (value) => void`：值变更回调
+- `onDelete?: () => void`：删除回调；传入后会在编辑态右侧显示 `x` 删除按钮
 - `mode?: 'show' | 'edit'`：显示模式，`show` 可双击进入编辑，`edit` 始终编辑
 - `editing?: boolean`：受控编辑状态；传入时由调用方负责维护，组件不再内部管理；不传时组件自管（双击进入、提交/取消退出）
 - `onEditingChange?: (editing: boolean) => void`：编辑状态变化回调（双击进入、提交或取消时触发）
@@ -1229,6 +1230,246 @@ const layoutFn: LayoutFunction = async (req) => ({
 | `--fc-rg-edge-selected-color` | `var(--fc-color-primary)` | 选中边线颜色 |
 
 > **注意**：`RelationGraph` 内部引用了 `@xyflow/react/dist/style.css`。若你的打包工具不自动去重，与项目中其他 React Flow 用法同时存在时该文件可能被引入两次，但不影响功能。
+
+## 地图编辑组件
+
+### `MapShapeEditor`
+
+用途：地图编辑 MVP 组件。左侧使用 SVG 作为编辑层，支持闭合图形描点、顶点拖拽、图形整体拖拽、双击边插点和关键地点编辑；底部 deck
+展示层只消费后端返回结果，用于提交后的回显。
+
+#### 当前迭代定位
+
+这是一个**迭代中的地图编辑组件**，当前目标不是一次性覆盖完整 GIS / CAD 能力，而是先把“前端可编辑草稿 + 后端可消费结构 +
+deck 展示回显”这条链路打通。
+
+当前版本已经稳定表达的职责有：
+
+- 前端维护一份可编辑草稿：`shapes + keyLocations`
+- 用户在 SVG 层完成基础编辑，再提交给后端
+- 后端返回一份**展示态场景**，供 deck 预览层渲染
+- 前端不自行推导 deck 展示数据，展示层以**后端返回结果为准**
+
+当前版本暂不承诺的能力：
+
+- 不做地图底图投影、地理坐标转换
+- 不做布尔运算、自动吸附、撤销重做、版本历史
+- 不做复杂拓扑修复
+- 不约束后端持久化方案，组件只关心请求和响应结构
+
+#### 快速示例
+
+```tsx
+import {
+  MapShapeEditor,
+  createMockMapShapeEditorApi,
+} from 'flowcloudai-ui'
+import type {
+  MapPreviewScene,
+  MapShapeEditorDraft,
+} from 'flowcloudai-ui'
+
+const api = createMockMapShapeEditorApi()
+
+const draft: MapShapeEditorDraft = {
+  shapes: [
+    {
+      id: 'shape-1',
+      name: '园区 A',
+      fill: '#d8ecff',
+      stroke: '#185fa5',
+      vertices: [
+        { id: 'v-1', x: 180, y: 120 },
+        { id: 'v-2', x: 420, y: 140 },
+        { id: 'v-3', x: 460, y: 340 },
+        { id: 'v-4', x: 220, y: 360 },
+      ],
+    },
+  ],
+  keyLocations: [
+    {
+      id: 'loc-1',
+      name: '主入口',
+      type: '入口',
+      x: 260,
+      y: 180,
+      shapeId: 'shape-1',
+    },
+  ],
+}
+
+const preview: MapPreviewScene | null = null
+
+export function Demo() {
+  return (
+    <MapShapeEditor
+      initialDraft={draft}
+      initialPreview={preview}
+      api={api}
+      width="100%"
+      height="auto"
+      canvas={{ width: 1000, height: 640 }}
+    />
+  )
+}
+```
+
+#### 参数
+
+| 参数               | 类型                        | 默认值                            | 说明                                           |
+|------------------|---------------------------|--------------------------------|----------------------------------------------|
+| `initialDraft`   | `MapShapeEditorDraft`     | —                              | 编辑层初始草稿，包含图形和关键地点                            |
+| `initialPreview` | `MapPreviewScene \| null` | `null`                         | deck 展示层初始回显数据                               |
+| `api`            | `MapShapeEditorApi`       | 内置 mock API                    | 提交接口适配层，默认使用 `createMockMapShapeEditorApi()` |
+| `canvas`         | `MapEditorCanvas`         | `{ width: 1000, height: 640 }` | SVG 编辑坐标系尺寸                                  |
+| `width`          | `string \| number`        | `'100%'`                       | 根容器宽度                                        |
+| `height`         | `string \| number`        | `'auto'`                       | 根容器高度                                        |
+| `className`      | `string`                  | —                              | 根元素额外类名                                      |
+| `style`          | `CSSProperties`           | —                              | 根元素内联样式                                      |
+
+#### 编辑交互约定
+
+这部分建议后端也了解，因为它决定了前端会在什么时机提交什么数据：
+
+- 初始可以处于“未选中任何图形”状态
+- 双击图形才进入图形编辑态
+- 点击画布空白处会取消当前图形选中
+- 当图形未选中时，可以直接在该图形上拖拽平移地图视图
+- 只有图形已选中时，才允许整体拖拽该图形
+- 关键地点始终是独立对象，但通过 `shapeId` 关联到某个图形
+- 图形整体拖动时，已关联的关键地点会跟随一起移动
+
+#### 前端预校验
+
+组件内置最小可用校验，提交前会在界面中直接给出中文提示，并阻止非法草稿进入后端：
+
+- 图形至少需要 3 个点
+- 图形不允许重复点或过近点
+- 图形不允许自交
+- 关键地点必须填写名称、类型，并关联一个存在的图形
+- 关键地点必须位于关联图形内部
+- 绘制中的未完成图形不会允许提交
+
+校验逻辑已拆到 `ui/src/components/MapShapeEditor/validation.ts`，几何计算入口在
+`ui/src/components/MapShapeEditor/geometry.ts`，后续如果要接布尔运算或更复杂的几何处理，可以继续沿这个入口扩展。
+
+#### 前后端通信模型
+
+`MapShapeEditor` 当前采用两套数据模型，后端需要明确区分：
+
+**1. 编辑草稿（前端提交）**
+
+这是用户正在编辑的原始结构，强调“好改、好回填、可保留业务 ID”。
+
+```ts
+interface MapShapeSaveRequest {
+  canvas: { width: number; height: number }
+  shapes: Array<{
+    id: string
+    name: string
+    vertices: Array<{
+      id: string
+      x: number
+      y: number
+    }>
+    fill?: string
+    stroke?: string
+  }>
+  keyLocations: Array<{
+    id: string
+    name: string
+    type: string
+    x: number
+    y: number
+    shapeId?: string | null
+  }>
+}
+```
+
+字段含义和约束：
+
+- `canvas.width / height`：前端编辑坐标系尺寸，不是经纬度范围
+- `shape.id`、`vertex.id`、`keyLocation.id`：由前端生成的稳定标识，后端可直接复用，也可以建立自己的映射
+- `vertices`：按顺序组成闭合多边形，前端不额外传首尾重复点
+- `fill`、`stroke`：当前是可选的 16 进制颜色字符串，属于表现层辅助信息
+- `keyLocations.shapeId`：表示关键地点关联的图形；允许为 `null`，但当前前端校验默认要求它关联到一个存在图形
+
+**2. 展示场景（后端返回）**
+
+这是给 deck 展示层消费的结构，强调“渲染友好”，不要求保留编辑期的全部细节。
+
+```ts
+interface MapShapeSaveResponse {
+  scene: {
+    canvas: { width: number; height: number }
+    shapes: Array<{
+      id: string
+      name: string
+      polygon: [number, number][]
+      fillColor: [number, number, number, number]
+      lineColor: [number, number, number, number]
+    }>
+    keyLocations: Array<{
+      id: string
+      name: string
+      type: string
+      position: [number, number]
+      shapeId?: string | null
+      color: [number, number, number, number]
+    }>
+  }
+  savedAt: string
+  message?: string
+}
+```
+
+字段含义和约束：
+
+- `polygon`：deck 使用的二维点数组，顺序应与展示轮廓一致
+- `fillColor`、`lineColor`、`color`：RGBA 数组，范围按 deck 约定为 `0-255`
+- `savedAt`：必填字符串，前端当前不解析格式，建议后端返回 ISO 时间串
+- `message`：可选，直接显示在界面“后端提交”状态区域
+
+#### 后端接入建议
+
+如果由另一个 Codex 或后端同学负责接口，建议按下面的思路理解：
+
+- 前端提交的是“编辑语义”数据，不是最终渲染数据
+- 后端返回的是“展示语义”数据，可以做颜色归一、结构裁剪、格式转换
+- 只要响应里 `scene` 和 `savedAt` 合法，前端就会把它视为最新展示结果
+- 如果后端要加入业务校验，建议保留前端当前字段名，不要重命名
+- 如果后端要补充业务主键、版本号、审计信息，优先放在外围接口层，不要破坏当前 `scene` 结构
+- 若未来要接真实地图坐标，可把当前 `canvas` 坐标系视作一个中间编辑坐标系，再由后端负责投影换算
+
+#### 当前推荐的后端处理步骤
+
+1. 接收 `MapShapeSaveRequest`
+2. 按业务需要做二次校验，例如名称唯一性、图形归属权限、区域合法性
+3. 将 `vertices` 转成后端内部几何结构
+4. 持久化图形和关键地点
+5. 组装 `MapPreviewScene` 返回给前端，而不是把数据库实体原样透出
+
+#### 已知扩展方向
+
+这部分不是当前版本必须实现，但后端设计时最好预留：
+
+- 真实底图坐标和编辑坐标系的换算
+- 图形布尔运算和裁剪
+- 多图层、分组、隐藏/锁定
+- 历史版本、草稿与发布态分离
+- 更细的后端校验码，而不仅是字符串消息
+
+#### 提交与失败提示
+
+- 前端预校验失败：界面显示“前端预校验”错误，不发请求
+- 后端请求失败：界面显示“后端提交”错误，区分网络失败、超时和返回结构异常
+- deck 展示层只更新最近一次成功提交后的返回结果，不直接读取当前编辑草稿
+
+#### 相关导出
+
+- `createMockMapShapeEditorApi()`：创建本地 mock API
+- `submitMapShapeScene(api, request, options?)`：统一处理超时、结构校验和错误归一化
+- `validateMapEditorDraft(draft, options?)`：执行前端校验
 
 ## 发布信息
 

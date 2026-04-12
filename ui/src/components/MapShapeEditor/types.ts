@@ -71,3 +71,56 @@ export interface MapShapeSaveResponse {
 export interface MapShapeEditorApi {
     saveScene: (request: MapShapeSaveRequest) => Promise<MapShapeSaveResponse>;
 }
+
+export type MapValidationSeverity = 'error';
+
+export type MapValidationSource = 'shape' | 'keyLocation' | 'draft';
+
+export type MapValidationCode =
+    | 'shape_too_few_vertices'
+    | 'shape_duplicate_vertices'
+    | 'shape_close_vertices'
+    | 'shape_self_intersection'
+    | 'key_location_name_required'
+    | 'key_location_type_required'
+    | 'key_location_shape_required'
+    | 'key_location_shape_missing'
+    | 'key_location_outside_shape'
+    | 'draft_no_shape'
+    | 'draft_shape_drawing_in_progress';
+
+export interface MapValidationIssue {
+    code: MapValidationCode;
+    severity: MapValidationSeverity;
+    source: MapValidationSource;
+    message: string;
+    shapeId?: string;
+    keyLocationId?: string;
+}
+
+export interface MapShapeValidationResult {
+    shapeId: string;
+    issues: MapValidationIssue[];
+    isValid: boolean;
+}
+
+export interface MapKeyLocationValidationResult {
+    keyLocationId: string;
+    issues: MapValidationIssue[];
+    isValid: boolean;
+}
+
+export interface MapDraftValidationResult {
+    issues: MapValidationIssue[];
+    isValid: boolean;
+}
+
+export interface MapValidationResult {
+    issues: MapValidationIssue[];
+    shapeResults: MapShapeValidationResult[];
+    keyLocationResults: MapKeyLocationValidationResult[];
+    draftResult: MapDraftValidationResult;
+    isValid: boolean;
+}
+
+export type MapShapeSubmitErrorKind = 'timeout' | 'transport' | 'invalid_response';
