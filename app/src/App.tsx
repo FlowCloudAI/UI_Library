@@ -18,7 +18,7 @@ import { MarkdownEditorDemo } from './demos/MarkdownEditorDemo'
 import { TabBarDemo }         from './demos/TabBarDemo'
 import { SideBarDemo }        from './demos/SideBarDemo'
 import { ContextMenuDemo }    from './demos/ContextMenuDemo'
-import ChatDemo from './demos/ChatDemo'
+import MessageBoxDemo from './demos/MessageBoxDemo.tsx'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
 import { TreeDemo }           from './demos/TreeDemo'
 import TimeDemo               from './demos/TimeDemo'
@@ -97,7 +97,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     SideBar:     SideBarDemo,
     Tree:        TreeDemo,
     ContextMenu: ContextMenuDemo,
-    Chat:        ChatDemo,
+    Chat:        MessageBoxDemo,
     LazyLoad:    LazyLoadDemo,
     Time:        TimeDemo,
     Relation:    RelationGraphDemo,
