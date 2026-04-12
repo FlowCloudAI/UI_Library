@@ -25,5 +25,6 @@ export * from "./components/Chat/Chat";
 export * from "./components/Time/Time";
 export * from "./components/RelationGraph/RelationGraph";
 export * from "./components/RelationGraph/types";
+export * from "./components/MapShapeEditor";
 
 import "./style/index.css"

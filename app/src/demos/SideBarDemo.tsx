@@ -45,6 +45,7 @@ export function SideBarDemo() {
     const [collapsed, setCollapsed] = useState(false)
     const [rightSelectedKey, setRightSelectedKey] = useState('settings')
     const [rightCollapsed, setRightCollapsed] = useState(false)
+    const [anchoredSelectedKey, setAnchoredSelectedKey] = useState('search')
 
     return (
         <>
@@ -79,6 +80,41 @@ export function SideBarDemo() {
                         onSelect={setRightSelectedKey}
                         onCollapse={setRightCollapsed}
                     />
+                </div>
+            </div>
+            <div className="demo-section">
+                <h4>锚定状态（隐藏展开/折叠按钮）</h4>
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
+                    <div style={{...demoWrap, height: 320}}>
+                        <SideBar
+                            items={menuItems}
+                            bottomItems={bottomMenuItems}
+                            selectedKey={anchoredSelectedKey}
+                            collapsed={false}
+                            anchorState="normal"
+                            onSelect={setAnchoredSelectedKey}
+                            onCollapse={() => {
+                            }}
+                        />
+                        <main style={{flex: 1, padding: 20, fontSize: 14, color: 'var(--fc-color-text-secondary)'}}>
+                            锚定为展开态，不显示收回按钮
+                        </main>
+                    </div>
+                    <div style={{...demoWrap, height: 320}}>
+                        <SideBar
+                            items={menuItems}
+                            bottomItems={bottomMenuItems}
+                            selectedKey={anchoredSelectedKey}
+                            collapsed={false}
+                            anchorState="collapse"
+                            onSelect={setAnchoredSelectedKey}
+                            onCollapse={() => {
+                            }}
+                        />
+                        <main style={{flex: 1, padding: 20, fontSize: 14, color: 'var(--fc-color-text-secondary)'}}>
+                            锚定为折叠态，不显示展开按钮
+                        </main>
+                    </div>
                 </div>
             </div>
             <div className="demo-section">

@@ -820,7 +820,7 @@ function Example() {
 
 ### `SideBar`
 
-用途：侧边栏导航组件，支持左右停靠、折叠、底部固定项和样式变量覆盖。
+用途：侧边栏导航组件，支持左右停靠、折叠、底部固定项、锚定展开/折叠状态和样式变量覆盖。
 
 示例：
 
@@ -853,12 +853,28 @@ function Example() {
 }
 ```
 
+锚定状态示例：
+
+```tsx
+<SideBar
+  items={items}
+  selectedKey={selectedKey}
+  collapsed={false}
+  anchorState="collapse"
+  onSelect={setSelectedKey}
+  onCollapse={() => {}}
+/>
+```
+
+传入 `anchorState` 后，侧边栏会以该值作为最终状态，并隐藏展开/折叠按钮及其所在头部区域。
+
 参数：
 
 - `items: SideBarItem[]`：主菜单项数组
 - `bottomItems?: SideBarItem[]`：底部固定菜单项数组
 - `selectedKey: string`：当前选中 key
 - `collapsed: boolean`：是否折叠
+- `anchorState?: 'collapse' | 'normal'`：锚定侧边栏状态；设置后隐藏展开/折叠按钮，并以该值作为最终状态
 - `width?: number`：展开宽度
 - `collapsedWidth?: number`：折叠宽度
 - `placement?: 'left' | 'right'`：停靠位置，默认 `'left'`

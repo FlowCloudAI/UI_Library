@@ -23,6 +23,7 @@ import { LazyLoadDemo }       from './demos/LazyLoadDemo'
 import { TreeDemo }           from './demos/TreeDemo'
 import TimeDemo               from './demos/TimeDemo'
 import { RelationGraphDemo }  from './demos/RelationGraphDemo'
+import { MapShapeEditorDemo } from './demos/MapShapeEditorDemo'
 
 /* ===== 导航注册表 ===== */
 
@@ -54,6 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
             { key: 'Card',        label: 'Card' },
             { key: 'Markdown',    label: 'MarkdownEditor' },
             { key: 'Relation',    label: '关系图谱' },
+            { key: 'MapShapeEditor', label: '地图编辑器' },
             { key: 'Time',        label: 'Timeline' },
         ],
     },
@@ -99,6 +101,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     LazyLoad:    LazyLoadDemo,
     Time:        TimeDemo,
     Relation:    RelationGraphDemo,
+    MapShapeEditor: MapShapeEditorDemo,
 }
 
 const ALL_ITEMS = NAV_GROUPS.flatMap(g => g.items)
