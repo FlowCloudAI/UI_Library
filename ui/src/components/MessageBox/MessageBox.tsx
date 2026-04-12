@@ -131,86 +131,73 @@ const ReasoningSection: React.FC<ReasoningSectionProps> = ({
 };
 
 // ========================================
-// 子组件：工具调用卡片
+// 子组件：工具调用标签（极简过程提示）
 // ========================================
 
 interface ToolCallCardProps {
   toolCall: Extract<ContentBlock, { type: 'tool_call' }>;
   toolResult?: Extract<ContentBlock, { type: 'tool_result' }>;
-  expanded?: boolean;
-  onExpand?: () => void;
 }
 
 const ToolCallCard: React.FC<ToolCallCardProps> = ({
-                                                     toolCall,
-                                                     toolResult,
-                                                     expanded = false,
-                                                     onExpand
-                                                   }) => {
-  const [isExpanded, setIsExpanded] = useState(expanded);
+  toolCall,
+  toolResult
+}) => {
+  const isCompleted = !!toolResult;
 
-  const handleExpand = () => {
-    const newExpanded = !isExpanded;
-    setIsExpanded(newExpanded);
-    onExpand?.();
+  // 生成用户友好的描述
+  const getDescription = () => {
+    try {
+      const args = JSON.parse(toolCall.arguments);
+      
+      switch (toolCall.name) {
+        case 'fetchUrl':
+        case 'browse':
+          const url = args.url || args.href || '';
+          const domain = url.replace(/^https?:\/\//, '').split('/')[0];
+          return isCompleted ? `已浏览 ${domain}` : `正在浏览 ${domain}...`;
+          
+        case 'search':
+        case 'searchWeb':
+          const query = args.query || args.q || args.keyword || '';
+          return isCompleted ? `已搜索 "${query}"` : `正在搜索 "${query}"...`;
+          
+        case 'getWeather':
+          const city = args.city || args.location || '';
+          return isCompleted ? `已查询 ${city}天气` : `正在查询 ${city}天气...`;
+          
+        default:
+          return isCompleted ? '处理完成' : '处理中...';
+      }
+    } catch {
+      return isCompleted ? '处理完成' : '处理中...';
+    }
   };
 
   return (
-      <div className="chat-tool-call-card">
-        <button
-            className="chat-tool-call-header"
-            onClick={handleExpand}
-            aria-expanded={isExpanded}
+    <div className={`chat-tool-call-label ${isCompleted ? 'completed' : 'processing'}`}>
+      {!isCompleted && (
+        <svg 
+          className="chat-tool-call-spinner" 
+          width="12" 
+          height="12" 
+          viewBox="0 0 12 12"
         >
-          <span className="chat-tool-call-icon">🔧</span>
-          <span className="chat-tool-call-name">{toolCall.name}</span>
-          <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`chat-tool-call-icon-arrow ${isExpanded ? 'rotated' : ''}`}
-          >
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-
-        {isExpanded && (
-            <div className="chat-tool-call-body">
-              <div className="chat-tool-call-section">
-                <div className="chat-tool-call-label">参数：</div>
-                <pre className="chat-tool-call-args">
-              {(() => {
-                try {
-                  return JSON.stringify(JSON.parse(toolCall.arguments), null, 2);
-                } catch {
-                  return toolCall.arguments;
-                }
-              })()}
-            </pre>
-              </div>
-
-              {toolResult && (
-                  <div className="chat-tool-call-section">
-                    <div className="chat-tool-call-label">结果：</div>
-                    <pre className={`chat-tool-call-result ${toolResult.isError ? 'error' : ''}`}>
-                {(() => {
-                  try {
-                    return JSON.stringify(toolResult.content, null, 2);
-                  } catch {
-                    return '[序列化失败]';
-                  }
-                })()}
-              </pre>
-                  </div>
-              )}
-            </div>
-        )}
-      </div>
+          <circle
+            cx="6"
+            cy="6"
+            r="5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeDasharray="23.56"
+            strokeDashoffset="7.85"
+          />
+        </svg>
+      )}
+      <span>{getDescription()}</span>
+    </div>
   );
 };
 
@@ -225,7 +212,6 @@ export const MessageBox: React.FC<MessageBoxProps> = React.memo(({
                                                                    onHeightChange,
                                                                    onReasoningToggle,
                                                                    onCopy,
-                                                                   onToolCallExpand,
                                                                    className = '',
                                                                    style = {}
                                                                  }) => {
@@ -312,7 +298,6 @@ export const MessageBox: React.FC<MessageBoxProps> = React.memo(({
                 key={block.id}
                 toolCall={block}
                 toolResult={toolResult}
-                onExpand={() => onToolCallExpand?.(block.index)}
             />
         );
       }
