@@ -560,7 +560,7 @@ type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
 
 ### `RollingBox`
 
-用途：带自定义滚动条的内容容器，支持横向/纵向滚动和滚动条样式控制。
+用途：带自定义滚动条的内容容器，支持横向/纵向滚动和滚动条样式控制。横向模式下会把鼠标滚轮映射为平滑横向滚动。
 
 参数：
 
@@ -574,6 +574,14 @@ type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
 - `thumbHoverColor?: string`：hover 滚动条颜色
 - `thumbActiveColor?: string`：滚动中滚动条颜色
 - `trackColor?: string`：轨道背景色
+- `interceptWheel?: (event: WheelEvent, container: HTMLDivElement) => boolean`：滚轮事件拦截器；返回 `true` 时由外部接管本次滚轮，
+  `RollingBox` 不再执行默认滚动逻辑
+
+说明：
+
+- `horizontal=true` 时，组件会把纵向滚轮转换为横向位移，并通过 `requestAnimationFrame` 做平滑滚动
+- 可结合 `ref` 直接访问实际滚动容器
+- `interceptWheel` 适合像时间线这类“局部区域缩放、其余区域滚动”的场景
 
 ### `VirtualList`
 
@@ -932,7 +940,7 @@ function StreamingExample() {
 
 ### `Timeline`
 
-用途：横向时间线组件，展示带时间点的事件序列，支持拖拽滚动、缩放、事件选择和协同滚动。
+用途：横向时间线组件，展示带时间点或持续区间的事件序列，支持拖拽滚动、时间轴缩放、事件选择和协同滚动。
 
 参数：
 
@@ -942,6 +950,36 @@ function StreamingExample() {
 - `syncId?: string`：同步组 ID，多个 Timeline 使用相同 syncId 可实现滚动同步
 - `selectedEventId?: string | null`：受控选中的事件 ID
 - `onEventSelect?: (eventId: string | null) => void`：事件选择回调
+
+#### `TimelineEvent`
+
+```ts
+export interface TimelineEvent {
+  id: string
+  title: string
+  startTime: number
+  endTime?: number
+  description?: string
+  parentId?: string
+}
+```
+
+- `id`：事件唯一标识，支持 UUID 等任意字符串
+- `title`：事件标题
+- `startTime`：起始年份，支持负数表示公元前
+- `endTime`：结束年份，可选，用于表示持续时间段
+- `description`：事件描述文本，可选
+- `parentId`：父事件 ID，可选，用于层级关系
+
+交互说明：
+
+- 事件内容区域滚轮：使用内置 `RollingBox` 做平滑横向滚动
+- 时间轴及其下方区域滚轮：执行时间轴缩放
+- 缩放时会尽量保持鼠标所在时间位置不跳动
+- 缩小时存在“适配当前视口”的最小缩放值，最小缩放下会尽量完整显示整个时间范围
+- 时间轴会贴近底部显示，并为年份数字保留独立显示空间
+- 事件卡片的纵向排布基于稳定布局宽度计算，不会因为缩放导致组件高度来回变化
+- `syncId` 当前只同步横向滚动位置，不同步缩放倍数
 
 示例：
 
@@ -1431,6 +1469,7 @@ deck 展示回显”这条链路打通。
 当前版本已经稳定表达的职责有：
 
 - 前端维护一份可编辑草稿：`shapes + keyLocations`
+- 当前只要求支持**基础海岸线 / 区域轮廓**的编辑与回显
 - 用户在 SVG 层完成基础编辑，再提交给后端
 - 后端返回一份**展示态场景**，供 deck 预览层渲染
 - 前端不自行推导 deck 展示数据，展示层以**后端返回结果为准**
@@ -1438,6 +1477,8 @@ deck 展示回显”这条链路打通。
 当前版本暂不承诺的能力：
 
 - 不做地图底图投影、地理坐标转换
+- 不做自然海岸线自动细分
+- 不做水文、地形、高度图、行政区划自动生成
 - 不做布尔运算、自动吸附、撤销重做、版本历史
 - 不做复杂拓扑修复
 - 不约束后端持久化方案，组件只关心请求和响应结构
@@ -1524,6 +1565,23 @@ export function Demo() {
 - 关键地点始终是独立对象，但通过 `shapeId` 关联到某个图形
 - 图形整体拖动时，已关联的关键地点会跟随一起移动
 
+#### 本期固定协议
+
+本期按“**海岸线 MVP v1**”固定协议，建议前后端统一使用 `map_shape_mvp_v1` 作为协议版本标识。
+
+当前固定目标：
+
+- 前端提交二维平面坐标系下的闭合多边形
+- 后端负责最小必要校验、持久化与展示结构转换
+- deck 展示层只要求画出基础轮廓和关键地点
+
+当前不要求后端实现：
+
+- 海岸线自动细分为自然轮廓
+- 基于高度图生成河流、湖泊
+- 地形、水文、行政区划衍生层
+- 真实经纬度或投影计算
+
 #### 前端预校验
 
 组件内置最小可用校验，提交前会在界面中直接给出中文提示，并阻止非法草稿进入后端：
@@ -1559,6 +1617,9 @@ interface MapShapeSaveRequest {
     }>
     fill?: string
     stroke?: string
+    bizId?: string | null
+    kind?: 'coastline'
+    ext?: Record<string, unknown>
   }>
   keyLocations: Array<{
     id: string
@@ -1567,17 +1628,30 @@ interface MapShapeSaveRequest {
     x: number
     y: number
     shapeId?: string | null
+    bizId?: string | null
+    ext?: Record<string, unknown>
   }>
+  meta?: {
+    protocolVersion?: 'map_shape_mvp_v1'
+    scenario?: 'coastline_mvp'
+    requestId?: string
+    ext?: Record<string, unknown>
+  }
 }
 ```
 
 字段含义和约束：
 
 - `canvas.width / height`：前端编辑坐标系尺寸，不是经纬度范围
-- `shape.id`、`vertex.id`、`keyLocation.id`：由前端生成的稳定标识，后端可直接复用，也可以建立自己的映射
+- `shape.id`、`vertex.id`、`keyLocation.id`：由前端生成的稳定标识，建议后端视为客户端稳定 ID，而不是直接等同业务主键
 - `vertices`：按顺序组成闭合多边形，前端不额外传首尾重复点
 - `fill`、`stroke`：当前是可选的 16 进制颜色字符串，属于表现层辅助信息
-- `keyLocations.shapeId`：表示关键地点关联的图形；允许为 `null`，但当前前端校验默认要求它关联到一个存在图形
+- `shape.kind`：当前固定为 `'coastline'`；后续若扩展到行政区或功能区，可在此基础上扩展
+- `bizId`：后端业务主键预留位；当前允许为空
+- `ext`：扩展字段预留位；前后端都不应在基础流程中依赖其存在
+- `keyLocations.shapeId`：类型上允许 `null`，但**当前 MVP 口径按必填处理**，必须关联一个存在图形
+- `meta.protocolVersion`：建议固定传 `map_shape_mvp_v1`
+- `meta.scenario`：建议当前固定为 `coastline_mvp`
 
 **2. 展示场景（后端返回）**
 
@@ -1593,6 +1667,9 @@ interface MapShapeSaveResponse {
       polygon: [number, number][]
       fillColor: [number, number, number, number]
       lineColor: [number, number, number, number]
+      bizId?: string | null
+      kind?: 'coastline'
+      ext?: Record<string, unknown>
     }>
     keyLocations: Array<{
       id: string
@@ -1601,10 +1678,20 @@ interface MapShapeSaveResponse {
       position: [number, number]
       shapeId?: string | null
       color: [number, number, number, number]
+      bizId?: string | null
+      ext?: Record<string, unknown>
     }>
+    ext?: Record<string, unknown>
   }
   savedAt: string
   message?: string
+  meta?: {
+    protocolVersion?: 'map_shape_mvp_v1'
+    scenario?: 'coastline_mvp'
+    requestId?: string
+    persisted?: boolean
+    ext?: Record<string, unknown>
+  }
 }
 ```
 
@@ -1612,8 +1699,10 @@ interface MapShapeSaveResponse {
 
 - `polygon`：deck 使用的二维点数组，顺序应与展示轮廓一致
 - `fillColor`、`lineColor`、`color`：RGBA 数组，范围按 deck 约定为 `0-255`
-- `savedAt`：必填字符串，前端当前不解析格式，建议后端返回 ISO 时间串
+- `savedAt`：必填字符串，建议固定为 ISO 8601 UTC 时间串
 - `message`：可选，直接显示在界面“后端提交”状态区域
+- `meta.persisted`：可表示本次结果是否已经写入正式存储；mock 场景可返回 `false`
+- `scene.ext / item.ext / meta.ext`：用于未来扩展，不影响当前前端渲染
 
 #### 后端接入建议
 
@@ -1625,6 +1714,43 @@ interface MapShapeSaveResponse {
 - 如果后端要加入业务校验，建议保留前端当前字段名，不要重命名
 - 如果后端要补充业务主键、版本号、审计信息，优先放在外围接口层，不要破坏当前 `scene` 结构
 - 若未来要接真实地图坐标，可把当前 `canvas` 坐标系视作一个中间编辑坐标系，再由后端负责投影换算
+- 前端传入的颜色字段是可选参考值；后端返回展示数据时应补齐 RGBA 颜色，不要把空颜色直接透传给 deck
+- 当前成功响应建议严格按 `MapShapeSaveResponse` 返回，避免前端适配多套成功结构
+
+#### 错误响应建议
+
+当前组件内部会区分超时、传输失败、结构异常。业务后端建议额外固定一套**结构化错误响应**，便于未来前端细化错误展示。
+
+推荐结构：
+
+```ts
+interface MapShapeSaveErrorResponse {
+  code:
+    | 'MAP_SHAPE_VALIDATION_FAILED'
+    | 'MAP_SHAPE_PERMISSION_DENIED'
+    | 'MAP_SHAPE_NOT_FOUND'
+    | 'MAP_SHAPE_CONFLICT'
+    | 'MAP_SHAPE_INTERNAL_ERROR'
+    | string
+  message: string
+  requestId?: string
+  retryable?: boolean
+  fieldErrors?: Array<{
+    field: string
+    code: string
+    message: string
+    ext?: Record<string, unknown>
+  }>
+  ext?: Record<string, unknown>
+}
+```
+
+建议：
+
+- 业务校验失败时返回固定 `code`，不要只给裸字符串
+- `fieldErrors` 可用于指出 `shapes[0].vertices`、`keyLocations[2].shapeId` 这类具体错误位置
+- `requestId` 便于日志追踪
+- 即使前端当前还没细消费这些字段，也建议后端先固定下来
 
 #### 当前推荐的后端处理步骤
 
@@ -1639,6 +1765,7 @@ interface MapShapeSaveResponse {
 这部分不是当前版本必须实现，但后端设计时最好预留：
 
 - 真实底图坐标和编辑坐标系的换算
+- 基于粗轮廓生成自然海岸线
 - 图形布尔运算和裁剪
 - 多图层、分组、隐藏/锁定
 - 历史版本、草稿与发布态分离

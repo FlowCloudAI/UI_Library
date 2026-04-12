@@ -1,9 +1,9 @@
-import {useMemo, useState, type CSSProperties, type MouseEvent as ReactMouseEvent} from 'react'
+import {type CSSProperties, type MouseEvent as ReactMouseEvent, SetStateAction, useMemo, useState} from 'react'
 import {
-    Tree,
-    flatToTree,
     type CategoryTreeNode,
     type DropPosition,
+    flatToTree,
+    Tree,
     type TreeActionItem,
     type TreeColorTokens,
     type TreeNodeActionHelpers,
@@ -58,7 +58,7 @@ export function TreeDemo() {
         rows.map(r => ({id: r.id, parent_id: r.parent_id, name: r.name, sort_order: r.sort_order}))
     )
 
-    const rootKeys = useMemo(() => roots.map(node => node.key), [roots])
+    const rootKeys = useMemo(() => roots.map((node: { key: any }) => node.key), [roots])
     const customColorTokens = useMemo<TreeColorTokens | undefined>(() => {
         if (!customColors) return undefined
         return {
@@ -355,7 +355,13 @@ export function TreeDemo() {
                     启用颜色 tokens
                 </label>
             </div>
-            <div style={{display: 'flex', height: 600, overflow: 'hidden', border: '1px solid var(--fc-color-border, #e2e8f0)', borderRadius: 8}}>
+            <div style={{
+                display: 'flex',
+                height: 600,
+                overflow: 'hidden',
+                border: '1px solid var(--fc-color-border, #e2e8f0)',
+                borderRadius: 8
+            }}>
 
                 {/* 导航区 */}
                 <div style={{width: navWidth, flexShrink: 0, overflow: 'hidden'}}>
@@ -369,11 +375,11 @@ export function TreeDemo() {
                         searchPlaceholder="搜索分类 / 人物 / 物品"
                         renderTitle={renderTreeTitle}
                         getNodeActions={getNodeActions}
-                        canRename={node => node.raw.parent_id !== null}
-                        canDelete={node => node.raw.parent_id !== null}
-                        canCreate={node => node === null || node.raw.parent_id !== null}
-                        canDrag={node => node.raw.parent_id !== null}
-                        canDrop={(source, target, position) => {
+                        canRename={(node) => node.raw.parent_id !== null}
+                        canDelete={(node) => node.raw.parent_id !== null}
+                        canCreate={(node) => node === null || node.raw.parent_id !== null}
+                        canDrag={(node) => node.raw.parent_id !== null}
+                        canDrop={(source, target, position: string) => {
                             if (source.raw.parent_id === null && position === 'into') return false
                             return !(source.raw.parent_id === null && target.raw.parent_id !== null);
 
@@ -383,7 +389,7 @@ export function TreeDemo() {
                         actionCollapseThreshold={240}
                         colorTokens={customColorTokens}
                         scrollHeight="600px"
-                        onSelect={key => {
+                        onSelect={(key: SetStateAction<string | undefined>) => {
                             setSelectedKey(key)
                             addLog(`选中 [${key}]`)
                         }}

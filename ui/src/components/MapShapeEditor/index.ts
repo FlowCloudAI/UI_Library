@@ -2,5 +2,7 @@ export * from './types';
 export * from './api';
 export * from './geometry';
 export * from './validation';
+export * from './mapShapeEditorSvgUtils';
 export * from './MapDeckPreview';
-export * from './MapShapeEditor';
+export * from './MapShapeSvgEditor';
+export * from './MapShapeEditorWorkbench';

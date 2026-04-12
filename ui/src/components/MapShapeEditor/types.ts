@@ -3,27 +3,46 @@ export interface MapEditorCanvas {
     height: number;
 }
 
+export interface MapShapeEditorViewBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export const MAP_SHAPE_PROTOCOL_VERSION = 'map_shape_mvp_v1' as const;
+
+export type MapShapeProtocolVersion = typeof MAP_SHAPE_PROTOCOL_VERSION;
+
+export interface MapShapeExtensible {
+    ext?: Record<string, unknown>;
+}
+
 export interface MapShapeVertex {
     id: string;
     x: number;
     y: number;
+    bizId?: string | null;
 }
 
-export interface MapShapeDraft {
+export interface MapShapeDraft extends MapShapeExtensible {
     id: string;
     name: string;
     vertices: MapShapeVertex[];
     fill?: string;
     stroke?: string;
+    bizId?: string | null;
+    kind?: 'coastline';
 }
 
-export interface MapKeyLocationDraft {
+export interface MapKeyLocationDraft extends MapShapeExtensible {
     id: string;
     name: string;
     type: string;
     x: number;
     y: number;
     shapeId?: string | null;
+    bizId?: string | null;
 }
 
 export interface MapShapeEditorDraft {
@@ -31,41 +50,59 @@ export interface MapShapeEditorDraft {
     keyLocations: MapKeyLocationDraft[];
 }
 
+export interface MapShapeRequestMeta extends MapShapeExtensible {
+    protocolVersion?: MapShapeProtocolVersion;
+    scenario?: 'coastline_mvp';
+    requestId?: string;
+}
+
 export interface MapShapeSaveRequest {
     canvas: MapEditorCanvas;
     shapes: MapShapeDraft[];
     keyLocations: MapKeyLocationDraft[];
+    meta?: MapShapeRequestMeta;
 }
 
 export type DeckColor = [number, number, number, number];
 
-export interface MapPreviewShape {
+export interface MapPreviewShape extends MapShapeExtensible {
     id: string;
     name: string;
     polygon: [number, number][];
     fillColor: DeckColor;
     lineColor: DeckColor;
+    bizId?: string | null;
+    kind?: 'coastline';
 }
 
-export interface MapPreviewKeyLocation {
+export interface MapPreviewKeyLocation extends MapShapeExtensible {
     id: string;
     name: string;
     type: string;
     position: [number, number];
     shapeId?: string | null;
     color: DeckColor;
+    bizId?: string | null;
 }
 
-export interface MapPreviewScene {
+export interface MapPreviewScene extends MapShapeExtensible {
     canvas: MapEditorCanvas;
     shapes: MapPreviewShape[];
     keyLocations: MapPreviewKeyLocation[];
+}
+
+export interface MapShapeResponseMeta extends MapShapeExtensible {
+    protocolVersion?: MapShapeProtocolVersion;
+    scenario?: 'coastline_mvp';
+    requestId?: string;
+    persisted?: boolean;
 }
 
 export interface MapShapeSaveResponse {
     scene: MapPreviewScene;
     savedAt: string;
     message?: string;
+    meta?: MapShapeResponseMeta;
 }
 
 export interface MapShapeEditorApi {
@@ -124,3 +161,25 @@ export interface MapValidationResult {
 }
 
 export type MapShapeSubmitErrorKind = 'timeout' | 'transport' | 'invalid_response';
+
+export type MapShapeServiceErrorCode =
+    | 'MAP_SHAPE_VALIDATION_FAILED'
+    | 'MAP_SHAPE_PERMISSION_DENIED'
+    | 'MAP_SHAPE_NOT_FOUND'
+    | 'MAP_SHAPE_CONFLICT'
+    | 'MAP_SHAPE_INTERNAL_ERROR'
+    | (string & {});
+
+export interface MapShapeFieldError extends MapShapeExtensible {
+    field: string;
+    code: string;
+    message: string;
+}
+
+export interface MapShapeSaveErrorResponse extends MapShapeExtensible {
+    code: MapShapeServiceErrorCode;
+    message: string;
+    requestId?: string;
+    retryable?: boolean;
+    fieldErrors?: MapShapeFieldError[];
+}

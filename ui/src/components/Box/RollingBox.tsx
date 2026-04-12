@@ -18,6 +18,8 @@ interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     showTrack?: boolean;
     /** 内容 */
     children: React.ReactNode;
+    /** 返回 true 时由外部接管本次滚轮事件，RollingBox 不再处理 */
+    interceptWheel?: (event: WheelEvent, container: HTMLDivElement) => boolean;
 
     /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
 
@@ -31,21 +33,22 @@ interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     trackColor?: string;
 }
 
-export function RollingBox({
-                               showThumb = 'auto',
-                               horizontal = false,
-                               vertical = true,
-                               thumbSize = 'normal',
-                               showTrack = false,
-                               children,
-                               className,
-                               thumbColor,
-                               thumbHoverColor,
-                               thumbActiveColor,
-                               trackColor,
-                               style,
-                               ...props
-                           }: RollingBoxProps) {
+export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(function RollingBox({
+                                                                                                    showThumb = 'auto',
+                                                                                                    horizontal = false,
+                                                                                                    vertical = true,
+                                                                                                    thumbSize = 'normal',
+                                                                                                    showTrack = false,
+                                                                                                    children,
+                                                                                                    interceptWheel,
+                                                                                                    className,
+                                                                                                    thumbColor,
+                                                                                                    thumbHoverColor,
+                                                                                                    thumbActiveColor,
+                                                                                                    trackColor,
+                                                                                                    style,
+                                                                                                    ...props
+                                                                                                }: RollingBoxProps, ref) {
     const colorVars: Record<string, string | undefined> = {
         '--roll-thumb':        thumbColor,
         '--roll-thumb-hover':  thumbHoverColor,
@@ -67,6 +70,21 @@ export function RollingBox({
     const scrollTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const animationFrameRef = React.useRef<number | null>(null);
     const targetScrollLeftRef = React.useRef<number | null>(null);
+
+    const setContainerRef = React.useCallback((node: HTMLDivElement | null) => {
+        containerRef.current = node;
+
+        if (!ref) {
+            return;
+        }
+
+        if (typeof ref === 'function') {
+            ref(node);
+            return;
+        }
+
+        ref.current = node;
+    }, [ref]);
 
     const handleScroll = React.useCallback(() => {
         if (showThumb !== 'auto') return;
@@ -125,6 +143,10 @@ export function RollingBox({
         };
 
         const handler = (e: WheelEvent) => {
+            if (interceptWheel?.(e, el)) {
+                return;
+            }
+
             const rawDelta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
             if (rawDelta === 0) return;
             e.preventDefault();
@@ -152,7 +174,7 @@ export function RollingBox({
             }
             targetScrollLeftRef.current = null;
         };
-    }, [horizontal]);
+    }, [horizontal, interceptWheel]);
 
     const resolvedDirection = horizontal ? 'horizontal' : 'vertical';
 
@@ -168,7 +190,7 @@ export function RollingBox({
 
     return (
         <div
-            ref={containerRef}
+            ref={setContainerRef}
             className={classNames}
             style={mergedStyle}
             onScroll={handleScroll}
@@ -179,4 +201,4 @@ export function RollingBox({
             </div>
         </div>
     );
-}
+});

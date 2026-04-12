@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {RollingBox} from '../Box/RollingBox';
 import './Time.css';
 
 export interface TimelineEvent {
@@ -20,11 +21,18 @@ interface TimelineProps {
 }
 
 const LEFT_OFFSET = 50;
-const AXIS_Y = 380;
 const FLAG_HEIGHT = 70;
 const PX_PER_YEAR = 12;
 const MIN_TRACK_WIDTH = 800;
 const MIN_CARD_WIDTH = 160;
+const MIN_ZOOM = 0.05;
+const MAX_ZOOM = 6;
+const ZOOM_STEP = 0.15;
+const TRACK_TOP_PADDING = 20;
+const EVENT_ROW_GAP = 90;
+const AXIS_TOP_GAP = 28;
+const AXIS_LABEL_SPACE = 28;
+const TRACK_BOTTOM_PADDING = 16;
 
 const syncGroups = new Map<string, Set<React.RefObject<HTMLDivElement | null>>>();
 
@@ -41,6 +49,9 @@ export function Timeline({
     const [dragStartX, setDragStartX] = useState(0);
     const [dragScrollLeft, setDragScrollLeft] = useState(0);
     const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null);
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [viewportWidth, setViewportWidth] = useState(0);
+    const zoomAnchorRef = useRef<{ offsetX: number; contentX: number; scaleRatio: number } | null>(null);
 
     useEffect(() => {
         if (selectedEventId !== undefined) {
@@ -57,16 +68,39 @@ export function Timeline({
     const currentStart = yearStart;
     const currentEnd = yearEnd;
 
-    const trackWidth = useMemo(() => {
+    const baseTrackWidth = useMemo(() => {
         const range = Math.max(currentEnd - currentStart, 1);
         return Math.max(range * PX_PER_YEAR, MIN_TRACK_WIDTH);
     }, [currentStart, currentEnd]);
+
+    const minZoomLevel = useMemo(() => {
+        if (viewportWidth <= 0) {
+            return MIN_ZOOM;
+        }
+
+        const fitZoom = (viewportWidth - LEFT_OFFSET * 2) / baseTrackWidth;
+        return Math.max(MIN_ZOOM, Math.min(1, fitZoom));
+    }, [baseTrackWidth, viewportWidth]);
+
+    const trackWidth = useMemo(() => {
+        return baseTrackWidth * zoomLevel;
+    }, [baseTrackWidth, zoomLevel]);
+
+    const layoutTrackWidth = useMemo(() => {
+        return baseTrackWidth * minZoomLevel;
+    }, [baseTrackWidth, minZoomLevel]);
 
     const getX = useCallback((year: number) => {
         const range = currentEnd - currentStart;
         if (range === 0) return 0;
         return ((year - currentStart) / range) * trackWidth;
     }, [currentStart, currentEnd, trackWidth]);
+
+    const getBaseX = useCallback((year: number) => {
+        const range = currentEnd - currentStart;
+        if (range === 0) return 0;
+        return ((year - currentStart) / range) * layoutTrackWidth;
+    }, [currentStart, currentEnd, layoutTrackWidth]);
 
     const ticks = useMemo(() => {
         const range = currentEnd - currentStart;
@@ -94,38 +128,61 @@ export function Timeline({
 
         const eventsWithCoords = events.map(e => {
             const startX = getX(e.startTime);
+            const layoutStartX = getBaseX(e.startTime);
             let durationWidth = 0;
             let cardWidth = MIN_CARD_WIDTH;
+            let layoutDurationWidth = 0;
+            let layoutCardWidth = MIN_CARD_WIDTH;
             if (e.endTime !== undefined && e.endTime !== null) {
                 const endX = getX(e.endTime);
+                const layoutEndX = getBaseX(e.endTime);
                 const rawWidth = endX - startX;
+                const layoutRawWidth = layoutEndX - layoutStartX;
                 durationWidth = rawWidth > 0 ? Math.max(rawWidth, 1) : 0;
                 cardWidth = durationWidth > 0 ? Math.max(durationWidth, MIN_CARD_WIDTH) : MIN_CARD_WIDTH;
+                layoutDurationWidth = layoutRawWidth > 0 ? Math.max(layoutRawWidth, 1) : 0;
+                layoutCardWidth = layoutDurationWidth > 0 ? Math.max(layoutDurationWidth, MIN_CARD_WIDTH) : MIN_CARD_WIDTH;
             }
-            return { ...e, startX, durationWidth, cardWidth };
+            return {...e, startX, durationWidth, cardWidth, layoutStartX, layoutCardWidth};
         });
 
         const sorted = [...eventsWithCoords].sort((a, b) => a.startTime - b.startTime);
         const rows: { rightX: number; y: number }[] = [];
         return sorted.map(e => {
-            const cardRightX = e.startX + e.cardWidth;
-            let y = 20;
+            const layoutCardRightX = e.layoutStartX + e.layoutCardWidth;
+            let y = TRACK_TOP_PADDING;
             let found = false;
             for (let i = 0; i < rows.length; i++) {
-                if (rows[i].rightX + 30 <= e.startX) {
-                    rows[i].rightX = cardRightX;
+                if (rows[i].rightX + 30 <= e.layoutStartX) {
+                    rows[i].rightX = layoutCardRightX;
                     y = rows[i].y;
                     found = true;
                     break;
                 }
             }
             if (!found) {
-                y = 20 + rows.length * 90;
-                rows.push({ rightX: cardRightX, y });
+                y = TRACK_TOP_PADDING + rows.length * EVENT_ROW_GAP;
+                rows.push({rightX: layoutCardRightX, y});
             }
-            return { ...e, y, cardRightX };
+            return {...e, y};
         });
-    }, [events, getX]);
+    }, [events, getBaseX, getX]);
+
+    const axisY = useMemo(() => {
+        if (!processedEvents.length) {
+            return TRACK_TOP_PADDING + FLAG_HEIGHT + AXIS_TOP_GAP;
+        }
+
+        const maxEventBottom = processedEvents.reduce((maxBottom, event) => {
+            return Math.max(maxBottom, event.y + FLAG_HEIGHT);
+        }, 0);
+
+        return maxEventBottom + AXIS_TOP_GAP;
+    }, [processedEvents]);
+
+    const trackHeight = useMemo(() => {
+        return axisY + AXIS_LABEL_SPACE + TRACK_BOTTOM_PADDING;
+    }, [axisY]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!scrollRef.current) return;
@@ -141,18 +198,79 @@ export function Timeline({
         scrollRef.current.scrollLeft = dragScrollLeft - (x - dragStartX) * 1.5;
     }, [isDragging, dragScrollLeft, dragStartX]);
 
-    const handleWheel = useCallback((e: WheelEvent) => {
+    const interceptWheel = useCallback((event: WheelEvent, container: HTMLDivElement) => {
+        const rect = container.getBoundingClientRect();
+        const offsetY = event.clientY - rect.top;
+        const offsetX = event.clientX - rect.left;
+        const isAxisWheelZone = offsetY >= axisY;
+
+        if (!isAxisWheelZone) {
+            return false;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const direction = event.deltaY > 0 ? -1 : 1;
+        const nextZoomLevel = Math.min(
+            MAX_ZOOM,
+            Math.max(minZoomLevel, zoomLevel + direction * ZOOM_STEP)
+        );
+
+        if (nextZoomLevel === zoomLevel) {
+            return true;
+        }
+
+        zoomAnchorRef.current = {
+            offsetX,
+            contentX: container.scrollLeft + offsetX - LEFT_OFFSET,
+            scaleRatio: nextZoomLevel / zoomLevel,
+        };
+        setZoomLevel(nextZoomLevel);
+        return true;
+    }, [axisY, minZoomLevel, zoomLevel]);
+
+    useEffect(() => {
         if (!scrollRef.current) return;
-        e.preventDefault();
-        scrollRef.current.scrollLeft += e.deltaY * 3;
+
+        const updateViewportWidth = () => {
+            if (!scrollRef.current) return;
+            setViewportWidth(scrollRef.current.clientWidth);
+        };
+
+        updateViewportWidth();
+
+        const resizeObserver = new ResizeObserver(() => {
+            updateViewportWidth();
+        });
+
+        resizeObserver.observe(scrollRef.current);
+
+        return () => {
+            resizeObserver.disconnect();
+        };
     }, []);
 
     useEffect(() => {
-        const scrollEl = scrollRef.current;
-        if (!scrollEl) return;
-        scrollEl.addEventListener('wheel', handleWheel, { passive: false });
-        return () => scrollEl.removeEventListener('wheel', handleWheel);
-    }, [handleWheel]);
+        setZoomLevel(prevZoomLevel => Math.max(prevZoomLevel, minZoomLevel));
+    }, [minZoomLevel]);
+
+    useEffect(() => {
+        if (!scrollRef.current || !zoomAnchorRef.current) return;
+
+        const {offsetX, contentX, scaleRatio} = zoomAnchorRef.current;
+        const scaledContentX = contentX * scaleRatio;
+        const maxScrollLeft = Math.max(
+            trackWidth + LEFT_OFFSET * 2 - scrollRef.current.clientWidth,
+            0
+        );
+
+        scrollRef.current.scrollLeft = Math.min(
+            maxScrollLeft,
+            Math.max(0, scaledContentX - offsetX + LEFT_OFFSET)
+        );
+        zoomAnchorRef.current = null;
+    }, [trackWidth, zoomLevel]);
 
     useEffect(() => {
         if (!syncId || !scrollRef.current) return;
@@ -195,23 +313,27 @@ export function Timeline({
 
     return (
         <div className="timeline-flag">
-            <div
+            <RollingBox
                 className={`timeline-scroll-area ${isDragging ? 'dragging' : ''}`}
                 ref={scrollRef}
+                horizontal
+                vertical={false}
+                showThumb="auto"
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
                 onMouseMove={handleMouseMove}
+                interceptWheel={interceptWheel}
             >
                 <div
                     className="flag-track"
                     style={{
                         width: trackWidth + LEFT_OFFSET * 2,
-                        height: AXIS_Y + 80,
+                        height: trackHeight,
                         position: 'relative'
                     }}
                 >
-                    <div className="flag-axis" style={{ left: LEFT_OFFSET, right: LEFT_OFFSET, top: AXIS_Y }}>
+                    <div className="flag-axis" style={{left: LEFT_OFFSET, right: LEFT_OFFSET, top: axisY}}>
                         <div className="flag-axis-line" />
                         <div className="flag-ticks">
                             {ticks.map((t, i) => (
@@ -222,7 +344,6 @@ export function Timeline({
                             ))}
                         </div>
                     </div>
-
                     {processedEvents.map(e => {
                         if (e.durationWidth <= 0) return null;
                         return (
@@ -231,7 +352,7 @@ export function Timeline({
                                 style={{
                                     position: 'absolute',
                                     left: LEFT_OFFSET + e.startX,
-                                    top: AXIS_Y - 2,
+                                    top: axisY - 2,
                                     width: e.durationWidth,
                                     height: 4,
                                     backgroundColor: 'var(--fc-color-primary)',
@@ -246,7 +367,7 @@ export function Timeline({
 
                     {processedEvents.map((e) => {
                         const flagBottom = e.y + FLAG_HEIGHT;
-                        const lineHeight = AXIS_Y - flagBottom;
+                        const lineHeight = axisY - flagBottom;
                         const isSelected = (selectedEventId !== undefined ? selectedEventId : internalSelectedId) === e.id;
                         return (
                             <div
@@ -281,7 +402,7 @@ export function Timeline({
                         );
                     })}
                 </div>
-            </div>
+            </RollingBox>
         </div>
     );
 }

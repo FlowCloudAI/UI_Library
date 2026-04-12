@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import './MessageBox.css';
 
 // ========================================
@@ -205,16 +205,16 @@ const ToolCallCard: React.FC<ToolCallCardProps> = ({
 // 主组件：MessageBox
 // ========================================
 
-export const MessageBox: React.FC<MessageBoxProps> = React.memo(({
-                                                                   message,
-                                                                   streamingCursor = false,
-                                                                   isVisible = true,
-                                                                   onHeightChange,
-                                                                   onReasoningToggle,
-                                                                   onCopy,
-                                                                   className = '',
-                                                                   style = {}
-                                                                 }) => {
+function MessageBox({
+                      message,
+                      streamingCursor = false,
+                      isVisible = true,
+                      onHeightChange,
+                      onReasoningToggle,
+                      onCopy,
+                      className = '',
+                      style = {}
+                    }: MessageBoxProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [measuredHeight, setMeasuredHeight] = useState<number>(0);
   const [copied, setCopied] = useState(false);
@@ -379,8 +379,9 @@ export const MessageBox: React.FC<MessageBoxProps> = React.memo(({
         )}
       </div>
   );
-});
+}
 
 MessageBox.displayName = 'MessageBox';
 
-export default MessageBox;
+export default React.memo(MessageBox);
+export {MessageBox};

@@ -8,6 +8,7 @@ import type {
     MapShapeSaveResponse,
     MapShapeSubmitErrorKind,
 } from './types';
+import {MAP_SHAPE_PROTOCOL_VERSION as PROTOCOL_VERSION} from './types';
 
 const SHAPE_FILL_PALETTE: DeckColor[] = [
     [55, 138, 221, 88],
@@ -51,6 +52,9 @@ function buildPreviewShapes(request: MapShapeSaveRequest): MapPreviewShape[] {
         polygon: shape.vertices.map(vertex => [vertex.x, vertex.y] as [number, number]),
         fillColor: hexToDeckColor(shape.fill, SHAPE_FILL_PALETTE[index % SHAPE_FILL_PALETTE.length]),
         lineColor: hexToDeckColor(shape.stroke, SHAPE_LINE_PALETTE[index % SHAPE_LINE_PALETTE.length]),
+        bizId: shape.bizId ?? null,
+        kind: shape.kind ?? 'coastline',
+        ext: shape.ext,
     }));
 }
 
@@ -62,6 +66,8 @@ function buildPreviewKeyLocations(request: MapShapeSaveRequest): MapPreviewKeyLo
         position: [location.x, location.y],
         shapeId: location.shapeId ?? null,
         color: LOCATION_COLOR_PALETTE[location.type] ?? [212, 48, 106, 255],
+        bizId: location.bizId ?? null,
+        ext: location.ext,
     }));
 }
 
@@ -70,6 +76,7 @@ export function buildPreviewSceneFromDraft(request: MapShapeSaveRequest): MapPre
         canvas: request.canvas,
         shapes: buildPreviewShapes(request),
         keyLocations: buildPreviewKeyLocations(request),
+        ext: request.meta?.ext,
     };
 }
 
@@ -88,6 +95,13 @@ export function createMockMapShapeEditorApi(options?: { delayMs?: number }): Map
                 scene: buildPreviewSceneFromDraft(request),
                 savedAt: new Date().toISOString(),
                 message: '已通过 mock 接口同步到 deck 展示层。',
+                meta: {
+                    protocolVersion: request.meta?.protocolVersion ?? PROTOCOL_VERSION,
+                    scenario: request.meta?.scenario ?? 'coastline_mvp',
+                    requestId: request.meta?.requestId,
+                    persisted: false,
+                    ext: request.meta?.ext,
+                },
             };
         },
     };
@@ -130,6 +144,7 @@ function normalizeSaveResponse(value: unknown): MapShapeSaveResponse {
         scene: response.scene,
         savedAt: response.savedAt,
         message: response.message,
+        meta: response.meta,
     };
 }
 

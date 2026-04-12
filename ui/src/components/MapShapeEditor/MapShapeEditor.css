@@ -101,6 +101,17 @@
     border: 1px solid color-mix(in srgb, var(--fc-color-border-light) 84%, transparent);
 }
 
+.fc-map-shape-svg-editor {
+    min-width: 0;
+}
+
+.fc-map-shape-editor__empty-hint {
+    font-size: 22px;
+    fill: var(--fc-mse-muted);
+    user-select: none;
+    pointer-events: none;
+}
+
 .fc-map-shape-editor__canvas--panning {
     cursor: grab;
 }

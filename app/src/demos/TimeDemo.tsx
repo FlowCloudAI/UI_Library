@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Timeline, type TimelineEvent } from 'flowcloudai-ui';
+import React, {useState} from 'react';
+import {Timeline, type TimelineEvent} from 'flowcloudai-ui';
 
 const TimeDemo: React.FC = () => {
     // 从外部/后端获取的时间范围
@@ -46,8 +46,9 @@ const TimeDemo: React.FC = () => {
     ];
 
     return (
-        <div className="w-full p-4">
+        <div className="w-full p-4" style={{height: 500}}>
             <Timeline
+
                 events={events}
                 yearStart={timeRange.start}
                 yearEnd={timeRange.end}

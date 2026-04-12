@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import {type RefObject, useEffect} from 'react';
 
 /**
  * 点击指定元素外部时触发回调。
@@ -18,7 +18,7 @@ export function useClickOutside<T extends HTMLElement>(
                 handler();
             }
         };
-        document.addEventListener('pointerdown', listener);
-        return () => document.removeEventListener('pointerdown', listener);
+        document.addEventListener('pointerdown', listener, true);
+        return () => document.removeEventListener('pointerdown', listener, true);
     }, [ref, handler, enabled]);
 }
