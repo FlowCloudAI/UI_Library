@@ -119,10 +119,10 @@ export default function MessageBoxDemo() {
                 })
             } else {
                 clearInterval(interval)
-                setStreamingMessage(prev => prev ? {
+                setStreamingMessage((prev: Message | null) => prev ? {
                     ...prev,
                     status: 'completed',
-                    blocks: prev.blocks.map(block => 
+                    blocks: prev.blocks.map((block: any) => 
                         block.type === 'text' ? { ...block, isStreaming: false } : block
                     )
                 } : null)
@@ -146,16 +146,10 @@ export default function MessageBoxDemo() {
                             message={message}
                             isVisible={true}
                             streamingCursor={message.status === 'streaming'}
-                            onHeightChange={(height) => {
-                                console.log(`Message ${message.id} height:`, height)
-                            }}
-                            onReasoningToggle={(expanded) => {
+                            onReasoningToggle={(expanded: boolean) => {
                                 console.log('Reasoning section:', expanded ? 'expanded' : 'collapsed')
                             }}
-                            onCopy={() => {
-                                console.log('Message copied')
-                            }}
-                            onToolCallExpand={(index) => {
+                            onToolCallExpand={(index: number) => {
                                 console.log('Tool call expanded:', index)
                             }}
                         />

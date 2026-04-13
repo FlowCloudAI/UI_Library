@@ -5,108 +5,85 @@ import './MessageBox.css';
 // 类型定义
 // ========================================
 
-export interface MessageBoxItemProps {
-  role: 'user' | 'assistant' | 'system';
-  avatar?: React.ReactNode;
-  content: string;
-  streaming?: boolean;
-  children?: React.ReactNode;
-  className?: string;
+export interface MessageBlock {
+  id: string;
+  type: 'text' | 'reasoning' | 'tool_call' | 'tool_result';
+  content?: string | any;
+  isStreaming?: boolean;
+  index?: number;
+  name?: string;
+  arguments?: string;
+  isError?: boolean;
+}
+
+export interface Message {
+  id: string;
+  type: 'user' | 'assistant' | 'system';
+  blocks: MessageBlock[];
+  status: 'streaming' | 'completed';
+  createdAt: number;
 }
 
 export interface MessageBoxProps {
-  children: React.ReactNode;
+  message: Message;
+  isVisible?: boolean;
+  streamingCursor?: boolean;
+  onReasoningToggle?: (expanded: boolean) => void;
+  onToolCallExpand?: (index: number) => void;
   className?: string;
   style?: React.CSSProperties;
 }
 
 // ========================================
-// 子组件：闪烁光标
-// ========================================
-
-const Cursor: React.FC = () => (
-  <span className="message-box-cursor">▋</span>
-);
-
-// ========================================
-// 子组件：MessageBox.Item
-// ========================================
-
-const MessageBoxItem: React.FC<MessageBoxItemProps> = ({
-  role,
-  avatar,
-  content,
-  streaming = false,
-  children,
-  className = ''
-}) => {
-  // 根据角色确定样式类名
-  const getRoleClass = () => {
-    switch (role) {
-      case 'user':
-        return 'message-box-item--user';
-      case 'assistant':
-        return 'message-box-item--assistant';
-      case 'system':
-        return 'message-box-item--system';
-      default:
-        return '';
-    }
-  };
-
-  // 判断是否显示头像
-  const hasAvatar = avatar !== undefined && avatar !== null;
-
-  return (
-    <div className={`message-box-item ${getRoleClass()} ${className}`}>
-      {/* 头像区域 */}
-      {hasAvatar && (
-        <div className="message-box-avatar">
-          {avatar}
-        </div>
-      )}
-
-      {/* 消息内容区域 */}
-      <div className="message-box-content">
-        <div className="message-box-bubble">
-          <div className="message-box-text">
-            {content}
-            {streaming && <Cursor />}
-          </div>
-
-          {/* 额外内容（工具调用、附件等） */}
-          {children && (
-            <div className="message-box-item-children">
-              {children}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-MessageBoxItem.displayName = 'MessageBox.Item';
-
-// ========================================
 // 主组件：MessageBox
 // ========================================
 
-const MessageBox: React.FC<MessageBoxProps> & {
-  Item: typeof MessageBoxItem;
-} = ({
-  children,
+/**
+ * MessageBox 组件 - 用于显示聊天消息
+ * @public
+ */
+// eslint-disable-next-line no-unused-vars
+export const MessageBox: React.FC<MessageBoxProps> = ({
+  message,
+  isVisible = true,
+  streamingCursor = false,
+  onReasoningToggle,
+  onToolCallExpand,
   className = '',
   style = {}
 }) => {
+  if (!isVisible) return null;
+
   return (
     <div className={`message-box ${className}`} style={style}>
-      {children}
+      {message.blocks.map((block) => (
+        <div key={block.id} className="message-block">
+          {block.type === 'text' && (
+            <div className="message-text">
+              {block.content}
+              {streamingCursor && block.isStreaming && <span className="message-box-cursor">▋</span>}
+            </div>
+          )}
+          {block.type === 'reasoning' && (
+            <div className="message-reasoning">
+              <div className="reasoning-header" onClick={() => onReasoningToggle?.(true)}>
+                💭 思考过程
+              </div>
+              <div className="reasoning-content">{block.content}</div>
+            </div>
+          )}
+          {block.type === 'tool_call' && (
+            <div className="message-tool-call" onClick={() => onToolCallExpand?.(block.index || 0)}>
+              🔧 {block.name}({block.arguments})
+            </div>
+          )}
+          {block.type === 'tool_result' && (
+            <div className={`message-tool-result ${block.isError ? 'error' : ''}`}>
+              {JSON.stringify(block.content)}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
-
-MessageBox.Item = MessageBoxItem;
-MessageBox.displayName = 'MessageBox';
-
-export default MessageBox;
