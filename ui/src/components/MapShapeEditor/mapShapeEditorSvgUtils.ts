@@ -65,6 +65,27 @@ export function cloneMapShapeEditorDraft(draft: MapShapeEditorDraft): MapShapeEd
     };
 }
 
+export function moveShapeInOrder(
+    shapes: MapShapeDraft[],
+    shapeId: string,
+    targetIndex: number,
+): MapShapeDraft[] {
+    const currentIndex = shapes.findIndex(shape => shape.id === shapeId);
+    if (currentIndex === -1) {
+        return shapes;
+    }
+
+    const boundedTargetIndex = clamp(targetIndex, 0, shapes.length - 1);
+    if (currentIndex === boundedTargetIndex) {
+        return shapes;
+    }
+
+    const nextShapes = [...shapes];
+    const [targetShape] = nextShapes.splice(currentIndex, 1);
+    nextShapes.splice(boundedTargetIndex, 0, targetShape);
+    return nextShapes;
+}
+
 export function createMapShapeEditorLocalId(prefix: string): string {
     const randomPart = typeof crypto !== 'undefined' && 'randomUUID' in crypto
         ? crypto.randomUUID()

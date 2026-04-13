@@ -1,17 +1,48 @@
-import {type CSSProperties, useEffect, useRef, useState} from 'react';
-import DeckGL from '@deck.gl/react';
+import {type CSSProperties, type RefObject, useEffect, useRef, useState} from 'react';
+import DeckGL, {type DeckGLRef} from '@deck.gl/react';
 import {type Layer, OrthographicView, type PickingInfo} from '@deck.gl/core';
 import {PolygonLayer, ScatterplotLayer, TextLayer} from '@deck.gl/layers';
+import {CanvasContext} from '@luma.gl/core';
 
 import type {MapPreviewKeyLocation, MapPreviewScene, MapPreviewShape} from './types';
 import './MapShapeEditor.css';
 
 const PREVIEW_VIEW = new OrthographicView({ id: 'fc-map-deck-preview' });
+const MIN_RENDER_SIZE = 2;
+const CANVAS_CONTEXT_PATCH_FLAG = '__fcMapDeckPreviewCanvasContextPatched__';
 
 interface ElementSize {
     width: number;
     height: number;
 }
+
+interface ResizeObserverBoxLike {
+    inlineSize: number;
+    blockSize: number;
+}
+
+interface CanvasContextDeviceLike {
+    limits?: {
+        maxTextureDimension2D?: number;
+    };
+    props?: {
+        onResize?: (canvasContext: CanvasContext, info: { oldPixelSize: [number, number] }) => void;
+        onVisibilityChange?: (canvasContext: CanvasContext) => void;
+        onDevicePixelRatioChange?: (canvasContext: CanvasContext, info: { oldRatio: number }) => void;
+    };
+}
+
+type MutableCanvasContext = Omit<CanvasContext, 'device'> & {
+    device?: CanvasContextDeviceLike;
+    _handleIntersection(entries: IntersectionObserverEntry[]): void;
+    _handleResize(entries: ResizeObserverEntry[]): void;
+    _observeDevicePixelRatio(): void;
+    _updateDrawingBufferSize(): void;
+};
+
+type MutableCanvasContextPrototype = MutableCanvasContext & {
+    [CANVAS_CONTEXT_PATCH_FLAG]?: boolean;
+};
 
 export interface MapDeckPreviewRenderOptions {
     polygonLineWidth?: number;
@@ -70,6 +101,139 @@ const DEFAULT_LOCATION_STROKE_COLOR: [number, number, number, number] = [255, 25
 const DEFAULT_LABEL_COLOR: [number, number, number, number] = [38, 43, 56, 255];
 const DEFAULT_LABEL_FONT_FAMILY = '"Microsoft YaHei UI", sans-serif';
 
+function normalizeElementSize(width: number, height: number): ElementSize {
+    return {
+        width: Number.isFinite(width) ? Math.max(0, Math.round(width)) : 0,
+        height: Number.isFinite(height) ? Math.max(0, Math.round(height)) : 0,
+    };
+}
+
+function resolveResizeObserverBox(
+    box: readonly ResizeObserverSize[] | ResizeObserverSize | undefined,
+): ResizeObserverBoxLike | null {
+    if (!box) {
+        return null;
+    }
+
+    if (Array.isArray(box)) {
+        return box[0] ?? null;
+    }
+
+    return box as ResizeObserverBoxLike;
+}
+
+function getFallbackDrawingBufferSize(canvasContext: MutableCanvasContext): [number, number] {
+    const fallbackWidth = Math.max(
+        1,
+        Math.ceil(canvasContext.canvas.width || canvasContext.htmlCanvas?.clientWidth || canvasContext.cssWidth || 1),
+    );
+    const fallbackHeight = Math.max(
+        1,
+        Math.ceil(canvasContext.canvas.height || canvasContext.htmlCanvas?.clientHeight || canvasContext.cssHeight || 1),
+    );
+
+    return [fallbackWidth, fallbackHeight];
+}
+
+function hasCanvasContextDevice(canvasContext: MutableCanvasContext): boolean {
+    return Number.isFinite(canvasContext.device?.limits?.maxTextureDimension2D)
+        && Boolean(canvasContext.device?.props);
+}
+
+function ensureCanvasContextSafetyPatch() {
+    const canvasContextPrototype = CanvasContext.prototype as unknown as MutableCanvasContextPrototype;
+    if (canvasContextPrototype[CANVAS_CONTEXT_PATCH_FLAG]) {
+        return;
+    }
+
+    const originalGetMaxDrawingBufferSize = canvasContextPrototype.getMaxDrawingBufferSize;
+    const originalHandleIntersection = canvasContextPrototype._handleIntersection;
+    const originalHandleResize = canvasContextPrototype._handleResize;
+    const originalObserveDevicePixelRatio = canvasContextPrototype._observeDevicePixelRatio;
+
+    canvasContextPrototype.getMaxDrawingBufferSize = function patchedGetMaxDrawingBufferSize(this: MutableCanvasContext) {
+        if (hasCanvasContextDevice(this)) {
+            return originalGetMaxDrawingBufferSize.call(this);
+        }
+
+        return getFallbackDrawingBufferSize(this);
+    };
+
+    canvasContextPrototype._handleIntersection = function patchedHandleIntersection(
+        this: MutableCanvasContext,
+        entries: IntersectionObserverEntry[],
+    ) {
+        if (this.device?.props?.onVisibilityChange) {
+            originalHandleIntersection.call(this, entries);
+            return;
+        }
+
+        const entry = entries.find(currentEntry => currentEntry.target === this.canvas);
+        if (!entry) {
+            return;
+        }
+
+        this.isVisible = entry.isIntersecting;
+    };
+
+    canvasContextPrototype._handleResize = function patchedHandleResize(
+        this: MutableCanvasContext,
+        entries: ResizeObserverEntry[],
+    ) {
+        if (hasCanvasContextDevice(this) && this.device?.props?.onResize) {
+            originalHandleResize.call(this, entries);
+            return;
+        }
+
+        const entry = entries.find(currentEntry => currentEntry.target === this.canvas);
+        if (!entry) {
+            return;
+        }
+
+        const contentBox = resolveResizeObserverBox(entry.contentBoxSize);
+        const devicePixelBox = resolveResizeObserverBox(entry.devicePixelContentBoxSize);
+        const oldPixelSize = this.getDevicePixelSize();
+        const nextCssWidth = contentBox?.inlineSize ?? entry.contentRect.width;
+        const nextCssHeight = contentBox?.blockSize ?? entry.contentRect.height;
+        const nextDevicePixelRatio = globalThis.devicePixelRatio || 1;
+        const nextDevicePixelWidth = Math.round(devicePixelBox?.inlineSize ?? nextCssWidth * nextDevicePixelRatio);
+        const nextDevicePixelHeight = Math.round(devicePixelBox?.blockSize ?? nextCssHeight * nextDevicePixelRatio);
+
+        this.cssWidth = nextCssWidth;
+        this.cssHeight = nextCssHeight;
+        this.devicePixelWidth = Math.max(1, nextDevicePixelWidth);
+        this.devicePixelHeight = Math.max(1, nextDevicePixelHeight);
+
+        this._updateDrawingBufferSize();
+        this.device?.props?.onResize?.(this as unknown as CanvasContext, {oldPixelSize});
+    };
+
+    canvasContextPrototype._observeDevicePixelRatio = function patchedObserveDevicePixelRatio(this: MutableCanvasContext) {
+        if (this.device?.props?.onDevicePixelRatioChange) {
+            originalObserveDevicePixelRatio.call(this);
+            return;
+        }
+
+        const oldRatio = this.devicePixelRatio;
+        this.devicePixelRatio = globalThis.devicePixelRatio || 1;
+        this.updatePosition();
+
+        if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+            window
+                .matchMedia(`(resolution: ${this.devicePixelRatio}dppx)`)
+                .addEventListener('change', () => {
+                    (CanvasContext.prototype as unknown as MutableCanvasContextPrototype)._observeDevicePixelRatio.call(this);
+                }, {once: true});
+        }
+
+        this.device?.props?.onDevicePixelRatioChange?.(this as unknown as CanvasContext, {oldRatio});
+    };
+
+    canvasContextPrototype[CANVAS_CONTEXT_PATCH_FLAG] = true;
+}
+
+ensureCanvasContextSafetyPatch();
+
 function useElementSize<T extends HTMLElement>() {
     const elementRef = useRef<T | null>(null);
     const [size, setSize] = useState<ElementSize>({ width: 0, height: 0 });
@@ -78,21 +242,130 @@ function useElementSize<T extends HTMLElement>() {
         const node = elementRef.current;
         if (!node) return;
 
+        let frameId: number | null = null;
+        let visibleFrameId: number | null = null;
+
+        const commitSize = (width: number, height: number) => {
+            const nextSize = normalizeElementSize(width, height);
+            setSize(currentSize => (
+                currentSize.width === nextSize.width && currentSize.height === nextSize.height
+                    ? currentSize
+                    : nextSize
+            ));
+        };
+
+        const scheduleSizeUpdate = (width: number, height: number) => {
+            if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+                commitSize(width, height);
+                return;
+            }
+
+            if (frameId !== null) {
+                window.cancelAnimationFrame(frameId);
+            }
+
+            frameId = window.requestAnimationFrame(() => {
+                frameId = null;
+                commitSize(width, height);
+            });
+        };
+
+        const measure = () => {
+            const rect = node.getBoundingClientRect();
+            scheduleSizeUpdate(rect.width, rect.height);
+        };
+
         const observer = new ResizeObserver(entries => {
             const entry = entries[0];
             if (!entry) return;
 
-            setSize({
-                width: entry.contentRect.width,
-                height: entry.contentRect.height,
-            });
+            scheduleSizeUpdate(entry.contentRect.width, entry.contentRect.height);
         });
 
         observer.observe(node);
-        return () => observer.disconnect();
+
+        const handleVisibilityChange = () => {
+            if (typeof document === 'undefined' || document.visibilityState === 'hidden') {
+                return;
+            }
+
+            if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+                measure();
+                return;
+            }
+
+            if (visibleFrameId !== null) {
+                window.cancelAnimationFrame(visibleFrameId);
+            }
+
+            visibleFrameId = window.requestAnimationFrame(() => {
+                visibleFrameId = window.requestAnimationFrame(() => {
+                    visibleFrameId = null;
+                    measure();
+                });
+            });
+        };
+
+        measure();
+
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+        }
+
+        return () => {
+            observer.disconnect();
+
+            if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
+            }
+
+            if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
+                if (frameId !== null) {
+                    window.cancelAnimationFrame(frameId);
+                }
+
+                if (visibleFrameId !== null) {
+                    window.cancelAnimationFrame(visibleFrameId);
+                }
+            }
+        };
     }, []);
 
     return { elementRef, size };
+}
+
+function usePageVisibility() {
+    const [isVisible, setIsVisible] = useState(
+        typeof document === 'undefined' ? true : document.visibilityState !== 'hidden',
+    );
+
+    useEffect(() => {
+        if (typeof document === 'undefined') {
+            return undefined;
+        }
+
+        const handleVisibilityChange = () => {
+            setIsVisible(document.visibilityState !== 'hidden');
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
+
+    return isVisible;
+}
+
+function requestDeckRedraw(deckRef: RefObject<DeckGLRef | null>, reason: string) {
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+        deckRef.current?.deck?.redraw(reason);
+        return () => undefined;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+        deckRef.current?.deck?.redraw(reason);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
 }
 
 function buildViewState(scene: MapPreviewScene, size: ElementSize) {
@@ -240,6 +513,25 @@ export function MapDeckPreview({
                                    onKeyLocationHover,
 }: MapDeckPreviewProps) {
     const { elementRef, size } = useElementSize<HTMLDivElement>();
+    const deckRef = useRef<DeckGLRef | null>(null);
+    const isPageVisible = usePageVisibility();
+    const [isDeviceReady, setIsDeviceReady] = useState(false);
+    const hasRenderableSize = size.width >= MIN_RENDER_SIZE && size.height >= MIN_RENDER_SIZE;
+    const shouldRenderDeck = Boolean(scene && hasRenderableSize && isPageVisible);
+
+    useEffect(() => {
+        if (!shouldRenderDeck) {
+            setIsDeviceReady(false);
+        }
+    }, [shouldRenderDeck]);
+
+    useEffect(() => {
+        if (!shouldRenderDeck || !isDeviceReady) {
+            return undefined;
+        }
+
+        return requestDeckRedraw(deckRef, 'MapDeckPreview resized');
+    }, [isDeviceReady, scene, shouldRenderDeck, size.height, size.width]);
 
     return (
         <div
@@ -247,12 +539,19 @@ export function MapDeckPreview({
             className={`fc-map-deck-preview${className ? ` ${className}` : ''}`}
             style={style}
         >
-            {scene && size.width > 0 && size.height > 0 ? (
+            {shouldRenderDeck && scene ? (
                 <DeckGL
+                    ref={deckRef}
                     layers={buildLayers(scene, previewRenderOptions)}
                     views={PREVIEW_VIEW}
                     controller={false}
                     viewState={buildViewState(scene, size)}
+                    onDeviceInitialized={() => {
+                        setIsDeviceReady(true);
+                    }}
+                    onLoad={() => {
+                        requestDeckRedraw(deckRef, 'MapDeckPreview loaded');
+                    }}
                     onClick={info => {
                         const detail = toPickDetail(info);
                         onDeckClick?.(detail);

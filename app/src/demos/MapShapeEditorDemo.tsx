@@ -14,6 +14,8 @@ import {
     type MapShapeDraft,
     type MapShapeEditorDraft,
     MapShapeSvgEditor,
+    type MapShapeSvgEditorShapeContextMenuDetail,
+    moveShapeInOrder,
     submitMapShapeScene,
     useContextMenu,
     validateMapEditorDraft,
@@ -265,6 +267,66 @@ export function MapShapeEditorDemo() {
         pushLog('state', `调用方执行删除关键地点：${locationId}`);
     };
 
+    const moveShapeBackward = (shapeId: string) => {
+        setDraft(currentDraft => {
+            const currentIndex = currentDraft.shapes.findIndex(shape => shape.id === shapeId);
+            if (currentIndex <= 0) {
+                return currentDraft;
+            }
+
+            return {
+                ...currentDraft,
+                shapes: moveShapeInOrder(currentDraft.shapes, shapeId, currentIndex - 1),
+            };
+        });
+        pushLog('state', `调用方将图形下移一层：${shapeId}`);
+    };
+
+    const moveShapeForward = (shapeId: string) => {
+        setDraft(currentDraft => {
+            const currentIndex = currentDraft.shapes.findIndex(shape => shape.id === shapeId);
+            if (currentIndex === -1 || currentIndex >= currentDraft.shapes.length - 1) {
+                return currentDraft;
+            }
+
+            return {
+                ...currentDraft,
+                shapes: moveShapeInOrder(currentDraft.shapes, shapeId, currentIndex + 1),
+            };
+        });
+        pushLog('state', `调用方将图形上移一层：${shapeId}`);
+    };
+
+    const moveShapeToBack = (shapeId: string) => {
+        setDraft(currentDraft => {
+            const currentIndex = currentDraft.shapes.findIndex(shape => shape.id === shapeId);
+            if (currentIndex <= 0) {
+                return currentDraft;
+            }
+
+            return {
+                ...currentDraft,
+                shapes: moveShapeInOrder(currentDraft.shapes, shapeId, 0),
+            };
+        });
+        pushLog('state', `调用方将图形移到底层：${shapeId}`);
+    };
+
+    const moveShapeToFront = (shapeId: string) => {
+        setDraft(currentDraft => {
+            const currentIndex = currentDraft.shapes.findIndex(shape => shape.id === shapeId);
+            if (currentIndex === -1 || currentIndex >= currentDraft.shapes.length - 1) {
+                return currentDraft;
+            }
+
+            return {
+                ...currentDraft,
+                shapes: moveShapeInOrder(currentDraft.shapes, shapeId, currentDraft.shapes.length - 1),
+            };
+        });
+        pushLog('state', `调用方将图形移到顶层：${shapeId}`);
+    };
+
     const handleAddShape = () => {
         const nextShape = createEmptyShapeDraft(draft.shapes);
         updateDrawingShape(nextShape);
@@ -435,9 +497,30 @@ export function MapShapeEditorDemo() {
             pushLog('callback', `onRequestLocationDelete：${locationId}`);
             deleteLocation(locationId);
         },
-        onShapeContextMenu: (detail: { nativeEvent: MouseEvent; shapeId: string }) => {
+        onShapeContextMenu: (detail: MapShapeSvgEditorShapeContextMenuDetail) => {
             pushLog('callback', `onShapeContextMenu：${detail.shapeId}`);
             showContextMenu(detail.nativeEvent, [
+                {
+                    label: '上移一层',
+                    disabled: detail.isAtFront,
+                    onClick: () => moveShapeForward(detail.shapeId),
+                },
+                {
+                    label: '下移一层',
+                    disabled: detail.isAtBack,
+                    onClick: () => moveShapeBackward(detail.shapeId),
+                },
+                {
+                    label: '移到顶层',
+                    disabled: detail.isAtFront,
+                    onClick: () => moveShapeToFront(detail.shapeId),
+                },
+                {
+                    label: '移到底层',
+                    disabled: detail.isAtBack,
+                    onClick: () => moveShapeToBack(detail.shapeId),
+                },
+                {type: 'divider'},
                 {
                     label: '删除图形',
                     danger: true,
@@ -527,7 +610,7 @@ export function MapShapeEditorDemo() {
 
                         <div className="fc-map-shape-editor__meta-row">
                             <span>右键菜单</span>
-                            <strong>图形 / 顶点 / 关键地点均支持删除</strong>
+                            <strong>图形支持调序与删除，顶点 / 关键地点支持删除</strong>
                         </div>
 
                         <div className="fc-map-shape-editor__stats">
@@ -569,7 +652,7 @@ export function MapShapeEditorDemo() {
                         <div>
                             <h3 className="fc-map-shape-editor__panel-title">MapShapeSvgEditor</h3>
                             <p className="fc-map-shape-editor__panel-subtitle">
-                                右键空白区可触发 `onCanvasContextMenu`。右键图形、顶点、关键地点的处理方式由上面的删除策略切换控制。
+                                右键空白区可触发 `onCanvasContextMenu`。右键图形可调整渲染顺序，顶点与关键地点仍由调用方接管删除逻辑。
                             </p>
                         </div>
                     </div>

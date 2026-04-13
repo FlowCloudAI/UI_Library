@@ -74,6 +74,10 @@ export interface MapShapeSvgEditorCanvasContextMenuDetail extends BaseContextMen
 export interface MapShapeSvgEditorShapeContextMenuDetail extends BaseContextMenuDetail {
     kind: 'shape';
     shapeId: string;
+    shapeIndex: number;
+    shapeCount: number;
+    isAtFront: boolean;
+    isAtBack: boolean;
 }
 
 export interface MapShapeSvgEditorVertexContextMenuDetail extends BaseContextMenuDetail {
@@ -523,9 +527,16 @@ export function MapShapeSvgEditor({
         onSelectedShapeChange(shapeId);
         onSelectedLocationChange(null);
 
+        const shapeIndex = draft.shapes.findIndex(shape => shape.id === shapeId);
+        const shapeCount = draft.shapes.length;
+
         const detail: MapShapeSvgEditorShapeContextMenuDetail = {
             kind: 'shape',
             shapeId,
+            shapeIndex,
+            shapeCount,
+            isAtFront: shapeIndex === shapeCount - 1,
+            isAtBack: shapeIndex <= 0,
             nativeEvent: event.nativeEvent,
             clientX: event.clientX,
             clientY: event.clientY,

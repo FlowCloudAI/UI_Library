@@ -17,6 +17,7 @@ import {
     createInitialMapShapeEditorViewBox,
     createMapShapeEditorLocalId,
     getShapeCenter,
+    moveShapeInOrder,
 } from './mapShapeEditorSvgUtils';
 import {validateMapEditorDraft} from './validation';
 import type {
@@ -61,23 +62,6 @@ function buildFrontendValidationMessage(issueCount: number): string {
 
 function formatCoordinate(value: number): string {
     return value.toFixed(1);
-}
-
-function moveShapeInOrder(
-    shapes: MapShapeDraft[],
-    shapeId: string,
-    targetIndex: number,
-): MapShapeDraft[] {
-    const currentIndex = shapes.findIndex(shape => shape.id === shapeId);
-    if (currentIndex === -1) return shapes;
-
-    const boundedTargetIndex = Math.max(0, Math.min(targetIndex, shapes.length - 1));
-    if (currentIndex === boundedTargetIndex) return shapes;
-
-    const nextShapes = [...shapes];
-    const [targetShape] = nextShapes.splice(currentIndex, 1);
-    nextShapes.splice(boundedTargetIndex, 0, targetShape);
-    return nextShapes;
 }
 
 export function MapShapeEditorWorkbench({
@@ -210,29 +194,25 @@ export function MapShapeEditorWorkbench({
     };
 
     const handleShapeContextMenu = (detail: MapShapeSvgEditorShapeContextMenuDetail) => {
-        const shapeIndex = draft.shapes.findIndex(shape => shape.id === detail.shapeId);
-        const isAtBack = shapeIndex <= 0;
-        const isAtFront = shapeIndex === draft.shapes.length - 1;
-
         showContextMenu(detail.nativeEvent, [
             {
                 label: '上移一层',
-                disabled: isAtFront,
+                disabled: detail.isAtFront,
                 onClick: () => moveShapeForward(detail.shapeId),
             },
             {
                 label: '下移一层',
-                disabled: isAtBack,
+                disabled: detail.isAtBack,
                 onClick: () => moveShapeBackward(detail.shapeId),
             },
             {
-                label: '置于顶层',
-                disabled: isAtFront,
+                label: '移到顶层',
+                disabled: detail.isAtFront,
                 onClick: () => moveShapeToFront(detail.shapeId),
             },
             {
-                label: '置于底层',
-                disabled: isAtBack,
+                label: '移到底层',
+                disabled: detail.isAtBack,
                 onClick: () => moveShapeToBack(detail.shapeId),
             },
             {type: 'divider'},

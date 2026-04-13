@@ -1,4 +1,5 @@
-.fc-map-shape-editor {
+.fc-map-shape-editor,
+.fc-map-shape-svg-editor {
     --fc-mse-surface: color-mix(in srgb, var(--fc-color-bg-elevated) 92%, transparent);
     --fc-mse-outline: color-mix(in srgb, var(--fc-color-border) 88%, transparent);
     --fc-mse-grid: color-mix(in srgb, var(--fc-color-border) 58%, transparent);
@@ -9,6 +10,9 @@
     --fc-mse-shape-fill-opacity: 0.36;
     --fc-mse-selected-fill-opacity: 0.78;
     --fc-mse-muted: var(--fc-color-text-secondary);
+}
+
+.fc-map-shape-editor {
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -17,7 +21,8 @@
     font-family: var(--fc-font-family);
 }
 
-[data-theme="dark"] .fc-map-shape-editor {
+[data-theme="dark"] .fc-map-shape-editor,
+[data-theme="dark"] .fc-map-shape-svg-editor {
     --fc-mse-selected-fill: color-mix(in srgb, var(--fc-color-primary-subtle) 72%, var(--fc-color-bg-elevated));
     --fc-mse-shape-fill-opacity: 0.16;
     --fc-mse-selected-fill-opacity: 0.34;

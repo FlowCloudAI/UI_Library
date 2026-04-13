@@ -1562,6 +1562,7 @@ export function Demo() {
 - 点击画布空白处会取消当前图形选中
 - 当图形未选中时，可以直接在该图形上拖拽平移地图视图
 - 只有图形已选中时，才允许整体拖拽该图形
+- 右键图形时，调用方可通过 `onShapeContextMenu` 返回的顺序信息实现“上移一层 / 下移一层 / 移到顶层 / 移到底层”
 - 关键地点始终是独立对象，但通过 `shapeId` 关联到某个图形
 - 图形整体拖动时，已关联的关键地点会跟随一起移动
 
@@ -1782,6 +1783,7 @@ interface MapShapeSaveErrorResponse {
 - `createMockMapShapeEditorApi()`：创建本地 mock API
 - `submitMapShapeScene(api, request, options?)`：统一处理超时、结构校验和错误归一化
 - `validateMapEditorDraft(draft, options?)`：执行前端校验
+- `moveShapeInOrder(shapes, shapeId, targetIndex)`：按目标索引调整图形渲染顺序，可用于自定义右键菜单或外部图层控制
 
 ## 发布信息
 
