@@ -115,18 +115,19 @@
 
 .message-box-cursor {
   display: inline-block;
-  margin-left: 2px;
-  color: var(--fc-color-primary, #378ADD);
-  animation: message-box-cursor-blink 0.8s step-end infinite;
-  font-weight: bold;
   width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: var(--fc-color-primary, #3b82f6);
+  animation: message-box-cursor-blink 0.8s infinite;
+  vertical-align: text-bottom;
 }
 
 @keyframes message-box-cursor-blink {
-  0%, 100% {
+  0%, 50% {
     opacity: 1;
   }
-  50% {
+  51%, 100% {
     opacity: 0;
   }
 }
