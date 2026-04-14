@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import type {ReactNode} from 'react'
+import {createContext, useContext, useEffect, useState} from 'react'
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -21,6 +21,7 @@ interface Props {
     children: ReactNode
     defaultTheme?: Theme
     target?: HTMLElement
+    onThemeApplied?: (resolvedTheme: 'light' | 'dark') => void
 }
 
 function getSystemTheme(): 'light' | 'dark' {
@@ -29,7 +30,7 @@ function getSystemTheme(): 'light' | 'dark' {
         : 'light'
 }
 
-export function ThemeProvider({ children, defaultTheme = 'system', target }: Props) {
+export function ThemeProvider({children, defaultTheme = 'system', target, onThemeApplied}: Props) {
     const [theme, setTheme] = useState<Theme>(defaultTheme)
     const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(getSystemTheme)
 
@@ -39,7 +40,8 @@ export function ThemeProvider({ children, defaultTheme = 'system', target }: Pro
     useEffect(() => {
         const el = target ?? document.documentElement
         el.setAttribute('data-theme', resolvedTheme)
-    }, [resolvedTheme, target])
+        onThemeApplied?.(resolvedTheme)
+    }, [resolvedTheme, target, onThemeApplied])
 
     // 监听系统主题变化
     useEffect(() => {

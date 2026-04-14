@@ -36,6 +36,7 @@ const AXIS_LABEL_SPACE = 28;
 const TRACK_BOTTOM_PADDING = 16;
 
 const syncGroups = new Map<string, Set<React.RefObject<HTMLDivElement | null>>>();
+const syncLocks = new WeakMap<React.RefObject<HTMLDivElement | null>, boolean>();
 
 export function Timeline({
                              events,
@@ -284,10 +285,14 @@ export function Timeline({
 
         const handleScroll = () => {
             if (!scrollRef.current) return;
+            if (syncLocks.get(scrollRef)) return;
+
             const currentLeft = scrollRef.current.scrollLeft;
             group.forEach(otherRef => {
                 if (otherRef !== scrollRef && otherRef.current) {
+                    syncLocks.set(otherRef, true);
                     otherRef.current.scrollLeft = currentLeft;
+                    requestAnimationFrame(() => syncLocks.set(otherRef, false));
                 }
             });
         };
