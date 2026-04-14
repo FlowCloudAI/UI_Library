@@ -1,7 +1,7 @@
 import "./AlertContext.css"
-import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
-import { RollingBox } from "../Box/RollingBox";
-import { Button } from "../Button/Button";
+import {createContext, CSSProperties, ReactNode, useContext, useEffect, useRef, useState} from "react";
+import {RollingBox} from "../Box/RollingBox";
+import {Button} from "../Button/Button";
 
 export type AlertType = "success" | "error" | "warning" | "info";
 export type AlertMode = "alert" | "confirm" | "toast";
@@ -89,7 +89,7 @@ export function AlertProvider({ children, background, borderColor }: AlertProvid
         return () => clearTimeout(timer);
     }, [alert.visible, alert.duration]);
 
-    const overrideStyle: React.CSSProperties = {};
+    const overrideStyle: CSSProperties = {};
     if (background !== undefined)  (overrideStyle as any)["--alert-bg"]     = background;
     if (borderColor !== undefined) (overrideStyle as any)["--alert-border"] = borderColor;
 

@@ -1,8 +1,8 @@
-import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, {useCallback, useLayoutEffect, useMemo, useRef, useState} from "react";
 import "./MarkdownEditor.css";
-import MDEditor, { commands } from "@uiw/react-md-editor";
-import type { ICommand, MDEditorProps } from "@uiw/react-md-editor";
-import { useTheme } from "../../ThemeProvider";
+import type {ICommand, MDEditorProps} from "@uiw/react-md-editor";
+import MDEditor, {commands} from "@uiw/react-md-editor";
+import {useTheme} from "../../ThemeProvider";
 
 type MarkdownPreviewOptions = MDEditorProps["previewOptions"];
 type MarkdownPreviewRenderer = NonNullable<MDEditorProps["components"]>["preview"];
@@ -78,9 +78,9 @@ const TOOLBAR_COMMANDS: ICommand[] = [
     withTitle(commands.italic,               '斜体'),
     withTitle(commands.strikethrough,        '删除线'),
     commands.divider,
-    withTitle(commands.title1,               '一级标题'),
-    withTitle(commands.title2,               '二级标题'),
-    withTitle(commands.title3,               '三级标题'),
+    withTitle(commands.heading1, '一级标题'),
+    withTitle(commands.heading2, '二级标题'),
+    withTitle(commands.heading3, '三级标题'),
     commands.divider,
     withTitle(commands.quote,                '引用'),
     withTitle(commands.code,                 '行内代码'),

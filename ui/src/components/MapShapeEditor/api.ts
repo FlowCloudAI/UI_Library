@@ -124,8 +124,6 @@ function isValidPreviewScene(value: unknown): value is MapPreviewScene {
 
     const scene = value as MapPreviewScene;
     return !!scene.canvas
-        && typeof scene.canvas.width === 'number'
-        && typeof scene.canvas.height === 'number'
         && Array.isArray(scene.shapes)
         && Array.isArray(scene.keyLocations);
 }

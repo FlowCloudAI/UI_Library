@@ -1,5 +1,5 @@
 import "./TagItem.css";
-import {useEffect, useLayoutEffect, useRef, useState} from "react";
+import {CSSProperties, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 export interface TagSchema {
     id:        string;
@@ -79,7 +79,7 @@ export function TagItem({
         "--tag-color":  color,
         "--tag-border": borderColor,
     };
-    const overrideStyle: React.CSSProperties = {};
+    const overrideStyle: CSSProperties = {};
     for (const [k, v] of Object.entries(colorVars)) {
         if (v !== undefined) (overrideStyle as any)[k] = v;
     }

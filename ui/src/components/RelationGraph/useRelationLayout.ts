@@ -7,12 +7,12 @@
 //  - executes a one-time fitBounds on first successful layout
 //  - handles empty graphs without calling the layout function at all
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNodesInitialized, useReactFlow } from '@xyflow/react';
-import type { Edge, Node } from '@xyflow/react';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import type {Edge, Node} from '@xyflow/react';
+import {useNodesInitialized, useReactFlow} from '@xyflow/react';
 
-import { computeGraphSignature } from './graphSignature';
-import type { LayoutFunction, LayoutRequest, RelationLayoutState } from './types';
+import {computeGraphSignature} from './graphSignature';
+import type {LayoutFunction, LayoutRequest, RelationLayoutState} from './types';
 
 export interface UseRelationLayoutOptions {
     nodes: Node[];
@@ -145,7 +145,7 @@ export function useRelationLayout({
 
         // Reset ready state before starting a new layout pass
         setLayoutReady(false);
-        runLayout(sig, { nodes, edges });
+        void runLayout(sig, {nodes, edges});
     }, [nodesInitialized, nodes, edges, runLayout]);
 
     return { layoutReady, layoutLoading, layoutError };

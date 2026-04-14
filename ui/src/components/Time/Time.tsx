@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {RollingBox} from '../Box/RollingBox';
 import './Time.css';
 
@@ -25,6 +25,7 @@ const FLAG_HEIGHT = 70;
 const PX_PER_YEAR = 12;
 const MIN_TRACK_WIDTH = 800;
 const MIN_CARD_WIDTH = 160;
+const MAX_CARD_WIDTH = 360;
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 6;
 const ZOOM_STEP = 0.15;
@@ -139,9 +140,9 @@ export function Timeline({
                 const rawWidth = endX - startX;
                 const layoutRawWidth = layoutEndX - layoutStartX;
                 durationWidth = rawWidth > 0 ? Math.max(rawWidth, 1) : 0;
-                cardWidth = durationWidth > 0 ? Math.max(durationWidth, MIN_CARD_WIDTH) : MIN_CARD_WIDTH;
                 layoutDurationWidth = layoutRawWidth > 0 ? Math.max(layoutRawWidth, 1) : 0;
-                layoutCardWidth = layoutDurationWidth > 0 ? Math.max(layoutDurationWidth, MIN_CARD_WIDTH) : MIN_CARD_WIDTH;
+                layoutCardWidth = layoutDurationWidth > 0 ? Math.min(Math.max(layoutDurationWidth, MIN_CARD_WIDTH), MAX_CARD_WIDTH) : MIN_CARD_WIDTH;
+                cardWidth = layoutCardWidth;
             }
             return {...e, startX, durationWidth, cardWidth, layoutStartX, layoutCardWidth};
         });
@@ -255,7 +256,7 @@ export function Timeline({
         setZoomLevel(prevZoomLevel => Math.max(prevZoomLevel, minZoomLevel));
     }, [minZoomLevel]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!scrollRef.current || !zoomAnchorRef.current) return;
 
         const {offsetX, contentX, scaleRatio} = zoomAnchorRef.current;
@@ -385,7 +386,7 @@ export function Timeline({
                                     style={{
                                         width: e.cardWidth,
                                         minWidth: MIN_CARD_WIDTH,
-                                        maxWidth: 'none'
+                                        maxWidth: MAX_CARD_WIDTH
                                     }}
                                     onClick={() => handleCardClick(e.id)}
                                 >
