@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Button, ButtonGroup, MarkdownEditor, useAlert } from 'flowcloudai-ui'
+import {useRef, useState} from 'react'
+import {Button, ButtonGroup, MarkdownEditor, type MarkdownEditorRef, useAlert} from 'flowcloudai-ui'
 
 type Mode = 'edit' | 'preview'
 
@@ -17,6 +17,17 @@ export function MarkdownEditorDemo() {
     const [splitView, setSplitView] = useState(true)
     const [fontSizeScale, setFontSizeScale] = useState(1.1)
     const { showAlert } = useAlert()
+    const editorRef = useRef<MarkdownEditorRef>(null)
+
+    const handleUndo = () => {
+        const ta = editorRef.current?.getTextareaElement()
+        if (ta) {
+            ta.focus()
+            // 演示：通过 document.execCommand 触发一次原生 undo（实际项目中可替换为自定义历史栈）
+            document.execCommand('undo', false)
+            showAlert('已触发原生 undo（演示）', 'info')
+        }
+    }
 
     return (
         <>
@@ -55,12 +66,20 @@ export function MarkdownEditorDemo() {
                         >
                             放大字号
                         </Button>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={handleUndo}
+                        >
+                            测试 ref.undo
+                        </Button>
                     </ButtonGroup>
                 </div>
                 <div className="demo-row" style={{ marginBottom: 12, color: 'var(--fc-color-text-secondary)' }}>
                     当前字号缩放：{fontSizeScale.toFixed(1)}x
                 </div>
                 <MarkdownEditor
+                    ref={editorRef}
                     value={content}
                     onChange={setContent}
                     mode={mode}
@@ -79,6 +98,12 @@ export function MarkdownEditorDemo() {
                     }}
                     onFocus={() => console.log('MarkdownEditor focus')}
                     onBlur={() => console.log('MarkdownEditor blur')}
+                    onKeyDown={(e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+                            e.preventDefault()
+                            console.log('拦截 Ctrl+Z，可接入自定义历史管理')
+                        }
+                    }}
                     onAiComplete={() => showAlert("AI 补全占位（待接入）", "info")}
                     background={"#0f172a"}
                     toolbarBackground="#111827"

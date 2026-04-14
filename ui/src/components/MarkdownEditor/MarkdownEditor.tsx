@@ -1,11 +1,18 @@
-import React, {useCallback, useLayoutEffect, useMemo, useRef, useState} from "react";
+import React, {forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState,} from "react";
 import "./MarkdownEditor.css";
-import type {ICommand, MDEditorProps} from "@uiw/react-md-editor";
+import type {ICommand, MDEditorProps, RefMDEditor} from "@uiw/react-md-editor";
 import MDEditor, {commands} from "@uiw/react-md-editor";
 import {useTheme} from "../../ThemeProvider";
 
 type MarkdownPreviewOptions = MDEditorProps["previewOptions"];
 type MarkdownPreviewRenderer = NonNullable<MDEditorProps["components"]>["preview"];
+
+export interface MarkdownEditorRef {
+    /** 获取底层 @uiw/react-md-editor 的 ref 实例 */
+    getEditorInstance: () => RefMDEditor | null;
+    /** 获取内部 textarea DOM 节点 */
+    getTextareaElement: () => HTMLTextAreaElement | null;
+}
 
 export interface MarkdownEditorProps {
     value:        string;
@@ -39,6 +46,8 @@ export interface MarkdownEditorProps {
      * @default 'edit'
      */
     mode?: 'edit' | 'preview';
+    /** 透传到内部 textarea 的 onKeyDown，可用于拦截 Ctrl+Z 等快捷键 */
+    onKeyDown?: React.KeyboardEventHandler<HTMLTextAreaElement>;
     showSplitToggle?: boolean;
     defaultSplitView?: boolean;
     splitView?: boolean;
@@ -92,50 +101,60 @@ const TOOLBAR_COMMANDS: ICommand[] = [
     withTitle(commands.hr,                   '分割线'),
 ];
 
-export function MarkdownEditor({
-    value,
-    onChange,
-    onAiComplete,
-    minHeight   = 200,
-    height,
-    maxHeight,
-    autoHeight  = true,
-    placeholder = "在此输入内容...",
-    disabled,
-    className,
-    style,
-    textareaProps,
-    onFocus,
-    onBlur,
-    mode        = "edit",
-    showSplitToggle = true,
-    defaultSplitView = false,
-    splitView,
-    onSplitChange,
-    showAiButton,
-    toolbarCommands,
-    extraCommands,
-    hideFullscreen = false,
-    previewOptions,
-    previewRender,
-    background,
-    toolbarBackground,
-    borderColor,
-    textColor,
-    mutedTextColor,
-    toolbarButtonHoverBackground,
-    toolbarButtonHoverColor,
-    primaryColor,
-    primaryBackground,
-    editorTextBackground,
-    previewBackground,
-    fontSizeScale,
-    codeInlineBackground,
-    codeBlockBackground,
-    blockquoteBorderColor,
-    selectionBackground,
-}: MarkdownEditorProps) {
+export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(function MarkdownEditor(_ref, ref) {
+    const {
+        value,
+        onChange,
+        onAiComplete,
+        minHeight = 200,
+        height,
+        maxHeight,
+        autoHeight = true,
+        placeholder = "在此输入内容...",
+        disabled,
+        className,
+        style,
+        textareaProps,
+        onFocus,
+        onBlur,
+        onKeyDown,
+        mode = "edit",
+        showSplitToggle = true,
+        defaultSplitView = false,
+        splitView,
+        onSplitChange,
+        showAiButton,
+        toolbarCommands,
+        extraCommands,
+        hideFullscreen = false,
+        previewOptions,
+        previewRender,
+        background,
+        toolbarBackground,
+        borderColor,
+        textColor,
+        mutedTextColor,
+        toolbarButtonHoverBackground,
+        toolbarButtonHoverColor,
+        primaryColor,
+        primaryBackground,
+        editorTextBackground,
+        previewBackground,
+        fontSizeScale,
+        codeInlineBackground,
+        codeBlockBackground,
+        blockquoteBorderColor,
+        selectionBackground,
+    } = _ref;
     const { resolvedTheme } = useTheme();
+    const editorRef = useRef<RefMDEditor>(null);
+
+    useImperativeHandle(ref, () => ({
+        getEditorInstance: () => editorRef.current,
+        getTextareaElement: () =>
+            wrapRef.current?.querySelector<HTMLTextAreaElement>('.w-md-editor-text-input') ?? null,
+    }), []);
+
     // Stable onChange wrapper — MDEditor won't see a new function reference each render
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
@@ -236,7 +255,11 @@ export function MarkdownEditor({
             textareaProps?.onBlur?.(event);
             onBlur?.(event);
         },
-    }), [textareaProps, placeholder, disabled, onFocus, onBlur]);
+        onKeyDown: event => {
+            textareaProps?.onKeyDown?.(event);
+            onKeyDown?.(event);
+        },
+    }), [textareaProps, placeholder, disabled, onFocus, onBlur, onKeyDown]);
 
     useLayoutEffect(() => {
         if (!autoHeight) {
@@ -332,6 +355,7 @@ export function MarkdownEditor({
             data-mode={mode}
         >
             <MDEditor
+                ref={editorRef}
                 value={value}
                 onChange={handleChange}
                 commands={editorCommands}
@@ -347,4 +371,4 @@ export function MarkdownEditor({
             />
         </div>
     );
-}
+});

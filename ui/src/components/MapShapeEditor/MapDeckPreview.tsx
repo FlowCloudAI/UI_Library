@@ -429,6 +429,7 @@ function buildLayers(
                 id: 'fc-map-preview-key-location-labels',
                 data: scene.keyLocations,
                 pickable: false,
+                characterSet: 'auto',
                 getPosition: item => [item.position[0], item.position[1] - 18],
                 getText: item => item.name,
                 getSize: labelFontSize,

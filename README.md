@@ -617,6 +617,7 @@ type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
 - `textareaProps?: MDEditorProps['textareaProps']`：透传到底层 `textarea` 的属性，可用于监听键盘、输入、光标等事件
 - `onFocus?: FocusEventHandler<HTMLTextAreaElement>`：编辑区获得焦点回调
 - `onBlur?: FocusEventHandler<HTMLTextAreaElement>`：编辑区失去焦点回调
+- `onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>`：编辑区键盘按下回调，可用于拦截 `Ctrl+Z` 等快捷键以接入自定义历史管理
 - `mode?: 'edit' | 'preview'`：显示模式
 - `showSplitToggle?: boolean`：是否显示双栏切换按钮
 - `defaultSplitView?: boolean`：非受控模式下的初始双栏状态
@@ -648,16 +649,18 @@ type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>
 受控双栏、颜色覆盖与自定义预览示例：
 
 ```tsx
-import { useState } from 'react'
-import { MarkdownEditor } from 'flowcloudai-ui'
+import { useRef, useState } from 'react'
+import { MarkdownEditor, type MarkdownEditorRef } from 'flowcloudai-ui'
 import MDEditor from '@uiw/react-md-editor'
 
 function Example() {
   const [value, setValue] = useState('')
   const [splitView, setSplitView] = useState(true)
+  const editorRef = useRef<MarkdownEditorRef>(null)
 
   return (
     <MarkdownEditor
+      ref={editorRef}
       value={value}
       onChange={setValue}
       splitView={splitView}
@@ -688,6 +691,13 @@ function Example() {
             console.log('打开词条选择弹窗')
           }
         },
+      }}
+      onKeyDown={(e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+          e.preventDefault()
+          // 在此接入自定义历史管理，例如调用宿主的 undo()
+          console.log('拦截 Ctrl+Z，可接入自定义历史管理')
+        }
       }}
       background="#0f172a"
       toolbarBackground="#111827"

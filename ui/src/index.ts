@@ -20,6 +20,7 @@ export * from "./components/Card/Card";
 export * from "./components/Bar/TabBar";
 export * from "./components/Tag/TagItem";
 export * from "./components/MarkdownEditor/MarkdownEditor";
+export type {MarkdownEditorRef} from "./components/MarkdownEditor/MarkdownEditor";
 export * from "./components/ContextMenu/ContextMenuContext";
 export * from "./components/MessageBox/MessageBox";
 export * from "./components/Time/Time";
