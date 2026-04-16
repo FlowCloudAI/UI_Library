@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react'
-import { MessageBox } from 'flowcloudai-ui'
+import {useEffect, useRef, useState} from 'react'
+import {MessageBox, type MessageBoxBlock} from 'flowcloudai-ui'
 
 export default function MessageBoxDemo() {
     const [messages] = useState<Array<{
         id: string
         role: 'user' | 'assistant' | 'system'
         content: string
-        streaming?: boolean
-        children?: React.ReactNode
+        markdown?: boolean
     }>>([
         {
             id: 'msg-1',
@@ -17,25 +16,127 @@ export default function MessageBoxDemo() {
         {
             id: 'msg-2',
             role: 'user',
-            content: '请帮我解释一下 React 的虚拟列表是什么？'
+            content: '请帮我解释一下 React 的虚拟列表是什么？还有代码示例吗？'
         },
         {
             id: 'msg-3',
             role: 'assistant',
-            content: '虚拟列表（Virtual List）是一种性能优化技术，用于高效渲染大量数据的列表。\n\n核心原理是只渲染视口内可见的项目，而非全部数据。这样可以显著减少 DOM 节点数量，提升页面性能。'
-        }
+            markdown: true,
+            content: `虚拟列表（Virtual List）是一种**性能优化技术**，用于高效渲染大量数据的列表。
+## 核心原理
+
+只渲染**视口内可见**的项目，而非全部数据，显著减少 DOM 节点数量。
+
+## 主要优势
+
+- 内存占用低
+- 渲染速度快
+- 支持百万级数据
+
+## 简单示例
+
+\`\`\`tsx
+import { VirtualList } from 'flowcloudai-ui'
+
+const items = Array.from({ length: 100000 }, (_, i) => ({
+  id: i,
+  label: \`Item \${i}\`
+}))
+
+<VirtualList
+  items={items}
+  itemHeight={40}
+  renderItem={(item) => <div>{item.label}</div>}
+/>
+\`\`\`
+
+> 💡 本组件库已内置 \`VirtualList\` 组件，开箱即用。`
+        },
     ])
 
-    // 模拟流式消息
+    // ── 深度思考演示 ───────────────────────────────────────────────────────────
+    const [reasoningText, setReasoningText] = useState('')
+    const [reasoningDone, setReasoningDone] = useState(false)
+    const [reasoningSeconds, setReasoningSeconds] = useState(0)
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+    useEffect(() => {
+        const thinking = `用户问的是虚拟列表相关内容……
+让我先思考核心原理：DOM 节点数量与性能的关系。
+浏览器每次重排（reflow）都需要遍历所有可见节点，节点越多越慢。
+虚拟列表只保留窗口内的节点，通常是 10~30 个，无论数据多大性能恒定。
+关键技术点：
+
+1. 计算可见范围 startIndex / endIndex
+2. 用 paddingTop / paddingBottom 撑开滚动容器
+3. 监听 scroll 事件动态更新范围`
+
+        let idx = 0
+        let secs = 0
+
+        timerRef.current = setInterval(() => {
+            secs += 1
+            setReasoningSeconds(secs)
+            if (idx < thinking.length) {
+                idx = Math.min(idx + 8, thinking.length)
+                setReasoningText(thinking.slice(0, idx))
+            } else {
+                clearInterval(timerRef.current!)
+                setReasoningDone(true)
+            }
+        }, 80)
+
+        return () => clearInterval(timerRef.current!)
+    }, [])
+
+    // ── 工具调用演示 ───────────────────────────────────────────────────────────
+    const toolCallsSimple = [
+        {index: 0, name: 'web_search', result: '搜索完成'},
+        {index: 1, name: 'read_file', args: '{"path":"/data/config.json"}', result: '{"version":"1.2.0"}'},
+        {index: 2, name: 'pending_tool'}, // 尚未收到 result，显示 spinner
+    ]
+
+    const toolCallsVerbose = [
+        {
+            index: 0,
+            name: 'fetching_data', // 调用中，尚无 result
+        },
+        {
+            index: 2,
+            name: 'web_search',
+            args: JSON.stringify({query: 'React virtual list performance', limit: 5}, null, 2),
+            result: JSON.stringify([
+                {title: 'React Window - GitHub', url: 'https://github.com/bvaughn/react-window'},
+                {title: 'Virtualized lists in React', url: 'https://web.dev/virtualize-long-lists-react-window'},
+            ], null, 2),
+        },
+        {
+            index: 3,
+            name: 'run_code',
+            args: JSON.stringify({language: 'python', code: 'import sys\nprint(sys.version)'}, null, 2),
+            result: '3.11.4 (main, Jul  5 2023, 13:45:01)',
+        },
+        {
+            index: 4,
+            name: 'broken_tool',
+            args: JSON.stringify({input: 'test'}, null, 2),
+            result: 'Error: connection timeout after 30s',
+            isError: true,
+        },
+    ]
+
+    // ── 流式正文演示 ───────────────────────────────────────────────────────────
     const [streamingContent, setStreamingContent] = useState('')
     const [isStreaming, setIsStreaming] = useState(false)
 
     useEffect(() => {
-        // 模拟流式输出
-        const fullContent = '这是一个流式输出的示例。你会看到文字逐字出现，就像真实的 AI 对话一样。这种体验更加自然和流畅。'
+        const fullContent = `好的，这是一个**流式 Markdown** 输出示例：
+1. 文字会**逐字**出现
+2. 支持 \`代码\`、*斜体* 等格式
+3. 渲染实时更新`
         let currentIndex = 0
         setIsStreaming(true)
-        
+
         const interval = setInterval(() => {
             if (currentIndex < fullContent.length) {
                 currentIndex += 2
@@ -49,30 +150,133 @@ export default function MessageBoxDemo() {
         return () => clearInterval(interval)
     }, [])
 
+    // ── blocks 顺序渲染演示 ────────────────────────────────────────────────────
+    const [blockMessages, setBlockMessages] = useState<MessageBoxBlock[]>([])
+    const blockStepRef = useRef(0)
+
+    useEffect(() => {
+        const sequence: MessageBoxBlock[] = [
+            {type: 'reasoning', content: '用户需要计算复杂表达式，我先拆解步骤…', streaming: false, seconds: 2},
+            {type: 'tool', tool: {index: 0, name: 'calculator', args: '{"expr":"1+1"}', result: '2'}},
+            {type: 'content', content: '第一步结果是 **2**。', markdown: true},
+            {type: 'tool',
+                tool: {
+                    index: 1,
+                    name: 'risky_tool',
+                    args: '{"input":"x"}',
+                    result: 'Error: invalid input',
+                    isError: true
+                }
+            },
+            {type: 'tool', tool: {index: 2, name: 'calculator', args: '{"expr":"2*3"}', result: '6'}},
+            {type: 'content', content: '虽然中间工具出错，但第二步结果是 6，最终答案为 `6`。', markdown: true},
+        ]
+
+        blockStepRef.current = 0
+        setBlockMessages([])
+        const interval = setInterval(() => {
+            if (blockStepRef.current < sequence.length) {
+                const current = sequence[blockStepRef.current]
+                setBlockMessages(prev => [...prev, current])
+                blockStepRef.current += 1
+            } else {
+                clearInterval(interval)
+            }
+        }, 600)
+
+        return () => clearInterval(interval)
+    }, [])
+
     return (
         <>
             <div className="demo-section">
-                <div style={{ height: '600px', maxWidth: '900px' }}>
-                    <MessageBox>
+                <div style={{maxWidth: '900px'}}>
+                    <div className="message-box">
+                        {/* 普通消息 */}
                         {messages.map((message) => (
-                            <MessageBox.Item
+                            <MessageBox
                                 key={message.id}
                                 role={message.role}
                                 content={message.content}
+                                markdown={message.markdown}
                             />
                         ))}
+
+                        {/* 深度思考（流式） */}
+                        <MessageBox
+                            role="assistant"
+                            content={reasoningDone ? '虚拟列表的核心是只渲染视口内的节点，用 padding 撑开容器模拟完整高度，再监听 scroll 动态替换节点。' : ''}
+                            reasoning={reasoningText}
+                            reasoningSeconds={reasoningSeconds}
+                            reasoningStreaming={!reasoningDone}
+                            streaming={!reasoningDone && reasoningText.length > 0}
+                        />
+
+                        {/* 系统信息 */}
+                        <MessageBox
+                            role="system"
+                            content='系统提示词'
+                            reasoningSeconds={reasoningSeconds}
+                            reasoningStreaming={!reasoningDone}
+                            streaming={!reasoningDone && reasoningText.length > 0}
+                        />
+
+                        {/* 工具调用 simple 模式 */}
+                        <MessageBox
+                            role="user"
+                            content="帮我搜索一下并读取配置文件"
+                        />
+                        <MessageBox
+                            role="assistant"
+                            content="我已搜索网页并读取了配置文件，这是结果摘要。"
+                            toolCalls={toolCallsSimple}
+                            toolCallDetail="simple"
+                        />
+
+                        {/* 工具调用 verbose 模式（含错误） */}
+                        <MessageBox
+                            role="user"
+                            content="帮我搜索资料、运行代码，还有调用一个会出错的工具"
+                        />
+                        <MessageBox
+                            role="assistant"
+                            content={`搜索已完成，代码执行成功。\n\n注意：\`broken_tool\` 调用失败，请检查网络连接后重试。`}
+                            markdown
+                            toolCalls={toolCallsVerbose}
+                            toolCallDetail="verbose"
+                        />
+
+                        {/* 角色扮演包裹框 */}
+                        <MessageBox
+                            role="user"
+                            content="你现在扮演一位苏格拉底风格的哲学老师"
+                        />
+                        <MessageBox
+                            role="assistant"
+                            content="好的，我来扮演苏格拉底。那么，请告诉我——什么是正义？你真的认为你知道吗？"
+                            rolePlaying="苏格拉底"
+                        />
+
+                        {/* 流式正文 */}
                         {streamingContent && (
-                            <MessageBox.Item
+                            <MessageBox
                                 role="assistant"
                                 content={streamingContent}
                                 streaming={isStreaming}
-                            >
-                                <div className="tool-calls">
-                                    {/* 工具调用等内容 */}
-                                </div>
-                            </MessageBox.Item>
+                                markdown
+                            />
                         )}
-                    </MessageBox>
+
+                        {/* blocks 顺序渲染：思考 → 工具 → content → 再工具 */}
+                        <MessageBox
+                            role="user"
+                            content="帮我算一下 (1+1)*3 的步骤"
+                        />
+                        <MessageBox
+                            role="assistant"
+                            blocks={blockMessages}
+                        />
+                    </div>
                 </div>
             </div>
         </>

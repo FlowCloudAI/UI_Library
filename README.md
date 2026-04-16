@@ -737,187 +737,230 @@ function Example() {
 
 ### `MessageBox`
 
-用途：高性能 AI 聊天消息组件，支持虚拟列表、Web Worker Markdown 解析、流式内容渲染。
+用途：AI 聊天消息组件，支持用户/助手/系统消息、深度思考、工具调用、Markdown 代码块复制、流式渲染和工具栏操作。
 
 **核心特性：**
 
-- **Web Worker Markdown 解析**：使用 micromark 在 Web Worker 中异步解析 Markdown，避免阻塞 UI
-- **虚拟列表支持**：通过 `isVisible` 和 `onHeightChange` 与虚拟列表集成，视口外降级为骨架屏
-- **流式渲染**：支持打字机光标和段落级增量解析
-- **推理区域折叠**：ReasoningSection 支持展开/折叠，已解析段落缓存复用
-- **工具调用卡片**：ToolCallCard 可展开显示参数和结果
-- **React 声明式渲染**：严格禁止 `dangerouslySetInnerHTML`（除 Worker 解析后的安全 HTML）
+- **角色适配布局**：user 右对齐固定宽度，assistant 全宽透明背景，system 居中灰底
+- **深度思考区域**：可折叠显示推理过程，支持流式输入，显示已思考秒数
+- **工具调用展示**：支持 simple（仅显示名称）和 verbose（显示参数和结果）两种模式，带状态指示（调用中、成功、失败）
+- **代码块复制**：Markdown 代码块右上角悬浮复制按钮，支持一键复制
+- **流式渲染**：支持打字机光标，支持多行内容宽度约束
+- **工具栏操作**：用户消息含复制/编辑，助手消息含复制/重说，角色扮演模式额外支持播放（TTS）
+- **角色扮演模式**：assistant 启用 `rolePlaying` 时展示灰色气泡框
 
 **数据类型：**
 
 ```ts
-type ContentBlock = 
-  | { id: string; type: 'text'; content: string; isStreaming?: boolean }
-  | { id: string; type: 'reasoning'; content: string; isStreaming?: boolean }
-  | { id: string; type: 'tool_call'; index: number; name: string; arguments: string; isStreaming?: boolean }
-  | { id: string; type: 'tool_result'; index: number; content: any; isError?: boolean };
-
-interface Message {
-  id: string;
-  type: 'user' | 'assistant' | 'system';
-  blocks: ContentBlock[];
-  status: 'streaming' | 'completed' | 'error';
-  createdAt: number;
+export interface ToolCallInfo {
+  index: number
+  name: string
+  args?: string
+  result?: string
+  isError?: boolean
 }
+
+export type MessageBoxBlock =
+  | { type: 'reasoning'; content: string; seconds?: number; streaming?: boolean }
+  | { type: 'tool'; tool: ToolCallInfo; detail?: 'simple' | 'verbose' }
+  | { type: 'content'; content: string; markdown?: boolean; streaming?: boolean }
+  | { type: 'children'; children: React.ReactNode }
 ```
 
 **参数：**
 
-- `message: Message`：消息数据
-- `isStreaming?: boolean`：是否正在接收流式事件（由上层缓冲池管理）
-- `streamingCursor?: boolean`：是否显示闪烁光标
-- `isVisible?: boolean`：是否在视口内（false 时降级为骨架屏）
-- `onHeightChange?: (height: number) => void`：高度变化回调，用于虚拟列表更新
-- `onReasoningToggle?: (expanded: boolean) => void`：推理区域展开/折叠回调
-- `onCopy?: () => void`：复制回调
-- `onToolCallExpand?: (index: number) => void`：工具调用卡片展开回调
+- `role: 'user' | 'assistant' | 'system'`：消息角色
+- `content?: string`：消息文本内容
+- `streaming?: boolean`：是否正在流式输入，显示闪烁光标
+- `markdown?: boolean`：是否解析 Markdown（包含代码块复制功能）
+- `maxWidth?: string`：多行内容时的宽度约束，默认 `'80%'`（assistant 不受此限制，始终全宽）
+- `reasoning?: string`：深度思考内容
+- `reasoningSeconds?: number`：已思考秒数
+- `reasoningStreaming?: boolean`：是否正在思考，true 时显示 spinner 并默认展开
+- `toolCalls?: ToolCallInfo[]`：工具调用列表
+- `toolCallDetail?: 'simple' | 'verbose'`：工具展示模式，默认 `'simple'`
+- `blocks?: MessageBoxBlock[]`：按顺序渲染的块列表，传入后优先级高于独立字段（`content` / `reasoning` / `toolCalls`）
+- `rolePlaying?: string`：角色扮演模式标识，传入时展示灰色气泡框（仅 assistant）
+- `onCopy?: () => void`：复制按钮回调，不传则默认复制 content 到剪贴板
+- `onEdit?: () => void`：编辑按钮回调（user only）
+- `onRegenerate?: () => void`：重说按钮回调（assistant only）
+- `onPlay?: () => void`：播放按钮回调（assistant + rolePlaying only）
+- `children?: ReactNode`：额外内容插槽
 - `className?: string`：额外 CSS 类名
 - `style?: React.CSSProperties`：内联样式
 
-**示例：**
-
-```tsx
-import { useState } from 'react'
-import { MessageBox } from 'flowcloudai-ui'
-import type { Message } from 'flowcloudai-ui'
-
-function Example() {
-  const [messages] = useState<Message[]>([
-    {
-      id: 'msg-1',
-      type: 'assistant',
-      blocks: [
-        {
-          id: 'block-1',
-          type: 'reasoning',
-          content: '用户询问的是关于 React 虚拟列表的概念。\n\n虚拟列表是一种性能优化技术...',
-          isStreaming: false
-        },
-        {
-          id: 'block-2',
-          type: 'text',
-          content: '虚拟列表（Virtual List）是一种性能优化技术...'
-        }
-      ],
-      status: 'completed',
-      createdAt: Date.now()
-    }
-  ])
-
-  return (
-    <div style={{ height: '600px' }}>
-      {messages.map((message) => (
-        <MessageBox
-          key={message.id}
-          message={message}
-          isVisible={true}
-          streamingCursor={message.status === 'streaming'}
-          onHeightChange={(height) => {
-            console.log(`Message height: ${height}px`)
-          }}
-          onReasoningToggle={(expanded) => {
-            console.log('Reasoning:', expanded ? 'expanded' : 'collapsed')
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-```
-
-**配合虚拟列表示例：**
-
-```tsx
-import { VirtualList } from 'flowcloudai-ui'
-import { MessageBox } from 'flowcloudai-ui'
-
-function ChatWithVirtualList({ messages }) {
-  return (
-    <VirtualList
-      data={messages}
-      height={600}
-      itemHeight={100}
-      renderItem={(message, index) => (
-        <MessageBox
-          key={message.id}
-          message={message}
-          isVisible={true} // 虚拟列表会控制此项
-          onHeightChange={(height) => {
-            // 更新虚拟列表的 itemHeight
-          }}
-        />
-      )}
-    />
-  )
-}
-```
-
-**流式输出示例：**
+**使用示例：**
 
 ```tsx
 import { useState, useEffect } from 'react'
 import { MessageBox } from 'flowcloudai-ui'
 
-function StreamingExample() {
-  const [message, setMessage] = useState<Message>({
-    id: 'streaming',
-    type: 'assistant',
-    blocks: [
-      {
-        id: 'text-block',
-        type: 'text',
-        content: '',
-        isStreaming: true
+function ChatExample() {
+  const [reasoningText, setReasoningText] = useState('')
+  const [reasoningDone, setReasoningDone] = useState(false)
+  const [reasoningSeconds, setReasoningSeconds] = useState(0)
+
+  // 深度思考流式演示
+  useEffect(() => {
+    let idx = 0
+    let secs = 0
+    const thinking = '用户询问虚拟列表的概念...\n让我先思考核心原理...'
+
+    const timer = setInterval(() => {
+      secs += 1
+      setReasoningSeconds(secs)
+      if (idx < thinking.length) {
+        idx += 4
+        setReasoningText(thinking.slice(0, idx))
+      } else {
+        clearInterval(timer)
+        setReasoningDone(true)
       }
-    ],
-    status: 'streaming',
-    createdAt: Date.now()
-  })
+    }, 80)
+
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <div style={{ maxWidth: '900px' }}>
+      {/* 用户消息 */}
+      <MessageBox
+        role="user"
+        content="请解释什么是虚拟列表"
+      />
+
+      {/* 助手消息：深度思考 + 工具调用 + 正文 */}
+      <MessageBox
+        role="assistant"
+        content={reasoningDone ? '虚拟列表是一种性能优化技术...' : ''}
+        reasoning={reasoningText}
+        reasoningSeconds={reasoningSeconds}
+        reasoningStreaming={!reasoningDone}
+        streaming={!reasoningDone}
+        markdown
+        toolCalls={[
+          { index: 0, name: 'web_search', result: '搜索完成' },
+          { index: 1, name: 'fetching_data' }, // 无 result，显示 spinner
+        ]}
+        toolCallDetail="verbose"
+        onCopy={() => navigator.clipboard.writeText('复制的内容')}
+        onRegenerate={() => console.log('重新生成')}
+      />
+
+      {/* 助手消息：角色扮演模式 */}
+      <MessageBox
+        role="assistant"
+        content="好的，我来扮演苏格拉底。那么，请告诉我——什么是正义？"
+        rolePlaying="苏格拉底"
+        onCopy={() => {}}
+        onRegenerate={() => {}}
+        onPlay={() => console.log('播放 TTS')}
+      />
+
+      {/* 系统消息 */}
+      <MessageBox
+        role="system"
+        content="对话已重置"
+      />
+    </div>
+  )
+}
+```
+
+**`blocks` 顺序渲染示例：**
+
+当 AI 输出是交错进行的（如思考 → 工具 → 正文 → 再工具），可使用 `blocks` 精确控制渲染顺序：
+
+```tsx
+import { useState, useEffect } from 'react'
+import { MessageBox, type MessageBoxBlock } from 'flowcloudai-ui'
+
+function BlocksExample() {
+  const [blocks, setBlocks] = useState<MessageBoxBlock[]>([])
 
   useEffect(() => {
-    const fullContent = '这是流式输出的内容...'
-    let index = 0
-    
-    const interval = setInterval(() => {
-      if (index < fullContent.length) {
-        index += 2
-        setMessage(prev => ({
-          ...prev,
-          blocks: prev.blocks.map(block =>
-            block.type === 'text'
-              ? { ...block, content: fullContent.slice(0, index) }
-              : block
-          )
-        }))
-      } else {
-        clearInterval(interval)
-        setMessage(prev => ({
-          ...prev,
-          status: 'completed',
-          blocks: prev.blocks.map(block =>
-            block.type === 'text'
-              ? { ...block, isStreaming: false }
-              : block
-          )
-        }))
-      }
-    }, 50)
+    const sequence: MessageBoxBlock[] = [
+      { type: 'reasoning', content: '让我先拆解这个问题…', seconds: 2 },
+      { type: 'tool', tool: { index: 0, name: 'web_search', result: '完成' } },
+      { type: 'content', content: '根据搜索结果，虚拟列表的核心是…', markdown: true },
+      { type: 'tool', tool: { index: 1, name: 'calculator', args: '{"expr":"1000/20"}', result: '50' } },
+      { type: 'content', content: '计算得出需要渲染 50 个节点。', markdown: true },
+    ]
 
-    return () => clearInterval(interval)
+    let step = 0
+    const timer = setInterval(() => {
+      if (step < sequence.length) {
+        setBlocks(prev => [...prev, sequence[step]])
+        step += 1
+      } else {
+        clearInterval(timer)
+      }
+    }, 600)
+
+    return () => clearInterval(timer)
   }, [])
 
   return (
     <MessageBox
-      message={message}
-      streamingCursor={message.status === 'streaming'}
+      role="assistant"
+      blocks={blocks}
     />
   )
 }
+```
+
+**工具调用状态说明：**
+
+- `result === undefined`：调用中，显示旋转 spinner ⌛
+- `result !== undefined && !isError`：成功，显示绿色 ✓
+- `result !== undefined && isError`：失败，显示红色 ✕ + 错误 badge
+
+**工具栏按钮说明：**
+
+| role                    | 按钮       | 说明           |
+|-------------------------|----------|--------------|
+| user                    | 复制、编辑    | 悬浮显示，复制有默认行为 |
+| assistant               | 复制、重说    | 悬浮显示         |
+| assistant + rolePlaying | 复制、重说、播放 | 额外支持 TTS 播放  |
+| system                  | 无        | 不显示工具栏       |
+
+**多行内容宽度约束：**
+
+内容包含换行符时自动应用 `maxWidth`（默认 80%）：
+
+```tsx
+// user 有换行时会自动限宽
+<MessageBox
+  role="user"
+  content="第一行\n第二行\n第三行"
+  maxWidth="60%"
+/>
+
+// assistant 始终全宽，maxWidth 参数被忽略
+<MessageBox
+  role="assistant"
+  content="第一行\n第二行"
+/>
+```
+
+**Markdown 代码块复制：**
+
+代码块自动在右上角显示"复制"按钮，悬浮才显示，点击复制到剪贴板：
+
+```tsx
+<MessageBox
+  role="assistant"
+  content={`
+## 代码示例
+
+\`\`\`javascript
+function hello() {
+  console.log('世界')
+}
+\`\`\`
+  `}
+  markdown
+/>
 ```
 
 ### `Chat`

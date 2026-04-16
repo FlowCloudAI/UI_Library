@@ -1,6 +1,6 @@
 {
   "name": "flowcloudai-ui",
-  "version": "0.1.28",
+  "version": "0.1.37",
   "type": "module",
   "author": "flowcloudai",
   "module": "dist/index.js",
