@@ -508,7 +508,7 @@
 }
 
 .message-box-tool-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.375rem;
   width: 100%;
@@ -591,8 +591,23 @@
   border-top-color: transparent;
 }
 
+.message-box-tool-label {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
 .message-box-tool-name {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-box-tool-status-text {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  opacity: 0.9;
 }
 
 .message-box-tool-badge {
@@ -622,7 +637,6 @@
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: translate(-50%, -50%) rotate(-45deg);
-  transition: transform 0.2s;
 }
 
 .message-box-tool-chevron.expanded::before {

@@ -187,6 +187,84 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
         return () => clearInterval(interval)
     }, [])
 
+    // ── 复杂 blocks 顺序渲染演示：思考 → 工具 → 思考 → 内容 → 工具 → 思考 → 内容 ──
+    const [complexBlockMessages, setComplexBlockMessages] = useState<MessageBoxBlock[]>([])
+    const complexBlockStepRef = useRef(0)
+
+    useEffect(() => {
+        const sequence: MessageBoxBlock[] = [
+            {
+                type: 'reasoning',
+                content: '用户要求分析 2024 年全球 AI 发展趋势，我需要先整理主要方向：大语言模型演进、多模态能力、AI Agent 爆发、代码生成工具普及，以及硬件基础设施变化。',
+                streaming: false,
+                seconds: 3,
+            },
+            {
+                type: 'tool',
+                tool: {
+                    index: 0,
+                    name: 'web_search',
+                    args: JSON.stringify({query: '2024 global AI development trends report'}, null, 2),
+                    result: JSON.stringify([
+                        {
+                            title: 'The State of AI Report 2024',
+                            summary: 'Multimodal models and AI agents dominated the landscape.'
+                        },
+                        {
+                            title: 'Global AI Market Analysis',
+                            summary: 'Enterprise adoption of coding assistants reached 62%.'
+                        },
+                    ], null, 2),
+                },
+            },
+            {
+                type: 'reasoning',
+                content: '搜索结果显示了几个关键趋势：1) 多模态模型成为技术主流；2) AI Agent 在下半年爆发式增长；3) 代码生成工具的企业采纳率达到 62%。我还需要获取更具体的市场规模数据来支撑结论。',
+                streaming: false,
+                seconds: 4,
+            },
+            {
+                type: 'content',
+                content: '根据初步信息检索，2024 年全球 AI 发展的**三大核心趋势**已经清晰：\n\n1. **多模态融合** — 文本、图像、音频、视频的端到端模型成为头部厂商竞争焦点\n2. **Agent 化应用** — 从"对话"走向"行动"，具备规划、记忆和工具调用能力的 Agent 快速落地\n3. **代码智能普及** — 企业开发者对 AI 编程助手的采纳率突破 60%',
+                markdown: true,
+            },
+            {
+                type: 'tool',
+                tool: {
+                    index: 1,
+                    name: 'fetch_market_data',
+                    args: JSON.stringify({metric: 'generative_ai_market_size', year: 2024}, null, 2),
+                    result: JSON.stringify({market_size_usd: 67000000000, yoy_growth: '+47%'}, null, 2),
+                },
+            },
+            {
+                type: 'reasoning',
+                content: '市场数据确认了高速增长：生成式 AI 市场规模达到 670 亿美元，同比增长 47%。这说明技术落地已经跨越早期采用阶段，进入主流市场。让我综合所有信息，给出最终结论。',
+                streaming: false,
+                seconds: 2,
+            },
+            {
+                type: 'content',
+                content: '## 综合分析结论\n\n2024 年是全球 AI 从**"对话工具"**向**"智能体"**转型的关键年份。`多模态`和`Agent`技术的成熟，正在重塑生产力工具的形态。\n\n- 生成式 AI 市场规模已达 **670 亿美元**，增速 **47%**\n- 超过 **62%** 的企业开发者已使用代码生成助手\n- 预计到 2025 年，超过 **50%** 的企业将部署至少一种 AI Agent 解决方案\n\n> 📈 数据来源：2024 State of AI Report & Global Market Analysis',
+                markdown: true,
+            },
+        ]
+
+        complexBlockStepRef.current = 0
+        setComplexBlockMessages([])
+        const interval = setInterval(() => {
+            if (complexBlockStepRef.current < sequence.length) {
+                const current = sequence[complexBlockStepRef.current]
+                setComplexBlockMessages(prev => [...prev, current])
+                complexBlockStepRef.current += 1
+            } else {
+                clearInterval(interval)
+            }
+        }, 700)
+
+        return () => clearInterval(interval)
+    }, [])
+
     return (
         <>
             <div className="demo-section">
@@ -275,6 +353,16 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
                         <MessageBox
                             role="assistant"
                             blocks={blockMessages}
+                        />
+
+                        {/* blocks 复杂顺序渲染：思考 → 工具 → 思考 → 内容 → 工具 → 思考 → 内容 */}
+                        <MessageBox
+                            role="user"
+                            content="帮我分析一下 2024 年全球 AI 发展趋势"
+                        />
+                        <MessageBox
+                            role="assistant"
+                            blocks={complexBlockMessages}
                         />
                     </div>
                 </div>

@@ -127,17 +127,17 @@ const ReasoningSection: React.FC<{
 };
 
 // ========================================
-// 子组件：工具状态图标
+// 子组件：工具调用状态文本
 // ========================================
 
-const ToolStatusIcon: React.FC<{ tool: ToolCallInfo }> = ({tool}) => {
+const getToolStatusText = (tool: ToolCallInfo): string => {
   if (tool.result === undefined) {
-    return <span className="message-box-tool-calling"/>;
+      return '调用中…';
   }
   if (tool.isError) {
-    return <span className="message-box-tool-status message-box-tool-status--error">✕</span>;
+      return '失败';
   }
-  return <span className="message-box-tool-status message-box-tool-status--success">✓</span>;
+    return '已完成';
 };
 
 // ========================================
@@ -154,9 +154,9 @@ const ToolCallItem: React.FC<{
   if (detail === 'simple') {
     return (
         <div className={`message-box-tool-item${tool.isError ? ' message-box-tool-item--error' : ''}`}>
-          <ToolStatusIcon tool={tool}/>
+            <span className="message-box-tool-label">调用工具</span>
           <span className="message-box-tool-name">{tool.name}</span>
-          {tool.isError && <span className="message-box-tool-badge">错误</span>}
+            <span className="message-box-tool-status-text">{getToolStatusText(tool)}</span>
         </div>
     );
   }
@@ -170,9 +170,9 @@ const ToolCallItem: React.FC<{
             style={hasDetail ? undefined : {cursor: 'default'}}
             type="button"
         >
-          <ToolStatusIcon tool={tool}/>
+            <span className="message-box-tool-label">调用工具</span>
           <span className="message-box-tool-name">{tool.name}</span>
-          {tool.isError && <span className="message-box-tool-badge">错误</span>}
+            <span className="message-box-tool-status-text">{getToolStatusText(tool)}</span>
           {hasDetail && <span className={`message-box-tool-chevron${expanded ? ' expanded' : ''}`}/>}
         </button>
         {expanded && hasDetail && (
