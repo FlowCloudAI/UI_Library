@@ -84,7 +84,7 @@
   word-wrap: break-word;
   white-space: pre-wrap;
   font-size: 0.9rem;
-  line-height: 1.5;
+  line-height: var(--fc-msg-line-height, 1.65);
   position: relative;
 }
 
@@ -126,7 +126,7 @@
    ======================================== */
 
 .message-box-text {
-  line-height: 1;
+  line-height: inherit;
   word-break: break-word;
 }
 
@@ -135,7 +135,7 @@
    ======================================== */
 
 .message-box-markdown {
-  line-height: 1;
+  line-height: inherit;
   word-break: break-word;
 }
 
@@ -148,7 +148,11 @@
 }
 
 .message-box-markdown p {
-  margin: 0.4em 0;
+  margin: 0;
+}
+
+.message-box-markdown p + p {
+  margin-top: 0.45em;
 }
 
 .message-box-markdown h1,
@@ -373,14 +377,18 @@
 .message-box-role-frame {
   border-radius: var(--fc-radius-lg, 0.75rem);
   overflow: hidden;
-  width: 100%;
+  width: fit-content;
+  max-width: min(70%, 100%);
 }
 
-/* 框内气泡恢复灰色背景和水平内边距 */
+/* rolePlaying 模式下，assistant 气泡改为和 user 一样按内容收缩 */
 .message-box-item--assistant .message-box-role-frame .message-box-bubble {
   background: var(--fc-color-bg-secondary, #F5F5F5);
   padding: 0.75rem 1rem;
   border-radius: var(--fc-radius-lg, 0.75rem);
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
 }
 
 /* 暗色适配 */
@@ -795,6 +803,10 @@
 
   .message-box-item--system {
     max-width: 90%;
+  }
+
+  .message-box-role-frame {
+    max-width: min(85%, 100%);
   }
 
   .message-box-bubble {

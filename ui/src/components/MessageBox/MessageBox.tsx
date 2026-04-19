@@ -1,5 +1,6 @@
 import React, {useRef, useState} from 'react';
 import Markdown from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 import './MessageBox.css';
 
@@ -29,6 +30,8 @@ export interface MessageBoxProps {
   children?: React.ReactNode;
   className?: string;
   maxWidth?: string;
+  // 行高，覆盖默认 1.65
+  lineHeight?: number | string;
   // 深度思考
   reasoning?: string;
   reasoningSeconds?: number;
@@ -38,8 +41,8 @@ export interface MessageBoxProps {
   toolCallDetail?: 'simple' | 'verbose';
   // 按顺序渲染的块（优先级高于独立字段）
   blocks?: MessageBoxBlock[];
-  // 角色扮演包裹框（仅对 assistant 生效）
-  rolePlaying?: string;
+  // 角色扮演模式（仅对 assistant 生效）
+  rolePlaying?: boolean;
   // 工具栏回调
   onCopy?: () => void;
   onEdit?: () => void;
@@ -235,6 +238,8 @@ const IconPlay = () => <svg {...sz}>
   <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
 </svg>;
 
+const markdownRemarkPlugins = [remarkGfm, remarkBreaks];
+
 // ========================================
 // 主组件：MessageBox
 // ========================================
@@ -247,6 +252,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
   children,
                                                         className = '',
                                                         maxWidth = '80%',
+                                                        lineHeight,
                                                         reasoning,
                                                         reasoningSeconds,
                                                         reasoningStreaming = false,
@@ -294,7 +300,8 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
   const showTools = toolCalls && toolCalls.length > 0;
   const showContent = content.length > 0 || streaming;
   // assistant 默认撑满父容器，不受 maxWidth 约束
-  const style = role !== 'assistant' && hasNewline ? {maxWidth} : undefined;
+  const style: React.CSSProperties | undefined = role !== 'assistant' && hasNewline ? {maxWidth} : undefined;
+  const bubbleStyle: React.CSSProperties | undefined = lineHeight !== undefined ? {lineHeight} : undefined;
 
   const renderBlocks = () => {
     if (!blocks || blocks.length === 0) return null;
@@ -321,10 +328,12 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
                 {block.markdown ? (
                     <>
                       <div className="message-box-markdown">
-                        <Markdown remarkPlugins={[remarkGfm]} components={{
+                        <Markdown remarkPlugins={markdownRemarkPlugins} components={{
                           pre: ({children}) => <>{children}</>,
                           code: CodeBlock
-                        }}>{block.content}</Markdown>
+                        }}>
+                          {block.content}
+                        </Markdown>
                       </div>
                       {block.streaming && <Cursor/>}
                     </>
@@ -349,11 +358,11 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
   };
 
   const bubble = blocks && blocks.length > 0 ? (
-      <div className="message-box-bubble">
+      <div className="message-box-bubble" style={bubbleStyle}>
         {renderBlocks()}
       </div>
   ) : (
-      <div className="message-box-bubble">
+      <div className="message-box-bubble" style={bubbleStyle}>
         {/* 深度思考区域 */}
         {showReasoning && (
             <ReasoningSection
@@ -378,7 +387,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
               {markdown ? (
                   <>
                     <div className="message-box-markdown">
-                      <Markdown remarkPlugins={[remarkGfm]} components={{
+                      <Markdown remarkPlugins={markdownRemarkPlugins} components={{
                         pre: ({children}) => <>{children}</>,
                         code: CodeBlock
                       }}>{content}</Markdown>
@@ -423,7 +432,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
               <IconRetry/>
             </button>
         )}
-        {role === 'assistant' && rolePlaying !== undefined && (
+        {role === 'assistant' && rolePlaying && (
             <button className="message-box-action" data-tooltip="播放" onClick={onPlay} type="button">
               <IconPlay/>
             </button>
@@ -437,7 +446,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
           style={style}
       >
         <div className="message-box-content">
-          {role === 'assistant' && rolePlaying !== undefined ? (
+          {role === 'assistant' && rolePlaying ? (
               <div className="message-box-role-frame">
                 {bubble}
               </div>

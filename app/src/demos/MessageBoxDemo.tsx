@@ -331,8 +331,9 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
                         />
                         <MessageBox
                             role="assistant"
-                            content="好的，我来扮演苏格拉底。那么，请告诉我——什么是正义？你真的认为你知道吗？"
-                            rolePlaying="苏格拉底"
+                            content="好的，我来扮演苏格拉底。那么，请告诉我——什么是正义？你真的认为你知道吗？
+我们可以通过对话来一步步揭示这个问题的本质。"
+                            rolePlaying={true}
                         />
 
                         {/* 流式正文 */}

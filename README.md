@@ -774,6 +774,7 @@ export type MessageBoxBlock =
 - `streaming?: boolean`：是否正在流式输入，显示闪烁光标
 - `markdown?: boolean`：是否解析 Markdown（包含代码块复制功能）
 - `maxWidth?: string`：多行内容时的宽度约束，默认 `'80%'`（assistant 不受此限制，始终全宽）
+- `lineHeight?: number | string`：行高，覆盖默认 `1.5`
 - `reasoning?: string`：深度思考内容
 - `reasoningSeconds?: number`：已思考秒数
 - `reasoningStreaming?: boolean`：是否正在思考，true 时显示 spinner 并默认展开
