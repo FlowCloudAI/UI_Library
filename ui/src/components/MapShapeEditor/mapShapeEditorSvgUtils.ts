@@ -8,6 +8,7 @@ import type {
 } from './types';
 
 const MIN_VIEWBOX_SCALE = 0.18;
+const MAX_VIEWBOX_SCALE = 2;
 
 export interface CoordinateSnapshot {
     id: string;
@@ -44,14 +45,16 @@ export function clampMapShapeEditorViewBox(
     viewBox: MapShapeEditorViewBox,
     canvas: MapEditorCanvas,
 ): MapShapeEditorViewBox {
-    const width = clamp(viewBox.width, canvas.width * MIN_VIEWBOX_SCALE, canvas.width);
-    const height = clamp(viewBox.height, canvas.height * MIN_VIEWBOX_SCALE, canvas.height);
+    const width = clamp(viewBox.width, canvas.width * MIN_VIEWBOX_SCALE, canvas.width * MAX_VIEWBOX_SCALE);
+    const height = clamp(viewBox.height, canvas.height * MIN_VIEWBOX_SCALE, canvas.height * MAX_VIEWBOX_SCALE);
+    const xMargin = canvas.width - width;
+    const yMargin = canvas.height - height;
 
     return {
         width,
         height,
-        x: clamp(viewBox.x, 0, canvas.width - width),
-        y: clamp(viewBox.y, 0, canvas.height - height),
+        x: clamp(viewBox.x, Math.min(0, xMargin), Math.max(0, xMargin)),
+        y: clamp(viewBox.y, Math.min(0, yMargin), Math.max(0, yMargin)),
     };
 }
 

@@ -4,7 +4,7 @@ import {RollingBox} from "../Box/RollingBox";
 import {Button} from "../Button/Button";
 
 export type AlertType = "success" | "error" | "warning" | "info";
-export type AlertMode = "alert" | "confirm" | "toast";
+export type AlertMode = "alert" | "confirm" | "toast" | "nonInvasive";
 
 export type AlertProps = {
     msg: string;
@@ -58,9 +58,11 @@ export interface AlertProviderProps {
     /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
     background?: string;
     borderColor?: string;
+    /** nonInvasive 模式下弹出条距视口顶部的距离，如 "3rem"、"10px"，默认 "1rem" */
+    offset?: string;
 }
 
-export function AlertProvider({ children, background, borderColor }: AlertProviderProps) {
+export function AlertProvider({children, background, borderColor, offset = "1rem"}: AlertProviderProps) {
     const [alert, setAlert] = useState<AlertProps>({
         msg: "", type: "info", mode: "alert", visible: false, choice: () => {},
     });
@@ -93,11 +95,16 @@ export function AlertProvider({ children, background, borderColor }: AlertProvid
     if (background !== undefined)  (overrideStyle as any)["--alert-bg"]     = background;
     if (borderColor !== undefined) (overrideStyle as any)["--alert-border"] = borderColor;
 
+    const isNonInvasive = alert.mode === "nonInvasive";
+
     return (
         <AlertContext.Provider value={{ showAlert }}>
             {children}
             {alert.visible && (
-                <div className="fc-alert-overlay">
+                <div
+                    className={`fc-alert-overlay${isNonInvasive ? " fc-alert-overlay--non-invasive" : ""}`}
+                    style={isNonInvasive ? {"--alert-offset": offset} as CSSProperties : undefined}
+                >
                     <div
                         className={`fc-alert fc-alert--${alert.type} fc-alert--${alert.mode}`}
                         style={overrideStyle}
@@ -107,7 +114,7 @@ export function AlertProvider({ children, background, borderColor }: AlertProvid
                             <span className="fc-alert__title">提示</span>
                         </div>
                         <RollingBox className="fc-alert__msg">{alert.msg}</RollingBox>
-                        {alert.mode !== "toast" && (
+                        {alert.mode !== "toast" && alert.mode !== "nonInvasive" && (
                             <div className="fc-alert__footer">
                                 {alert.mode === "confirm" && (
                                     <Button variant="secondary" size="sm"

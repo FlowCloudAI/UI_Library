@@ -105,6 +105,10 @@ export interface MapShapeSvgEditorProps {
     className?: string;
     style?: CSSProperties;
     emptyHint?: string;
+    /** SVG 背景图 URL，渲染在所有图形之下，使用 cover 适配模式 */
+    backgroundImage?: string;
+    /** 只读模式：保留缩放/平移，禁用所有编辑交互 */
+    readOnly?: boolean;
     onDraftChange: (draft: MapShapeEditorDraft) => void;
     onSelectedShapeChange: (shapeId: string | null) => void;
     onSelectedLocationChange: (locationId: string | null) => void;
@@ -133,6 +137,8 @@ export function MapShapeSvgEditor({
                                       className,
                                       style,
                                       emptyHint = '请在调用方中传入 draft 与交互状态。',
+                                      backgroundImage,
+                                      readOnly = false,
                                       onDraftChange,
                                       onSelectedShapeChange,
                                       onSelectedLocationChange,
@@ -361,6 +367,7 @@ export function MapShapeSvgEditor({
         event: ReactPointerEvent<SVGPolygonElement>,
         shape: MapShapeDraft,
     ) => {
+        if (readOnly) return;
         if (selectedShapeId !== shape.id) return;
 
         const svgElement = svgRef.current;
@@ -387,6 +394,7 @@ export function MapShapeSvgEditor({
         shapeId: string,
         vertexId: string,
     ) => {
+        if (readOnly) return;
         event.preventDefault();
         event.stopPropagation();
         setPendingPointerState(null);
@@ -399,6 +407,7 @@ export function MapShapeSvgEditor({
         event: ReactPointerEvent<SVGGElement>,
         locationId: string,
     ) => {
+        if (readOnly) return;
         event.preventDefault();
         event.stopPropagation();
         setPendingPointerState({
@@ -414,6 +423,7 @@ export function MapShapeSvgEditor({
         shapeId: string,
         edgeIndex: number,
     ) => {
+        if (readOnly) return;
         event.preventDefault();
         event.stopPropagation();
 
@@ -449,6 +459,20 @@ export function MapShapeSvgEditor({
     };
 
     const handleCanvasPointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
+        if (readOnly) {
+            if (event.button !== 0 && event.button !== 1) return;
+            event.preventDefault();
+            setPendingPointerState(null);
+            setDragState(null);
+            setPanState({
+                startClientX: event.clientX,
+                startClientY: event.clientY,
+                originViewBox: viewBox,
+                hasMoved: false,
+            });
+            return;
+        }
+
         const target = event.target as SVGElement | null;
         const isBackgroundTarget = target?.tagName === 'svg' || target?.tagName === 'rect';
         const targetShapeId = target?.getAttribute('data-shape-id');
@@ -473,6 +497,7 @@ export function MapShapeSvgEditor({
     };
 
     const handleCanvasClick = (event: ReactMouseEvent<SVGSVGElement>) => {
+        if (readOnly) return;
         if (suppressCanvasClickRef.current) {
             suppressCanvasClickRef.current = false;
             return;
@@ -522,6 +547,7 @@ export function MapShapeSvgEditor({
         event: ReactMouseEvent<SVGPolygonElement>,
         shapeId: string,
     ) => {
+        if (readOnly) return;
         event.preventDefault();
         event.stopPropagation();
         onSelectedShapeChange(shapeId);
@@ -555,6 +581,7 @@ export function MapShapeSvgEditor({
         shapeId: string,
         vertexId: string,
     ) => {
+        if (readOnly) return;
         event.preventDefault();
         event.stopPropagation();
         onSelectedShapeChange(shapeId);
@@ -581,6 +608,7 @@ export function MapShapeSvgEditor({
         event: ReactMouseEvent<SVGGElement>,
         locationId: string,
     ) => {
+        if (readOnly) return;
         event.preventDefault();
         event.stopPropagation();
         onSelectedShapeChange(null);
@@ -603,7 +631,7 @@ export function MapShapeSvgEditor({
     };
 
     const handleCanvasContextMenuInternal = (event: ReactMouseEvent<SVGSVGElement>) => {
-        if (!onCanvasContextMenu) return;
+        if (readOnly || !onCanvasContextMenu) return;
 
         event.preventDefault();
         onCanvasContextMenu({
@@ -615,7 +643,11 @@ export function MapShapeSvgEditor({
     };
 
     const zoomPercentage = Math.round((canvas.width / Math.max(viewBox.width, 1)) * 100);
-    const wrapperClassName = ['fc-map-shape-svg-editor', className].filter(Boolean).join(' ');
+    const wrapperClassName = [
+        'fc-map-shape-svg-editor',
+        readOnly ? 'fc-map-shape-svg-editor--readonly' : '',
+        className,
+    ].filter(Boolean).join(' ');
 
     return (
         <div className={wrapperClassName} style={{width, height, ...style}}>
@@ -640,6 +672,17 @@ export function MapShapeSvgEditor({
                     onContextMenu={handleCanvasContextMenuInternal}
                 >
                     <rect x={0} y={0} width={canvas.width} height={canvas.height} fill="transparent"/>
+
+                    {backgroundImage && (
+                        <image
+                            href={backgroundImage}
+                            x={0}
+                            y={0}
+                            width={canvas.width}
+                            height={canvas.height}
+                            preserveAspectRatio="xMidYMid slice"
+                        />
+                    )}
 
                     {draft.shapes.length === 0 && !drawingShape && draft.keyLocations.length === 0 ? (
                         <text
@@ -680,7 +723,7 @@ export function MapShapeSvgEditor({
                                     onContextMenu={event => handleShapeContextMenuInternal(event, shape.id)}
                                 />
 
-                                {isSelected && shape.vertices.map((vertex, index) => {
+                                {isSelected && !readOnly && shape.vertices.map((vertex, index) => {
                                     const edge = getShapeEdge(shape, index);
                                     return (
                                         <g key={`${shape.id}-${vertex.id}`}>
@@ -714,7 +757,7 @@ export function MapShapeSvgEditor({
                         );
                     })}
 
-                    {drawingShape && (
+                    {!readOnly && drawingShape && (
                         <g
                             style={{
                                 ['--fc-mse-shape-fill-color' as const]: drawingShape.fill ?? '#d8ecff',

@@ -1,20 +1,20 @@
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {
     buildPreviewSceneFromDraft,
     createEmptyShapeDraft,
     createInitialMapShapeEditorViewBox,
     createMapShapeEditorLocalId,
     createMockMapShapeEditorApi,
+    type DeckColor,
     getShapeCenter,
-    MapDeckPreview,
     type MapDeckPreviewPickDetail,
-    type MapDeckPreviewRenderOptions,
+    type MapDeckPreviewTooltip,
     type MapKeyLocationDraft,
     type MapPreviewScene,
     type MapShapeDraft,
     type MapShapeEditorDraft,
-    MapShapeSvgEditor,
     type MapShapeSvgEditorShapeContextMenuDetail,
+    MapShapeViewport,
     moveShapeInOrder,
     submitMapShapeScene,
     useContextMenu,
@@ -70,6 +70,8 @@ const demoApi = createMockMapShapeEditorApi({delayMs: 480});
 
 type SubmitStatus = 'idle' | 'frontend_error' | 'saving' | 'backend_error' | 'success';
 type EventLogLevel = 'state' | 'callback' | 'network';
+type DemoKeyLocationRenderMode = 'circle' | 'icon' | 'auto';
+type DemoTooltipMode = 'default' | 'compact' | 'rich' | 'off';
 
 interface EventLogItem {
     id: string;
@@ -147,6 +149,124 @@ function formatDeckPickDetail(detail: MapDeckPreviewPickDetail | null): string {
     return `关键地点 ${detail.object.name} (${detail.object.id}) @ (${detail.x}, ${detail.y})`;
 }
 
+function svgToDataUrl(svg: string): string {
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function buildLocationIcon(type: string, color: string): {
+    url: string;
+    width: number;
+    height: number;
+    anchorX: number;
+    anchorY: number
+} | null {
+    if (type === '出入口') {
+        return {
+            url: svgToDataUrl(`
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
+                    <circle cx="22" cy="22" r="18" fill="${color}" fill-opacity="0.18" />
+                    <path d="M22 6L35 18H29V34H15V18H9L22 6Z" fill="${color}" stroke="#ffffff" stroke-width="2.2" />
+                </svg>
+            `),
+            width: 44,
+            height: 44,
+            anchorX: 22,
+            anchorY: 22,
+        };
+    }
+
+    if (type === '设备点') {
+        return {
+            url: svgToDataUrl(`
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
+                    <circle cx="22" cy="22" r="17" fill="${color}" fill-opacity="0.16" />
+                    <rect x="12" y="12" width="20" height="20" rx="6" fill="${color}" stroke="#ffffff" stroke-width="2.2" />
+                    <path d="M18 22H26M22 18V26" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" />
+                </svg>
+            `),
+            width: 44,
+            height: 44,
+            anchorX: 22,
+            anchorY: 22,
+        };
+    }
+
+    return null;
+}
+
+function enhancePreviewScene(scene: MapPreviewScene, iconMarkerSize: number): MapPreviewScene {
+    return {
+        ...scene,
+        keyLocations: scene.keyLocations.map(location => {
+            const locationColor = deckColorToHex(location.color);
+            const icon = buildLocationIcon(location.type, locationColor);
+            return {
+                ...location,
+                icon,
+                iconSize: icon ? iconMarkerSize : undefined,
+            };
+        }),
+    };
+}
+
+function buildDemoTooltip(detail: MapDeckPreviewPickDetail, tooltipMode: DemoTooltipMode): MapDeckPreviewTooltip | string | null {
+    if (tooltipMode === 'off' || detail.kind === 'empty') {
+        return null;
+    }
+
+    if (tooltipMode === 'default') {
+        return null;
+    }
+
+    if (detail.kind === 'shape') {
+        if (tooltipMode === 'compact') {
+            return `图形：${detail.object.name}\n顶点数：${detail.object.polygon.length}`;
+        }
+
+        return {
+            html: `
+                <div style="display:flex;flex-direction:column;gap:4px;min-width:170px;">
+                    <strong>${detail.object.name}</strong>
+                    <span>ID：${detail.object.id}</span>
+                    <span>顶点数：${detail.object.polygon.length}</span>
+                    <span>填充色：${deckColorToHex(detail.object.fillColor)}</span>
+                </div>
+            `,
+            style: {
+                backgroundColor: 'rgba(16, 24, 40, 0.92)',
+                color: '#ffffff',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                boxShadow: '0 12px 32px rgba(15, 23, 42, 0.28)',
+            },
+        };
+    }
+
+    if (tooltipMode === 'compact') {
+        return `关键地点：${detail.object.name}\n类型：${detail.object.type}`;
+    }
+
+    return {
+        html: `
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:180px;">
+                <strong>${detail.object.name}</strong>
+                <span>类型：${detail.object.type}</span>
+                <span>关联图形：${detail.object.shapeId ?? '未关联'}</span>
+                <span>坐标：${Math.round(detail.object.position[0])}, ${Math.round(detail.object.position[1])}</span>
+                <span>图标：${detail.object.icon ? 'SVG 图标' : '圆点'}</span>
+            </div>
+        `,
+        style: {
+            backgroundColor: 'rgba(8, 15, 30, 0.94)',
+            color: '#f8fafc',
+            borderRadius: '12px',
+            padding: '10px 12px',
+            border: '1px solid rgba(148, 163, 184, 0.35)',
+            boxShadow: '0 14px 30px rgba(15, 23, 42, 0.32)',
+        },
+    };
+}
+
 function ButtonLike({text, onClick, danger = false}: ButtonLikeProps) {
     return (
         <button
@@ -168,22 +288,24 @@ export function MapShapeEditorDemo() {
     const [drawingShape, setDrawingShape] = useState<MapShapeDraft | null>(null);
     const [viewBox, setViewBox] = useState(() => createInitialMapShapeEditorViewBox(DEMO_CANVAS));
     const [preview, setPreview] = useState<MapPreviewScene | null>(DEMO_PREVIEW);
+    const [viewportMode, setViewportMode] = useState<'edit' | 'preview'>('edit');
     const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
     const [submitMessage, setSubmitMessage] = useState('尚未触发提交。');
     const [forcedInvalidShapeIds, setForcedInvalidShapeIds] = useState<string[]>([]);
     const [forcedInvalidLocationIds, setForcedInvalidLocationIds] = useState<string[]>([]);
     const [deckHoverDetail, setDeckHoverDetail] = useState<MapDeckPreviewPickDetail | null>(null);
     const [deckClickDetail, setDeckClickDetail] = useState<MapDeckPreviewPickDetail | null>(null);
-    const [deckRenderOptions, setDeckRenderOptions] = useState<MapDeckPreviewRenderOptions>({
-        polygonLineWidth: 2,
-        locationRadius: 8,
-        locationStrokeColor: [255, 255, 255, 255],
-        labelFontSize: 13,
-        labelColor: [38, 43, 56, 255],
-        labelFontFamily: '"Microsoft YaHei UI", sans-serif',
-        showLabels: true,
-        showLocationStroke: true,
-    });
+    const [polygonLineWidth, setPolygonLineWidth] = useState(2);
+    const [locationRadius, setLocationRadius] = useState(8);
+    const [locationStrokeColor, setLocationStrokeColor] = useState<DeckColor>([255, 255, 255, 255]);
+    const [showLocationStroke, setShowLocationStroke] = useState(true);
+    const [keyLocationRenderMode, setKeyLocationRenderMode] = useState<DemoKeyLocationRenderMode>('auto');
+    const [iconMarkerSize, setIconMarkerSize] = useState(30);
+    const [labelFontSize, setLabelFontSize] = useState(13);
+    const [labelColor, setLabelColor] = useState<DeckColor>([38, 43, 56, 255]);
+    const [labelFontFamily, setLabelFontFamily] = useState('"Microsoft YaHei UI", sans-serif');
+    const [showLabels, setShowLabels] = useState(true);
+    const [tooltipMode, setTooltipMode] = useState<DemoTooltipMode>('rich');
     const [eventLogs, setEventLogs] = useState<EventLogItem[]>([
         createLog('state', 'demo 已初始化。你可以从这里观察所有受控状态与回调能力。'),
     ]);
@@ -207,6 +329,10 @@ export function MapShapeEditorDemo() {
     const selectedShapeIssues = validationResult.shapeResults.find(result => result.shapeId === selectedShapeId)?.issues ?? [];
     const selectedLocationIssues = validationResult.keyLocationResults.find(result => result.keyLocationId === selectedLocationId)?.issues ?? [];
     const zoomPercentage = Math.round((DEMO_CANVAS.width / Math.max(viewBox.width, 1)) * 100);
+    const previewScene = useMemo(
+        () => (preview ? enhancePreviewScene(preview, iconMarkerSize) : null),
+        [preview, iconMarkerSize],
+    );
 
     const updateDraft = (nextDraft: MapShapeEditorDraft) => {
         setDraft(nextDraft);
@@ -232,6 +358,7 @@ export function MapShapeEditorDemo() {
         setViewBox(nextViewBox);
         pushLog('callback', `onViewBoxChange：${formatViewBoxValue(nextViewBox.x)}, ${formatViewBoxValue(nextViewBox.y)}, ${formatViewBoxValue(nextViewBox.width)}, ${formatViewBoxValue(nextViewBox.height)}`);
     };
+
     const deleteShape = (shapeId: string) => {
         const removedLocationIds = new Set(
             draft.keyLocations.filter(location => location.shapeId === shapeId).map(location => location.id),
@@ -270,14 +397,8 @@ export function MapShapeEditorDemo() {
     const moveShapeBackward = (shapeId: string) => {
         setDraft(currentDraft => {
             const currentIndex = currentDraft.shapes.findIndex(shape => shape.id === shapeId);
-            if (currentIndex <= 0) {
-                return currentDraft;
-            }
-
-            return {
-                ...currentDraft,
-                shapes: moveShapeInOrder(currentDraft.shapes, shapeId, currentIndex - 1),
-            };
+            if (currentIndex <= 0) return currentDraft;
+            return {...currentDraft, shapes: moveShapeInOrder(currentDraft.shapes, shapeId, currentIndex - 1)};
         });
         pushLog('state', `调用方将图形下移一层：${shapeId}`);
     };
@@ -285,14 +406,8 @@ export function MapShapeEditorDemo() {
     const moveShapeForward = (shapeId: string) => {
         setDraft(currentDraft => {
             const currentIndex = currentDraft.shapes.findIndex(shape => shape.id === shapeId);
-            if (currentIndex === -1 || currentIndex >= currentDraft.shapes.length - 1) {
-                return currentDraft;
-            }
-
-            return {
-                ...currentDraft,
-                shapes: moveShapeInOrder(currentDraft.shapes, shapeId, currentIndex + 1),
-            };
+            if (currentIndex === -1 || currentIndex >= currentDraft.shapes.length - 1) return currentDraft;
+            return {...currentDraft, shapes: moveShapeInOrder(currentDraft.shapes, shapeId, currentIndex + 1)};
         });
         pushLog('state', `调用方将图形上移一层：${shapeId}`);
     };
@@ -300,14 +415,8 @@ export function MapShapeEditorDemo() {
     const moveShapeToBack = (shapeId: string) => {
         setDraft(currentDraft => {
             const currentIndex = currentDraft.shapes.findIndex(shape => shape.id === shapeId);
-            if (currentIndex <= 0) {
-                return currentDraft;
-            }
-
-            return {
-                ...currentDraft,
-                shapes: moveShapeInOrder(currentDraft.shapes, shapeId, 0),
-            };
+            if (currentIndex <= 0) return currentDraft;
+            return {...currentDraft, shapes: moveShapeInOrder(currentDraft.shapes, shapeId, 0)};
         });
         pushLog('state', `调用方将图形移到底层：${shapeId}`);
     };
@@ -315,13 +424,10 @@ export function MapShapeEditorDemo() {
     const moveShapeToFront = (shapeId: string) => {
         setDraft(currentDraft => {
             const currentIndex = currentDraft.shapes.findIndex(shape => shape.id === shapeId);
-            if (currentIndex === -1 || currentIndex >= currentDraft.shapes.length - 1) {
-                return currentDraft;
-            }
-
+            if (currentIndex === -1 || currentIndex >= currentDraft.shapes.length - 1) return currentDraft;
             return {
                 ...currentDraft,
-                shapes: moveShapeInOrder(currentDraft.shapes, shapeId, currentDraft.shapes.length - 1),
+                shapes: moveShapeInOrder(currentDraft.shapes, shapeId, currentDraft.shapes.length - 1)
             };
         });
         pushLog('state', `调用方将图形移到顶层：${shapeId}`);
@@ -349,10 +455,7 @@ export function MapShapeEditorDemo() {
             shapeId: relatedShape?.id ?? null,
         };
 
-        updateDraft({
-            ...draft,
-            keyLocations: [...draft.keyLocations, nextLocation],
-        });
+        updateDraft({...draft, keyLocations: [...draft.keyLocations, nextLocation]});
         updateSelectedShapeId(relatedShape?.id ?? null);
         updateSelectedLocationId(nextLocation.id);
     };
@@ -364,22 +467,24 @@ export function MapShapeEditorDemo() {
         setDrawingShape(null);
         setViewBox(createInitialMapShapeEditorViewBox(DEMO_CANVAS));
         setPreview(DEMO_PREVIEW);
+        setViewportMode('edit');
         setSubmitStatus('idle');
         setSubmitMessage('已重置为 demo 初始状态。');
         setForcedInvalidShapeIds([]);
         setForcedInvalidLocationIds([]);
         setDeckHoverDetail(null);
         setDeckClickDetail(null);
-        setDeckRenderOptions({
-            polygonLineWidth: 2,
-            locationRadius: 8,
-            locationStrokeColor: [255, 255, 255, 255],
-            labelFontSize: 13,
-            labelColor: [38, 43, 56, 255],
-            labelFontFamily: '"Microsoft YaHei UI", sans-serif',
-            showLabels: true,
-            showLocationStroke: true,
-        });
+        setPolygonLineWidth(2);
+        setLocationRadius(8);
+        setLocationStrokeColor([255, 255, 255, 255]);
+        setShowLocationStroke(true);
+        setKeyLocationRenderMode('auto');
+        setIconMarkerSize(30);
+        setLabelFontSize(13);
+        setLabelColor([38, 43, 56, 255]);
+        setLabelFontFamily('"Microsoft YaHei UI", sans-serif');
+        setShowLabels(true);
+        setTooltipMode('rich');
         pushLog('state', '调用方重置了所有状态。');
     };
 
@@ -392,28 +497,18 @@ export function MapShapeEditorDemo() {
         pushLog('network', '调用方使用 buildPreviewSceneFromDraft 直接生成了展示层 scene。');
     };
 
-    const handleSelectedShapeFieldChange = (
-        field: 'name' | 'fill' | 'stroke',
-        value: string,
-    ) => {
+    const handleSelectedShapeFieldChange = (field: 'name' | 'fill' | 'stroke', value: string) => {
         if (!selectedShapeId) return;
-
         updateDraft({
             ...draft,
             shapes: draft.shapes.map(shape => (
-                shape.id === selectedShapeId
-                    ? {...shape, [field]: value}
-                    : shape
+                shape.id === selectedShapeId ? {...shape, [field]: value} : shape
             )),
         });
     };
 
-    const handleSelectedLocationFieldChange = (
-        field: 'name' | 'type' | 'shapeId',
-        value: string,
-    ) => {
+    const handleSelectedLocationFieldChange = (field: 'name' | 'type' | 'shapeId', value: string) => {
         if (!selectedLocationId) return;
-
         updateDraft({
             ...draft,
             keyLocations: draft.keyLocations.map(location => (
@@ -424,16 +519,9 @@ export function MapShapeEditorDemo() {
         });
     };
 
-    const handleDrawingShapeFieldChange = (
-        field: 'name' | 'fill' | 'stroke',
-        value: string,
-    ) => {
+    const handleDrawingShapeFieldChange = (field: 'name' | 'fill' | 'stroke', value: string) => {
         if (!drawingShape) return;
-
-        updateDrawingShape({
-            ...drawingShape,
-            [field]: value,
-        });
+        updateDrawingShape({...drawingShape, [field]: value});
     };
 
     const handleSubmit = async () => {
@@ -468,23 +556,29 @@ export function MapShapeEditorDemo() {
 
     const toggleForcedShapeInvalid = (shapeId: string) => {
         setForcedInvalidShapeIds(currentIds => (
-            currentIds.includes(shapeId)
-                ? currentIds.filter(id => id !== shapeId)
-                : [...currentIds, shapeId]
+            currentIds.includes(shapeId) ? currentIds.filter(id => id !== shapeId) : [...currentIds, shapeId]
         ));
         pushLog('state', `调用方切换 invalidShapeIds：${shapeId}`);
     };
 
     const toggleForcedLocationInvalid = (locationId: string) => {
         setForcedInvalidLocationIds(currentIds => (
-            currentIds.includes(locationId)
-                ? currentIds.filter(id => id !== locationId)
-                : [...currentIds, locationId]
+            currentIds.includes(locationId) ? currentIds.filter(id => id !== locationId) : [...currentIds, locationId]
         ));
         pushLog('state', `调用方切换 invalidKeyLocationIds：${locationId}`);
     };
 
-    const editorDeleteProps = {
+    const svgProps = {
+        draft,
+        selectedShapeId,
+        selectedLocationId,
+        drawingShape,
+        invalidShapeIds,
+        invalidKeyLocationIds,
+        onDraftChange: updateDraft,
+        onSelectedShapeChange: updateSelectedShapeId,
+        onSelectedLocationChange: updateSelectedLocationId,
+        onDrawingShapeChange: updateDrawingShape,
         onRequestShapeDelete: (shapeId: string) => {
             pushLog('callback', `onRequestShapeDelete：${shapeId}`);
             deleteShape(shapeId);
@@ -500,83 +594,99 @@ export function MapShapeEditorDemo() {
         onShapeContextMenu: (detail: MapShapeSvgEditorShapeContextMenuDetail) => {
             pushLog('callback', `onShapeContextMenu：${detail.shapeId}`);
             showContextMenu(detail.nativeEvent, [
-                {
-                    label: '上移一层',
-                    disabled: detail.isAtFront,
-                    onClick: () => moveShapeForward(detail.shapeId),
-                },
-                {
-                    label: '下移一层',
-                    disabled: detail.isAtBack,
-                    onClick: () => moveShapeBackward(detail.shapeId),
-                },
-                {
-                    label: '移到顶层',
-                    disabled: detail.isAtFront,
-                    onClick: () => moveShapeToFront(detail.shapeId),
-                },
-                {
-                    label: '移到底层',
-                    disabled: detail.isAtBack,
-                    onClick: () => moveShapeToBack(detail.shapeId),
-                },
+                {label: '上移一层', disabled: detail.isAtFront, onClick: () => moveShapeForward(detail.shapeId)},
+                {label: '下移一层', disabled: detail.isAtBack, onClick: () => moveShapeBackward(detail.shapeId)},
+                {label: '移到顶层', disabled: detail.isAtFront, onClick: () => moveShapeToFront(detail.shapeId)},
+                {label: '移到底层', disabled: detail.isAtBack, onClick: () => moveShapeToBack(detail.shapeId)},
                 {type: 'divider'},
+                {label: '删除图形', danger: true, onClick: () => deleteShape(detail.shapeId)},
                 {
-                    label: '删除图形',
-                    danger: true,
-                    onClick: () => deleteShape(detail.shapeId),
-                },
-                {
-                    label: '选中图形',
-                    onClick: () => {
+                    label: '选中图形', onClick: () => {
                         updateSelectedShapeId(detail.shapeId);
                         updateSelectedLocationId(null);
-                    },
+                    }
                 },
             ]);
         },
         onVertexContextMenu: (detail: { nativeEvent: MouseEvent; shapeId: string; vertexId: string }) => {
             pushLog('callback', `onVertexContextMenu：${detail.shapeId} / ${detail.vertexId}`);
             showContextMenu(detail.nativeEvent, [
-                {
-                    label: '删除顶点',
-                    danger: true,
-                    onClick: () => deleteVertex(detail.shapeId, detail.vertexId),
-                },
+                {label: '删除顶点', danger: true, onClick: () => deleteVertex(detail.shapeId, detail.vertexId)},
             ]);
         },
         onLocationContextMenu: (detail: { nativeEvent: MouseEvent; locationId: string }) => {
             pushLog('callback', `onLocationContextMenu：${detail.locationId}`);
             showContextMenu(detail.nativeEvent, [
+                {label: '删除关键地点', danger: true, onClick: () => deleteLocation(detail.locationId)},
                 {
-                    label: '删除关键地点',
-                    danger: true,
-                    onClick: () => deleteLocation(detail.locationId),
-                },
-                {
-                    label: '选中关键地点',
-                    onClick: () => {
+                    label: '选中关键地点', onClick: () => {
                         updateSelectedShapeId(null);
                         updateSelectedLocationId(detail.locationId);
-                    },
+                    }
                 },
             ]);
         },
+        onCanvasContextMenu: (detail: { nativeEvent: MouseEvent; clientX: number; clientY: number }) => {
+            pushLog('callback', `onCanvasContextMenu：client(${detail.clientX}, ${detail.clientY})`);
+            showContextMenu(detail.nativeEvent, [
+                {
+                    label: '清空选中态', onClick: () => {
+                        updateSelectedShapeId(null);
+                        updateSelectedLocationId(null);
+                    }
+                },
+                {label: '新增绘制图形', onClick: handleAddShape},
+                {label: '新增关键地点（居中落点）', onClick: handleAddLocation},
+            ]);
+        },
     };
+
+    const deckProps = {
+        showLabels,
+        keyLocationRenderMode,
+        polygonLayerProps: {lineWidthMinPixels: polygonLineWidth},
+        scatterplotLayerProps: {
+            getRadius: locationRadius,
+            getLineColor: () => locationStrokeColor,
+            stroked: showLocationStroke,
+        },
+        iconLayerProps: {
+            getSize: iconMarkerSize,
+        },
+        textLayerProps: {
+            getSize: labelFontSize,
+            getColor: () => labelColor,
+            fontFamily: labelFontFamily,
+        },
+        disableTooltip: tooltipMode === 'off',
+        getTooltip: (detail: MapDeckPreviewPickDetail) => buildDemoTooltip(detail, tooltipMode),
+        onDeckHover: (detail: MapDeckPreviewPickDetail) => setDeckHoverDetail(detail),
+        onDeckClick: (detail: MapDeckPreviewPickDetail) => {
+            setDeckClickDetail(detail);
+            pushLog('callback', `onDeckClick：${formatDeckPickDetail(detail)}`);
+        },
+        onShapeClick: (detail: MapDeckPreviewPickDetail) => {
+            if (detail.kind === 'shape') pushLog('callback', `onShapeClick：${detail.object.name}`);
+        },
+        onKeyLocationClick: (detail: MapDeckPreviewPickDetail) => {
+            if (detail.kind === 'keyLocation') pushLog('callback', `onKeyLocationClick：${detail.object.name}`);
+        },
+    };
+
     return (
         <div className="demo-section fc-map-shape-editor" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
-            <h4>地图轮廓编辑器（接口上限展台）</h4>
+            <h4>地图轮廓编辑器（MapShapeViewport 叠层视口）</h4>
             <p style={{margin: 0, color: 'var(--fc-color-text-secondary)', fontSize: 'var(--fc-font-size-sm)'}}>
-                这个 demo 不再模拟一个固定业务页，而是尽量把 `MapShapeSvgEditor` 的可控状态、可接管逻辑和可观察回调全部摊开。
+                SVG 编辑层与 deck 展示层叠在同一视口。编辑模式下 deck 同步 viewBox、禁用 tooltip；预览模式下只显示 deck、开启
+                tooltip。
             </p>
 
+            {/* 总控台 */}
             <div className="fc-map-shape-editor__panel">
                 <div className="fc-map-shape-editor__panel-header">
                     <div>
                         <h3 className="fc-map-shape-editor__panel-title">总控台</h3>
-                        <p className="fc-map-shape-editor__panel-subtitle">
-                            这里集中展示调用方可控的状态与策略切换。
-                        </p>
+                        <p className="fc-map-shape-editor__panel-subtitle">所有受控状态与策略切换。</p>
                     </div>
                 </div>
                 <div className="fc-map-shape-editor__sidebar-body">
@@ -587,20 +697,36 @@ export function MapShapeEditorDemo() {
                                 重置全部状态
                             </button>
                             <button type="button" className="fc-map-shape-editor__chip" style={{width: 'auto'}}
-                                    onClick={() => updateViewBox(createInitialMapShapeEditorViewBox(DEMO_CANVAS))}>
+                                    onClick={() => setViewBox(createInitialMapShapeEditorViewBox(DEMO_CANVAS))}>
                                 重置视图
                             </button>
-                            <button type="button" className="fc-map-shape-editor__chip" style={{width: 'auto'}}
-                                    onClick={drawingShape ? () => updateDrawingShape(null) : handleAddShape}>
-                                {drawingShape ? '取消绘制图形' : '开始绘制图形'}
+                            <button
+                                type="button"
+                                className="fc-map-shape-editor__chip"
+                                style={{width: 'auto', fontWeight: 600}}
+                                onClick={() => {
+                                    const next = viewportMode === 'edit' ? 'preview' : 'edit';
+                                    setViewportMode(next);
+                                    pushLog('state', `切换视口模式：${next}`);
+                                }}
+                            >
+                                {viewportMode === 'edit' ? '切换到预览模式' : '切换到编辑模式'}
                             </button>
-                            <button type="button" className="fc-map-shape-editor__chip" style={{width: 'auto'}}
-                                    onClick={handleAddLocation}>
-                                新增关键地点
-                            </button>
+                            {viewportMode === 'edit' && (
+                                <>
+                                    <button type="button" className="fc-map-shape-editor__chip" style={{width: 'auto'}}
+                                            onClick={drawingShape ? () => updateDrawingShape(null) : handleAddShape}>
+                                        {drawingShape ? '取消绘制图形' : '开始绘制图形'}
+                                    </button>
+                                    <button type="button" className="fc-map-shape-editor__chip" style={{width: 'auto'}}
+                                            onClick={handleAddLocation}>
+                                        新增关键地点
+                                    </button>
+                                </>
+                            )}
                             <button type="button" className="fc-map-shape-editor__chip" style={{width: 'auto'}}
                                     onClick={handleRebuildPreviewFromDraft}>
-                                用草稿直接刷新预览
+                                用草稿刷新展示层
                             </button>
                             <button type="button" className="fc-map-shape-editor__chip" style={{width: 'auto'}}
                                     onClick={() => void handleSubmit()}>
@@ -608,12 +734,11 @@ export function MapShapeEditorDemo() {
                             </button>
                         </div>
 
-                        <div className="fc-map-shape-editor__meta-row">
-                            <span>右键菜单</span>
-                            <strong>图形支持调序与删除，顶点 / 关键地点支持删除</strong>
-                        </div>
-
                         <div className="fc-map-shape-editor__stats">
+                            <div className="fc-map-shape-editor__stat">
+                                <span className="fc-map-shape-editor__stat-label">视口模式</span>
+                                <strong className="fc-map-shape-editor__stat-value">{viewportMode}</strong>
+                            </div>
                             <div className="fc-map-shape-editor__stat">
                                 <span className="fc-map-shape-editor__stat-label">图形数量</span>
                                 <strong className="fc-map-shape-editor__stat-value">{draft.shapes.length}</strong>
@@ -631,67 +756,38 @@ export function MapShapeEditorDemo() {
                                 <strong className="fc-map-shape-editor__stat-value">{selectedShapeId ?? 'null'}</strong>
                             </div>
                             <div className="fc-map-shape-editor__stat">
-                                <span className="fc-map-shape-editor__stat-label">选中地点</span>
-                                <strong
-                                    className="fc-map-shape-editor__stat-value">{selectedLocationId ?? 'null'}</strong>
-                            </div>
-                            <div className="fc-map-shape-editor__stat">
                                 <span className="fc-map-shape-editor__stat-label">绘制状态</span>
-                                <strong
-                                    className="fc-map-shape-editor__stat-value">{drawingShape ? `${drawingShape.vertices.length} 点` : '关闭'}</strong>
+                                <strong className="fc-map-shape-editor__stat-value">
+                                    {drawingShape ? `${drawingShape.vertices.length} 点` : '关闭'}
+                                </strong>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            {/* 主视口 + 侧边栏 */}
             <div className="fc-map-shape-editor__workspace"
                  style={{gridTemplateColumns: 'minmax(0, 1.4fr) minmax(360px, 1fr)'}}>
                 <section className="fc-map-shape-editor__panel">
                     <div className="fc-map-shape-editor__panel-header">
                         <div>
-                            <h3 className="fc-map-shape-editor__panel-title">MapShapeSvgEditor</h3>
+                            <h3 className="fc-map-shape-editor__panel-title">MapShapeViewport</h3>
                             <p className="fc-map-shape-editor__panel-subtitle">
-                                右键空白区可触发 `onCanvasContextMenu`。右键图形可调整渲染顺序，顶点与关键地点仍由调用方接管删除逻辑。
+                                {viewportMode === 'edit'
+                                    ? 'SVG 编辑层叠在 deck 层上方。右键图形可调序，右键空白区可新增。'
+                                    : '纯 deck 展示模式，悬浮可查看 tooltip，无编辑交互。'}
                             </p>
                         </div>
                     </div>
-
-                    <MapShapeSvgEditor
+                    <MapShapeViewport
+                        mode={viewportMode}
                         canvas={DEMO_CANVAS}
-                        draft={draft}
-                        selectedShapeId={selectedShapeId}
-                        selectedLocationId={selectedLocationId}
-                        drawingShape={drawingShape}
+                        scene={previewScene}
                         viewBox={viewBox}
-                        invalidShapeIds={invalidShapeIds}
-                        invalidKeyLocationIds={invalidKeyLocationIds}
-                        onDraftChange={updateDraft}
-                        onSelectedShapeChange={updateSelectedShapeId}
-                        onSelectedLocationChange={updateSelectedLocationId}
-                        onDrawingShapeChange={updateDrawingShape}
                         onViewBoxChange={updateViewBox}
-                        onCanvasContextMenu={detail => {
-                            pushLog('callback', `onCanvasContextMenu：client(${detail.clientX}, ${detail.clientY})`);
-                            showContextMenu(detail.nativeEvent, [
-                                {
-                                    label: '清空选中态',
-                                    onClick: () => {
-                                        updateSelectedShapeId(null);
-                                        updateSelectedLocationId(null);
-                                    },
-                                },
-                                {
-                                    label: '新增绘制图形',
-                                    onClick: handleAddShape,
-                                },
-                                {
-                                    label: '新增关键地点（居中落点）',
-                                    onClick: handleAddLocation,
-                                },
-                            ]);
-                        }}
-                        {...editorDeleteProps}
+                        svgProps={svgProps}
+                        deckProps={deckProps}
                     />
                 </section>
 
@@ -700,12 +796,13 @@ export function MapShapeEditorDemo() {
                         <div>
                             <h3 className="fc-map-shape-editor__panel-title">调用方状态区</h3>
                             <p className="fc-map-shape-editor__panel-subtitle">
-                                所有下面这些内容都不在 SVG 组件内部，而是由调用方自由组合。
+                                所有这些内容都在视口组件外部，由调用方自由组合。
                             </p>
                         </div>
                     </div>
 
                     <div className="fc-map-shape-editor__sidebar-body">
+                        {/* 提交与校验 */}
                         <div className="fc-map-shape-editor__section">
                             <h4 className="fc-map-shape-editor__section-title">提交与校验</h4>
                             <div className="fc-map-shape-editor__status-row">
@@ -723,14 +820,12 @@ export function MapShapeEditorDemo() {
                                     'fc-map-shape-editor__status',
                                     submitStatus === 'success' ? 'fc-map-shape-editor__status--success' : '',
                                     submitStatus === 'saving' ? 'fc-map-shape-editor__status--saving' : '',
-                                    submitStatus === 'frontend_error' || submitStatus === 'backend_error'
-                                        ? 'fc-map-shape-editor__status--error'
-                                        : '',
+                                    submitStatus === 'frontend_error' || submitStatus === 'backend_error' ? 'fc-map-shape-editor__status--error' : '',
                                 ].filter(Boolean).join(' ')}>
                                     {submitMessage}
                                 </div>
                             </div>
-                            {validationResult.issues.length > 0 ? (
+                            {validationResult.issues.length > 0 && (
                                 <div className="fc-map-shape-editor__issue-list">
                                     {validationResult.issues.map(issue => (
                                         <div key={`${issue.code}-${issue.message}`}
@@ -739,146 +834,86 @@ export function MapShapeEditorDemo() {
                                         </div>
                                     ))}
                                 </div>
-                            ) : null}
+                            )}
                         </div>
 
-                        <div className="fc-map-shape-editor__section">
-                            <h4 className="fc-map-shape-editor__section-title">视窗参数</h4>
-                            <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-map-viewbox-x">viewBox.x</label>
-                                <input
-                                    id="demo-map-viewbox-x"
-                                    type="number"
-                                    value={viewBox.x}
-                                    onChange={event => updateViewBox({...viewBox, x: Number(event.target.value)})}
-                                />
-                            </div>
-                            <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-map-viewbox-y">viewBox.y</label>
-                                <input
-                                    id="demo-map-viewbox-y"
-                                    type="number"
-                                    value={viewBox.y}
-                                    onChange={event => updateViewBox({...viewBox, y: Number(event.target.value)})}
-                                />
-                            </div>
-                            <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-map-viewbox-width">viewBox.width</label>
-                                <input
-                                    id="demo-map-viewbox-width"
-                                    type="number"
-                                    value={viewBox.width}
-                                    onChange={event => updateViewBox({...viewBox, width: Number(event.target.value)})}
-                                />
-                            </div>
-                            <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-map-viewbox-height">viewBox.height</label>
-                                <input
-                                    id="demo-map-viewbox-height"
-                                    type="number"
-                                    value={viewBox.height}
-                                    onChange={event => updateViewBox({...viewBox, height: Number(event.target.value)})}
-                                />
-                            </div>
-                        </div>
-
+                        {/* Deck 渲染参数 */}
                         <div className="fc-map-shape-editor__section">
                             <h4 className="fc-map-shape-editor__section-title">Deck 渲染参数</h4>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-line-width">polygonLineWidth</label>
-                                <input
-                                    id="demo-deck-line-width"
-                                    type="number"
-                                    value={deckRenderOptions.polygonLineWidth ?? 2}
-                                    onChange={event => setDeckRenderOptions(current => ({
-                                        ...current,
-                                        polygonLineWidth: Number(event.target.value),
-                                    }))}
-                                />
+                                <label htmlFor="demo-deck-marker-mode">keyLocationRenderMode</label>
+                                <select id="demo-deck-marker-mode" value={keyLocationRenderMode}
+                                        onChange={event => setKeyLocationRenderMode(event.target.value as DemoKeyLocationRenderMode)}>
+                                    <option value="auto">auto（有 icon 就走图标）</option>
+                                    <option value="icon">icon（强制图标）</option>
+                                    <option value="circle">circle（强制圆点）</option>
+                                </select>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-location-radius">locationRadius</label>
-                                <input
-                                    id="demo-deck-location-radius"
-                                    type="number"
-                                    value={deckRenderOptions.locationRadius ?? 8}
-                                    onChange={event => setDeckRenderOptions(current => ({
-                                        ...current,
-                                        locationRadius: Number(event.target.value),
-                                    }))}
-                                />
+                                <label htmlFor="demo-deck-line-width">polygonLayerProps.lineWidthMinPixels</label>
+                                <input id="demo-deck-line-width" type="number" value={polygonLineWidth}
+                                       onChange={event => setPolygonLineWidth(Number(event.target.value))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-location-stroke">locationStrokeColor</label>
-                                <input
-                                    id="demo-deck-location-stroke"
-                                    value={deckColorToHex(deckRenderOptions.locationStrokeColor ?? [255, 255, 255, 255])}
-                                    onChange={event => setDeckRenderOptions(current => ({
-                                        ...current,
-                                        locationStrokeColor: hexToDeckColor(event.target.value, 255),
-                                    }))}
-                                />
+                                <label htmlFor="demo-deck-location-radius">scatterplotLayerProps.getRadius</label>
+                                <input id="demo-deck-location-radius" type="number" value={locationRadius}
+                                       onChange={event => setLocationRadius(Number(event.target.value))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-label-size">labelFontSize</label>
-                                <input
-                                    id="demo-deck-label-size"
-                                    type="number"
-                                    value={deckRenderOptions.labelFontSize ?? 13}
-                                    onChange={event => setDeckRenderOptions(current => ({
-                                        ...current,
-                                        labelFontSize: Number(event.target.value),
-                                    }))}
-                                />
+                                <label htmlFor="demo-deck-location-stroke">scatterplotLayerProps.getLineColor</label>
+                                <input id="demo-deck-location-stroke" value={deckColorToHex(locationStrokeColor)}
+                                       onChange={event => setLocationStrokeColor(hexToDeckColor(event.target.value, 255))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-label-color">labelColor</label>
-                                <input
-                                    id="demo-deck-label-color"
-                                    value={deckColorToHex(deckRenderOptions.labelColor ?? [38, 43, 56, 255])}
-                                    onChange={event => setDeckRenderOptions(current => ({
-                                        ...current,
-                                        labelColor: hexToDeckColor(event.target.value, 255),
-                                    }))}
-                                />
+                                <label htmlFor="demo-deck-icon-size">iconLayerProps.getSize</label>
+                                <input id="demo-deck-icon-size" type="number" value={iconMarkerSize}
+                                       onChange={event => setIconMarkerSize(Number(event.target.value))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-label-font">labelFontFamily</label>
-                                <input
-                                    id="demo-deck-label-font"
-                                    value={deckRenderOptions.labelFontFamily ?? '"Microsoft YaHei UI", sans-serif'}
-                                    onChange={event => setDeckRenderOptions(current => ({
-                                        ...current,
-                                        labelFontFamily: event.target.value,
-                                    }))}
-                                />
+                                <label htmlFor="demo-deck-label-size">textLayerProps.getSize</label>
+                                <input id="demo-deck-label-size" type="number" value={labelFontSize}
+                                       onChange={event => setLabelFontSize(Number(event.target.value))}/>
+                            </div>
+                            <div className="fc-map-shape-editor__field">
+                                <label htmlFor="demo-deck-label-color">textLayerProps.getColor</label>
+                                <input id="demo-deck-label-color" value={deckColorToHex(labelColor)}
+                                       onChange={event => setLabelColor(hexToDeckColor(event.target.value, 255))}/>
+                            </div>
+                            <div className="fc-map-shape-editor__field">
+                                <label htmlFor="demo-deck-label-font">textLayerProps.fontFamily</label>
+                                <input id="demo-deck-label-font" value={labelFontFamily}
+                                       onChange={event => setLabelFontFamily(event.target.value)}/>
                             </div>
                             <label className="fc-map-shape-editor__chip" style={{cursor: 'pointer'}}>
-                                <input
-                                    type="checkbox"
-                                    checked={deckRenderOptions.showLabels ?? true}
-                                    onChange={event => setDeckRenderOptions(current => ({
-                                        ...current,
-                                        showLabels: event.target.checked,
-                                    }))}
-                                    style={{marginRight: 8}}
-                                />
+                                <input type="checkbox" checked={showLabels}
+                                       onChange={event => setShowLabels(event.target.checked)}
+                                       style={{marginRight: 8}}/>
                                 <span className="fc-map-shape-editor__chip-title">showLabels</span>
                             </label>
                             <label className="fc-map-shape-editor__chip" style={{cursor: 'pointer'}}>
-                                <input
-                                    type="checkbox"
-                                    checked={deckRenderOptions.showLocationStroke ?? true}
-                                    onChange={event => setDeckRenderOptions(current => ({
-                                        ...current,
-                                        showLocationStroke: event.target.checked,
-                                    }))}
-                                    style={{marginRight: 8}}
-                                />
-                                <span className="fc-map-shape-editor__chip-title">showLocationStroke</span>
+                                <input type="checkbox" checked={showLocationStroke}
+                                       onChange={event => setShowLocationStroke(event.target.checked)}
+                                       style={{marginRight: 8}}/>
+                                <span className="fc-map-shape-editor__chip-title">scatterplotLayerProps.stroked</span>
                             </label>
+                            <div className="fc-map-shape-editor__field">
+                                <label htmlFor="demo-deck-tooltip-mode">tooltip 模式</label>
+                                <select id="demo-deck-tooltip-mode" value={tooltipMode}
+                                        onChange={event => setTooltipMode(event.target.value as DemoTooltipMode)}>
+                                    <option value="rich">rich（HTML 卡片）</option>
+                                    <option value="compact">compact（纯文本）</option>
+                                    <option value="default">default（组件内置）</option>
+                                    <option value="off">off（关闭 tooltip）</option>
+                                </select>
+                            </div>
+                            <p className="fc-map-shape-editor__section-note">
+                                本 demo 会在调用方先把 preview scene 二次增强：`出入口 / 设备点` 自动补 SVG 图标，并通过
+                                `getTooltip`
+                                控制悬浮内容。切到 `auto` 时可同时看到“图标关键点 + 圆点关键点”混排。
+                            </p>
                         </div>
 
+                        {/* 外部强制异常高亮 */}
                         <div className="fc-map-shape-editor__section">
                             <h4 className="fc-map-shape-editor__section-title">外部强制异常高亮</h4>
                             <p className="fc-map-shape-editor__section-note">
@@ -888,51 +923,55 @@ export function MapShapeEditorDemo() {
                                 {draft.shapes.map(shape => (
                                     <label key={shape.id} className="fc-map-shape-editor__chip"
                                            style={{cursor: 'pointer'}}>
-                                        <input
-                                            type="checkbox"
-                                            checked={forcedInvalidShapeIds.includes(shape.id)}
-                                            onChange={() => toggleForcedShapeInvalid(shape.id)}
-                                            style={{marginRight: 8}}
-                                        />
+                                        <input type="checkbox" checked={forcedInvalidShapeIds.includes(shape.id)}
+                                               onChange={() => toggleForcedShapeInvalid(shape.id)}
+                                               style={{marginRight: 8}}/>
                                         <span className="fc-map-shape-editor__chip-title">{shape.name}</span>
                                     </label>
                                 ))}
                                 {draft.keyLocations.map(location => (
                                     <label key={location.id} className="fc-map-shape-editor__chip"
                                            style={{cursor: 'pointer'}}>
-                                        <input
-                                            type="checkbox"
-                                            checked={forcedInvalidLocationIds.includes(location.id)}
-                                            onChange={() => toggleForcedLocationInvalid(location.id)}
-                                            style={{marginRight: 8}}
-                                        />
+                                        <input type="checkbox" checked={forcedInvalidLocationIds.includes(location.id)}
+                                               onChange={() => toggleForcedLocationInvalid(location.id)}
+                                               style={{marginRight: 8}}/>
                                         <span className="fc-map-shape-editor__chip-title">{location.name}</span>
                                     </label>
                                 ))}
                             </div>
                         </div>
+
+                        {/* Deck 交互日志 */}
+                        <div className="fc-map-shape-editor__section">
+                            <h4 className="fc-map-shape-editor__section-title">Deck 交互（预览模式下有效）</h4>
+                            <div className="fc-map-shape-editor__meta-row">
+                                <span>Hover</span>
+                                <strong>{formatDeckPickDetail(deckHoverDetail)}</strong>
+                            </div>
+                            <div className="fc-map-shape-editor__meta-row">
+                                <span>Click</span>
+                                <strong>{formatDeckPickDetail(deckClickDetail)}</strong>
+                            </div>
+                        </div>
                     </div>
                 </aside>
             </div>
+
+            {/* 选中图形 / 关键地点 / 绘制中图形 */}
             <div className="fc-map-shape-editor__workspace" style={{gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'}}>
                 <section className="fc-map-shape-editor__panel">
                     <div className="fc-map-shape-editor__panel-header">
                         <div>
                             <h3 className="fc-map-shape-editor__panel-title">选中图形控制</h3>
-                            <p className="fc-map-shape-editor__panel-subtitle">
-                                图形名称、颜色、选中态和删除都可以完全由调用方控制。
-                            </p>
+                            <p className="fc-map-shape-editor__panel-subtitle">图形名称、颜色、选中态和删除都可以完全由调用方控制。</p>
                         </div>
                     </div>
                     <div className="fc-map-shape-editor__sidebar-body">
                         <div className="fc-map-shape-editor__section">
                             <div className="fc-map-shape-editor__field">
                                 <label htmlFor="demo-selected-shape">selectedShapeId</label>
-                                <select
-                                    id="demo-selected-shape"
-                                    value={selectedShapeId ?? ''}
-                                    onChange={event => updateSelectedShapeId(event.target.value || null)}
-                                >
+                                <select id="demo-selected-shape" value={selectedShapeId ?? ''}
+                                        onChange={event => updateSelectedShapeId(event.target.value || null)}>
                                     <option value="">未选中</option>
                                     {draft.shapes.map(shape => (
                                         <option key={shape.id} value={shape.id}>{shape.name}</option>
@@ -943,27 +982,18 @@ export function MapShapeEditorDemo() {
                                 <>
                                     <div className="fc-map-shape-editor__field">
                                         <label htmlFor="demo-shape-name">名称</label>
-                                        <input
-                                            id="demo-shape-name"
-                                            value={selectedShape.name}
-                                            onChange={event => handleSelectedShapeFieldChange('name', event.target.value)}
-                                        />
+                                        <input id="demo-shape-name" value={selectedShape.name}
+                                               onChange={event => handleSelectedShapeFieldChange('name', event.target.value)}/>
                                     </div>
                                     <div className="fc-map-shape-editor__field">
                                         <label htmlFor="demo-shape-fill">填充色</label>
-                                        <input
-                                            id="demo-shape-fill"
-                                            value={selectedShape.fill ?? ''}
-                                            onChange={event => handleSelectedShapeFieldChange('fill', event.target.value)}
-                                        />
+                                        <input id="demo-shape-fill" value={selectedShape.fill ?? ''}
+                                               onChange={event => handleSelectedShapeFieldChange('fill', event.target.value)}/>
                                     </div>
                                     <div className="fc-map-shape-editor__field">
                                         <label htmlFor="demo-shape-stroke">描边色</label>
-                                        <input
-                                            id="demo-shape-stroke"
-                                            value={selectedShape.stroke ?? ''}
-                                            onChange={event => handleSelectedShapeFieldChange('stroke', event.target.value)}
-                                        />
+                                        <input id="demo-shape-stroke" value={selectedShape.stroke ?? ''}
+                                               onChange={event => handleSelectedShapeFieldChange('stroke', event.target.value)}/>
                                     </div>
                                     <div className="fc-map-shape-editor__meta-row">
                                         <span>顶点数量</span>
@@ -971,7 +1001,7 @@ export function MapShapeEditorDemo() {
                                     </div>
                                     <ButtonLike text="删除当前图形" onClick={() => deleteShape(selectedShape.id)}
                                                 danger/>
-                                    {selectedShapeIssues.length > 0 ? (
+                                    {selectedShapeIssues.length > 0 && (
                                         <div className="fc-map-shape-editor__issue-list">
                                             {selectedShapeIssues.map(issue => (
                                                 <div key={`${issue.code}-${issue.message}`}
@@ -980,7 +1010,7 @@ export function MapShapeEditorDemo() {
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : null}
+                                    )}
                                 </>
                             ) : (
                                 <div className="fc-map-shape-editor__empty">当前没有选中图形。</div>
@@ -993,20 +1023,15 @@ export function MapShapeEditorDemo() {
                     <div className="fc-map-shape-editor__panel-header">
                         <div>
                             <h3 className="fc-map-shape-editor__panel-title">关键地点控制</h3>
-                            <p className="fc-map-shape-editor__panel-subtitle">
-                                关键地点表单、关联图形和删除逻辑都完全在外部。
-                            </p>
+                            <p className="fc-map-shape-editor__panel-subtitle">关键地点表单、关联图形和删除逻辑都完全在外部。</p>
                         </div>
                     </div>
                     <div className="fc-map-shape-editor__sidebar-body">
                         <div className="fc-map-shape-editor__section">
                             <div className="fc-map-shape-editor__field">
                                 <label htmlFor="demo-selected-location">selectedLocationId</label>
-                                <select
-                                    id="demo-selected-location"
-                                    value={selectedLocationId ?? ''}
-                                    onChange={event => updateSelectedLocationId(event.target.value || null)}
-                                >
+                                <select id="demo-selected-location" value={selectedLocationId ?? ''}
+                                        onChange={event => updateSelectedLocationId(event.target.value || null)}>
                                     <option value="">未选中</option>
                                     {draft.keyLocations.map(location => (
                                         <option key={location.id} value={location.id}>{location.name}</option>
@@ -1017,27 +1042,18 @@ export function MapShapeEditorDemo() {
                                 <>
                                     <div className="fc-map-shape-editor__field">
                                         <label htmlFor="demo-map-location-name">名称</label>
-                                        <input
-                                            id="demo-map-location-name"
-                                            value={selectedLocation.name}
-                                            onChange={event => handleSelectedLocationFieldChange('name', event.target.value)}
-                                        />
+                                        <input id="demo-map-location-name" value={selectedLocation.name}
+                                               onChange={event => handleSelectedLocationFieldChange('name', event.target.value)}/>
                                     </div>
                                     <div className="fc-map-shape-editor__field">
                                         <label htmlFor="demo-map-location-type">类型</label>
-                                        <input
-                                            id="demo-map-location-type"
-                                            value={selectedLocation.type}
-                                            onChange={event => handleSelectedLocationFieldChange('type', event.target.value)}
-                                        />
+                                        <input id="demo-map-location-type" value={selectedLocation.type}
+                                               onChange={event => handleSelectedLocationFieldChange('type', event.target.value)}/>
                                     </div>
                                     <div className="fc-map-shape-editor__field">
                                         <label htmlFor="demo-map-location-shape">关联图形</label>
-                                        <select
-                                            id="demo-map-location-shape"
-                                            value={selectedLocation.shapeId ?? ''}
-                                            onChange={event => handleSelectedLocationFieldChange('shapeId', event.target.value)}
-                                        >
+                                        <select id="demo-map-location-shape" value={selectedLocation.shapeId ?? ''}
+                                                onChange={event => handleSelectedLocationFieldChange('shapeId', event.target.value)}>
                                             <option value="">未关联</option>
                                             {draft.shapes.map(shape => (
                                                 <option key={shape.id} value={shape.id}>{shape.name}</option>
@@ -1050,7 +1066,7 @@ export function MapShapeEditorDemo() {
                                     </div>
                                     <ButtonLike text="删除当前关键地点"
                                                 onClick={() => deleteLocation(selectedLocation.id)} danger/>
-                                    {selectedLocationIssues.length > 0 ? (
+                                    {selectedLocationIssues.length > 0 && (
                                         <div className="fc-map-shape-editor__issue-list">
                                             {selectedLocationIssues.map(issue => (
                                                 <div key={`${issue.code}-${issue.message}`}
@@ -1059,7 +1075,7 @@ export function MapShapeEditorDemo() {
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : null}
+                                    )}
                                 </>
                             ) : (
                                 <div className="fc-map-shape-editor__empty">当前没有选中关键地点。</div>
@@ -1072,9 +1088,8 @@ export function MapShapeEditorDemo() {
                     <div className="fc-map-shape-editor__panel-header">
                         <div>
                             <h3 className="fc-map-shape-editor__panel-title">绘制中图形控制</h3>
-                            <p className="fc-map-shape-editor__panel-subtitle">
-                                `drawingShape` 也是外部状态，业务方可以在侧边单独编辑它。
-                            </p>
+                            <p className="fc-map-shape-editor__panel-subtitle">`drawingShape`
+                                也是外部状态，业务方可以在侧边单独编辑它。</p>
                         </div>
                     </div>
                     <div className="fc-map-shape-editor__sidebar-body">
@@ -1083,27 +1098,18 @@ export function MapShapeEditorDemo() {
                                 <>
                                     <div className="fc-map-shape-editor__field">
                                         <label htmlFor="demo-drawing-shape-name">名称</label>
-                                        <input
-                                            id="demo-drawing-shape-name"
-                                            value={drawingShape.name}
-                                            onChange={event => handleDrawingShapeFieldChange('name', event.target.value)}
-                                        />
+                                        <input id="demo-drawing-shape-name" value={drawingShape.name}
+                                               onChange={event => handleDrawingShapeFieldChange('name', event.target.value)}/>
                                     </div>
                                     <div className="fc-map-shape-editor__field">
                                         <label htmlFor="demo-drawing-shape-fill">填充色</label>
-                                        <input
-                                            id="demo-drawing-shape-fill"
-                                            value={drawingShape.fill ?? ''}
-                                            onChange={event => handleDrawingShapeFieldChange('fill', event.target.value)}
-                                        />
+                                        <input id="demo-drawing-shape-fill" value={drawingShape.fill ?? ''}
+                                               onChange={event => handleDrawingShapeFieldChange('fill', event.target.value)}/>
                                     </div>
                                     <div className="fc-map-shape-editor__field">
                                         <label htmlFor="demo-drawing-shape-stroke">描边色</label>
-                                        <input
-                                            id="demo-drawing-shape-stroke"
-                                            value={drawingShape.stroke ?? ''}
-                                            onChange={event => handleDrawingShapeFieldChange('stroke', event.target.value)}
-                                        />
+                                        <input id="demo-drawing-shape-stroke" value={drawingShape.stroke ?? ''}
+                                               onChange={event => handleDrawingShapeFieldChange('stroke', event.target.value)}/>
                                     </div>
                                     <div className="fc-map-shape-editor__meta-row">
                                         <span>已落点</span>
@@ -1112,23 +1118,23 @@ export function MapShapeEditorDemo() {
                                     <ButtonLike text="取消绘制" onClick={() => updateDrawingShape(null)}/>
                                 </>
                             ) : (
-                                <div
-                                    className="fc-map-shape-editor__empty">当前没有绘制中的图形。点击上方“开始绘制图形”后，这里就会被业务表单接管。</div>
+                                <div className="fc-map-shape-editor__empty">
+                                    当前没有绘制中的图形。点击上方"开始绘制图形"后，这里就会被业务表单接管。
+                                </div>
                             )}
                         </div>
                     </div>
                 </section>
             </div>
 
+            {/* 事件日志 */}
             <div className="fc-map-shape-editor__workspace"
                  style={{gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)'}}>
                 <section className="fc-map-shape-editor__panel">
                     <div className="fc-map-shape-editor__panel-header">
                         <div>
                             <h3 className="fc-map-shape-editor__panel-title">事件日志</h3>
-                            <p className="fc-map-shape-editor__panel-subtitle">
-                                这里展示回调链路，帮助判断接口究竟把什么交给了调用方。
-                            </p>
+                            <p className="fc-map-shape-editor__panel-subtitle">这里展示回调链路，帮助判断接口究竟把什么交给了调用方。</p>
                         </div>
                     </div>
                     <div className="fc-map-shape-editor__sidebar-body">
@@ -1147,20 +1153,31 @@ export function MapShapeEditorDemo() {
                     <div className="fc-map-shape-editor__panel-header">
                         <div>
                             <h3 className="fc-map-shape-editor__panel-title">原始状态快照</h3>
-                            <p className="fc-map-shape-editor__panel-subtitle">
-                                调用方可直接查看、保存或二次派生这些状态。
-                            </p>
+                            <p className="fc-map-shape-editor__panel-subtitle">调用方可直接查看、保存或二次派生这些状态。</p>
                         </div>
                     </div>
                     <div className="fc-map-shape-editor__sidebar-body">
                         <div className="fc-map-shape-editor__section">
                             <pre style={{margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12}}>
                                 {JSON.stringify({
+                                    viewportMode,
                                     selectedShapeId,
                                     selectedLocationId,
                                     drawingShape,
                                     viewBox,
-                                    deckRenderOptions,
+                                    deckLayerOptions: {
+                                        polygonLineWidth,
+                                        keyLocationRenderMode,
+                                        locationRadius,
+                                        iconMarkerSize,
+                                        locationStrokeColor,
+                                        showLocationStroke,
+                                        labelFontSize,
+                                        labelColor,
+                                        labelFontFamily,
+                                        showLabels,
+                                        tooltipMode,
+                                    },
                                     invalidShapeIds,
                                     invalidKeyLocationIds,
                                     submitStatus,
@@ -1183,49 +1200,6 @@ export function MapShapeEditorDemo() {
                     </div>
                 </section>
             </div>
-
-            <section className="fc-map-shape-editor__panel">
-                <div className="fc-map-shape-editor__panel-header">
-                    <div>
-                        <h3 className="fc-map-shape-editor__panel-title">MapDeckPreview</h3>
-                        <p className="fc-map-shape-editor__panel-subtitle">
-                            这里继续只消费 `scene`。你可以选择直接用草稿构造 scene，也可以走提交链路后再刷新。
-                        </p>
-                    </div>
-                </div>
-                <div className="fc-map-shape-editor__editor-shell fc-map-shape-editor__preview-shell"
-                     style={{aspectRatio: `${DEMO_CANVAS.width} / ${DEMO_CANVAS.height}`}}>
-                    <MapDeckPreview
-                        scene={preview}
-                        previewRenderOptions={deckRenderOptions}
-                        onDeckHover={detail => {
-                            setDeckHoverDetail(detail);
-                        }}
-                        onDeckClick={detail => {
-                            setDeckClickDetail(detail);
-                            pushLog('callback', `onDeckClick：${formatDeckPickDetail(detail)}`);
-                        }}
-                        onShapeClick={detail => {
-                            pushLog('callback', `onShapeClick：${detail.object.name}`);
-                        }}
-                        onKeyLocationClick={detail => {
-                            pushLog('callback', `onKeyLocationClick：${detail.object.name}`);
-                        }}
-                    />
-                </div>
-                <div className="fc-map-shape-editor__sidebar-body">
-                    <div className="fc-map-shape-editor__section">
-                        <div className="fc-map-shape-editor__meta-row">
-                            <span>Deck Hover</span>
-                            <strong>{formatDeckPickDetail(deckHoverDetail)}</strong>
-                        </div>
-                        <div className="fc-map-shape-editor__meta-row">
-                            <span>Deck Click</span>
-                            <strong>{formatDeckPickDetail(deckClickDetail)}</strong>
-                        </div>
-                    </div>
-                </div>
-            </section>
         </div>
     );
 }

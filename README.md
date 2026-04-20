@@ -1733,6 +1733,16 @@ interface MapShapeSaveResponse {
       position: [number, number]
       shapeId?: string | null
       color: [number, number, number, number]
+      icon?: {
+        url: string
+        width?: number
+        height?: number
+        anchorX?: number
+        anchorY?: number
+        mask?: boolean
+        ext?: Record<string, unknown>
+      } | null
+      iconSize?: number
       bizId?: string | null
       ext?: Record<string, unknown>
     }>
@@ -1754,6 +1764,8 @@ interface MapShapeSaveResponse {
 
 - `polygon`：deck 使用的二维点数组，顺序应与展示轮廓一致
 - `fillColor`、`lineColor`、`color`：RGBA 数组，范围按 deck 约定为 `0-255`
+- `keyLocations[].icon`：可选的图标配置；存在时可由前端切换到 `IconLayer` 渲染
+- `keyLocations[].iconSize`：图标像素尺寸，适合固定屏幕大小的 marker
 - `savedAt`：必填字符串，建议固定为 ISO 8601 UTC 时间串
 - `message`：可选，直接显示在界面“后端提交”状态区域
 - `meta.persisted`：可表示本次结果是否已经写入正式存储；mock 场景可返回 `false`
@@ -1838,6 +1850,240 @@ interface MapShapeSaveErrorResponse {
 - `submitMapShapeScene(api, request, options?)`：统一处理超时、结构校验和错误归一化
 - `validateMapEditorDraft(draft, options?)`：执行前端校验
 - `moveShapeInOrder(shapes, shapeId, targetIndex)`：按目标索引调整图形渲染顺序，可用于自定义右键菜单或外部图层控制
+
+### `MapDeckPreview`
+
+用途：基于 deck.gl + OrthographicView 渲染地图预览场景（多边形图形 + 关键地点 + 背景图）。
+
+#### 参数
+
+| 参数                         | 类型                                                                     | 默认值      | 说明                                                                  |
+|----------------------------|------------------------------------------------------------------------|----------|---------------------------------------------------------------------|
+| `scene`                    | `MapPreviewScene \| null`                                              | —        | 展示场景数据                                                              |
+| `showLabels`               | `boolean`                                                              | `true`   | 是否显示关键地点标签                                                          |
+| `polygonLayerProps`        | `Omit<PolygonLayerProps<MapPreviewShape>, 'id'\|'data'\|'getPolygon'>` | —        | 透传给 PolygonLayer 的 props（结构性 accessor 不可覆盖）                         |
+| `scatterplotLayerProps`    | `Omit<ScatterplotLayerProps<...>, 'id'\|'data'\|'getPosition'>`        | —        | 透传给 ScatterplotLayer                                                |
+| `keyLocationRenderMode`    | `'circle' \| 'icon' \| 'auto'`                                         | `'auto'` | 关键地点渲染模式；`auto` 会根据 `location.icon` 自动切换圆点或图标                       |
+| `iconLayerProps`           | `Omit<IconLayerProps<...>, 'id'\|'data'\|'getPosition'\|'getIcon'>`    | —        | 透传给 IconLayer，用于图标关键地点                                              |
+| `textLayerProps`           | `Omit<TextLayerProps<...>, 'id'\|'data'\|'getText'>`                   | —        | 透传给 TextLayer，`getPosition` 可覆盖（默认在标记上方 18px）                       |
+| `polygonShaderInject`      | `MapDeckShaderInject`                                                  | —        | PolygonLayer GLSL inject map                                        |
+| `scatterplotShaderInject`  | `MapDeckShaderInject`                                                  | —        | ScatterplotLayer GLSL inject                                        |
+| `iconShaderInject`         | `MapDeckShaderInject`                                                  | —        | IconLayer GLSL inject                                               |
+| `textShaderInject`         | `MapDeckShaderInject`                                                  | —        | TextLayer GLSL inject                                               |
+| `extraLayers`              | `Layer[]`                                                              | —        | 追加到内置层之后的额外 deck 层                                                  |
+| `deckEffects`              | `Effect[]`                                                             | —        | deck.gl `effects` 数组（例如 PostProcessEffect）                          |
+| `syncViewBox`              | `MapShapeEditorViewBox`                                                | —        | 传入时用 viewBox 推导 viewState，而不是自动适配；在 `MapShapeViewport` 中用于与 SVG 层同步 |
+| `disableTooltip`           | `boolean`                                                              | `false`  | 禁用悬浮 tooltip（叠层编辑时避免与 SVG 层冲突）                                      |
+| `getTooltip`               | `(detail) => MapDeckPreviewTooltip \| string \| null`                  | —        | 自定义悬浮内容；返回 `string` 等价于 `{ text }`，返回 `null` 可抑制 tooltip            |
+| `onDeckClick/Hover`        | `(detail) => void`                                                     | —        | 任意位置点击/悬浮                                                           |
+| `onShapeClick/Hover`       | `(detail) => void`                                                     | —        | 图形点击/悬浮                                                             |
+| `onKeyLocationClick/Hover` | `(detail) => void`                                                     | —        | 关键地点点击/悬浮                                                           |
+
+#### 图标关键地点
+
+当关键地点需要使用 SVG 或图片样式时，可在 `scene.keyLocations` 中补充 `icon` 与 `iconSize`，再把 `keyLocationRenderMode`
+设为
+`'icon'` 或 `'auto'`：
+
+```tsx
+<MapDeckPreview
+  scene={scene}
+  keyLocationRenderMode="auto"
+  iconLayerProps={{
+    getSize: (location) => location.iconSize ?? 28,
+  }}
+/>
+```
+
+```ts
+const scene: MapPreviewScene = {
+  canvas: { width: 1000, height: 640 },
+  shapes: [],
+  keyLocations: [
+    {
+      id: 'loc-1',
+      name: '主入口',
+      type: '出入口',
+      position: [320, 180],
+      color: [226, 75, 74, 255],
+      iconSize: 32,
+      icon: {
+        url: '/markers/entrance.svg',
+        width: 32,
+        height: 32,
+        anchorX: 16,
+        anchorY: 16,
+      },
+    },
+  ],
+}
+```
+
+图标模式默认使用屏幕像素尺寸，不随地图缩放。
+
+#### Tooltip 自定义
+
+```tsx
+<MapDeckPreview
+    scene={scene}
+    getTooltip={(detail) => {
+        if (detail.kind === 'keyLocation') {
+            return {
+                html: `<div><strong>${detail.object.name}</strong><br/>类型：${detail.object.type}</div>`,
+                style: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                    color: '#fff',
+                    borderRadius: '10px',
+                    padding: '10px 12px',
+                },
+            }
+        }
+        return null
+    }}
+/>
+```
+
+说明：
+
+- 返回 `string` 时使用 deck 默认文本 tooltip
+- 返回 `{ html, className, style }` 时使用自定义 HTML tooltip
+- 返回 `null` 时本次不显示 tooltip
+
+#### GLSL 注入
+
+```ts
+import { makeInjectExtension, type MapDeckShaderInject } from 'flowcloudai-ui'
+
+// 将多边形整体调成暖色调
+const warmInject: MapDeckShaderInject = {
+  'fs:DECKGL_FILTER_COLOR': `
+    color.r = color.r * 1.3;
+    color.g = color.g * 0.9;
+    color.b = color.b * 0.7;
+  `,
+}
+
+<MapDeckPreview
+  scene={scene}
+  polygonShaderInject={warmInject}
+/>
+```
+
+也可以手动创建 `LayerExtension` 并通过 `polygonLayerProps.extensions` 传入：
+
+```ts
+const ext = makeInjectExtension(warmInject)
+
+<MapDeckPreview
+  scene={scene}
+  polygonLayerProps={{ extensions: [ext, myOtherExtension] }}
+/>
+```
+
+#### 按图形差异化样式
+
+通过 `polygonLayerProps.getFillColor` 等函数 accessor，可以基于数据字段实现每个图形不同的颜色或视觉效果：
+
+```ts
+<MapDeckPreview
+  scene={scene}
+  polygonLayerProps={{
+    getFillColor: (shape) => shape.ext?.highlight ? [255, 200, 0, 200] : shape.fillColor,
+    lineWidthMinPixels: 3,
+  }}
+/>
+```
+
+### `MapShapeSvgEditor`
+
+用途：SVG 编辑层，负责顶点绘制、拖拽、图形整体移动、关键地点拖拽、缩放/平移视图。所有状态通过 props 受控，编辑逻辑通过回调开放给调用方。
+
+#### 参数（简要）
+
+| 参数                                        | 说明                          |
+|-------------------------------------------|-----------------------------|
+| `canvas`                                  | 编辑坐标系尺寸                     |
+| `draft`                                   | 当前草稿（shapes + keyLocations） |
+| `selectedShapeId / selectedLocationId`    | 受控选中态                       |
+| `drawingShape`                            | 绘制中的图形（null 表示未开始绘制）        |
+| `viewBox`                                 | 受控视图框（pan/zoom）             |
+| `invalidShapeIds / invalidKeyLocationIds` | 红色错误高亮的 ID 列表               |
+| `backgroundImage`                         | SVG 背景图 URL，cover 模式        |
+| `readOnly`                                | 只读模式：保留平移/缩放，禁用所有编辑操作       |
+| `onDraftChange / onViewBoxChange / ...`   | 编辑回调                        |
+
+### `MapShapeViewport`
+
+用途：单视口叠层组件，将 SVG 编辑层叠在 deck 展示层上方，同步 viewBox 实现完美对齐。提供 `edit` 和 `preview` 两种模式。
+
+- **edit 模式**：SVG 编辑层（z-index 高）叠在 deck 层之上；deck 自动同步 viewBox，不显示 tooltip
+- **preview 模式**：只有 deck 层，显示 tooltip，deck 自动适配画布尺寸
+
+容器宽度自动为 100%，高度由 `canvas` 宽高比决定（`aspect-ratio`）。
+
+叠层模式下，viewport 会把 deck 层和 SVG 层约束在同一块可绘制区域内：
+
+- deck 层铺满 viewport
+- SVG 层在 viewport 专用样式下去掉内部编辑 shell 的 padding
+- deck 的 `syncViewBox` 与 SVG 的 `viewBox` 使用同一块像素区域推导，因此两层可以对齐
+
+#### 参数
+
+| 参数                | 类型                                                                                   | 说明                               |
+|-------------------|--------------------------------------------------------------------------------------|----------------------------------|
+| `mode`            | `'edit' \| 'preview'`                                                                | 视口模式                             |
+| `canvas`          | `MapEditorCanvas`                                                                    | 编辑坐标系尺寸，决定宽高比                    |
+| `scene`           | `MapPreviewScene \| null`                                                            | 传入 deck 展示层                      |
+| `viewBox`         | `MapShapeEditorViewBox`                                                              | 受控 viewBox；不传则内部管理               |
+| `onViewBoxChange` | `(v) => void`                                                                        | viewBox 变化回调                     |
+| `svgProps`        | `Omit<MapShapeSvgEditorProps, 'canvas'\|'viewBox'\|'onViewBoxChange'>`               | 传给 SVG 编辑层的其余 props（仅 edit 模式使用） |
+| `deckProps`       | `Omit<MapDeckPreviewProps, 'scene'\|'syncViewBox'\|'disableTooltip'\|'interactive'>` | 传给 deck 层的其余 props               |
+
+#### 示例
+
+```tsx
+import { useState } from 'react'
+import {
+  MapShapeViewport,
+  createInitialMapShapeEditorViewBox,
+  type MapShapeEditorDraft,
+  type MapPreviewScene,
+} from 'flowcloudai-ui'
+
+const CANVAS = { width: 1000, height: 800 }
+
+function EditorPage() {
+  const [draft, setDraft] = useState<MapShapeEditorDraft>({ shapes: [], keyLocations: [] })
+  const [scene, setScene] = useState<MapPreviewScene | null>(null)
+  const [viewBox, setViewBox] = useState(() => createInitialMapShapeEditorViewBox(CANVAS))
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
+
+  return (
+    <div>
+      <button onClick={() => setMode(m => m === 'edit' ? 'preview' : 'edit')}>
+        切换模式
+      </button>
+      <MapShapeViewport
+        mode={mode}
+        canvas={CANVAS}
+        scene={scene}
+        viewBox={viewBox}
+        onViewBoxChange={setViewBox}
+        svgProps={{
+          draft,
+          selectedShapeId: null,
+          selectedLocationId: null,
+          drawingShape: null,
+          onDraftChange: setDraft,
+          onSelectedShapeChange: () => {},
+          onSelectedLocationChange: () => {},
+          onDrawingShapeChange: () => {},
+        }}
+      />
+    </div>
+  )
+}
+```
 
 ## 发布信息
 

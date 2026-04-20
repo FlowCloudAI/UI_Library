@@ -297,7 +297,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
 
   const hasNewline = content.includes('\n');
   const showReasoning = reasoning !== undefined || reasoningStreaming;
-  const showTools = toolCalls && toolCalls.length > 0;
+    const showTools = toolCalls && toolCalls.length > 0 && !rolePlaying;
   const showContent = content.length > 0 || streaming;
   // assistant 默认撑满父容器，不受 maxWidth 约束
   const style: React.CSSProperties | undefined = role !== 'assistant' && hasNewline ? {maxWidth} : undefined;
@@ -317,6 +317,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
               />
           );
         case 'tool':
+            if (rolePlaying) return null;
           return (
               <div key={`tool-${idx}`} className="message-box-tools">
                 <ToolCallItem tool={block.tool} detail={block.detail ?? 'simple'}/>

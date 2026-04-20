@@ -91,3 +91,35 @@
 .fc-alert--error   .fc-alert__icon { color: var(--fc-color-danger); }
 .fc-alert--warning .fc-alert__icon { color: var(--fc-color-warning); }
 .fc-alert--info    .fc-alert__icon { color: var(--fc-color-info); }
+
+/* ---------- nonInvasive 模式 ---------- */
+@keyframes fc-alert-slide-down {
+    from {
+        transform: translateY(calc(-100% - var(--alert-offset, 1rem)));
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.fc-alert-overlay--non-invasive {
+    --alert-offset: 1rem;
+    background: transparent;
+    pointer-events: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: var(--alert-offset);
+}
+
+.fc-alert-overlay--non-invasive .fc-alert--nonInvasive {
+    pointer-events: auto;
+    animation: fc-alert-slide-down 0.3s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+    min-width: 18rem;
+    max-width: 40rem;
+}
+
+.fc-alert--nonInvasive .fc-alert__msg {
+    margin-bottom: 0;
+}

@@ -1,4 +1,4 @@
-import { Button, useAlert } from 'flowcloudai-ui'
+import {Button, useAlert} from 'flowcloudai-ui'
 
 export function AlertDemo() {
     const { showAlert } = useAlert()
@@ -33,6 +33,14 @@ export function AlertDemo() {
                 <div className="demo-row">
                     <Button onClick={() => showAlert("操作成功，2s 后关闭", "success", "toast", 2000)}>2s Toast</Button>
                     <Button onClick={() => showAlert("加载完成，3s 后关闭", "info", "toast", 3000)}>3s Toast</Button>
+                </div>
+            </div>
+            <div className="demo-section">
+                <h4>非侵入模式（nonInvasive）</h4>
+                <div className="demo-row">
+                    <Button onClick={() => showAlert("文件已保存", "success", "nonInvasive", 2500)}>成功（2.5s）</Button>
+                    <Button onClick={() => showAlert("网络连接已恢复", "info", "nonInvasive", 3000)}>信息（3s）</Button>
+                    <Button onClick={() => showAlert("磁盘空间不足", "warning", "nonInvasive", 4000)}>警告（4s）</Button>
                 </div>
             </div>
         </>

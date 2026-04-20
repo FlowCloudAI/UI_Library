@@ -82,13 +82,33 @@ export interface MapPreviewKeyLocation extends MapShapeExtensible {
     position: [number, number];
     shapeId?: string | null;
     color: DeckColor;
+    icon?: MapPreviewKeyLocationIcon | null;
+    iconSize?: number;
     bizId?: string | null;
+}
+
+export interface MapPreviewKeyLocationIcon extends MapShapeExtensible {
+    url: string;
+    width?: number;
+    height?: number;
+    anchorX?: number;
+    anchorY?: number;
+    mask?: boolean;
+}
+
+export interface MapPreviewBackgroundImage {
+    url: string;
+    /** 0–1，默认 1 */
+    opacity?: number;
+    /** 图片适配模式，默认 'fill' */
+    fit?: 'fill' | 'cover' | 'contain';
 }
 
 export interface MapPreviewScene extends MapShapeExtensible {
     canvas: MapEditorCanvas;
     shapes: MapPreviewShape[];
     keyLocations: MapPreviewKeyLocation[];
+    backgroundImage?: MapPreviewBackgroundImage;
 }
 
 export interface MapShapeResponseMeta extends MapShapeExtensible {

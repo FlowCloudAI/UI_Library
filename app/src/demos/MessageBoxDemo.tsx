@@ -324,7 +324,7 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
                             toolCallDetail="verbose"
                         />
 
-                        {/* 角色扮演包裹框 */}
+                        {/* 角色扮演包裹框（含工具调用数据，但不渲染工具 UI） */}
                         <MessageBox
                             role="user"
                             content="你现在扮演一位苏格拉底风格的哲学老师"
@@ -334,6 +334,37 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
                             content="好的，我来扮演苏格拉底。那么，请告诉我——什么是正义？你真的认为你知道吗？
 我们可以通过对话来一步步揭示这个问题的本质。"
                             rolePlaying={true}
+                            toolCalls={[
+                                {
+                                    index: 0,
+                                    name: 'get_persona',
+                                    args: '{"name":"Socrates"}',
+                                    result: '{"style":"dialectic"}'
+                                },
+                                {index: 1, name: 'load_context', result: '加载完成'},
+                            ]}
+                            toolCallDetail="verbose"
+                        />
+                        {/* 角色扮演 blocks 模式（tool block 被静默跳过） */}
+                        <MessageBox
+                            role="assistant"
+                            rolePlaying={true}
+                            blocks={[
+                                {
+                                    type: 'tool',
+                                    tool: {
+                                        index: 0,
+                                        name: 'lookup_philosophy',
+                                        args: '{"topic":"justice"}',
+                                        result: '柏拉图：正义是各司其职'
+                                    }
+                                },
+                                {
+                                    type: 'content',
+                                    content: '我听到你的问题了。但在我回答之前，你能告诉我你心中的正义是什么样的吗？',
+                                    markdown: false
+                                },
+                            ]}
                         />
 
                         {/* 流式正文 */}

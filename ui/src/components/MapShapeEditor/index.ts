@@ -6,3 +6,4 @@ export * from './mapShapeEditorSvgUtils';
 export * from './MapDeckPreview';
 export * from './MapShapeSvgEditor';
 export * from './MapShapeEditorWorkbench';
+export * from './MapShapeViewport';
