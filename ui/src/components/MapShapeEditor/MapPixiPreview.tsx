@@ -27,6 +27,7 @@ import type {
     MapEditorCanvas,
     MapKeyLocationRenderMode,
     MapPreviewBackgroundImage,
+    MapPreviewEmptyPickDetail,
     MapPreviewKeyLocation,
     MapPreviewKeyLocationPickDetail,
     MapPreviewKeyLocationStyle,
@@ -147,9 +148,10 @@ export interface MapPixiPreviewProps {
     /** 为 true 时关闭 Pixi 内置 tooltip。 */
     disableTooltip?: boolean;
     /**
-     * 自定义 Pixi 悬浮 tooltip。返回空值会使用默认 tooltip，返回字符串等同于 `{ text: string }`。
+     * 自定义 Pixi 悬浮 tooltip。返回 `undefined` 会使用默认 tooltip；返回 `null` 会禁用该对象 tooltip。
+     * 返回字符串等同于 `{ text: string }`。
      */
-    getTooltip?: (detail: MapPreviewPickDetail) => MapPreviewTooltip | string | null;
+    getTooltip?: (detail: MapPreviewPickDetail) => MapPreviewTooltip | string | null | undefined;
     /**
      * Pixi 专属场景滤镜，应用到内置图层和 `renderOverlay` 所在的场景容器。
      * 适合承接轻量后处理；自定义 shader / geometry 建议先通过 `renderOverlay` 封装为 React Pixi 子树。
@@ -166,10 +168,15 @@ export interface MapPixiPreviewProps {
     onShapeHover?: (detail: MapPreviewShapePickDetail | null) => void;
     onKeyLocationClick?: (detail: MapPreviewKeyLocationPickDetail) => void;
     onKeyLocationHover?: (detail: MapPreviewKeyLocationPickDetail | null) => void;
+    /** @deprecated 使用 `enablePanZoom` 和 `enablePicking` 分别控制预览交互能力。 */
+    interactive?: boolean;
     /**
      * 开启预览模式下的滚轮缩放和拖拽平移。传入 syncViewBox 时会忽略该能力。
+     * 未传入时回退到 `interactive`。
      */
-    interactive?: boolean;
+    enablePanZoom?: boolean;
+    /** 是否启用 Pixi picking、hover、click 与 tooltip。未传入时默认启用。 */
+    enablePicking?: boolean;
     /**
      * 与 SVG 编辑器共享 viewBox，用于编辑模式下同步缩放和平移。
      * 为空时会按场景画布自动适配容器。
@@ -397,16 +404,16 @@ function normalizeTooltip(
     return null;
 }
 
-function getDefaultTooltip(detail: MapPreviewPickDetail): MapPreviewTooltip {
+function getDefaultTooltip(detail: MapPreviewPickDetail): MapPreviewTooltip | null {
+    if (detail.kind === 'empty') {
+        return null;
+    }
+
     if (detail.kind === 'shape') {
         return {text: `图形：${detail.object.name}`};
     }
 
-    if (detail.kind === 'keyLocation') {
-        return {text: `关键地点：${detail.object.name}\n类型：${detail.object.type}`};
-    }
-
-    return {text: ''};
+    return {text: `关键地点：${detail.object.name}\n类型：${detail.object.type}`};
 }
 
 function getEventScreenPoint(event: FederatedPointerEvent): { x: number; y: number } {
@@ -426,6 +433,22 @@ function getEventCanvasCoordinate(
         (point.x - transform.x) / Math.max(transform.scale, 0.01),
         (point.y - transform.y) / Math.max(transform.scale, 0.01),
     ];
+}
+
+function createEmptyPickDetail(
+    transform: PixiViewportTransform,
+    event: FederatedPointerEvent,
+): MapPreviewEmptyPickDetail {
+    const point = getEventScreenPoint(event);
+    return {
+        kind: 'empty',
+        object: null,
+        index: -1,
+        layerId: 'fc-map-pixi-preview-empty',
+        x: point.x,
+        y: point.y,
+        coordinate: getEventCanvasCoordinate(event, transform),
+    };
 }
 
 function toScreenPoint(
@@ -600,6 +623,7 @@ function MapPixiShape({
                           index,
                           transform,
                           polygonLineWidth,
+                          enablePicking,
                           hovered,
                           onClick,
                           onHover,
@@ -610,6 +634,7 @@ function MapPixiShape({
     index: number;
     transform: PixiViewportTransform;
     polygonLineWidth: number;
+    enablePicking: boolean;
     hovered: boolean;
     onClick: (detail: MapPreviewShapePickDetail, event: FederatedPointerEvent) => void;
     onHover: (detail: MapPreviewShapePickDetail, event: FederatedPointerEvent) => void;
@@ -636,13 +661,25 @@ function MapPixiShape({
     return (
         <pixiGraphics
             draw={draw}
-            eventMode="static"
-            cursor="pointer"
+            eventMode={enablePicking ? 'static' : 'none'}
+            cursor={enablePicking ? 'pointer' : undefined}
             hitArea={hitArea}
-            onClick={(event: FederatedPointerEvent) => onClick(createDetail(event), event)}
-            onPointerOver={(event: FederatedPointerEvent) => onHover(createDetail(event), event)}
-            onPointerMove={(event: FederatedPointerEvent) => onMove(createDetail(event), event)}
-            onPointerOut={onOut}
+            onClick={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onClick(createDetail(event), event);
+            }}
+            onPointerOver={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onHover(createDetail(event), event);
+            }}
+            onPointerMove={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onMove(createDetail(event), event);
+            }}
+            onPointerOut={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onOut();
+            }}
         />
     );
 }
@@ -654,6 +691,7 @@ function MapPixiKeyLocationCircle({
                                       keyLocationRadius,
                                       keyLocationStrokeColor,
                                       keyLocationStrokeWidth,
+                                      enablePicking,
                                       hovered,
                                       onClick,
                                       onHover,
@@ -666,6 +704,7 @@ function MapPixiKeyLocationCircle({
     keyLocationRadius: number;
     keyLocationStrokeColor: MapRgbaColor;
     keyLocationStrokeWidth: number;
+    enablePicking: boolean;
     hovered: boolean;
     onClick: (detail: MapPreviewKeyLocationPickDetail, event: FederatedPointerEvent) => void;
     onHover: (detail: MapPreviewKeyLocationPickDetail, event: FederatedPointerEvent) => void;
@@ -701,13 +740,25 @@ function MapPixiKeyLocationCircle({
     return (
         <pixiGraphics
             draw={draw}
-            eventMode="static"
-            cursor="pointer"
+            eventMode={enablePicking ? 'static' : 'none'}
+            cursor={enablePicking ? 'pointer' : undefined}
             hitArea={hitArea}
-            onClick={(event: FederatedPointerEvent) => onClick(createDetail(event), event)}
-            onPointerOver={(event: FederatedPointerEvent) => onHover(createDetail(event), event)}
-            onPointerMove={(event: FederatedPointerEvent) => onMove(createDetail(event), event)}
-            onPointerOut={onOut}
+            onClick={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onClick(createDetail(event), event);
+            }}
+            onPointerOver={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onHover(createDetail(event), event);
+            }}
+            onPointerMove={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onMove(createDetail(event), event);
+            }}
+            onPointerOut={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onOut();
+            }}
         />
     );
 }
@@ -717,6 +768,7 @@ function MapPixiKeyLocationIcon({
                                     index,
                                     iconSize,
                                     transform,
+                                    enablePicking,
                                     hovered,
                                     onClick,
                                     onHover,
@@ -727,6 +779,7 @@ function MapPixiKeyLocationIcon({
     index: number;
     iconSize: number;
     transform: PixiViewportTransform;
+    enablePicking: boolean;
     hovered: boolean;
     onClick: (detail: MapPreviewKeyLocationPickDetail, event: FederatedPointerEvent) => void;
     onHover: (detail: MapPreviewKeyLocationPickDetail, event: FederatedPointerEvent) => void;
@@ -761,13 +814,25 @@ function MapPixiKeyLocationIcon({
         <pixiContainer
             x={location.position[0]}
             y={location.position[1]}
-            eventMode="static"
-            cursor="pointer"
+            eventMode={enablePicking ? 'static' : 'none'}
+            cursor={enablePicking ? 'pointer' : undefined}
             hitArea={hitArea}
-            onClick={(event: FederatedPointerEvent) => onClick(createDetail(event), event)}
-            onPointerOver={(event: FederatedPointerEvent) => onHover(createDetail(event), event)}
-            onPointerMove={(event: FederatedPointerEvent) => onMove(createDetail(event), event)}
-            onPointerOut={onOut}
+            onClick={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onClick(createDetail(event), event);
+            }}
+            onPointerOver={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onHover(createDetail(event), event);
+            }}
+            onPointerMove={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onMove(createDetail(event), event);
+            }}
+            onPointerOut={(event: FederatedPointerEvent) => {
+                event.stopPropagation();
+                onOut();
+            }}
             scale={hovered ? 1.08 : 1}
         >
             <pixiSprite
@@ -780,11 +845,44 @@ function MapPixiKeyLocationIcon({
     );
 }
 
+function MapPixiEmptyHitArea({
+                                 scene,
+                                 transform,
+                                 enablePicking,
+                                 onClick,
+                                 onHover,
+                                 onMove,
+                                 onOut,
+                             }: {
+    scene: MapPreviewScene;
+    transform: PixiViewportTransform;
+    enablePicking: boolean;
+    onClick: (detail: MapPreviewEmptyPickDetail, event: FederatedPointerEvent) => void;
+    onHover: (detail: MapPreviewEmptyPickDetail, event: FederatedPointerEvent) => void;
+    onMove: (detail: MapPreviewEmptyPickDetail, event: FederatedPointerEvent) => void;
+    onOut: () => void;
+}) {
+    const hitArea = useMemo(() => new Rectangle(0, 0, scene.canvas.width, scene.canvas.height), [scene.canvas.height, scene.canvas.width]);
+    const createDetail = useCallback((event: FederatedPointerEvent) => createEmptyPickDetail(transform, event), [transform]);
+
+    return (
+        <pixiContainer
+            eventMode={enablePicking ? 'static' : 'none'}
+            hitArea={hitArea}
+            onClick={(event: FederatedPointerEvent) => onClick(createDetail(event), event)}
+            onPointerOver={(event: FederatedPointerEvent) => onHover(createDetail(event), event)}
+            onPointerMove={(event: FederatedPointerEvent) => onMove(createDetail(event), event)}
+            onPointerOut={onOut}
+        />
+    );
+}
+
 function MapPixiScene({
                           scene,
                           showLabels,
                           transform,
                           size,
+                          enablePicking,
                           polygonLineWidth,
                           keyLocationRadius,
                           keyLocationStrokeColor,
@@ -807,6 +905,7 @@ function MapPixiScene({
     showLabels: boolean;
     transform: PixiViewportTransform;
     size: ElementSize;
+    enablePicking: boolean;
     polygonLineWidth: number;
     keyLocationRadius: number;
     keyLocationStrokeColor: MapRgbaColor;
@@ -864,6 +963,15 @@ function MapPixiScene({
     return (
         <pixiContainer filters={sceneFilters}>
             <pixiContainer x={transform.x} y={transform.y} scale={transform.scale}>
+                <MapPixiEmptyHitArea
+                    scene={scene}
+                    transform={transform}
+                    enablePicking={enablePicking}
+                    onClick={onPickClick}
+                    onHover={onPickHover}
+                    onMove={onPickMove}
+                    onOut={onPickOut}
+                />
                 {backgroundImage && backgroundBounds && (
                     <MapPixiBackground backgroundImage={backgroundImage} bounds={backgroundBounds}/>
                 )}
@@ -874,6 +982,7 @@ function MapPixiScene({
                         index={index}
                         transform={transform}
                         polygonLineWidth={polygonLineWidth}
+                        enablePicking={enablePicking}
                         hovered={hoveredDetail?.kind === 'shape' && hoveredDetail.object.id === shape.id}
                         onClick={onPickClick}
                         onHover={onPickHover}
@@ -890,6 +999,7 @@ function MapPixiScene({
                         keyLocationRadius={keyLocationRadius}
                         keyLocationStrokeColor={keyLocationStrokeColor}
                         keyLocationStrokeWidth={keyLocationStrokeWidth}
+                        enablePicking={enablePicking}
                         hovered={hoveredDetail?.kind === 'keyLocation' && hoveredDetail.object.id === location.id}
                         onClick={onPickClick}
                         onHover={onPickHover}
@@ -904,6 +1014,7 @@ function MapPixiScene({
                         index={index}
                         iconSize={iconSize}
                         transform={transform}
+                        enablePicking={enablePicking}
                         hovered={hoveredDetail?.kind === 'keyLocation' && hoveredDetail.object.id === location.id}
                         onClick={onPickClick}
                         onHover={onPickHover}
@@ -964,6 +1075,8 @@ export function MapPixiPreview({
                                    onKeyLocationClick,
                                    onKeyLocationHover,
                                    interactive = false,
+                                   enablePanZoom,
+                                   enablePicking = true,
                                    syncViewBox,
                                    onPreviewViewBoxChange,
                                }: MapPixiPreviewProps) {
@@ -978,7 +1091,9 @@ export function MapPixiPreview({
     const [interactiveViewBox, setInteractiveViewBox] = useState<MapShapeEditorViewBox | null>(null);
     const [panState, setPanState] = useState<PixiPanState | null>(null);
     const hasRenderableSize = size.width >= MIN_RENDER_SIZE && size.height >= MIN_RENDER_SIZE;
-    const shouldUseInteractiveViewBox = Boolean(interactive && !syncViewBox && scene);
+    const panZoomEnabled = enablePanZoom ?? interactive;
+    const pickingEnabled = enablePicking;
+    const shouldUseInteractiveViewBox = Boolean(panZoomEnabled && !syncViewBox && scene);
     const resolvedPolygonLineWidth = shapeStyle?.lineWidth ?? polygonLineWidth;
     const resolvedKeyLocationRadius = keyLocationStyle?.radius ?? keyLocationRadius;
     const resolvedKeyLocationStrokeColor = keyLocationStyle?.showStroke === false
@@ -1001,7 +1116,7 @@ export function MapPixiPreview({
     ), [effectiveSyncViewBox, hasRenderableSize, scene, size]);
 
     useEffect(() => {
-        if (!scene || !interactive || syncViewBox) {
+        if (!scene || !panZoomEnabled || syncViewBox) {
             setInteractiveViewBox(null);
             setPanState(null);
             return;
@@ -1012,7 +1127,7 @@ export function MapPixiPreview({
                 ? clampMapShapeEditorViewBox(currentViewBox, scene.canvas)
                 : createInitialMapShapeEditorViewBox(scene.canvas)
         ));
-    }, [interactive, scene, syncViewBox]);
+    }, [panZoomEnabled, scene, syncViewBox]);
 
     useEffect(() => {
         if (interactiveViewBox && onPreviewViewBoxChange) {
@@ -1108,8 +1223,20 @@ export function MapPixiPreview({
         };
     }, [elementRef, interactiveViewBox, scene, shouldUseInteractiveViewBox]);
     const resolveTooltip = useCallback((detail: MapPreviewPickDetail) => {
-        const customTooltip = normalizeTooltip(getTooltip?.(detail));
-        return customTooltip ?? getDefaultTooltip(detail);
+        if (!getTooltip) {
+            return getDefaultTooltip(detail);
+        }
+
+        const customTooltip = getTooltip(detail);
+        if (customTooltip === undefined) {
+            return getDefaultTooltip(detail);
+        }
+
+        if (customTooltip === null) {
+            return null;
+        }
+
+        return normalizeTooltip(customTooltip);
     }, [getTooltip]);
     const updateTooltip = useCallback((detail: MapPreviewPickDetail, event: FederatedPointerEvent) => {
         if (disableTooltip) {
@@ -1206,6 +1333,7 @@ export function MapPixiPreview({
                         showLabels={showLabels}
                         transform={transform}
                         size={size}
+                        enablePicking={pickingEnabled}
                         polygonLineWidth={resolvedPolygonLineWidth}
                         keyLocationRadius={resolvedKeyLocationRadius}
                         keyLocationStrokeColor={resolvedKeyLocationStrokeColor}

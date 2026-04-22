@@ -45,25 +45,29 @@ export interface MapShapeViewportProps {
     labelStyle?: MapPreviewLabelStyle;
     /**
      * Props forwarded to `MapDeckPreview`. `scene`、`syncViewBox`、`disableTooltip`、
-     * `interactive`、`onPreviewViewBoxChange` 和通用样式由 viewport 托管，不能在这里设置。
+     * `interactive`、交互开关、`onPreviewViewBoxChange` 和通用样式由 viewport 托管，不能在这里设置。
      */
     deckProps?: Omit<
         MapDeckPreviewProps,
-        'scene' | 'syncViewBox' | 'disableTooltip' | 'interactive' | 'shapeStyle' | 'keyLocationStyle' | 'labelStyle' | 'onPreviewViewBoxChange'
+        'scene' | 'syncViewBox' | 'disableTooltip' | 'interactive' | 'enablePanZoom' | 'enablePicking' | 'shapeStyle' | 'keyLocationStyle' | 'labelStyle' | 'onPreviewViewBoxChange'
     >;
     /**
      * Props forwarded to `MapPixiPreview`. `scene`、`syncViewBox`、`interactive`、
-     * `onPreviewViewBoxChange` 和通用样式由 viewport 托管，不能在这里设置。
+     * 交互开关、`onPreviewViewBoxChange` 和通用样式由 viewport 托管，不能在这里设置。
      */
     pixiProps?: Omit<
         MapPixiPreviewProps,
-        'scene' | 'syncViewBox' | 'interactive' | 'shapeStyle' | 'keyLocationStyle' | 'labelStyle' | 'onPreviewViewBoxChange'
+        'scene' | 'syncViewBox' | 'interactive' | 'enablePanZoom' | 'enablePicking' | 'shapeStyle' | 'keyLocationStyle' | 'labelStyle' | 'onPreviewViewBoxChange'
     >;
     /**
      * 预览视口变化回调。仅在预览渲染器处于 `interactive` 模式时触发。
      * 编辑模式下视口由 `viewBox` / `onViewBoxChange` 控制，不会触发此回调。
      */
     onPreviewViewBoxChange?: (viewBox: MapShapeEditorViewBox) => void;
+    /** 是否启用预览态滚轮缩放和拖拽平移；默认仅预览模式启用。 */
+    enablePreviewPanZoom?: boolean;
+    /** 是否启用预览态 picking、hover、click 与 tooltip；默认仅预览模式启用。 */
+    enablePreviewPicking?: boolean;
     className?: string;
     style?: CSSProperties;
 }
@@ -82,6 +86,8 @@ export function MapShapeViewport({
                                      deckProps,
                                      pixiProps,
                                      onPreviewViewBoxChange,
+                                     enablePreviewPanZoom,
+                                     enablePreviewPicking,
                                      className,
                                      style,
                                  }: MapShapeViewportProps) {
@@ -90,6 +96,8 @@ export function MapShapeViewport({
     );
 
     const isEditMode = mode === 'edit';
+    const panZoomEnabled = !isEditMode && (enablePreviewPanZoom ?? true);
+    const pickingEnabled = !isEditMode && (enablePreviewPicking ?? true);
     const viewBox = viewBoxProp ?? internalViewBox;
     const svgEditorClassName = [
         'fc-map-shape-viewport__svg-editor',
@@ -129,7 +137,8 @@ export function MapShapeViewport({
                         {...pixiProps}
                         scene={scene}
                         syncViewBox={isEditMode ? viewBox : undefined}
-                        interactive={!isEditMode}
+                        enablePanZoom={panZoomEnabled}
+                        enablePicking={pickingEnabled}
                         shapeStyle={shapeStyle}
                         keyLocationStyle={keyLocationStyle}
                         labelStyle={labelStyle}
@@ -142,7 +151,8 @@ export function MapShapeViewport({
                         scene={scene}
                         syncViewBox={isEditMode ? viewBox : undefined}
                         disableTooltip={isEditMode}
-                        interactive={!isEditMode}
+                        enablePanZoom={panZoomEnabled}
+                        enablePicking={pickingEnabled}
                         shapeStyle={shapeStyle}
                         keyLocationStyle={keyLocationStyle}
                         labelStyle={labelStyle}

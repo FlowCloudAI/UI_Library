@@ -67,6 +67,11 @@
   是否直接依赖 Pixi，再用 `useMemo` 管理 Filter 实例生命周期。
 - Pixi 标签已改为屏幕像素层渲染，避免随场景容器放大旧 Text 纹理导致文字发糊。当前标签在 `renderOverlay`
   之后绘制，优先保证文字可读性；如果后续需要 overlay 压在标签上方，应新增明确的 overlay z-order 选项。
+- Tier 2 已实现：`MapShapeViewport` 新增 `enablePreviewPanZoom` / `enablePreviewPicking`，Deck/Pixi 内部分别拆出
+  `enablePanZoom` / `enablePicking`；Pixi 已补空白区域 picking；tooltip 已统一为 `undefined` 回退默认、`null`
+  禁用当前对象 tooltip。后续如果业务需要“允许点击但禁用 hover tooltip”这类更细粒度能力，可再把 picking 拆成
+  hover/click/tooltip
+  三个开关。
 
 ---
 
@@ -86,14 +91,13 @@
 
 ### Tier 2：低成本，有明显功能/对齐收益
 
-| # | 事项                            | 对应遗留条目 | 改动说明                                                                                                                                                          | 预估时间   |
-|---|-------------------------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|
-| 4 | 拆分 `previewInteraction`       | 第 16 条 | `MapShapeViewportProps` 新增 `enablePreviewPanZoom?: boolean`、`enablePreviewPicking?: boolean`，默认值兼容当前 `!isEditMode` 行为；Pixi/Deck 内部把 `interactive` 拆成两个开关      | 20 min |
-| 5 | 空白区域 picking（`kind: 'empty'`） | 第 8 条  | `MapPixiScene` 的 `<pixiContainer>` 加 `eventMode="static"` + `hitArea`（覆盖 canvas 全范围），空白点击时生成 `MapPreviewEmptyPickDetail`。pan 在外层 div 触发，与 Pixi 内部 picking 不冲突 | 30 min |
-| 6 | tooltip 空返回值语义统一              | 第 10 条 | 明确约定：`getTooltip` 返回 `null` = **禁用该对象 tooltip**；返回 `undefined` = **回退默认 tooltip**。Pixi 侧把 `null` 分支改成 `setTooltipState(null)`                                 | 10 min |
+| # | 事项                              | 对应遗留条目 | 改动说明                                                                                                                                            | 预估时间 |
+|---|---------------------------------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------|------|
+| 4 | ✅ 拆分 `previewInteraction`       | 第 16 条 | `MapShapeViewportProps` 已新增 `enablePreviewPanZoom?: boolean`、`enablePreviewPicking?: boolean`；Pixi/Deck 内部已拆成 `enablePanZoom` 和 `enablePicking` | 已完成  |
+| 5 | ✅ 空白区域 picking（`kind: 'empty'`） | 第 8 条  | `MapPixiScene` 已增加全画布 hitArea，空白点击/hover 会生成 `MapPreviewEmptyPickDetail`；子对象事件会阻止冒泡，避免重复触发 empty                                                | 已完成  |
+| 6 | ✅ tooltip 空返回值语义统一              | 第 10 条 | 已统一约定：`getTooltip` 返回 `null` = **禁用该对象 tooltip**；返回 `undefined` = **回退默认 tooltip**                                                              | 已完成  |
 
-**结论**：加上 Tier 1，一小时可以完成 6 项。功能收益最实在的是 **空白区域 picking**（与 Deck 对齐）和 **interaction 拆分**
-（细粒度控制）。
+**结论**：Tier 2 已完成。构建通过，未发现影响后续 Tier 3 的阻塞项。
 
 ### Tier 3：中等成本，体验优化（按需做）
 

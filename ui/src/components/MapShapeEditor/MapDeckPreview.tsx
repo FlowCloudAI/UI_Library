@@ -177,17 +177,21 @@ export interface MapDeckPreviewProps {
     disableTooltip?: boolean;
 
     /**
-     * Customize the built-in hover tooltip. Return `null` to suppress it.
-     * Returning a string is equivalent to `{ text: string }`.
+     * Customize the built-in hover tooltip. Return `undefined` to use the default tooltip.
+     * Return `null` to suppress the current object's tooltip. Returning a string is equivalent to `{ text: string }`.
      */
-    getTooltip?: (detail: MapPreviewPickDetail) => MapPreviewTooltip | string | null;
+    getTooltip?: (detail: MapPreviewPickDetail) => MapPreviewTooltip | string | null | undefined;
 
+    /** @deprecated 使用 `enablePanZoom` 和 `enablePicking` 分别控制预览交互能力。 */
+    interactive?: boolean;
     /**
      * When true, enables zoom (wheel) and pan (drag) via OrthographicController.
      * View state is managed internally and resets to auto-fit when `scene` changes.
-     * Has no effect when `syncViewBox` is set.
+     * Has no effect when `syncViewBox` is set. Defaults to `interactive`.
      */
-    interactive?: boolean;
+    enablePanZoom?: boolean;
+    /** 是否启用 deck picking、hover、click 与 tooltip。未传入时默认启用。 */
+    enablePicking?: boolean;
 
     onDeckClick?: (detail: MapPreviewPickDetail) => void;
     onDeckHover?: (detail: MapPreviewPickDetail) => void;
@@ -913,6 +917,8 @@ export function MapDeckPreview({
                                    disableTooltip = false,
                                    getTooltip,
                                    interactive = false,
+                                   enablePanZoom,
+                                   enablePicking = true,
                                    onDeckClick,
                                    onDeckHover,
                                    onShapeClick,
@@ -926,10 +932,12 @@ export function MapDeckPreview({
     const isPageVisible = usePageVisibility();
     const [isDeviceReady, setIsDeviceReady] = useState(false);
     const [interactiveViewState, setInteractiveViewState] = useState<DeckViewState | null>(null);
+    const panZoomEnabled = enablePanZoom ?? interactive;
+    const pickingEnabled = enablePicking;
 
     useEffect(() => {
         setInteractiveViewState(null);
-    }, [scene, interactive]);
+    }, [scene, panZoomEnabled]);
     const hasRenderableSize = size.width >= MIN_RENDER_SIZE && size.height >= MIN_RENDER_SIZE;
     const shouldRenderDeck = Boolean(scene && hasRenderableSize && isPageVisible);
 
@@ -964,7 +972,7 @@ export function MapDeckPreview({
         return requestDeckRedraw(deckRef, 'MapDeckPreview resized');
     }, [isDeviceReady, scene, shouldRenderDeck, size.height, size.width]);
 
-    const isControlled = interactive && !syncViewBox;
+    const isControlled = panZoomEnabled && !syncViewBox;
     const viewState = scene
         ? (syncViewBox
             ? buildSyncedViewState(syncViewBox, size.width)
@@ -1044,7 +1052,7 @@ export function MapDeckPreview({
                     onLoad={() => {
                         requestDeckRedraw(deckRef, 'MapDeckPreview loaded');
                     }}
-                    onClick={info => {
+                    onClick={pickingEnabled ? info => {
                         const detail = toPickDetail(info);
                         onDeckClick?.(detail);
 
@@ -1055,8 +1063,8 @@ export function MapDeckPreview({
                         if (detail.kind === 'keyLocation') {
                             onKeyLocationClick?.(detail);
                         }
-                    }}
-                    onHover={info => {
+                    } : undefined}
+                    onHover={pickingEnabled ? info => {
                         const detail = toPickDetail(info);
                         onDeckHover?.(detail);
 
@@ -1067,11 +1075,23 @@ export function MapDeckPreview({
                         if (detail.kind === 'keyLocation') {
                             onKeyLocationHover?.(detail);
                         }
-                    }}
-                    getTooltip={disableTooltip ? undefined : info => {
+                    } : undefined}
+                    getTooltip={disableTooltip || !pickingEnabled ? undefined : info => {
                         const detail = toPickDetail(info);
-                        const customTooltip = normalizeTooltip(getTooltip?.(detail));
-                        return toDeckTooltip(customTooltip ?? getDefaultTooltip(detail));
+                        if (!getTooltip) {
+                            return toDeckTooltip(getDefaultTooltip(detail));
+                        }
+
+                        const customTooltip = getTooltip(detail);
+                        if (customTooltip === undefined) {
+                            return toDeckTooltip(getDefaultTooltip(detail));
+                        }
+
+                        if (customTooltip === null) {
+                            return null;
+                        }
+
+                        return toDeckTooltip(normalizeTooltip(customTooltip));
                     }}
                 />
             ) : (
