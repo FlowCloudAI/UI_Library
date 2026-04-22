@@ -24,7 +24,6 @@ import {
 } from 'react';
 
 import type {
-    DeckColor,
     MapEditorCanvas,
     MapKeyLocationRenderMode,
     MapPreviewBackgroundImage,
@@ -38,6 +37,7 @@ import type {
     MapPreviewShapePickDetail,
     MapPreviewShapeStyle,
     MapPreviewTooltip,
+    MapRgbaColor,
     MapShapeEditorViewBox,
 } from './types';
 import {clampMapShapeEditorViewBox, createInitialMapShapeEditorViewBox,} from './mapShapeEditorSvgUtils';
@@ -53,9 +53,9 @@ extend({
 const MIN_RENDER_SIZE = 2;
 const DEFAULT_LOCATION_RADIUS = 8;
 const DEFAULT_LOCATION_STROKE_WIDTH = 2;
-const DEFAULT_LOCATION_STROKE_COLOR: DeckColor = [255, 255, 255, 255];
+const DEFAULT_LOCATION_STROKE_COLOR: MapRgbaColor = [255, 255, 255, 255];
 const DEFAULT_LABEL_FONT_SIZE = 13;
-const DEFAULT_LABEL_COLOR: DeckColor = [38, 43, 56, 255];
+const DEFAULT_LABEL_COLOR: MapRgbaColor = [38, 43, 56, 255];
 const DEFAULT_LABEL_FONT_FAMILY = '"Microsoft YaHei UI", sans-serif';
 const DEFAULT_ICON_SIZE = 28;
 const PAN_DRAG_THRESHOLD = 3;
@@ -86,6 +86,7 @@ interface PixiPanState {
     hasMoved: boolean;
 }
 
+/** @deprecated 使用 {@link MapKeyLocationRenderMode}。 */
 export type MapPixiKeyLocationRenderMode = MapKeyLocationRenderMode;
 
 /** @deprecated 使用 {@link MapPreviewShapePickDetail} */
@@ -125,23 +126,23 @@ export interface MapPixiPreviewProps {
     keyLocationStyle?: MapPreviewKeyLocationStyle;
     /** 通用标签样式。优先使用该接口，散装样式 props 仅保留兼容。 */
     labelStyle?: MapPreviewLabelStyle;
-    /** 多边形描边宽度，按屏幕像素计算，默认 2。 */
+    /** @deprecated 使用 `shapeStyle.lineWidth`。 */
     polygonLineWidth?: number;
-    /** 关键地点圆点半径，按屏幕像素计算，默认 8。 */
+    /** @deprecated 使用 `keyLocationStyle.radius`。 */
     keyLocationRadius?: number;
-    /** 关键地点圆点描边颜色，默认白色。 */
-    keyLocationStrokeColor?: DeckColor;
+    /** @deprecated 使用 `keyLocationStyle.strokeColor`。 */
+    keyLocationStrokeColor?: MapRgbaColor;
     /**
-     * 关键地点渲染模式。`auto` 会在存在 icon.url 时渲染图标，否则回退圆点。
+     * @deprecated 使用 `keyLocationStyle.renderMode`。
      */
     keyLocationRenderMode?: MapPixiKeyLocationRenderMode;
-    /** 关键地点图标尺寸，按屏幕像素计算；地点自身的 iconSize 优先。 */
+    /** @deprecated 使用 `keyLocationStyle.iconSize`。 */
     iconSize?: number;
-    /** 关键地点标签字号，按屏幕像素计算，默认 13。 */
+    /** @deprecated 使用 `labelStyle.fontSize`。 */
     labelFontSize?: number;
-    /** 关键地点标签颜色，默认深灰色。 */
-    labelColor?: DeckColor;
-    /** 关键地点标签字体族。 */
+    /** @deprecated 使用 `labelStyle.color`。 */
+    labelColor?: MapRgbaColor;
+    /** @deprecated 使用 `labelStyle.fontFamily`。 */
     labelFontFamily?: string;
     /** 为 true 时关闭 Pixi 内置 tooltip。 */
     disableTooltip?: boolean;
@@ -319,11 +320,11 @@ function usePixiImageTexture(url: string | undefined): Texture {
     return texture;
 }
 
-function colorToHex(color: DeckColor): number {
+function colorToHex(color: MapRgbaColor): number {
     return (color[0] << 16) + (color[1] << 8) + color[2];
 }
 
-function colorToAlpha(color: DeckColor): number {
+function colorToAlpha(color: MapRgbaColor): number {
     return Math.max(0, Math.min(1, color[3] / 255));
 }
 
@@ -424,6 +425,16 @@ function getEventCanvasCoordinate(
     return [
         (point.x - transform.x) / Math.max(transform.scale, 0.01),
         (point.y - transform.y) / Math.max(transform.scale, 0.01),
+    ];
+}
+
+function toScreenPoint(
+    position: [number, number],
+    transform: PixiViewportTransform,
+): [number, number] {
+    return [
+        Math.round(transform.x + position[0] * transform.scale),
+        Math.round(transform.y + position[1] * transform.scale),
     ];
 }
 
@@ -540,7 +551,7 @@ function drawKeyLocationCircle(
     location: MapPreviewKeyLocation,
     scale: number,
     keyLocationRadius: number,
-    keyLocationStrokeColor: DeckColor,
+    keyLocationStrokeColor: MapRgbaColor,
     keyLocationStrokeWidth: number,
     hovered: boolean,
 ) {
@@ -653,7 +664,7 @@ function MapPixiKeyLocationCircle({
     index: number;
     transform: PixiViewportTransform;
     keyLocationRadius: number;
-    keyLocationStrokeColor: DeckColor;
+    keyLocationStrokeColor: MapRgbaColor;
     keyLocationStrokeWidth: number;
     hovered: boolean;
     onClick: (detail: MapPreviewKeyLocationPickDetail, event: FederatedPointerEvent) => void;
@@ -798,12 +809,12 @@ function MapPixiScene({
     size: ElementSize;
     polygonLineWidth: number;
     keyLocationRadius: number;
-    keyLocationStrokeColor: DeckColor;
+    keyLocationStrokeColor: MapRgbaColor;
     keyLocationStrokeWidth: number;
     keyLocationRenderMode: MapPixiKeyLocationRenderMode;
     iconSize: number;
     labelFontSize: number;
-    labelColor: DeckColor;
+    labelColor: MapRgbaColor;
     labelFontFamily: string;
     labelFontWeight: string;
     hoveredDetail: MapPreviewPickDetail | null;
@@ -836,83 +847,90 @@ function MapPixiScene({
         .filter(({location}) => shouldRenderKeyLocationAsIcon(location, keyLocationRenderMode)), [keyLocationRenderMode, scene.keyLocations]);
     const labelStyle = useMemo<TextStyleOptions>(() => ({
         fontFamily: labelFontFamily,
-        fontSize: normalizePositiveNumber(labelFontSize, DEFAULT_LABEL_FONT_SIZE) / Math.max(transform.scale, 0.01),
+        fontSize: normalizePositiveNumber(labelFontSize, DEFAULT_LABEL_FONT_SIZE),
         fill: colorToHex(labelColor),
         fontWeight: labelFontWeight as TextStyleOptions['fontWeight'],
         align: 'center',
-    }), [labelColor, labelFontFamily, labelFontSize, labelFontWeight, transform.scale]);
+    }), [labelColor, labelFontFamily, labelFontSize, labelFontWeight]);
     const getLabelOffset = useCallback((location: MapPreviewKeyLocation) => {
-        const markerOffset = shouldRenderKeyLocationAsIcon(location, keyLocationRenderMode)
-            ? Math.max(resolveIconRenderSize(location, iconSize, transform.scale).height / 2 + 8 / Math.max(transform.scale, 0.01), 18 / Math.max(transform.scale, 0.01))
-            : 18 / Math.max(transform.scale, 0.01);
+        if (shouldRenderKeyLocationAsIcon(location, keyLocationRenderMode)) {
+            const markerSize = normalizePositiveNumber(location.iconSize, iconSize);
+            return Math.max(markerSize / 2 + 8, 18);
+        }
 
-        return markerOffset;
-    }, [iconSize, keyLocationRenderMode, transform.scale]);
+        return 18;
+    }, [iconSize, keyLocationRenderMode]);
 
     return (
-        <pixiContainer x={transform.x} y={transform.y} scale={transform.scale} filters={sceneFilters}>
-            {backgroundImage && backgroundBounds && (
-                <MapPixiBackground backgroundImage={backgroundImage} bounds={backgroundBounds}/>
-            )}
-            {scene.shapes.map((shape, index) => (
-                <MapPixiShape
-                    key={shape.id}
-                    shape={shape}
-                    index={index}
-                    transform={transform}
-                    polygonLineWidth={polygonLineWidth}
-                    hovered={hoveredDetail?.kind === 'shape' && hoveredDetail.object.id === shape.id}
-                    onClick={onPickClick}
-                    onHover={onPickHover}
-                    onMove={onPickMove}
-                    onOut={onPickOut}
-                />
-            ))}
-            {circleKeyLocationItems.map(({location, index}) => (
-                <MapPixiKeyLocationCircle
-                    key={location.id}
-                    location={location}
-                    index={index}
-                    transform={transform}
-                    keyLocationRadius={keyLocationRadius}
-                    keyLocationStrokeColor={keyLocationStrokeColor}
-                    keyLocationStrokeWidth={keyLocationStrokeWidth}
-                    hovered={hoveredDetail?.kind === 'keyLocation' && hoveredDetail.object.id === location.id}
-                    onClick={onPickClick}
-                    onHover={onPickHover}
-                    onMove={onPickMove}
-                    onOut={onPickOut}
-                />
-            ))}
-            {iconKeyLocationItems.map(({location, index}) => (
-                <MapPixiKeyLocationIcon
-                    key={location.id}
-                    location={location}
-                    index={index}
-                    iconSize={iconSize}
-                    transform={transform}
-                    hovered={hoveredDetail?.kind === 'keyLocation' && hoveredDetail.object.id === location.id}
-                    onClick={onPickClick}
-                    onHover={onPickHover}
-                    onMove={onPickMove}
-                    onOut={onPickOut}
-                />
-            ))}
-            {showLabels && scene.keyLocations.map(location => (
-                <pixiText
-                    key={location.id}
-                    text={location.name}
-                    x={location.position[0]}
-                    y={location.position[1] - getLabelOffset(location)}
-                    anchor={0.5}
-                    alpha={colorToAlpha(labelColor)}
-                    style={labelStyle}
-                />
-            ))}
-            {renderOverlay?.({
-                scene,
-                viewportTransform: transform,
-                viewportSize: size,
+        <pixiContainer filters={sceneFilters}>
+            <pixiContainer x={transform.x} y={transform.y} scale={transform.scale}>
+                {backgroundImage && backgroundBounds && (
+                    <MapPixiBackground backgroundImage={backgroundImage} bounds={backgroundBounds}/>
+                )}
+                {scene.shapes.map((shape, index) => (
+                    <MapPixiShape
+                        key={shape.id}
+                        shape={shape}
+                        index={index}
+                        transform={transform}
+                        polygonLineWidth={polygonLineWidth}
+                        hovered={hoveredDetail?.kind === 'shape' && hoveredDetail.object.id === shape.id}
+                        onClick={onPickClick}
+                        onHover={onPickHover}
+                        onMove={onPickMove}
+                        onOut={onPickOut}
+                    />
+                ))}
+                {circleKeyLocationItems.map(({location, index}) => (
+                    <MapPixiKeyLocationCircle
+                        key={location.id}
+                        location={location}
+                        index={index}
+                        transform={transform}
+                        keyLocationRadius={keyLocationRadius}
+                        keyLocationStrokeColor={keyLocationStrokeColor}
+                        keyLocationStrokeWidth={keyLocationStrokeWidth}
+                        hovered={hoveredDetail?.kind === 'keyLocation' && hoveredDetail.object.id === location.id}
+                        onClick={onPickClick}
+                        onHover={onPickHover}
+                        onMove={onPickMove}
+                        onOut={onPickOut}
+                    />
+                ))}
+                {iconKeyLocationItems.map(({location, index}) => (
+                    <MapPixiKeyLocationIcon
+                        key={location.id}
+                        location={location}
+                        index={index}
+                        iconSize={iconSize}
+                        transform={transform}
+                        hovered={hoveredDetail?.kind === 'keyLocation' && hoveredDetail.object.id === location.id}
+                        onClick={onPickClick}
+                        onHover={onPickHover}
+                        onMove={onPickMove}
+                        onOut={onPickOut}
+                    />
+                ))}
+                {renderOverlay?.({
+                    scene,
+                    viewportTransform: transform,
+                    viewportSize: size,
+                })}
+            </pixiContainer>
+            {showLabels && scene.keyLocations.map(location => {
+                const [screenX, screenY] = toScreenPoint(location.position, transform);
+
+                return (
+                    <pixiText
+                        key={location.id}
+                        text={location.name}
+                        x={screenX}
+                        y={screenY - getLabelOffset(location)}
+                        anchor={0.5}
+                        alpha={colorToAlpha(labelColor)}
+                        style={labelStyle}
+                    />
+                );
             })}
         </pixiContainer>
     );
@@ -964,7 +982,7 @@ export function MapPixiPreview({
     const resolvedPolygonLineWidth = shapeStyle?.lineWidth ?? polygonLineWidth;
     const resolvedKeyLocationRadius = keyLocationStyle?.radius ?? keyLocationRadius;
     const resolvedKeyLocationStrokeColor = keyLocationStyle?.showStroke === false
-        ? [keyLocationStrokeColor[0], keyLocationStrokeColor[1], keyLocationStrokeColor[2], 0] as DeckColor
+        ? [keyLocationStrokeColor[0], keyLocationStrokeColor[1], keyLocationStrokeColor[2], 0] as MapRgbaColor
         : keyLocationStyle?.strokeColor ?? keyLocationStrokeColor;
     const resolvedKeyLocationStrokeWidth = keyLocationStyle?.strokeWidth ?? DEFAULT_LOCATION_STROKE_WIDTH;
     const resolvedKeyLocationRenderMode = keyLocationStyle?.renderMode ?? keyLocationRenderMode;

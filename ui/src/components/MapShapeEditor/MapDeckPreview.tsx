@@ -127,30 +127,27 @@ export interface MapDeckPreviewProps {
     labelStyle?: MapPreviewLabelStyle;
 
     /**
-     * Override any PolygonLayer prop except `id`, `data`, and `getPolygon`.
-     * Spread before locked props, so structural accessors always win.
+     * @deprecated 常规图形样式请优先使用 `shapeStyle`；该入口仅作为 Deck PolygonLayer 高级覆盖口保留。
      */
     polygonLayerProps?: Omit<PolygonLayerProps<MapPreviewShape>, 'id' | 'data' | 'getPolygon'>;
 
     /**
-     * Override any ScatterplotLayer prop except `id`, `data`, and `getPosition`.
+     * @deprecated 常规关键地点样式请优先使用 `keyLocationStyle`；该入口仅作为 Deck ScatterplotLayer 高级覆盖口保留。
      */
     scatterplotLayerProps?: Omit<ScatterplotLayerProps<MapPreviewKeyLocation>, 'id' | 'data' | 'getPosition'>;
 
     /**
-     * Key location render mode. `auto` renders icon markers when location.icon
-     * is present, otherwise falls back to circle markers.
+     * @deprecated 使用 `keyLocationStyle.renderMode`。
      */
     keyLocationRenderMode?: MapKeyLocationRenderMode;
 
     /**
-     * Override any IconLayer prop except `id`, `data`, `getPosition`, and `getIcon`.
+     * @deprecated 常规图标样式请优先使用 `keyLocationStyle`；该入口仅作为 Deck IconLayer 高级覆盖口保留。
      */
     iconLayerProps?: Omit<IconLayerProps<MapPreviewKeyLocation>, 'id' | 'data' | 'getPosition' | 'getIcon'>;
 
     /**
-     * Override any TextLayer prop except `id`, `data`, and `getText`.
-     * `getPosition` is overridable — default places labels 18px above marker.
+     * @deprecated 常规标签样式请优先使用 `labelStyle`；该入口仅作为 Deck TextLayer 高级覆盖口保留。
      */
     textLayerProps?: Omit<TextLayerProps<MapPreviewKeyLocation>, 'id' | 'data' | 'getText'>;
 

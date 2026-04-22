@@ -65,3 +65,56 @@
   示例做成长期文档，应考虑从组件库导出轻量 Pixi overlay helper，或在 app 明确添加 Pixi 依赖并补类型。
 - Demo 当前的 Pixi 风格化覆盖层只使用 `Graphics` 绘制，没有使用 `sceneFilters`。后续如果需要演示 filter 能力，应先决定 app
   是否直接依赖 Pixi，再用 `useMemo` 管理 Filter 实例生命周期。
+- Pixi 标签已改为屏幕像素层渲染，避免随场景容器放大旧 Text 纹理导致文字发糊。当前标签在 `renderOverlay`
+  之后绘制，优先保证文字可读性；如果后续需要 overlay 压在标签上方，应新增明确的 overlay z-order 选项。
+
+---
+
+## 按性价比排序的实施建议
+
+> 以下按 **"改动量最小、收益最实在"** 分级。每做完一批记得更新本清单，把已完成项标记为 ✅。
+
+### Tier 1：几乎零成本，纯类型/注释层清理（建议优先）
+
+| # | 事项                                               | 对应遗留条目 | 改动说明                                                                                        | 预估时间 |
+|---|--------------------------------------------------|--------|---------------------------------------------------------------------------------------------|------|
+| 1 | ✅ `MapPixiKeyLocationRenderMode` 标 `@deprecated` | 第 3 条  | `MapPixiPreview.tsx` 已加 JSDoc，引导使用 `MapKeyLocationRenderMode`                               | 已完成  |
+| 2 | ✅ `DeckColor` 内部类型切到 `MapRgbaColor`              | 第 1 条  | `MapRgbaColor` 已提升为主定义，`DeckColor` 已标 `@deprecated`；`api.ts` / `MapPixiPreview.tsx` 内部类型已替换 | 已完成  |
+| 3 | ✅ 散装样式 props 标 `@deprecated`                     | 第 19 条 | `MapPixiPreviewProps` / `MapDeckPreviewProps` 中已被通用样式覆盖的样式入口已加废弃说明                          | 已完成  |
+
+**结论**：Tier 1 已完成。此次为纯类型/注释层清理，构建通过，未发现影响后续 Tier 2 的阻塞项。
+
+### Tier 2：低成本，有明显功能/对齐收益
+
+| # | 事项                            | 对应遗留条目 | 改动说明                                                                                                                                                          | 预估时间   |
+|---|-------------------------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|
+| 4 | 拆分 `previewInteraction`       | 第 16 条 | `MapShapeViewportProps` 新增 `enablePreviewPanZoom?: boolean`、`enablePreviewPicking?: boolean`，默认值兼容当前 `!isEditMode` 行为；Pixi/Deck 内部把 `interactive` 拆成两个开关      | 20 min |
+| 5 | 空白区域 picking（`kind: 'empty'`） | 第 8 条  | `MapPixiScene` 的 `<pixiContainer>` 加 `eventMode="static"` + `hitArea`（覆盖 canvas 全范围），空白点击时生成 `MapPreviewEmptyPickDetail`。pan 在外层 div 触发，与 Pixi 内部 picking 不冲突 | 30 min |
+| 6 | tooltip 空返回值语义统一              | 第 10 条 | 明确约定：`getTooltip` 返回 `null` = **禁用该对象 tooltip**；返回 `undefined` = **回退默认 tooltip**。Pixi 侧把 `null` 分支改成 `setTooltipState(null)`                                 | 10 min |
+
+**结论**：加上 Tier 1，一小时可以完成 6 项。功能收益最实在的是 **空白区域 picking**（与 Deck 对齐）和 **interaction 拆分**
+（细粒度控制）。
+
+### Tier 3：中等成本，体验优化（按需做）
+
+| # | 事项                    | 对应遗留条目 | 改动说明                                                            | 预估时间      |
+|---|-----------------------|--------|-----------------------------------------------------------------|-----------|
+| 7 | pan/zoom 期间隐藏 tooltip | 第 17 条 | `handlePointerDown` / `handleWheel` 开始时 `setTooltipState(null)` | 10 min    |
+| 8 | 统一初始视口 framing        | 第 14 条 | Pixi 预览初始 `viewBox` 与 Deck 统一，或双栏模式下显式传入同一份 `syncViewBox`       | 30 min    |
+| 9 | tooltip 视口边缘避让        | 第 9 条  | tooltip DOM 加 `ref`，`useLayoutEffect` 测量尺寸，调整 `left/top` 防溢出容器  | 30-60 min |
+
+**结论**：属于锦上添花，等有实际交互体验反馈（如移动端适配、tooltip 截断投诉）时再补。
+
+### Tier 4：高成本或当前收益不明确（暂不建议）
+
+| #  | 事项                                      | 对应遗留条目    | 暂不做的原因                                           |
+|----|-----------------------------------------|-----------|--------------------------------------------------|
+| 10 | `fontWeight` 联合类型                       | 第 20 条    | Deck 与 Pixi 接受的值域差异大，联合类型只是 `string` 子集，收益有限     |
+| 11 | `icon.mask` 单色图标着色                      | 第 5 条     | 需要独立设计 Pixi tint/mask 语义，不能直接照搬 Deck `IconLayer` |
+| 12 | 纹理缓存 / 加载失败占位                           | 第 6 条     | 当前场景规模小，DOM Image 加载已够用                          |
+| 13 | `renderScreenOverlay` / 统一 overlay prop | 第 22、23 条 | 架构改动大，需先明确 Deck Layer 与 Pixi ReactNode 的能力边界     |
+| 14 | Pixi shader 字符串注入 API                   | 第 25 条    | 优先级低，`renderOverlay` + `sceneFilters` 已提供逃生口     |
+
+---
+
+*最后更新：2026-04-22*

@@ -65,9 +65,10 @@ export interface MapShapeSaveRequest {
 
 import type {CSSProperties} from 'react';
 
-export type DeckColor = [number, number, number, number];
+export type MapRgbaColor = [number, number, number, number];
 
-export type MapRgbaColor = DeckColor;
+/** @deprecated 使用 {@link MapRgbaColor}。 */
+export type DeckColor = MapRgbaColor;
 
 export type MapKeyLocationRenderMode = 'circle' | 'icon' | 'auto';
 
@@ -106,8 +107,8 @@ export interface MapPreviewShape extends MapShapeExtensible {
     id: string;
     name: string;
     polygon: [number, number][];
-    fillColor: DeckColor;
-    lineColor: DeckColor;
+    fillColor: MapRgbaColor;
+    lineColor: MapRgbaColor;
     bizId?: string | null;
     kind?: 'coastline';
 }
@@ -118,7 +119,7 @@ export interface MapPreviewKeyLocation extends MapShapeExtensible {
     type: string;
     position: [number, number];
     shapeId?: string | null;
-    color: DeckColor;
+    color: MapRgbaColor;
     icon?: MapPreviewKeyLocationIcon | null;
     iconSize?: number;
     bizId?: string | null;
