@@ -21,10 +21,10 @@
 - Pixi 图标和背景已改为 DOM `Image` 加载后创建纹理，尚未做跨实例纹理缓存、加载失败占位或跨域错误反馈。场景规模变大或外部图片源复杂时再统一补。
 - Pixi 已支持图形和关键地点 picking、hover、click、默认 tooltip 与 `getTooltip`，但 pick detail 类型仍是 Pixi/Deck 各一套。后续应抽出
   renderer-agnostic 的 `MapPreviewPickDetail` / `MapPreviewTooltip`，Deck 与 Pixi 只保留底层专属字段。
-- Pixi 当前没有空白区域 picking，因此没有 `kind: 'empty'`，与 Deck 的 `onDeckClick` 空白点击能力不完全一致。若业务需要背景点击、清空选择或右键菜单，应在
-  Pixi 侧补容器级 hitArea。
-- Pixi tooltip 当前是组件内 DOM 浮层，位置按 Pixi 全局坐标加偏移计算，尚未做视口边缘避让。后续如果 tooltip
-  内容较宽或移动端使用，应补自动翻转/裁剪。
+- Pixi 已支持空白区域 picking，并会返回 `kind: 'empty'`。后续如果要承接背景右键菜单、框选起点或清空选择，应继续复用该
+  empty pick detail，而不是新增另一套背景点击接口。
+- Pixi tooltip 已支持容器边缘避让，并会在 pan/zoom 开始时隐藏。当前只覆盖 Pixi 自管 DOM tooltip；Deck tooltip 仍由 DeckGL
+  内部处理，后续如需完全一致的 tooltip 行为，应考虑把 Deck tooltip 也改为组件自管 DOM 浮层。
 - Pixi `getTooltip` 的空返回值语义与当前 Deck 实现保持一致：回退默认 tooltip，关闭整体 tooltip 使用 `disableTooltip`
   。后续统一通用 tooltip API 时，应明确“回退默认”和“禁止显示”两个不同返回语义。
 - Pixi tooltip 支持 `html` 并使用 `dangerouslySetInnerHTML`，与 Deck 的 HTML tooltip 能力对齐，但需要调用方保证内容可信。后续通用
@@ -33,13 +33,13 @@
   的告警。如果浏览器中仍出现 `WebGL context was lost`，再继续检查 Pixi/Deck 切换时的上下文生命周期、热更新重复挂载和显卡资源上限。
 - Pixi 非编辑预览模式已支持滚轮缩放和拖拽平移，并复用 `clampMapShapeEditorViewBox` 限制视口范围；当前内部交互视口没有暴露给宿主。后续如需
   Deck/Pixi 双栏对照或外部保存预览视口，应新增 renderer-agnostic 的 `previewViewBox` / `onPreviewViewBoxChange`。
-- Pixi 预览模式的初始视口当前按完整画布初始化，Deck 预览仍保留自身 auto-fit/padding 行为。两者默认首屏 framing
-  可能存在轻微差异，后续做双栏对照 Demo 时应统一初始适配策略或显式传入同一份 `syncViewBox`。
+- Pixi 与 Deck 默认初始视口已统一为完整画布 `viewBox`，与 SVG 编辑器的初始 viewBox 对齐。该策略默认宿主容器宽高比与画布一致；
+  `MapShapeViewport` 已满足这一点。若未来单独使用预览组件且容器宽高比不一致，可能需要补 `fitMode` 或显式 `previewViewBox`。
 - Pixi 拖拽平移从预览容器级别触发，移动超过阈值后会压制本次 click。后续如果给预览层增加对象拖拽、框选或右键菜单，需要把 pan
   手势与 picking/编辑手势拆成更明确的交互模式。
 - `MapShapeViewport` 目前把 Pixi 的 `interactive` 作为内部托管参数，仅按 `mode` 自动切换。后续如果预览态需要只读但禁用
   pan/zoom/picking，应补通用的 `previewInteraction` 或拆分 `enablePreviewPanZoom`、`enablePreviewPicking` 语义。
-- Pixi pan/zoom 期间 tooltip 没有独立的“平移中禁用/隐藏”接口；当前不影响功能，但移动端或高频滚轮场景可能需要统一的 hover
+- Pixi pan/zoom 开始时会隐藏当前 tooltip。后续如果需要在连续滚轮、触控缩放或惯性滚动期间暂停 hover，可再补更完整的 hover
   暂停策略。
 - 第 5 步已把 Demo 控件文案从 Deck layer 术语改为通用样式术语，但 `deckProps` / `pixiProps`
   的类型层面仍允许部分渲染器专属样式入口存在于单独组件上。后续如果要减少不当接口，应先补迁移说明，再考虑给散装 Pixi 样式
@@ -101,13 +101,15 @@
 
 ### Tier 3：中等成本，体验优化（按需做）
 
-| # | 事项                    | 对应遗留条目 | 改动说明                                                            | 预估时间      |
-|---|-----------------------|--------|-----------------------------------------------------------------|-----------|
-| 7 | pan/zoom 期间隐藏 tooltip | 第 17 条 | `handlePointerDown` / `handleWheel` 开始时 `setTooltipState(null)` | 10 min    |
-| 8 | 统一初始视口 framing        | 第 14 条 | Pixi 预览初始 `viewBox` 与 Deck 统一，或双栏模式下显式传入同一份 `syncViewBox`       | 30 min    |
-| 9 | tooltip 视口边缘避让        | 第 9 条  | tooltip DOM 加 `ref`，`useLayoutEffect` 测量尺寸，调整 `left/top` 防溢出容器  | 30-60 min |
+| # | 事项                      | 对应遗留条目 | 改动说明                                                                    | 预估时间 |
+|---|-------------------------|--------|-------------------------------------------------------------------------|------|
+| 7 | ✅ pan/zoom 期间隐藏 tooltip | 第 17 条 | Pixi `handlePointerDown` / `handleWheel` 开始时会清空 tooltip                 | 已完成  |
+| 8 | ✅ 统一初始视口 framing        | 第 14 条 | Deck/Pixi 默认初始视口统一使用完整画布 `viewBox`，与 SVG 初始 viewBox 对齐                  | 已完成  |
+| 9 | ✅ tooltip 视口边缘避让        | 第 9 条  | Pixi tooltip DOM 已加 `ref`，通过 `useLayoutEffect` 测量尺寸并调整 `left/top` 防溢出容器 | 已完成  |
 
-**结论**：属于锦上添花，等有实际交互体验反馈（如移动端适配、tooltip 截断投诉）时再补。
+**结论**：Tier 3 已完成。此次按 SVG/Pixi 的完整画布 viewBox 统一初始 framing；剩余非阻塞点是独立预览组件在非画布宽高比容器里可能需要额外
+fit
+策略，已记录到当前不阻塞事项。
 
 ### Tier 4：高成本或当前收益不明确（暂不建议）
 

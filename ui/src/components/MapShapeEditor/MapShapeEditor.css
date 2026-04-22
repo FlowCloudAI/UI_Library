@@ -389,7 +389,6 @@
     white-space: pre-line;
     pointer-events: none;
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.28);
-    transform: translate(12px, 12px);
 }
 
 .fc-map-shape-editor__shape-polygon {

@@ -18,6 +18,7 @@ import {
     type ReactNode,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useMemo,
     useRef,
     useState,
@@ -85,6 +86,11 @@ interface PixiPanState {
     startClientY: number;
     originViewBox: MapShapeEditorViewBox;
     hasMoved: boolean;
+}
+
+interface TooltipPosition {
+    left: number;
+    top: number;
 }
 
 /** @deprecated 使用 {@link MapKeyLocationRenderMode}。 */
@@ -478,23 +484,12 @@ function buildViewportTransform(
     size: ElementSize,
     syncViewBox?: MapShapeEditorViewBox,
 ): PixiViewportTransform {
-    if (syncViewBox) {
-        const scale = size.width / Math.max(syncViewBox.width, 1);
-        return {
-            x: -syncViewBox.x * scale,
-            y: -syncViewBox.y * scale,
-            scale,
-        };
-    }
-
-    const scale = Math.min(
-        size.width / Math.max(canvas.width, 1),
-        size.height / Math.max(canvas.height, 1),
-    ) * 0.92;
+    const viewBox = syncViewBox ?? createInitialMapShapeEditorViewBox(canvas);
+    const scale = size.width / Math.max(viewBox.width, 1);
 
     return {
-        x: (size.width - canvas.width * scale) / 2,
-        y: (size.height - canvas.height * scale) / 2,
+        x: -viewBox.x * scale,
+        y: -viewBox.y * scale,
         scale,
     };
 }
@@ -1081,6 +1076,7 @@ export function MapPixiPreview({
                                    onPreviewViewBoxChange,
                                }: MapPixiPreviewProps) {
     const {elementRef, size} = useElementSize<HTMLDivElement>();
+    const tooltipRef = useRef<HTMLDivElement | null>(null);
     const suppressPickClickRef = useRef(false);
     const [hoveredDetail, setHoveredDetail] = useState<MapPreviewPickDetail | null>(null);
     const [tooltipState, setTooltipState] = useState<{
@@ -1088,6 +1084,7 @@ export function MapPixiPreview({
         x: number;
         y: number;
     } | null>(null);
+    const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(null);
     const [interactiveViewBox, setInteractiveViewBox] = useState<MapShapeEditorViewBox | null>(null);
     const [panState, setPanState] = useState<PixiPanState | null>(null);
     const hasRenderableSize = size.width >= MIN_RENDER_SIZE && size.height >= MIN_RENDER_SIZE;
@@ -1114,6 +1111,44 @@ export function MapPixiPreview({
             ? buildViewportTransform(scene.canvas, size, effectiveSyncViewBox)
             : null
     ), [effectiveSyncViewBox, hasRenderableSize, scene, size]);
+
+    useLayoutEffect(() => {
+        if (!tooltipState) {
+            setTooltipPosition(null);
+            return;
+        }
+
+        const tooltipNode = tooltipRef.current;
+        if (!tooltipNode || size.width <= 0 || size.height <= 0) {
+            setTooltipPosition({
+                left: tooltipState.x + 12,
+                top: tooltipState.y + 12,
+            });
+            return;
+        }
+
+        const margin = 8;
+        const offset = 12;
+        const tooltipWidth = tooltipNode.offsetWidth;
+        const tooltipHeight = tooltipNode.offsetHeight;
+        const maxLeft = Math.max(margin, size.width - tooltipWidth - margin);
+        const maxTop = Math.max(margin, size.height - tooltipHeight - margin);
+        let left = tooltipState.x + offset;
+        let top = tooltipState.y + offset;
+
+        if (left > maxLeft) {
+            left = tooltipState.x - tooltipWidth - offset;
+        }
+
+        if (top > maxTop) {
+            top = tooltipState.y - tooltipHeight - offset;
+        }
+
+        setTooltipPosition({
+            left: Math.min(Math.max(left, margin), maxLeft),
+            top: Math.min(Math.max(top, margin), maxTop),
+        });
+    }, [size.height, size.width, tooltipState]);
 
     useEffect(() => {
         if (!scene || !panZoomEnabled || syncViewBox) {
@@ -1201,6 +1236,7 @@ export function MapPixiPreview({
             if (rect.width <= 0 || rect.height <= 0) return;
 
             event.preventDefault();
+            setTooltipState(null);
 
             const zoomFactor = event.deltaY < 0 ? 0.9 : 1.1;
             const pointer = toViewBoxPoint(event.clientX, event.clientY, rect, currentViewBox);
@@ -1298,6 +1334,7 @@ export function MapPixiPreview({
 
         const currentViewBox = interactiveViewBox ?? createInitialMapShapeEditorViewBox(scene.canvas);
         event.preventDefault();
+        setTooltipState(null);
         event.currentTarget.setPointerCapture(event.pointerId);
         setPanState({
             pointerId: event.pointerId,
@@ -1358,11 +1395,13 @@ export function MapPixiPreview({
             )}
             {tooltipState && (
                 <div
+                    ref={tooltipRef}
                     className={`fc-map-pixi-preview__tooltip${tooltipState.tooltip.className ? ` ${tooltipState.tooltip.className}` : ''}`}
                     style={{
-                        left: tooltipState.x,
-                        top: tooltipState.y,
                         ...tooltipState.tooltip.style,
+                        left: tooltipPosition?.left ?? tooltipState.x + 12,
+                        top: tooltipPosition?.top ?? tooltipState.y + 12,
+                        transform: 'none',
                     }}
                 >
                     {tooltipState.tooltip.html ? (

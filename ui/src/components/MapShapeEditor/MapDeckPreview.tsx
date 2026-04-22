@@ -38,6 +38,7 @@ import type {
     MapPreviewTooltip,
     MapShapeEditorViewBox,
 } from './types';
+import {createInitialMapShapeEditorViewBox} from './mapShapeEditorSvgUtils';
 import './MapShapeEditor.css';
 
 const PREVIEW_VIEW = new OrthographicView({ id: 'fc-map-deck-preview' });
@@ -563,17 +564,7 @@ function requestDeckRedraw(deckRef: RefObject<DeckGLRef | null>, reason: string)
 // ── View state ─────────────────────────────────────────────────────────────────
 
 function buildAutoViewState(canvas: MapEditorCanvas, size: ElementSize) {
-    const safeWidth = Math.max(canvas.width, 1);
-    const safeHeight = Math.max(canvas.height, 1);
-    const availableWidth = Math.max(size.width, 1);
-    const availableHeight = Math.max(size.height, 1);
-    const scale = Math.min(availableWidth / safeWidth, availableHeight / safeHeight) * 0.92;
-    const zoom = Math.log2(Math.max(scale, 0.01));
-
-    return {
-        target: [canvas.width / 2, canvas.height / 2, 0] as [number, number, number],
-        zoom,
-    };
+    return buildSyncedViewState(createInitialMapShapeEditorViewBox(canvas), size.width);
 }
 
 function buildSyncedViewState(viewBox: MapShapeEditorViewBox, containerWidth: number) {
