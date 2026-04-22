@@ -63,7 +63,44 @@ export interface MapShapeSaveRequest {
     meta?: MapShapeRequestMeta;
 }
 
+import type {CSSProperties} from 'react';
+
 export type DeckColor = [number, number, number, number];
+
+export type MapRgbaColor = DeckColor;
+
+export type MapKeyLocationRenderMode = 'circle' | 'icon' | 'auto';
+
+export interface MapPreviewShapeStyle {
+    /** 多边形描边宽度，按屏幕像素计算。 */
+    lineWidth?: number;
+}
+
+export interface MapPreviewKeyLocationStyle {
+    /** 关键地点渲染模式。`auto` 会在存在 icon.url 时渲染图标，否则回退圆点。 */
+    renderMode?: MapKeyLocationRenderMode;
+    /** 关键地点圆点半径，按屏幕像素计算。 */
+    radius?: number;
+    /** 关键地点圆点描边颜色。 */
+    strokeColor?: MapRgbaColor;
+    /** 关键地点圆点描边宽度，按屏幕像素计算。 */
+    strokeWidth?: number;
+    /** 是否显示关键地点圆点描边。 */
+    showStroke?: boolean;
+    /** 关键地点图标尺寸，按屏幕像素计算；地点自身的 iconSize 优先。 */
+    iconSize?: number;
+}
+
+export interface MapPreviewLabelStyle {
+    /** 关键地点标签字号，按屏幕像素计算。 */
+    fontSize?: number;
+    /** 关键地点标签颜色。 */
+    color?: MapRgbaColor;
+    /** 关键地点标签字体族。 */
+    fontFamily?: string;
+    /** 关键地点标签字重。 */
+    fontWeight?: string;
+}
 
 export interface MapPreviewShape extends MapShapeExtensible {
     id: string;
@@ -202,4 +239,41 @@ export interface MapShapeSaveErrorResponse extends MapShapeExtensible {
     requestId?: string;
     retryable?: boolean;
     fieldErrors?: MapShapeFieldError[];
+}
+
+// ── Renderer-agnostic preview types ────────────────────────────────────────────
+
+export interface MapPreviewPickBaseDetail {
+    index: number;
+    layerId?: string;
+    x: number;
+    y: number;
+    coordinate?: number[];
+}
+
+export interface MapPreviewEmptyPickDetail extends MapPreviewPickBaseDetail {
+    kind: 'empty';
+    object: null;
+}
+
+export interface MapPreviewShapePickDetail extends MapPreviewPickBaseDetail {
+    kind: 'shape';
+    object: MapPreviewShape;
+}
+
+export interface MapPreviewKeyLocationPickDetail extends MapPreviewPickBaseDetail {
+    kind: 'keyLocation';
+    object: MapPreviewKeyLocation;
+}
+
+export type MapPreviewPickDetail =
+    | MapPreviewEmptyPickDetail
+    | MapPreviewShapePickDetail
+    | MapPreviewKeyLocationPickDetail;
+
+export interface MapPreviewTooltip {
+    text?: string;
+    html?: string;
+    className?: string;
+    style?: CSSProperties;
 }

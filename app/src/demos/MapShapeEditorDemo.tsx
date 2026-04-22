@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {createElement, useMemo, useState} from 'react';
 import {
     buildPreviewSceneFromDraft,
     createEmptyShapeDraft,
@@ -7,14 +7,19 @@ import {
     createMockMapShapeEditorApi,
     type DeckColor,
     getShapeCenter,
-    type MapDeckPreviewPickDetail,
-    type MapDeckPreviewTooltip,
+    MapDeckPreview,
     type MapKeyLocationDraft,
+    MapPixiPreview,
+    type MapPixiPreviewOverlayContext,
+    type MapPreviewPickDetail,
     type MapPreviewScene,
+    type MapPreviewTooltip,
     type MapShapeDraft,
     type MapShapeEditorDraft,
+    type MapShapeEditorViewBox,
     type MapShapeSvgEditorShapeContextMenuDetail,
     MapShapeViewport,
+    type MapShapeViewportRenderer,
     moveShapeInOrder,
     submitMapShapeScene,
     useContextMenu,
@@ -72,6 +77,8 @@ type SubmitStatus = 'idle' | 'frontend_error' | 'saving' | 'backend_error' | 'su
 type EventLogLevel = 'state' | 'callback' | 'network';
 type DemoKeyLocationRenderMode = 'circle' | 'icon' | 'auto';
 type DemoTooltipMode = 'default' | 'compact' | 'rich' | 'off';
+type DemoPixiRenderStyle = 'clean' | 'operations' | 'neon';
+type PreviewPickDetail = MapPreviewPickDetail;
 
 interface EventLogItem {
     id: string;
@@ -119,6 +126,10 @@ function deckColorToHex(color: [number, number, number, number]): string {
     return `#${color.slice(0, 3).map(value => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
+function deckColorToNumber(color: [number, number, number, number]): number {
+    return (color[0] << 16) + (color[1] << 8) + color[2];
+}
+
 function hexToDeckColor(value: string, fallbackAlpha: number): [number, number, number, number] {
     const normalized = value.trim().replace('#', '');
     if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
@@ -133,7 +144,116 @@ function hexToDeckColor(value: string, fallbackAlpha: number): [number, number, 
     ];
 }
 
-function formatDeckPickDetail(detail: MapDeckPreviewPickDetail | null): string {
+function getPolygonCenter(polygon: [number, number][]): [number, number] {
+    if (polygon.length === 0) {
+        return [0, 0];
+    }
+
+    const total = polygon.reduce((sum, point) => ({
+        x: sum.x + point[0],
+        y: sum.y + point[1],
+    }), {x: 0, y: 0});
+
+    return [total.x / polygon.length, total.y / polygon.length];
+}
+
+function drawPixiStyleOverlay(
+    graphics: any,
+    context: MapPixiPreviewOverlayContext,
+    styleMode: DemoPixiRenderStyle,
+    selectedShapeId: string | null,
+    selectedLocationId: string | null,
+    invalidShapeIds: string[],
+    invalidLocationIds: string[],
+) {
+    graphics.clear();
+    if (styleMode === 'clean') {
+        return;
+    }
+
+    const {scene} = context;
+    const isNeon = styleMode === 'neon';
+    const gridStep = isNeon ? 50 : 100;
+    const gridColor = isNeon ? 0x53f3ff : 0x2563eb;
+    const accentColor = isNeon ? 0xff4fd8 : 0x0f766e;
+    const warningColor = 0xff4d4d;
+    const safeScale = Math.max(context.viewportTransform.scale, 0.01);
+    const thinLine = Math.max(1 / safeScale, 0.8);
+    const normalLine = Math.max(2 / safeScale, 1.2);
+
+    for (let x = 0; x <= scene.canvas.width; x += gridStep) {
+        graphics.moveTo(x, 0);
+        graphics.lineTo(x, scene.canvas.height);
+    }
+    for (let y = 0; y <= scene.canvas.height; y += gridStep) {
+        graphics.moveTo(0, y);
+        graphics.lineTo(scene.canvas.width, y);
+    }
+    graphics.stroke({width: thinLine, color: gridColor, alpha: isNeon ? 0.2 : 0.1});
+
+    graphics
+        .rect(0, 0, scene.canvas.width, scene.canvas.height)
+        .stroke({width: normalLine, color: gridColor, alpha: isNeon ? 0.48 : 0.22});
+
+    scene.shapes.forEach(shape => {
+        const points = shape.polygon.flatMap(point => point);
+        const isSelected = shape.id === selectedShapeId;
+        const isInvalid = invalidShapeIds.includes(shape.id);
+        if (!isSelected && !isInvalid && !isNeon) {
+            return;
+        }
+
+        const strokeColor = isInvalid ? warningColor : (isSelected ? accentColor : deckColorToNumber(shape.lineColor));
+        const fillAlpha = isInvalid ? 0.1 : (isSelected ? 0.08 : 0.035);
+
+        graphics
+            .poly(points, true)
+            .fill({color: strokeColor, alpha: fillAlpha})
+            .stroke({
+                width: normalLine + (isSelected || isInvalid ? 1 / safeScale : 0),
+                color: strokeColor,
+                alpha: isNeon ? 0.72 : 0.5,
+            });
+
+        if (isNeon || isSelected) {
+            const center = getPolygonCenter(shape.polygon);
+            graphics
+                .circle(center[0], center[1], 26 / safeScale)
+                .stroke({width: thinLine, color: strokeColor, alpha: 0.55});
+        }
+    });
+
+    scene.keyLocations.forEach(location => {
+        const isSelected = location.id === selectedLocationId;
+        const isInvalid = invalidLocationIds.includes(location.id);
+        const markerColor = isInvalid ? warningColor : (isSelected ? accentColor : deckColorToNumber(location.color));
+        const radius = (isSelected || isInvalid ? 32 : 22) / safeScale;
+
+        if (styleMode === 'operations') {
+            if (!isSelected && !isInvalid) {
+                return;
+            }
+        }
+
+        graphics
+            .circle(location.position[0], location.position[1], radius)
+            .stroke({width: normalLine, color: markerColor, alpha: isNeon ? 0.72 : 0.48});
+        graphics
+            .circle(location.position[0], location.position[1], radius * 0.52)
+            .fill({color: markerColor, alpha: isNeon ? 0.08 : 0.05})
+            .stroke({width: thinLine, color: markerColor, alpha: 0.38});
+
+        const relatedShape = scene.shapes.find(shape => shape.id === location.shapeId);
+        if (relatedShape && (isNeon || isSelected || isInvalid)) {
+            const center = getPolygonCenter(relatedShape.polygon);
+            graphics.moveTo(center[0], center[1]);
+            graphics.lineTo(location.position[0], location.position[1]);
+            graphics.stroke({width: thinLine, color: markerColor, alpha: isNeon ? 0.36 : 0.24});
+        }
+    });
+}
+
+function formatPreviewPickDetail(detail: PreviewPickDetail | null): string {
     if (!detail) {
         return '暂无';
     }
@@ -209,7 +329,7 @@ function enhancePreviewScene(scene: MapPreviewScene, iconMarkerSize: number): Ma
     };
 }
 
-function buildDemoTooltip(detail: MapDeckPreviewPickDetail, tooltipMode: DemoTooltipMode): MapDeckPreviewTooltip | string | null {
+function buildDemoTooltip(detail: PreviewPickDetail, tooltipMode: DemoTooltipMode): MapPreviewTooltip | string | null {
     if (tooltipMode === 'off' || detail.kind === 'empty') {
         return null;
     }
@@ -289,12 +409,15 @@ export function MapShapeEditorDemo() {
     const [viewBox, setViewBox] = useState(() => createInitialMapShapeEditorViewBox(DEMO_CANVAS));
     const [preview, setPreview] = useState<MapPreviewScene | null>(DEMO_PREVIEW);
     const [viewportMode, setViewportMode] = useState<'edit' | 'preview'>('edit');
+    const [previewRenderer, setPreviewRenderer] = useState<MapShapeViewportRenderer>('pixi');
+    const [showDualRenderer, setShowDualRenderer] = useState(false);
+    const [dualViewBox, setDualViewBox] = useState<MapShapeEditorViewBox | null>(null);
     const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
     const [submitMessage, setSubmitMessage] = useState('尚未触发提交。');
     const [forcedInvalidShapeIds, setForcedInvalidShapeIds] = useState<string[]>([]);
     const [forcedInvalidLocationIds, setForcedInvalidLocationIds] = useState<string[]>([]);
-    const [deckHoverDetail, setDeckHoverDetail] = useState<MapDeckPreviewPickDetail | null>(null);
-    const [deckClickDetail, setDeckClickDetail] = useState<MapDeckPreviewPickDetail | null>(null);
+    const [previewHoverDetail, setPreviewHoverDetail] = useState<PreviewPickDetail | null>(null);
+    const [previewClickDetail, setPreviewClickDetail] = useState<PreviewPickDetail | null>(null);
     const [polygonLineWidth, setPolygonLineWidth] = useState(2);
     const [locationRadius, setLocationRadius] = useState(8);
     const [locationStrokeColor, setLocationStrokeColor] = useState<DeckColor>([255, 255, 255, 255]);
@@ -306,6 +429,7 @@ export function MapShapeEditorDemo() {
     const [labelFontFamily, setLabelFontFamily] = useState('"Microsoft YaHei UI", sans-serif');
     const [showLabels, setShowLabels] = useState(true);
     const [tooltipMode, setTooltipMode] = useState<DemoTooltipMode>('rich');
+    const [pixiRenderStyle, setPixiRenderStyle] = useState<DemoPixiRenderStyle>('neon');
     const [eventLogs, setEventLogs] = useState<EventLogItem[]>([
         createLog('state', 'demo 已初始化。你可以从这里观察所有受控状态与回调能力。'),
     ]);
@@ -468,12 +592,15 @@ export function MapShapeEditorDemo() {
         setViewBox(createInitialMapShapeEditorViewBox(DEMO_CANVAS));
         setPreview(DEMO_PREVIEW);
         setViewportMode('edit');
+        setPreviewRenderer('pixi');
+        setShowDualRenderer(false);
+        setDualViewBox(null);
         setSubmitStatus('idle');
         setSubmitMessage('已重置为 demo 初始状态。');
         setForcedInvalidShapeIds([]);
         setForcedInvalidLocationIds([]);
-        setDeckHoverDetail(null);
-        setDeckClickDetail(null);
+        setPreviewHoverDetail(null);
+        setPreviewClickDetail(null);
         setPolygonLineWidth(2);
         setLocationRadius(8);
         setLocationStrokeColor([255, 255, 255, 255]);
@@ -485,6 +612,7 @@ export function MapShapeEditorDemo() {
         setLabelFontFamily('"Microsoft YaHei UI", sans-serif');
         setShowLabels(true);
         setTooltipMode('rich');
+        setPixiRenderStyle('neon');
         pushLog('state', '调用方重置了所有状态。');
     };
 
@@ -641,44 +769,80 @@ export function MapShapeEditorDemo() {
         },
     };
 
+    const previewShapeStyle = useMemo(() => ({
+        lineWidth: polygonLineWidth,
+    }), [polygonLineWidth]);
+    const previewKeyLocationStyle = useMemo(() => ({
+        renderMode: keyLocationRenderMode,
+        radius: locationRadius,
+        strokeColor: locationStrokeColor,
+        showStroke: showLocationStroke,
+        iconSize: iconMarkerSize,
+    }), [iconMarkerSize, keyLocationRenderMode, locationRadius, locationStrokeColor, showLocationStroke]);
+    const previewLabelStyle = useMemo(() => ({
+        fontSize: labelFontSize,
+        color: labelColor,
+        fontFamily: labelFontFamily,
+    }), [labelColor, labelFontFamily, labelFontSize]);
+
     const deckProps = {
         showLabels,
-        keyLocationRenderMode,
-        polygonLayerProps: {lineWidthMinPixels: polygonLineWidth},
-        scatterplotLayerProps: {
-            getRadius: locationRadius,
-            getLineColor: () => locationStrokeColor,
-            stroked: showLocationStroke,
-        },
-        iconLayerProps: {
-            getSize: iconMarkerSize,
-        },
-        textLayerProps: {
-            getSize: labelFontSize,
-            getColor: () => labelColor,
-            fontFamily: labelFontFamily,
-        },
         disableTooltip: tooltipMode === 'off',
-        getTooltip: (detail: MapDeckPreviewPickDetail) => buildDemoTooltip(detail, tooltipMode),
-        onDeckHover: (detail: MapDeckPreviewPickDetail) => setDeckHoverDetail(detail),
-        onDeckClick: (detail: MapDeckPreviewPickDetail) => {
-            setDeckClickDetail(detail);
-            pushLog('callback', `onDeckClick：${formatDeckPickDetail(detail)}`);
+        getTooltip: (detail: MapPreviewPickDetail) => buildDemoTooltip(detail, tooltipMode),
+        onDeckHover: (detail: MapPreviewPickDetail) => setPreviewHoverDetail(detail),
+        onDeckClick: (detail: MapPreviewPickDetail) => {
+            setPreviewClickDetail(detail);
+            pushLog('callback', `onDeckClick：${formatPreviewPickDetail(detail)}`);
         },
-        onShapeClick: (detail: MapDeckPreviewPickDetail) => {
+        onShapeClick: (detail: MapPreviewPickDetail) => {
             if (detail.kind === 'shape') pushLog('callback', `onShapeClick：${detail.object.name}`);
         },
-        onKeyLocationClick: (detail: MapDeckPreviewPickDetail) => {
+        onKeyLocationClick: (detail: MapPreviewPickDetail) => {
             if (detail.kind === 'keyLocation') pushLog('callback', `onKeyLocationClick：${detail.object.name}`);
         },
     };
+    const pixiProps = useMemo(() => ({
+        showLabels,
+        disableTooltip: tooltipMode === 'off',
+        getTooltip: (detail: MapPreviewPickDetail) => buildDemoTooltip(detail, tooltipMode),
+        renderOverlay: (context: MapPixiPreviewOverlayContext) => createElement('pixiGraphics' as any, {
+            draw: (graphics: any) => drawPixiStyleOverlay(
+                graphics,
+                context,
+                pixiRenderStyle,
+                selectedShapeId,
+                selectedLocationId,
+                invalidShapeIds,
+                invalidKeyLocationIds,
+            ),
+        }),
+        onPixiHover: (detail: MapPreviewPickDetail | null) => setPreviewHoverDetail(detail),
+        onPixiClick: (detail: MapPreviewPickDetail) => {
+            setPreviewClickDetail(detail);
+            pushLog('callback', `onPixiClick：${formatPreviewPickDetail(detail)}`);
+        },
+        onShapeClick: (detail: MapPreviewPickDetail) => {
+            if (detail.kind === 'shape') pushLog('callback', `onPixiShapeClick：${detail.object.name}`);
+        },
+        onKeyLocationClick: (detail: MapPreviewPickDetail) => {
+            if (detail.kind === 'keyLocation') pushLog('callback', `onPixiKeyLocationClick：${detail.object.name}`);
+        },
+        emptyHint: '提交后将在这里显示后端回传的 Pixi 结果。',
+    }), [
+        invalidKeyLocationIds,
+        invalidShapeIds,
+        pixiRenderStyle,
+        selectedLocationId,
+        selectedShapeId,
+        showLabels,
+        tooltipMode,
+    ]);
 
     return (
         <div className="demo-section fc-map-shape-editor" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
             <h4>地图轮廓编辑器（MapShapeViewport 叠层视口）</h4>
             <p style={{margin: 0, color: 'var(--fc-color-text-secondary)', fontSize: 'var(--fc-font-size-sm)'}}>
-                SVG 编辑层与 deck 展示层叠在同一视口。编辑模式下 deck 同步 viewBox、禁用 tooltip；预览模式下只显示 deck、开启
-                tooltip。
+                SVG 编辑层与预览层叠在同一视口。本 demo 默认使用 Pixi，并保留 Deck 切换用于对照验证。
             </p>
 
             {/* 总控台 */}
@@ -712,6 +876,35 @@ export function MapShapeEditorDemo() {
                             >
                                 {viewportMode === 'edit' ? '切换到预览模式' : '切换到编辑模式'}
                             </button>
+                            <button
+                                type="button"
+                                className="fc-map-shape-editor__chip"
+                                style={{width: 'auto', fontWeight: 600}}
+                                onClick={() => {
+                                    const next = previewRenderer === 'pixi' ? 'deck' : 'pixi';
+                                    setPreviewRenderer(next);
+                                    pushLog('state', `切换预览渲染器：${next}`);
+                                }}
+                            >
+                                {previewRenderer === 'pixi' ? '当前 Pixi，切到 Deck' : '当前 Deck，切到 Pixi'}
+                            </button>
+                            <button
+                                type="button"
+                                className="fc-map-shape-editor__chip"
+                                style={{width: 'auto', fontWeight: 600}}
+                                onClick={() => {
+                                    const next = !showDualRenderer;
+                                    setShowDualRenderer(next);
+                                    if (next) {
+                                        setViewportMode('preview');
+                                        pushLog('state', '进入 Deck / Pixi 双栏对照模式');
+                                    } else {
+                                        pushLog('state', '退出双栏对照，恢复单栏');
+                                    }
+                                }}
+                            >
+                                {showDualRenderer ? '退出双栏对照' : '进入双栏对照'}
+                            </button>
                             {viewportMode === 'edit' && (
                                 <>
                                     <button type="button" className="fc-map-shape-editor__chip" style={{width: 'auto'}}
@@ -738,6 +931,15 @@ export function MapShapeEditorDemo() {
                             <div className="fc-map-shape-editor__stat">
                                 <span className="fc-map-shape-editor__stat-label">视口模式</span>
                                 <strong className="fc-map-shape-editor__stat-value">{viewportMode}</strong>
+                            </div>
+                            <div className="fc-map-shape-editor__stat">
+                                <span className="fc-map-shape-editor__stat-label">预览渲染器</span>
+                                <strong className="fc-map-shape-editor__stat-value">{previewRenderer}</strong>
+                            </div>
+                            <div className="fc-map-shape-editor__stat">
+                                <span className="fc-map-shape-editor__stat-label">双栏对照</span>
+                                <strong
+                                    className="fc-map-shape-editor__stat-value">{showDualRenderer ? '开启' : '关闭'}</strong>
                             </div>
                             <div className="fc-map-shape-editor__stat">
                                 <span className="fc-map-shape-editor__stat-label">图形数量</span>
@@ -768,28 +970,78 @@ export function MapShapeEditorDemo() {
 
             {/* 主视口 + 侧边栏 */}
             <div className="fc-map-shape-editor__workspace"
-                 style={{gridTemplateColumns: 'minmax(0, 1.4fr) minmax(360px, 1fr)'}}>
-                <section className="fc-map-shape-editor__panel">
-                    <div className="fc-map-shape-editor__panel-header">
-                        <div>
-                            <h3 className="fc-map-shape-editor__panel-title">MapShapeViewport</h3>
-                            <p className="fc-map-shape-editor__panel-subtitle">
-                                {viewportMode === 'edit'
-                                    ? 'SVG 编辑层叠在 deck 层上方。右键图形可调序，右键空白区可新增。'
-                                    : '纯 deck 展示模式，悬浮可查看 tooltip，无编辑交互。'}
-                            </p>
+                 style={{gridTemplateColumns: showDualRenderer ? 'minmax(0, 1fr) minmax(0, 1fr) minmax(360px, 1fr)' : 'minmax(0, 1.4fr) minmax(360px, 1fr)'}}>
+                {showDualRenderer ? (
+                    <>
+                        <section className="fc-map-shape-editor__panel">
+                            <div className="fc-map-shape-editor__panel-header">
+                                <div>
+                                    <h3 className="fc-map-shape-editor__panel-title">Deck 预览（主控）</h3>
+                                    <p className="fc-map-shape-editor__panel-subtitle">
+                                        左侧 Deck 预览层负责平移/缩放主控；右侧 Pixi 跟随同一份 viewBox。
+                                    </p>
+                                </div>
+                            </div>
+                            <MapDeckPreview
+                                scene={previewScene}
+                                interactive
+                                shapeStyle={previewShapeStyle}
+                                keyLocationStyle={previewKeyLocationStyle}
+                                labelStyle={previewLabelStyle}
+                                onPreviewViewBoxChange={setDualViewBox}
+                                {...deckProps}
+                            />
+                        </section>
+                        <section className="fc-map-shape-editor__panel">
+                            <div className="fc-map-shape-editor__panel-header">
+                                <div>
+                                    <h3 className="fc-map-shape-editor__panel-title">Pixi 预览（跟随）</h3>
+                                    <p className="fc-map-shape-editor__panel-subtitle">
+                                        接收 Deck 的 viewBox 同步；picking 和 overlay 仍可用。
+                                    </p>
+                                </div>
+                            </div>
+                            <MapPixiPreview
+                                scene={previewScene}
+                                interactive={false}
+                                syncViewBox={dualViewBox ?? undefined}
+                                shapeStyle={previewShapeStyle}
+                                keyLocationStyle={previewKeyLocationStyle}
+                                labelStyle={previewLabelStyle}
+                                {...pixiProps}
+                            />
+                        </section>
+                    </>
+                ) : (
+                    <section className="fc-map-shape-editor__panel">
+                        <div className="fc-map-shape-editor__panel-header">
+                            <div>
+                                <h3 className="fc-map-shape-editor__panel-title">MapShapeViewport</h3>
+                                <p className="fc-map-shape-editor__panel-subtitle">
+                                    {previewRenderer === 'pixi'
+                                        ? '当前使用 Pixi 预览层，可叠加扫描网格、区域光晕和关键地点态势覆盖层。'
+                                        : (viewportMode === 'edit'
+                                            ? '当前使用 Deck 预览层，SVG 编辑层叠在 Deck 上方。'
+                                            : '当前使用 Deck 展示模式，悬浮可查看 tooltip。')}
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                    <MapShapeViewport
-                        mode={viewportMode}
-                        canvas={DEMO_CANVAS}
-                        scene={previewScene}
-                        viewBox={viewBox}
-                        onViewBoxChange={updateViewBox}
-                        svgProps={svgProps}
-                        deckProps={deckProps}
-                    />
-                </section>
+                        <MapShapeViewport
+                            mode={viewportMode}
+                            renderer={previewRenderer}
+                            canvas={DEMO_CANVAS}
+                            scene={previewScene}
+                            viewBox={viewBox}
+                            onViewBoxChange={updateViewBox}
+                            svgProps={svgProps}
+                            shapeStyle={previewShapeStyle}
+                            keyLocationStyle={previewKeyLocationStyle}
+                            labelStyle={previewLabelStyle}
+                            deckProps={deckProps}
+                            pixiProps={pixiProps}
+                        />
+                    </section>
+                )}
 
                 <aside className="fc-map-shape-editor__panel">
                     <div className="fc-map-shape-editor__panel-header">
@@ -837,9 +1089,9 @@ export function MapShapeEditorDemo() {
                             )}
                         </div>
 
-                        {/* Deck 渲染参数 */}
+                        {/* 预览渲染参数 */}
                         <div className="fc-map-shape-editor__section">
-                            <h4 className="fc-map-shape-editor__section-title">Deck 渲染参数</h4>
+                            <h4 className="fc-map-shape-editor__section-title">预览渲染参数</h4>
                             <div className="fc-map-shape-editor__field">
                                 <label htmlFor="demo-deck-marker-mode">keyLocationRenderMode</label>
                                 <select id="demo-deck-marker-mode" value={keyLocationRenderMode}
@@ -850,37 +1102,37 @@ export function MapShapeEditorDemo() {
                                 </select>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-line-width">polygonLayerProps.lineWidthMinPixels</label>
+                                <label htmlFor="demo-deck-line-width">shapeStyle.lineWidth</label>
                                 <input id="demo-deck-line-width" type="number" value={polygonLineWidth}
                                        onChange={event => setPolygonLineWidth(Number(event.target.value))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-location-radius">scatterplotLayerProps.getRadius</label>
+                                <label htmlFor="demo-deck-location-radius">keyLocationStyle.radius</label>
                                 <input id="demo-deck-location-radius" type="number" value={locationRadius}
                                        onChange={event => setLocationRadius(Number(event.target.value))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-location-stroke">scatterplotLayerProps.getLineColor</label>
+                                <label htmlFor="demo-deck-location-stroke">keyLocationStyle.strokeColor</label>
                                 <input id="demo-deck-location-stroke" value={deckColorToHex(locationStrokeColor)}
                                        onChange={event => setLocationStrokeColor(hexToDeckColor(event.target.value, 255))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-icon-size">iconLayerProps.getSize</label>
+                                <label htmlFor="demo-deck-icon-size">keyLocationStyle.iconSize</label>
                                 <input id="demo-deck-icon-size" type="number" value={iconMarkerSize}
                                        onChange={event => setIconMarkerSize(Number(event.target.value))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-label-size">textLayerProps.getSize</label>
+                                <label htmlFor="demo-deck-label-size">labelStyle.fontSize</label>
                                 <input id="demo-deck-label-size" type="number" value={labelFontSize}
                                        onChange={event => setLabelFontSize(Number(event.target.value))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-label-color">textLayerProps.getColor</label>
+                                <label htmlFor="demo-deck-label-color">labelStyle.color</label>
                                 <input id="demo-deck-label-color" value={deckColorToHex(labelColor)}
                                        onChange={event => setLabelColor(hexToDeckColor(event.target.value, 255))}/>
                             </div>
                             <div className="fc-map-shape-editor__field">
-                                <label htmlFor="demo-deck-label-font">textLayerProps.fontFamily</label>
+                                <label htmlFor="demo-deck-label-font">labelStyle.fontFamily</label>
                                 <input id="demo-deck-label-font" value={labelFontFamily}
                                        onChange={event => setLabelFontFamily(event.target.value)}/>
                             </div>
@@ -894,7 +1146,7 @@ export function MapShapeEditorDemo() {
                                 <input type="checkbox" checked={showLocationStroke}
                                        onChange={event => setShowLocationStroke(event.target.checked)}
                                        style={{marginRight: 8}}/>
-                                <span className="fc-map-shape-editor__chip-title">scatterplotLayerProps.stroked</span>
+                                <span className="fc-map-shape-editor__chip-title">keyLocationStyle.showStroke</span>
                             </label>
                             <div className="fc-map-shape-editor__field">
                                 <label htmlFor="demo-deck-tooltip-mode">tooltip 模式</label>
@@ -906,10 +1158,20 @@ export function MapShapeEditorDemo() {
                                     <option value="off">off（关闭 tooltip）</option>
                                 </select>
                             </div>
+                            <div className="fc-map-shape-editor__field">
+                                <label htmlFor="demo-pixi-render-style">Pixi 风格化覆盖层</label>
+                                <select id="demo-pixi-render-style" value={pixiRenderStyle}
+                                        onChange={event => setPixiRenderStyle(event.target.value as DemoPixiRenderStyle)}
+                                        disabled={previewRenderer !== 'pixi'}>
+                                    <option value="neon">neon（态势光晕 + 全域网格）</option>
+                                    <option value="operations">operations（只强调选中/异常）</option>
+                                    <option value="clean">clean（关闭覆盖层）</option>
+                                </select>
+                            </div>
                             <p className="fc-map-shape-editor__section-note">
                                 本 demo 会在调用方先把 preview scene 二次增强：`出入口 / 设备点` 自动补 SVG 图标，并通过
-                                `getTooltip`
-                                控制悬浮内容。切到 `auto` 时可同时看到“图标关键点 + 圆点关键点”混排。
+                                `getTooltip` 控制悬浮内容。Pixi 模式下还会通过 `renderOverlay` 增加场景坐标覆盖层，切到
+                                `neon` 可看到网格、区域光晕、关键地点扫描圈和关联线。
                             </p>
                         </div>
 
@@ -941,16 +1203,16 @@ export function MapShapeEditorDemo() {
                             </div>
                         </div>
 
-                        {/* Deck 交互日志 */}
+                        {/* 预览交互日志 */}
                         <div className="fc-map-shape-editor__section">
-                            <h4 className="fc-map-shape-editor__section-title">Deck 交互（预览模式下有效）</h4>
+                            <h4 className="fc-map-shape-editor__section-title">预览交互（Deck / Pixi）</h4>
                             <div className="fc-map-shape-editor__meta-row">
                                 <span>Hover</span>
-                                <strong>{formatDeckPickDetail(deckHoverDetail)}</strong>
+                                <strong>{formatPreviewPickDetail(previewHoverDetail)}</strong>
                             </div>
                             <div className="fc-map-shape-editor__meta-row">
                                 <span>Click</span>
-                                <strong>{formatDeckPickDetail(deckClickDetail)}</strong>
+                                <strong>{formatPreviewPickDetail(previewClickDetail)}</strong>
                             </div>
                         </div>
                     </div>
@@ -1161,11 +1423,14 @@ export function MapShapeEditorDemo() {
                             <pre style={{margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12}}>
                                 {JSON.stringify({
                                     viewportMode,
+                                    renderer: previewRenderer,
+                                    showDualRenderer,
+                                    dualViewBox,
                                     selectedShapeId,
                                     selectedLocationId,
                                     drawingShape,
                                     viewBox,
-                                    deckLayerOptions: {
+                                    previewStyleOptions: {
                                         polygonLineWidth,
                                         keyLocationRenderMode,
                                         locationRadius,
@@ -1177,6 +1442,7 @@ export function MapShapeEditorDemo() {
                                         labelFontFamily,
                                         showLabels,
                                         tooltipMode,
+                                        pixiRenderStyle,
                                     },
                                     invalidShapeIds,
                                     invalidKeyLocationIds,

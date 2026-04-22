@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 
@@ -45,7 +45,7 @@ export default defineConfig({
     // 防止 Vite 清除 Rust 显示的错误
     clearScreen: false,
     server: {
-        port: 5174,
+        port: 5173,
         // Tauri 工作于固定端口，如果端口不可用则报错
         strictPort: true,
         // 如果设置了 host，Tauri 则会使用

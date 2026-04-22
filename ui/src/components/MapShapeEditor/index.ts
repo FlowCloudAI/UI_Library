@@ -4,6 +4,7 @@ export * from './geometry';
 export * from './validation';
 export * from './mapShapeEditorSvgUtils';
 export * from './MapDeckPreview';
+export * from './MapPixiPreview';
 export * from './MapShapeSvgEditor';
 export * from './MapShapeEditorWorkbench';
 export * from './MapShapeViewport';

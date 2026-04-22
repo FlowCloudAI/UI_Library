@@ -1,4 +1,4 @@
-import {type CSSProperties, type RefObject, useEffect, useMemo, useRef, useState} from 'react';
+import {type CSSProperties, type RefObject, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import DeckGL, {type DeckGLRef} from '@deck.gl/react';
 import {
     type Effect,
@@ -23,9 +23,19 @@ import {CanvasContext} from '@luma.gl/core';
 
 import type {
     MapEditorCanvas,
+    MapKeyLocationRenderMode,
+    MapPreviewEmptyPickDetail,
     MapPreviewKeyLocation,
+    MapPreviewKeyLocationPickDetail,
+    MapPreviewKeyLocationStyle,
+    MapPreviewLabelStyle,
+    MapPreviewPickBaseDetail,
+    MapPreviewPickDetail,
     MapPreviewScene,
     MapPreviewShape,
+    MapPreviewShapePickDetail,
+    MapPreviewShapeStyle,
+    MapPreviewTooltip,
     MapShapeEditorViewBox,
 } from './types';
 import './MapShapeEditor.css';
@@ -107,6 +117,15 @@ export interface MapDeckPreviewProps {
     /** Show/hide TextLayer labels above key locations. Default: true */
     showLabels?: boolean;
 
+    /** 通用图形样式。建议优先使用，`polygonLayerProps` 仅作为 Deck 高级覆盖口。 */
+    shapeStyle?: MapPreviewShapeStyle;
+
+    /** 通用关键地点样式。建议优先使用，Deck layer props 仅作为高级覆盖口。 */
+    keyLocationStyle?: MapPreviewKeyLocationStyle;
+
+    /** 通用标签样式。建议优先使用，`textLayerProps` 仅作为 Deck 高级覆盖口。 */
+    labelStyle?: MapPreviewLabelStyle;
+
     /**
      * Override any PolygonLayer prop except `id`, `data`, and `getPolygon`.
      * Spread before locked props, so structural accessors always win.
@@ -122,7 +141,7 @@ export interface MapDeckPreviewProps {
      * Key location render mode. `auto` renders icon markers when location.icon
      * is present, otherwise falls back to circle markers.
      */
-    keyLocationRenderMode?: 'circle' | 'icon' | 'auto';
+    keyLocationRenderMode?: MapKeyLocationRenderMode;
 
     /**
      * Override any IconLayer prop except `id`, `data`, `getPosition`, and `getIcon`.
@@ -164,7 +183,7 @@ export interface MapDeckPreviewProps {
      * Customize the built-in hover tooltip. Return `null` to suppress it.
      * Returning a string is equivalent to `{ text: string }`.
      */
-    getTooltip?: (detail: MapDeckPreviewPickDetail) => MapDeckPreviewTooltip | string | null;
+    getTooltip?: (detail: MapPreviewPickDetail) => MapPreviewTooltip | string | null;
 
     /**
      * When true, enables zoom (wheel) and pan (drag) via OrthographicController.
@@ -173,48 +192,29 @@ export interface MapDeckPreviewProps {
      */
     interactive?: boolean;
 
-    onDeckClick?: (detail: MapDeckPreviewPickDetail) => void;
-    onDeckHover?: (detail: MapDeckPreviewPickDetail) => void;
-    onShapeClick?: (detail: MapDeckPreviewShapePickDetail) => void;
-    onShapeHover?: (detail: MapDeckPreviewShapePickDetail) => void;
-    onKeyLocationClick?: (detail: MapDeckPreviewKeyLocationPickDetail) => void;
-    onKeyLocationHover?: (detail: MapDeckPreviewKeyLocationPickDetail) => void;
+    onDeckClick?: (detail: MapPreviewPickDetail) => void;
+    onDeckHover?: (detail: MapPreviewPickDetail) => void;
+    onShapeClick?: (detail: MapPreviewShapePickDetail) => void;
+    onShapeHover?: (detail: MapPreviewShapePickDetail) => void;
+    onKeyLocationClick?: (detail: MapPreviewKeyLocationPickDetail) => void;
+    onKeyLocationHover?: (detail: MapPreviewKeyLocationPickDetail) => void;
+    /**
+     * 预览视口变化回调。仅在 `interactive` 模式下内部管理视口时触发。
+     * 若传入了 `syncViewBox`，该回调不会触发（视口由外部控制）。
+     */
+    onPreviewViewBoxChange?: (viewBox: MapShapeEditorViewBox) => void;
 }
 
-interface MapDeckPreviewPickBaseDetail {
-    index: number;
-    layerId?: string;
-    x: number;
-    y: number;
-    coordinate?: number[];
-}
-
-export interface MapDeckPreviewEmptyPickDetail extends MapDeckPreviewPickBaseDetail {
-    kind: 'empty';
-    object: null;
-}
-
-export interface MapDeckPreviewShapePickDetail extends MapDeckPreviewPickBaseDetail {
-    kind: 'shape';
-    object: MapPreviewShape;
-}
-
-export interface MapDeckPreviewKeyLocationPickDetail extends MapDeckPreviewPickBaseDetail {
-    kind: 'keyLocation';
-    object: MapPreviewKeyLocation;
-}
-
-export type MapDeckPreviewPickDetail =
-    | MapDeckPreviewEmptyPickDetail
-    | MapDeckPreviewShapePickDetail
-    | MapDeckPreviewKeyLocationPickDetail;
-
-export interface MapDeckPreviewTooltip {
-    text?: string;
-    html?: string;
-    className?: string;
-    style?: Partial<CSSStyleDeclaration>;
-}
+/** @deprecated 使用 {@link MapPreviewEmptyPickDetail} */
+export type MapDeckPreviewEmptyPickDetail = MapPreviewEmptyPickDetail;
+/** @deprecated 使用 {@link MapPreviewShapePickDetail} */
+export type MapDeckPreviewShapePickDetail = MapPreviewShapePickDetail;
+/** @deprecated 使用 {@link MapPreviewKeyLocationPickDetail} */
+export type MapDeckPreviewKeyLocationPickDetail = MapPreviewKeyLocationPickDetail;
+/** @deprecated 使用 {@link MapPreviewPickDetail} */
+export type MapDeckPreviewPickDetail = MapPreviewPickDetail;
+/** @deprecated 使用 {@link MapPreviewTooltip} */
+export type MapDeckPreviewTooltip = MapPreviewTooltip;
 
 // ── Defaults ───────────────────────────────────────────────────────────────────
 
@@ -620,10 +620,13 @@ function clampDeckViewState(
 interface BuildLayersOptions {
     scene: MapPreviewScene;
     showLabels: boolean;
+    shapeStyle?: MapPreviewShapeStyle;
     polygonLayerProps?: Omit<PolygonLayerProps<MapPreviewShape>, 'id' | 'data' | 'getPolygon'>;
+    keyLocationStyle?: MapPreviewKeyLocationStyle;
     scatterplotLayerProps?: Omit<ScatterplotLayerProps<MapPreviewKeyLocation>, 'id' | 'data' | 'getPosition'>;
-    keyLocationRenderMode: 'circle' | 'icon' | 'auto';
+    keyLocationRenderMode: MapKeyLocationRenderMode;
     iconLayerProps?: Omit<IconLayerProps<MapPreviewKeyLocation>, 'id' | 'data' | 'getPosition' | 'getIcon'>;
+    labelStyle?: MapPreviewLabelStyle;
     textLayerProps?: Omit<TextLayerProps<MapPreviewKeyLocation>, 'id' | 'data' | 'getText'>;
     polygonShaderInject?: MapDeckShaderInject;
     scatterplotShaderInject?: MapDeckShaderInject;
@@ -644,7 +647,7 @@ function mergeExtensions(userProps: {
 
 function shouldRenderKeyLocationAsIcon(
     location: MapPreviewKeyLocation,
-    renderMode: 'circle' | 'icon' | 'auto',
+    renderMode: MapKeyLocationRenderMode,
 ): boolean {
     if (!location.icon?.url) {
         return false;
@@ -656,10 +659,13 @@ function shouldRenderKeyLocationAsIcon(
 function buildLayers({
                          scene,
                          showLabels,
+                         shapeStyle,
                          polygonLayerProps,
+                         keyLocationStyle,
                          scatterplotLayerProps,
                          keyLocationRenderMode,
                          iconLayerProps,
+                         labelStyle,
                          textLayerProps,
                          polygonShaderInject,
                          scatterplotShaderInject,
@@ -693,7 +699,7 @@ function buildLayers({
             filled: true,
             stroked: true,
             wireframe: false,
-            lineWidthMinPixels: 2,
+            lineWidthMinPixels: shapeStyle?.lineWidth ?? 2,
             getFillColor: item => item.fillColor,
             getLineColor: item => item.lineColor,
             ...polygonLayerProps,
@@ -710,11 +716,11 @@ function buildLayers({
                 pickable: true,
                 radiusMinPixels: 6,
                 radiusMaxPixels: 14,
-                stroked: true,
-                lineWidthMinPixels: 2,
-                getRadius: 8,
+                stroked: keyLocationStyle?.showStroke ?? true,
+                lineWidthMinPixels: keyLocationStyle?.strokeWidth ?? 2,
+                getRadius: keyLocationStyle?.radius ?? 8,
                 getFillColor: item => item.color,
-                getLineColor: () => DEFAULT_LOCATION_STROKE_COLOR,
+                getLineColor: () => keyLocationStyle?.strokeColor ?? DEFAULT_LOCATION_STROKE_COLOR,
                 ...scatterplotLayerProps,
                 id: 'fc-map-preview-key-locations',
                 data: circleKeyLocations,
@@ -730,7 +736,7 @@ function buildLayers({
                 pickable: true,
                 sizeUnits: 'pixels',
                 sizeBasis: 'height',
-                getSize: item => item.iconSize ?? 28,
+                getSize: item => item.iconSize ?? keyLocationStyle?.iconSize ?? 28,
                 getColor: () => [255, 255, 255, 255],
                 ...iconLayerProps,
                 id: 'fc-map-preview-key-location-icons',
@@ -738,7 +744,7 @@ function buildLayers({
                 getPosition: item => item.position,
                 getIcon: item => {
                     const icon = item.icon;
-                    const fallbackSize = Math.max(1, Math.round(item.iconSize ?? 28));
+                    const fallbackSize = Math.max(1, Math.round(item.iconSize ?? keyLocationStyle?.iconSize ?? 28));
                     return {
                         url: icon?.url ?? '',
                         width: Math.max(1, Math.round(icon?.width ?? fallbackSize)),
@@ -760,15 +766,16 @@ function buildLayers({
                 characterSet: 'auto',
                 getPosition: item => {
                     const labelOffset = shouldRenderKeyLocationAsIcon(item, keyLocationRenderMode)
-                        ? Math.max((item.iconSize ?? 28) / 2 + 8, 18)
+                        ? Math.max((item.iconSize ?? keyLocationStyle?.iconSize ?? 28) / 2 + 8, 18)
                         : 18;
                     return [item.position[0], item.position[1] - labelOffset];
                 },
-                getSize: 13,
-                getColor: () => DEFAULT_LABEL_COLOR,
+                getSize: labelStyle?.fontSize ?? 13,
+                getColor: () => labelStyle?.color ?? DEFAULT_LABEL_COLOR,
                 getTextAnchor: () => 'middle',
                 getAlignmentBaseline: () => 'bottom',
-                fontFamily: DEFAULT_LABEL_FONT_FAMILY,
+                fontFamily: labelStyle?.fontFamily ?? DEFAULT_LABEL_FONT_FAMILY,
+                fontWeight: labelStyle?.fontWeight ?? '600',
                 ...textLayerProps,
                 id: 'fc-map-preview-key-location-labels',
                 data: scene.keyLocations,
@@ -804,8 +811,8 @@ function getTooltipText(object: unknown): string | null {
 }
 
 function normalizeTooltip(
-    value: MapDeckPreviewTooltip | string | null | undefined,
-): MapDeckPreviewTooltip | null {
+    value: MapPreviewTooltip | string | null | undefined,
+): MapPreviewTooltip | null {
     if (!value) {
         return null;
     }
@@ -821,7 +828,20 @@ function normalizeTooltip(
     return null;
 }
 
-function getDefaultTooltip(detail: MapDeckPreviewPickDetail): MapDeckPreviewTooltip | null {
+function toDeckTooltip(tooltip: MapPreviewTooltip | null): any {
+    if (!tooltip) {
+        return null;
+    }
+
+    return {
+        text: tooltip.text,
+        html: tooltip.html,
+        className: tooltip.className,
+        style: tooltip.style as Partial<CSSStyleDeclaration>,
+    };
+}
+
+function getDefaultTooltip(detail: MapPreviewPickDetail): MapPreviewTooltip | null {
     if (detail.kind === 'empty') {
         return null;
     }
@@ -830,8 +850,8 @@ function getDefaultTooltip(detail: MapDeckPreviewPickDetail): MapDeckPreviewTool
     return text ? {text} : null;
 }
 
-function toPickDetail(info: PickingInfo): MapDeckPreviewPickDetail {
-    const baseDetail: MapDeckPreviewPickBaseDetail = {
+function toPickDetail(info: PickingInfo): MapPreviewPickDetail {
+    const baseDetail: MapPreviewPickBaseDetail = {
         index: info.index,
         layerId: info.layer?.id,
         x: info.x,
@@ -878,10 +898,13 @@ export function MapDeckPreview({
     style,
     emptyHint = '提交后将在这里显示后端回传的 deck 结果。',
                                    showLabels = true,
+                                   shapeStyle,
                                    polygonLayerProps,
+                                   keyLocationStyle,
                                    scatterplotLayerProps,
                                    keyLocationRenderMode = 'auto',
                                    iconLayerProps,
+                                   labelStyle,
                                    textLayerProps,
                                    polygonShaderInject,
                                    scatterplotShaderInject,
@@ -899,6 +922,7 @@ export function MapDeckPreview({
                                    onShapeHover,
                                    onKeyLocationClick,
                                    onKeyLocationHover,
+                                   onPreviewViewBoxChange,
 }: MapDeckPreviewProps) {
     const { elementRef, size } = useElementSize<HTMLDivElement>();
     const deckRef = useRef<DeckGLRef | null>(null);
@@ -950,6 +974,35 @@ export function MapDeckPreview({
             : (interactiveViewState ?? (hasRenderableSize ? buildAutoViewState(scene.canvas, size) : null)))
         : null;
 
+    const deckViewStateToViewBox = useCallback((
+        state: DeckViewState,
+        containerWidth: number,
+        containerHeight: number,
+    ): MapShapeEditorViewBox => {
+        const scale = Math.pow(2, state.zoom);
+        const vw = containerWidth / scale;
+        const vh = containerHeight / scale;
+
+        return {
+            x: state.target[0] - vw / 2,
+            y: state.target[1] - vh / 2,
+            width: vw,
+            height: vh,
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isControlled || !interactiveViewState || !onPreviewViewBoxChange) {
+            return;
+        }
+
+        onPreviewViewBoxChange(deckViewStateToViewBox(
+            interactiveViewState,
+            size.width,
+            size.height,
+        ));
+    }, [isControlled, interactiveViewState, onPreviewViewBoxChange, size.width, size.height, deckViewStateToViewBox]);
+
     return (
         <div
             ref={elementRef}
@@ -962,10 +1015,13 @@ export function MapDeckPreview({
                     layers={buildLayers({
                         scene,
                         showLabels,
+                        shapeStyle,
                         polygonLayerProps,
+                        keyLocationStyle,
                         scatterplotLayerProps,
-                        keyLocationRenderMode,
+                        keyLocationRenderMode: keyLocationStyle?.renderMode ?? keyLocationRenderMode,
                         iconLayerProps,
+                        labelStyle,
                         textLayerProps,
                         polygonShaderInject,
                         scatterplotShaderInject,
@@ -979,11 +1035,10 @@ export function MapDeckPreview({
                     viewState={viewState}
                     onViewStateChange={isControlled ? ({viewState: next}) => {
                         const nextViewState = next as DeckViewState;
-                        setInteractiveViewState(
-                            hasRenderableSize
-                                ? clampDeckViewState(nextViewState, scene.canvas, size.width, size.height)
-                                : nextViewState,
-                        );
+                        const clamped = hasRenderableSize
+                            ? clampDeckViewState(nextViewState, scene.canvas, size.width, size.height)
+                            : nextViewState;
+                        setInteractiveViewState(clamped);
                     } : undefined}
                     effects={deckEffects ?? []}
                     onDeviceInitialized={() => {
@@ -1019,7 +1074,7 @@ export function MapDeckPreview({
                     getTooltip={disableTooltip ? undefined : info => {
                         const detail = toPickDetail(info);
                         const customTooltip = normalizeTooltip(getTooltip?.(detail));
-                        return customTooltip ?? getDefaultTooltip(detail);
+                        return toDeckTooltip(customTooltip ?? getDefaultTooltip(detail));
                     }}
                 />
             ) : (

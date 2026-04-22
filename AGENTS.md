@@ -46,7 +46,7 @@ flowcloudai-ui-monorepo/
   - `@deck.gl/core`, `@deck.gl/layers`, `@deck.gl/react` — 地图预览层
   - `@uiw/react-md-editor` — Markdown 编辑器
   - `html-to-image` — 关系图图片导出
-  - `d3-force` — 仅演示用的 RelationGraph 力导向布局
+  - `d3-force` — RelationGraph 力导向布局（UI 库与演示应用均依赖）
   - `lucide-react` — playgrounds 中的图标
 
 ## 关键命令
@@ -160,9 +160,7 @@ import 'flowcloudai-ui/style'
 - `RollingBox` — 自定义滚动内容容器（水平方向时将滚轮转换为滚动）
 - `VirtualList` — 窗口化高性能列表
 - `MarkdownEditor` — Markdown 编辑 + 预览（基于 `@uiw/react-md-editor`）
-- `SmartMessage` — 消息气泡组件
 - `MessageBox` — 富 AI 聊天消息（推理、工具、Markdown、流式）
-- `Chat` — 带对话历史的完整聊天容器
 - `Timeline` (`Time.tsx`) — 水平时间轴，支持缩放、选择和同步组
 - `RelationGraph` — 关系图可视化（基于 React Flow）；宿主注入 `layoutFn`
 - `MapShapeEditor` — 基于 SVG 的形状编辑器，带 deck.gl 预览层
@@ -226,6 +224,5 @@ import 'flowcloudai-ui/style'
 
 ## Git 说明
 
-- 当前分支：`main`
 - `dist/` 和 `node_modules/` 已加入 gitignore。
 - 除非明确要求，否则请勿运行 `git commit`、`git push` 或其他 git 变更操作。

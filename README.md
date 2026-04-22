@@ -720,21 +720,6 @@ function Example() {
 }
 ```
 
-### `SmartMessage`
-
-用途：消息气泡组件，支持用户、助手、系统和工具消息。
-
-参数：
-
-- `id: string`：消息 ID
-- `content: string`：消息内容
-- `role: 'user' | 'assistant' | 'system' | 'tool'`：消息角色
-- `timestamp?: Date`：消息时间
-- `status?: 'sending' | 'sent' | 'error'`：消息状态
-- `toolName?: string`：工具名称
-- `toolResult?: any`：工具结果
-- `onCopy?: (content: string, role) => void`：复制回调
-
 ### `MessageBox`
 
 用途：AI 聊天消息组件，支持用户/助手/系统消息、深度思考、工具调用、Markdown 代码块复制、流式渲染和工具栏操作。
@@ -781,7 +766,7 @@ export type MessageBoxBlock =
 - `toolCalls?: ToolCallInfo[]`：工具调用列表
 - `toolCallDetail?: 'simple' | 'verbose'`：工具展示模式，默认 `'simple'`
 - `blocks?: MessageBoxBlock[]`：按顺序渲染的块列表，传入后优先级高于独立字段（`content` / `reasoning` / `toolCalls`）
-- `rolePlaying?: string`：角色扮演模式标识，传入时展示灰色气泡框（仅 assistant）
+- `rolePlaying?: boolean`：角色扮演模式标识，传入 true 时展示灰色气泡框（仅 assistant）
 - `onCopy?: () => void`：复制按钮回调，不传则默认复制 content 到剪贴板
 - `onEdit?: () => void`：编辑按钮回调（user only）
 - `onRegenerate?: () => void`：重说按钮回调（assistant only）
@@ -963,34 +948,6 @@ function hello() {
   markdown
 />
 ```
-
-### `Chat`
-
-用途：完整聊天容器，支持历史会话、消息面板、头部和最小化状态。
-
-参数：
-
-- `messages?: Message[]`：消息列表
-- `title?: string`：标题
-- `loading?: boolean`：是否显示加载状态
-- `conversations?: Conversation[]`：历史会话列表
-- `currentConversationId?: string`：当前会话 ID
-- `emptyText?: string`：空历史文案
-- `newConversationText?: string`：新建会话按钮文案
-- `historyTitle?: string`：历史面板标题
-- `showHistoryButton?: boolean`：是否显示历史按钮
-- `showMinimizeButton?: boolean`：是否显示最小化按钮
-- `showHeader?: boolean`：是否显示头部
-- `showFooter?: boolean`：是否显示底部区域
-- `autoScroll?: boolean`：消息更新时是否自动滚到底部
-- `onSwitchConversation?: (conversationId: string) => void`：切换会话回调
-- `onNewConversation?: () => void`：新建会话回调
-- `onDeleteConversation?: (conversationId: string) => void`：删除会话回调
-- `onMinimize?: () => void`：最小化回调
-- `onRestore?: () => void`：恢复回调
-- `onMessageCopy?: (message: Message) => void`：消息复制回调
-- `height?: string`：整体高度
-- `width?: string`：整体宽度
 
 ### `Timeline`
 
