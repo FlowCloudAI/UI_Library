@@ -1,19 +1,22 @@
-import {createElement, useMemo, useState} from 'react';
+import {createElement, useEffect, useMemo, useRef, useState} from 'react';
+import {BlurFilter} from 'pixi.js';
 import {
     buildPreviewSceneFromDraft,
     createEmptyShapeDraft,
     createInitialMapShapeEditorViewBox,
     createMapShapeEditorLocalId,
     createMockMapShapeEditorApi,
-    type DeckColor,
     getShapeCenter,
     MapDeckPreview,
     type MapKeyLocationDraft,
     MapPixiPreview,
     type MapPixiPreviewOverlayContext,
+    type MapPreviewKeyLocationPickDetail,
     type MapPreviewPickDetail,
     type MapPreviewScene,
+    type MapPreviewShapePickDetail,
     type MapPreviewTooltip,
+    type MapRgbaColor,
     type MapShapeDraft,
     type MapShapeEditorDraft,
     type MapShapeEditorViewBox,
@@ -273,6 +276,15 @@ function svgToDataUrl(svg: string): string {
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+const DEMO_BACKGROUND_IMAGE = svgToDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+        <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+        </pattern></defs>
+        <rect width="200" height="200" fill="url(#grid)"/>
+    </svg>
+`);
+
 function buildLocationIcon(type: string, color: string): {
     url: string;
     width: number;
@@ -400,6 +412,44 @@ function ButtonLike({text, onClick, danger = false}: ButtonLikeProps) {
     );
 }
 
+function useStableDemoPixiBlurFilter(): BlurFilter {
+    const filterRef = useRef<BlurFilter | null>(null);
+    const destroyTimerRef = useRef<number | null>(null);
+
+    if (!filterRef.current) {
+        filterRef.current = new BlurFilter({strength: 2});
+    }
+
+    const filter = filterRef.current;
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && destroyTimerRef.current !== null) {
+            window.clearTimeout(destroyTimerRef.current);
+            destroyTimerRef.current = null;
+        }
+
+        return () => {
+            if (typeof window === 'undefined') {
+                filter.destroy();
+                if (filterRef.current === filter) {
+                    filterRef.current = null;
+                }
+                return;
+            }
+
+            destroyTimerRef.current = window.setTimeout(() => {
+                filter.destroy();
+                if (filterRef.current === filter) {
+                    filterRef.current = null;
+                }
+                destroyTimerRef.current = null;
+            }, 0);
+        };
+    }, [filter]);
+
+    return filter;
+}
+
 export function MapShapeEditorDemo() {
     const {showContextMenu} = useContextMenu();
     const [draft, setDraft] = useState<MapShapeEditorDraft>(() => cloneDraft(DEMO_DRAFT));
@@ -420,16 +470,20 @@ export function MapShapeEditorDemo() {
     const [previewClickDetail, setPreviewClickDetail] = useState<PreviewPickDetail | null>(null);
     const [polygonLineWidth, setPolygonLineWidth] = useState(2);
     const [locationRadius, setLocationRadius] = useState(8);
-    const [locationStrokeColor, setLocationStrokeColor] = useState<DeckColor>([255, 255, 255, 255]);
+    const [locationStrokeColor, setLocationStrokeColor] = useState<MapRgbaColor>([255, 255, 255, 255]);
     const [showLocationStroke, setShowLocationStroke] = useState(true);
     const [keyLocationRenderMode, setKeyLocationRenderMode] = useState<DemoKeyLocationRenderMode>('auto');
     const [iconMarkerSize, setIconMarkerSize] = useState(30);
     const [labelFontSize, setLabelFontSize] = useState(13);
-    const [labelColor, setLabelColor] = useState<DeckColor>([38, 43, 56, 255]);
+    const [labelColor, setLabelColor] = useState<MapRgbaColor>([38, 43, 56, 255]);
     const [labelFontFamily, setLabelFontFamily] = useState('"Microsoft YaHei UI", sans-serif');
     const [showLabels, setShowLabels] = useState(true);
     const [tooltipMode, setTooltipMode] = useState<DemoTooltipMode>('rich');
     const [pixiRenderStyle, setPixiRenderStyle] = useState<DemoPixiRenderStyle>('neon');
+    const [readOnly, setReadOnly] = useState(false);
+    const [showBackgroundImage, setShowBackgroundImage] = useState(false);
+    const [pixiFilterEnabled, setPixiFilterEnabled] = useState(false);
+    const [previewViewBox, setPreviewViewBox] = useState<MapShapeEditorViewBox | null>(null);
     const [eventLogs, setEventLogs] = useState<EventLogItem[]>([
         createLog('state', 'demo 已初始化。你可以从这里观察所有受控状态与回调能力。'),
     ]);
@@ -457,6 +511,7 @@ export function MapShapeEditorDemo() {
         () => (preview ? enhancePreviewScene(preview, iconMarkerSize) : null),
         [preview, iconMarkerSize],
     );
+    const pixiBlurFilter = useStableDemoPixiBlurFilter();
 
     const updateDraft = (nextDraft: MapShapeEditorDraft) => {
         setDraft(nextDraft);
@@ -613,6 +668,10 @@ export function MapShapeEditorDemo() {
         setShowLabels(true);
         setTooltipMode('rich');
         setPixiRenderStyle('neon');
+        setReadOnly(false);
+        setShowBackgroundImage(false);
+        setPixiFilterEnabled(false);
+        setPreviewViewBox(null);
         pushLog('state', '调用方重置了所有状态。');
     };
 
@@ -701,6 +760,8 @@ export function MapShapeEditorDemo() {
         selectedShapeId,
         selectedLocationId,
         drawingShape,
+        readOnly,
+        backgroundImage: showBackgroundImage ? DEMO_BACKGROUND_IMAGE : undefined,
         invalidShapeIds,
         invalidKeyLocationIds,
         onDraftChange: updateDraft,
@@ -816,6 +877,7 @@ export function MapShapeEditorDemo() {
                 invalidKeyLocationIds,
             ),
         }),
+        sceneFilters: pixiFilterEnabled ? [pixiBlurFilter] : undefined,
         onPixiHover: (detail: MapPreviewPickDetail | null) => setPreviewHoverDetail(detail),
         onPixiClick: (detail: MapPreviewPickDetail) => {
             setPreviewClickDetail(detail);
@@ -827,10 +889,18 @@ export function MapShapeEditorDemo() {
         onKeyLocationClick: (detail: MapPreviewPickDetail) => {
             if (detail.kind === 'keyLocation') pushLog('callback', `onPixiKeyLocationClick：${detail.object.name}`);
         },
+        onShapeHover: (detail: MapPreviewShapePickDetail | null) => {
+            if (detail) pushLog('callback', `onShapeHover：${detail.object.name}`);
+        },
+        onKeyLocationHover: (detail: MapPreviewKeyLocationPickDetail | null) => {
+            if (detail) pushLog('callback', `onKeyLocationHover：${detail.object.name}`);
+        },
         emptyHint: '提交后将在这里显示后端回传的 Pixi 结果。',
     }), [
         invalidKeyLocationIds,
         invalidShapeIds,
+        pixiBlurFilter,
+        pixiFilterEnabled,
         pixiRenderStyle,
         selectedLocationId,
         selectedShapeId,
@@ -863,6 +933,30 @@ export function MapShapeEditorDemo() {
                             <button type="button" className="fc-map-shape-editor__chip" style={{width: 'auto'}}
                                     onClick={() => setViewBox(createInitialMapShapeEditorViewBox(DEMO_CANVAS))}>
                                 重置视图
+                            </button>
+                            <button
+                                type="button"
+                                className="fc-map-shape-editor__chip"
+                                style={{width: 'auto'}}
+                                onClick={() => {
+                                    const next = !readOnly;
+                                    setReadOnly(next);
+                                    pushLog('state', `切换只读模式：${next ? '开启' : '关闭'}`);
+                                }}
+                            >
+                                {readOnly ? '退出只读模式' : '进入只读模式'}
+                            </button>
+                            <button
+                                type="button"
+                                className="fc-map-shape-editor__chip"
+                                style={{width: 'auto'}}
+                                onClick={() => {
+                                    const next = !showBackgroundImage;
+                                    setShowBackgroundImage(next);
+                                    pushLog('state', `切换底图：${next ? '显示' : '隐藏'}`);
+                                }}
+                            >
+                                {showBackgroundImage ? '隐藏底图' : '显示底图'}
                             </button>
                             <button
                                 type="button"
@@ -942,6 +1036,24 @@ export function MapShapeEditorDemo() {
                                     className="fc-map-shape-editor__stat-value">{showDualRenderer ? '开启' : '关闭'}</strong>
                             </div>
                             <div className="fc-map-shape-editor__stat">
+                                <span className="fc-map-shape-editor__stat-label">只读模式</span>
+                                <strong
+                                    className="fc-map-shape-editor__stat-value">{readOnly ? '开启' : '关闭'}</strong>
+                            </div>
+                            <div className="fc-map-shape-editor__stat">
+                                <span className="fc-map-shape-editor__stat-label">底图</span>
+                                <strong
+                                    className="fc-map-shape-editor__stat-value">{showBackgroundImage ? '显示' : '隐藏'}</strong>
+                            </div>
+                            <div className="fc-map-shape-editor__stat">
+                                <span className="fc-map-shape-editor__stat-label">预览视口</span>
+                                <strong className="fc-map-shape-editor__stat-value">
+                                    {previewViewBox
+                                        ? `${formatViewBoxValue(previewViewBox.x)}, ${formatViewBoxValue(previewViewBox.y)}, ${formatViewBoxValue(previewViewBox.width)}, ${formatViewBoxValue(previewViewBox.height)}`
+                                        : '外部控制'}
+                                </strong>
+                            </div>
+                            <div className="fc-map-shape-editor__stat">
                                 <span className="fc-map-shape-editor__stat-label">图形数量</span>
                                 <strong className="fc-map-shape-editor__stat-value">{draft.shapes.length}</strong>
                             </div>
@@ -984,7 +1096,8 @@ export function MapShapeEditorDemo() {
                             </div>
                             <MapDeckPreview
                                 scene={previewScene}
-                                interactive
+                                enablePanZoom
+                                enablePicking
                                 shapeStyle={previewShapeStyle}
                                 keyLocationStyle={previewKeyLocationStyle}
                                 labelStyle={previewLabelStyle}
@@ -1003,7 +1116,8 @@ export function MapShapeEditorDemo() {
                             </div>
                             <MapPixiPreview
                                 scene={previewScene}
-                                interactive={false}
+                                enablePanZoom
+                                enablePicking
                                 syncViewBox={dualViewBox ?? undefined}
                                 shapeStyle={previewShapeStyle}
                                 keyLocationStyle={previewKeyLocationStyle}
@@ -1033,6 +1147,7 @@ export function MapShapeEditorDemo() {
                             scene={previewScene}
                             viewBox={viewBox}
                             onViewBoxChange={updateViewBox}
+                            onPreviewViewBoxChange={viewportMode === 'preview' ? setPreviewViewBox : undefined}
                             svgProps={svgProps}
                             shapeStyle={previewShapeStyle}
                             keyLocationStyle={previewKeyLocationStyle}
@@ -1168,6 +1283,13 @@ export function MapShapeEditorDemo() {
                                     <option value="clean">clean（关闭覆盖层）</option>
                                 </select>
                             </div>
+                            <label className="fc-map-shape-editor__chip" style={{cursor: 'pointer'}}>
+                                <input type="checkbox" checked={pixiFilterEnabled}
+                                       onChange={event => setPixiFilterEnabled(event.target.checked)}
+                                       disabled={previewRenderer !== 'pixi'}
+                                       style={{marginRight: 8}}/>
+                                <span className="fc-map-shape-editor__chip-title">sceneFilters（BlurFilter）</span>
+                            </label>
                             <p className="fc-map-shape-editor__section-note">
                                 本 demo 会在调用方先把 preview scene 二次增强：`出入口 / 设备点` 自动补 SVG 图标，并通过
                                 `getTooltip` 控制悬浮内容。Pixi 模式下还会通过 `renderOverlay` 增加场景坐标覆盖层，切到

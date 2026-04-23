@@ -1,4 +1,4 @@
-import {Application, extend} from '@pixi/react';
+import {Application, extend, useApplication} from '@pixi/react';
 import {
     Circle,
     Container,
@@ -61,6 +61,7 @@ const DEFAULT_LABEL_COLOR: MapRgbaColor = [38, 43, 56, 255];
 const DEFAULT_LABEL_FONT_FAMILY = '"Microsoft YaHei UI", sans-serif';
 const DEFAULT_ICON_SIZE = 28;
 const PAN_DRAG_THRESHOLD = 3;
+const MAX_PIXI_RESOLUTION = 2;
 
 interface ElementSize {
     width: number;
@@ -91,6 +92,11 @@ interface PixiPanState {
 interface TooltipPosition {
     left: number;
     top: number;
+}
+
+interface MapPixiApplicationGuardProps {
+    onContextLost: () => void;
+    onContextRestored: () => void;
 }
 
 /** @deprecated 使用 {@link MapKeyLocationRenderMode}。 */
@@ -200,6 +206,14 @@ function normalizeElementSize(width: number, height: number): ElementSize {
         width: Number.isFinite(width) ? Math.max(0, Math.round(width)) : 0,
         height: Number.isFinite(height) ? Math.max(0, Math.round(height)) : 0,
     };
+}
+
+function getPixiResolution(): number {
+    if (typeof window === 'undefined') {
+        return 1;
+    }
+
+    return Math.max(1, Math.min(window.devicePixelRatio || 1, MAX_PIXI_RESOLUTION));
 }
 
 function useElementSize<T extends HTMLElement>() {
@@ -1042,6 +1056,38 @@ function MapPixiScene({
     );
 }
 
+function MapPixiApplicationGuard({
+                                     onContextLost,
+                                     onContextRestored,
+                                 }: MapPixiApplicationGuardProps) {
+    const {app} = useApplication();
+
+    useEffect(() => {
+        const canvas = app.canvas as HTMLCanvasElement | null;
+        if (!canvas || typeof canvas.addEventListener !== 'function') {
+            return undefined;
+        }
+
+        const handleContextLost = (event: Event) => {
+            event.preventDefault();
+            onContextLost();
+        };
+        const handleContextRestored = () => {
+            onContextRestored();
+        };
+
+        canvas.addEventListener('webglcontextlost', handleContextLost);
+        canvas.addEventListener('webglcontextrestored', handleContextRestored);
+
+        return () => {
+            canvas.removeEventListener('webglcontextlost', handleContextLost);
+            canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+        };
+    }, [app, onContextLost, onContextRestored]);
+
+    return null;
+}
+
 export function MapPixiPreview({
                                    scene,
                                    className,
@@ -1087,10 +1133,15 @@ export function MapPixiPreview({
     const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(null);
     const [interactiveViewBox, setInteractiveViewBox] = useState<MapShapeEditorViewBox | null>(null);
     const [panState, setPanState] = useState<PixiPanState | null>(null);
+    const [shouldMountApplication, setShouldMountApplication] = useState(false);
+    const [contextLost, setContextLost] = useState(false);
+    const [contextRevision, setContextRevision] = useState(0);
+    const hasScene = Boolean(scene);
     const hasRenderableSize = size.width >= MIN_RENDER_SIZE && size.height >= MIN_RENDER_SIZE;
     const panZoomEnabled = enablePanZoom ?? interactive;
     const pickingEnabled = enablePicking;
     const shouldUseInteractiveViewBox = Boolean(panZoomEnabled && !syncViewBox && scene);
+    const pixiResolution = getPixiResolution();
     const resolvedPolygonLineWidth = shapeStyle?.lineWidth ?? polygonLineWidth;
     const resolvedKeyLocationRadius = keyLocationStyle?.radius ?? keyLocationRadius;
     const resolvedKeyLocationStrokeColor = keyLocationStyle?.showStroke === false
@@ -1111,6 +1162,40 @@ export function MapPixiPreview({
             ? buildViewportTransform(scene.canvas, size, effectiveSyncViewBox)
             : null
     ), [effectiveSyncViewBox, hasRenderableSize, scene, size]);
+
+    useEffect(() => {
+        if (!hasScene) {
+            setShouldMountApplication(false);
+            setContextLost(false);
+            return undefined;
+        }
+
+        let frameId: number | null = null;
+        let timeoutId: number | null = null;
+        const commitMount = () => {
+            frameId = null;
+            timeoutId = null;
+            setShouldMountApplication(true);
+        };
+
+        if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+            frameId = window.requestAnimationFrame(commitMount);
+        } else if (typeof window !== 'undefined') {
+            timeoutId = window.setTimeout(commitMount, 0);
+        } else {
+            commitMount();
+        }
+
+        return () => {
+            if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function' && frameId !== null) {
+                window.cancelAnimationFrame(frameId);
+            }
+            if (typeof window !== 'undefined' && timeoutId !== null) {
+                window.clearTimeout(timeoutId);
+            }
+            setShouldMountApplication(false);
+        };
+    }, [hasScene]);
 
     useLayoutEffect(() => {
         if (!tooltipState) {
@@ -1344,6 +1429,29 @@ export function MapPixiPreview({
             hasMoved: false,
         });
     }, [interactiveViewBox, scene, shouldUseInteractiveViewBox]);
+    const handleContextLost = useCallback(() => {
+        setContextLost(true);
+        setTooltipState(null);
+        setHoveredDetail(null);
+        setPanState(null);
+        onPixiHover?.(null);
+        onShapeHover?.(null);
+        onKeyLocationHover?.(null);
+    }, [onKeyLocationHover, onPixiHover, onShapeHover]);
+    const handleContextRestored = useCallback(() => {
+        setContextLost(false);
+        setContextRevision(currentRevision => currentRevision + 1);
+    }, []);
+    const shouldRenderScene = Boolean(scene && transform && !contextLost);
+    const statusMessage = !scene
+        ? emptyHint
+        : contextLost
+            ? 'Pixi 渲染上下文已丢失，正在等待浏览器恢复。'
+            : shouldMountApplication && !transform
+                ? '正在等待 Pixi 预览容器尺寸。'
+                : !shouldMountApplication
+                    ? '正在初始化 Pixi 预览。'
+                    : null;
 
     return (
         <div
@@ -1357,41 +1465,50 @@ export function MapPixiPreview({
             style={style}
             onPointerDown={handlePointerDown}
         >
-            {scene && transform ? (
+            {scene && shouldMountApplication && (
                 <Application
                     resizeTo={elementRef}
+                    preference="webgl"
                     backgroundAlpha={0}
                     antialias
                     autoDensity
-                    resolution={typeof window === 'undefined' ? 1 : window.devicePixelRatio}
+                    resolution={pixiResolution}
                 >
-                    <MapPixiScene
-                        scene={scene}
-                        showLabels={showLabels}
-                        transform={transform}
-                        size={size}
-                        enablePicking={pickingEnabled}
-                        polygonLineWidth={resolvedPolygonLineWidth}
-                        keyLocationRadius={resolvedKeyLocationRadius}
-                        keyLocationStrokeColor={resolvedKeyLocationStrokeColor}
-                        keyLocationStrokeWidth={resolvedKeyLocationStrokeWidth}
-                        keyLocationRenderMode={resolvedKeyLocationRenderMode}
-                        iconSize={resolvedIconSize}
-                        labelFontSize={resolvedLabelFontSize}
-                        labelColor={resolvedLabelColor}
-                        labelFontFamily={resolvedLabelFontFamily}
-                        labelFontWeight={resolvedLabelFontWeight}
-                        hoveredDetail={hoveredDetail}
-                        onPickClick={handlePickClick}
-                        onPickHover={handlePickHover}
-                        onPickMove={handlePickMove}
-                        onPickOut={handlePickOut}
-                        sceneFilters={sceneFilters}
-                        renderOverlay={renderOverlay}
+                    <MapPixiApplicationGuard
+                        onContextLost={handleContextLost}
+                        onContextRestored={handleContextRestored}
                     />
+                    {shouldRenderScene && transform && (
+                        <MapPixiScene
+                            key={contextRevision}
+                            scene={scene}
+                            showLabels={showLabels}
+                            transform={transform}
+                            size={size}
+                            enablePicking={pickingEnabled}
+                            polygonLineWidth={resolvedPolygonLineWidth}
+                            keyLocationRadius={resolvedKeyLocationRadius}
+                            keyLocationStrokeColor={resolvedKeyLocationStrokeColor}
+                            keyLocationStrokeWidth={resolvedKeyLocationStrokeWidth}
+                            keyLocationRenderMode={resolvedKeyLocationRenderMode}
+                            iconSize={resolvedIconSize}
+                            labelFontSize={resolvedLabelFontSize}
+                            labelColor={resolvedLabelColor}
+                            labelFontFamily={resolvedLabelFontFamily}
+                            labelFontWeight={resolvedLabelFontWeight}
+                            hoveredDetail={hoveredDetail}
+                            onPickClick={handlePickClick}
+                            onPickHover={handlePickHover}
+                            onPickMove={handlePickMove}
+                            onPickOut={handlePickOut}
+                            sceneFilters={sceneFilters}
+                            renderOverlay={renderOverlay}
+                        />
+                    )}
                 </Application>
-            ) : (
-                <div className="fc-map-pixi-preview__empty">{emptyHint}</div>
+            )}
+            {statusMessage && (
+                <div className="fc-map-pixi-preview__empty">{statusMessage}</div>
             )}
             {tooltipState && (
                 <div
