@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import Markdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
@@ -17,10 +17,10 @@ export interface ToolCallInfo {
 }
 
 export type MessageBoxBlock =
-    | { type: 'reasoning'; content: string; seconds?: number; streaming?: boolean }
-    | { type: 'tool'; tool: ToolCallInfo; detail?: 'simple' | 'verbose' }
-    | { type: 'content'; content: string; markdown?: boolean; streaming?: boolean }
-    | { type: 'children'; children: React.ReactNode };
+    | { id?: string; type: 'reasoning'; content: string; seconds?: number; streaming?: boolean }
+    | { id?: string; type: 'tool'; tool: ToolCallInfo; detail?: 'simple' | 'verbose' }
+    | { id?: string; type: 'content'; content: string; markdown?: boolean; streaming?: boolean }
+    | { id?: string; type: 'children'; children: React.ReactNode };
 
 export interface MessageBoxProps {
   role: 'user' | 'assistant' | 'system';
@@ -100,6 +100,10 @@ const ReasoningSection: React.FC<{
   reasoningStreaming: boolean;
 }> = ({reasoning, reasoningStreaming, reasoningSeconds}) => {
   const [expanded, setExpanded] = useState(reasoningStreaming);
+
+  useEffect(() => {
+    if (reasoningStreaming) setExpanded(true);
+  }, [reasoningStreaming]);
 
   const label = reasoningStreaming
       ? `思考中${reasoningSeconds !== undefined ? `（${reasoningSeconds}s）` : '…'}`
@@ -288,8 +292,10 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
         : content;
     if (onCopy) {
       onCopy();
-    } else {
+    } else if (copyText) {
       navigator.clipboard?.writeText(copyText);
+    } else {
+      return;
     }
     setContentCopied(true);
     setTimeout(() => setContentCopied(false), 2000);
@@ -306,11 +312,12 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
   const renderBlocks = () => {
     if (!blocks || blocks.length === 0) return null;
     return blocks.map((block, idx) => {
+      const key = block.id ?? `${block.type}-${idx}`;
       switch (block.type) {
         case 'reasoning':
           return (
               <ReasoningSection
-                  key={`reasoning-${idx}`}
+                  key={key}
                   reasoning={block.content}
                   reasoningSeconds={block.seconds}
                   reasoningStreaming={block.streaming ?? false}
@@ -319,13 +326,13 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
         case 'tool':
             if (rolePlaying) return null;
           return (
-              <div key={`tool-${idx}`} className="message-box-tools">
+              <div key={key} className="message-box-tools">
                 <ToolCallItem tool={block.tool} detail={block.detail ?? 'simple'}/>
               </div>
           );
         case 'content':
           return (
-              <div key={`content-${idx}`} className="message-box-text">
+              <div key={key} className="message-box-text">
                 {block.markdown ? (
                     <>
                       <div className="message-box-markdown">
@@ -348,7 +355,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
           );
         case 'children':
           return (
-              <div key={`children-${idx}`} className="message-box-item-children">
+              <div key={key} className="message-box-item-children">
                 {block.children}
               </div>
           );
