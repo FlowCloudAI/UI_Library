@@ -1,0 +1,146 @@
+/* ========================================
+   ConversationTreeView 容器
+   ======================================== */
+
+.fc-conv-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--fc-color-bg, #FFFFFF);
+  border: 1px solid var(--fc-color-border, #D0D0D0);
+  border-radius: var(--fc-radius-md, 0.5rem);
+  max-height: 400px;
+  overflow-y: auto;
+  font-size: 0.8125rem;
+}
+
+.fc-conv-tree__header {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fc-color-text-secondary, #5F5F5F);
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--fc-color-border-light, #E0E0E0);
+}
+
+.fc-conv-tree__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+/* ── 轮次节点 ── */
+
+.fc-conv-tree__turn {
+  display: flex;
+  flex-direction: column;
+}
+
+.fc-conv-tree__item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3125rem 0.5rem;
+  border-radius: var(--fc-radius-sm, 0.25rem);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.fc-conv-tree__item:hover {
+  background: var(--fc-color-bg-secondary, #F0F0F0);
+}
+
+.fc-conv-tree__item--head {
+  background: var(--fc-color-primary-subtle, rgba(55, 138, 221, 0.08));
+}
+
+.fc-conv-tree__item--head:hover {
+  background: var(--fc-color-primary-subtle, rgba(55, 138, 221, 0.15));
+}
+
+.fc-conv-tree__role {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}
+
+.fc-conv-tree__preview {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fc-color-text, #1A1A1A);
+}
+
+.fc-conv-tree__head-marker {
+  flex-shrink: 0;
+  font-size: 0.5rem;
+  color: var(--fc-color-primary, #378ADD);
+}
+
+/* ── 分支列表 ── */
+
+.fc-conv-tree__branches {
+  display: flex;
+  flex-direction: column;
+  margin-left: 1.5rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--fc-color-border-light, #E0E0E0);
+}
+
+.fc-conv-tree__branch {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--fc-radius-sm, 0.25rem);
+  cursor: pointer;
+  color: var(--fc-color-text-secondary, #5F5F5F);
+  transition: background 0.12s;
+}
+
+.fc-conv-tree__branch:hover {
+  background: var(--fc-color-bg-secondary, #F0F0F0);
+}
+
+.fc-conv-tree__branch--active {
+  color: var(--fc-color-text, #1A1A1A);
+  font-weight: 500;
+}
+
+.fc-conv-tree__branch-idx {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  opacity: 0.7;
+  min-width: 1.5rem;
+}
+
+.fc-conv-tree__branch-preview {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 暗色主题 ── */
+
+[data-theme="dark"] .fc-conv-tree {
+  background: var(--fc-color-bg, #1A1A1A);
+  border-color: var(--fc-color-border, #333330);
+}
+
+[data-theme="dark"] .fc-conv-tree__item:hover,
+[data-theme="dark"] .fc-conv-tree__branch:hover {
+  background: var(--fc-color-bg-tertiary, #2A2A2A);
+}
+
+[data-theme="dark"] .fc-conv-tree__item--head {
+  background: rgba(55, 138, 221, 0.12);
+}
+
+[data-theme="dark"] .fc-conv-tree__branches {
+  border-left-color: var(--fc-color-border, #333330);
+}

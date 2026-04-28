@@ -43,6 +43,11 @@ export interface MessageBoxProps {
   blocks?: MessageBoxBlock[];
   // 角色扮演模式（仅对 assistant 生效）
   rolePlaying?: boolean;
+  // 分支信息
+  nodeId?: number;
+  branchIndex?: number;
+  branchTotal?: number;
+  onSwitchBranch?: (direction: 'prev' | 'next') => void;
   // 工具栏回调
   onCopy?: () => void;
   onEdit?: () => void;
@@ -264,6 +269,10 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
                                                         toolCallDetail = 'simple',
                                                         blocks,
                                                         rolePlaying,
+                                                        nodeId,
+                                                        branchIndex,
+                                                        branchTotal,
+                                                        onSwitchBranch,
                                                         onCopy,
                                                         onEdit,
                                                         onRegenerate,
@@ -420,8 +429,29 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
       </div>
   );
 
+  const showBranchNav = branchTotal !== undefined && branchTotal > 1 && onSwitchBranch && nodeId !== undefined;
+
   const toolbar = role === 'system' ? null : (
       <div className="message-box-actions">
+        {showBranchNav && (
+            <span className="message-box-branch-nav">
+              <button
+                  className="message-box-action message-box-branch-btn"
+                  data-tooltip="上一个分支"
+                  disabled={branchIndex === 1}
+                  onClick={() => onSwitchBranch?.('prev')}
+                  type="button"
+              >◀</button>
+              <span className="message-box-branch-label">{branchIndex}/{branchTotal}</span>
+              <button
+                  className="message-box-action message-box-branch-btn"
+                  data-tooltip="下一个分支"
+                  disabled={branchIndex === branchTotal}
+                  onClick={() => onSwitchBranch?.('next')}
+                  type="button"
+              >▶</button>
+            </span>
+        )}
         <button
             className={`message-box-action${contentCopied ? ' message-box-action--active' : ''}`}
             data-tooltip={contentCopied ? '已复制' : '复制'}

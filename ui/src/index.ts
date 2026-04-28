@@ -23,6 +23,7 @@ export * from "./components/MarkdownEditor/MarkdownEditor";
 export type {MarkdownEditorRef} from "./components/MarkdownEditor/MarkdownEditor";
 export * from "./components/ContextMenu/ContextMenuContext";
 export * from "./components/MessageBox/MessageBox";
+export * from "./components/ConversationTreeView/ConversationTreeView";
 export * from "./components/Time/Time";
 export * from "./components/RelationGraph/RelationGraph";
 export * from "./components/RelationGraph/types";
