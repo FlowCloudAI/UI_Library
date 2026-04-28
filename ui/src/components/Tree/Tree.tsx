@@ -22,8 +22,7 @@ import {
 } from '@dnd-kit/core'
 import { RollingBox } from '../Box/RollingBox'
 import { useContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenuContext'
-import { DeleteDialog } from './DeleteDialog'
-import type { DeleteMode } from './DeleteDialog'
+
 import { CategoryTreeNode } from './flatToTree'
 import './Tree.css'
 
@@ -627,7 +626,6 @@ export interface TreeProps {
     treeData: CategoryTreeNode[]
     onRename?: (key: string, newName: string) => Promise<void>
     onCreate?: (parentKey: string | null) => Promise<string>
-    onDelete?: (key: string, mode: DeleteMode) => Promise<void>
     onDeleteRequest?: (node: CategoryTreeNode) => void
     onMove?: (key: string, targetKey: string, position: DropPosition) => Promise<void>
     onSelect?: (key: string) => void
@@ -665,7 +663,6 @@ export function Tree({
                          treeData,
                          onRename,
                          onCreate,
-                         onDelete,
                          onDeleteRequest,
                          onMove,
                          onSelect,
@@ -697,7 +694,6 @@ export function Tree({
         () => new Set(defaultExpandedKeys ?? [])
     )
     const [editingKey, setEditingKey]     = useState<string | null>(null)
-    const [deleteTarget, setDeleteTarget] = useState<CategoryTreeNode | null>(null)
     const [uncontrolledSearchValue, setUncontrolledSearchValue] = useState(defaultSearchValue)
 
     // DnD state — single object so one setState = one render
@@ -711,7 +707,7 @@ export function Tree({
     const pointerYRef = useRef(0)
     const dragEnabled = Boolean(onMove)
     const renameEnabled = Boolean(onRename)
-    const deleteEnabled = Boolean(onDelete || onDeleteRequest)
+    const deleteEnabled = Boolean(onDeleteRequest)
     const createEnabled = Boolean(onCreate)
     const currentExpandedKeys = useMemo(
         () => new Set(controlledExpandedKeys ?? uncontrolledExpandedKeys),
@@ -795,7 +791,6 @@ export function Tree({
 
     const requestDelete = useCallback((node: CategoryTreeNode) => {
         onDeleteRequest?.(node)
-        setDeleteTarget(node)
     }, [onDeleteRequest])
 
     // ── DnD handlers ─────────────────────────────────────────────────────────
@@ -1046,14 +1041,7 @@ export function Tree({
                                 )}
                             </div>
 
-                            <DeleteDialog
-                                node={deleteTarget}
-                                onClose={() => setDeleteTarget(null)}
-                                onDelete={async (key, mode) => {
-                                    await onDelete?.(key, mode)
-                                    setDeleteTarget(null)
-                                }}
-                            />
+
                         </DndContext>
                     </DndStateCtx.Provider>
                 </TreeOptionsCtx.Provider>

@@ -1,6 +1,8 @@
 import {type CSSProperties, type MouseEvent as ReactMouseEvent, SetStateAction, useMemo, useState} from 'react'
 import {
     type CategoryTreeNode,
+    DeleteDialog,
+    type DeleteMode,
     type DropPosition,
     flatToTree,
     Tree,
@@ -34,6 +36,7 @@ export function TreeDemo() {
     const [indentSize, setIndentSize] = useState(20)
     const [actionDisplayMode, setActionDisplayMode] = useState<'auto' | 'inline' | 'overflow'>('auto')
     const [customColors, setCustomColors] = useState(true)
+    const [deleteTarget, setDeleteTarget] = useState<CategoryTreeNode | null>(null)
 
     const handleDividerMouseDown = (e: ReactMouseEvent<HTMLDivElement>) => {
         e.preventDefault()
@@ -117,6 +120,7 @@ export function TreeDemo() {
 
     const handleDeleteRequest = (node: CategoryTreeNode) => {
         addLog(`请求删除 [${node.key}] "${node.title}"`)
+        setDeleteTarget(node)
     }
 
     // Drop on target = become target's last child
@@ -396,7 +400,6 @@ export function TreeDemo() {
                         onRename={handleRename}
                         onCreate={handleCreate}
                         onDeleteRequest={handleDeleteRequest}
-                        onDelete={handleDelete}
                         onMove={handleMove}
                         searchable
                         collapseDuration={0.2}
@@ -457,6 +460,15 @@ export function TreeDemo() {
                     ))}
                 </div>
             </div>
+
+            <DeleteDialog
+                node={deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onDelete={async (key: string, mode: DeleteMode) => {
+                    await handleDelete(key, mode)
+                    setDeleteTarget(null)
+                }}
+            />
         </div>
     )
 }
