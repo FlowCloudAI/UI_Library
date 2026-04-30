@@ -398,8 +398,8 @@ export const TabBar = memo<TabBarProps>(({
         }
     }, []);
 
-    // Stable handler refs — callers need not wrap onChange/onClose/onAdd in useCallback.
-    // TabItemView memo stays effective even when callers pass anonymous functions.
+    // 稳定的 handler ref — 调用者无需将 onChange/onClose/onAdd 包裹在 useCallback 中。
+    // 即使调用者传入匿名函数，TabItemView 的 memo 仍然有效。
     const onChangeRef = useRef(onChange); onChangeRef.current = onChange;
     const onCloseRef  = useRef(onClose);  onCloseRef.current  = onClose;
 

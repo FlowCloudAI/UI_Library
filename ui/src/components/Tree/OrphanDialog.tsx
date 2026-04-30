@@ -1,12 +1,12 @@
 // OrphanDialog.tsx
-// Used by the PARENT component, not by Tree itself.
+// 由父组件使用，而非 Tree 本身。
 //
-// Usage:
+// 用法：
 //   const { roots, orphans } = flatToTree(dbRows)
 //   <OrphanDialog orphans={orphans} onResolve={handleResolve} onClose={...} />
 //
-// onResolve receives a map of { [nodeKey]: 'lift' | 'remove' }
-// Parent is responsible for executing the DB operations.
+// onResolve 接收 { [nodeKey]: 'lift' | 'remove' } 映射表
+// 父组件负责执行数据库操作。
 
 import { useState } from 'react'
 import type { CategoryTreeNode } from './flatToTree'
@@ -17,7 +17,7 @@ export type OrphanResolutionMap = Record<string, OrphanResolution>
 interface OrphanDialogProps {
     orphans: CategoryTreeNode[]
     onResolve: (resolutions: OrphanResolutionMap) => void
-    /** Dismiss without resolving — orphans will be silently excluded from the tree. */
+    /** 关闭而不处理 — 孤立节点将被静默从树中排除。 */
     onClose: () => void
 }
 

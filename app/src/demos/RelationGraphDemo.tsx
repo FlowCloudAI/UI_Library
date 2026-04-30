@@ -1,11 +1,10 @@
 // app/src/demos/RelationGraphDemo.tsx
-// Demonstrates RelationGraph with a mock layout function.
-// The mock layout function arranges nodes in a simple grid — this is NOT a real
-// layout algorithm.  In production the host would supply a Tauri invoke or HTTP
-// call that runs a real graph-layout backend.
+// 演示 RelationGraph 与模拟布局函数的配合使用。
+// 模拟布局函数将节点排列在简单网格中——这并非真实
+// 布局算法。生产环境中宿主应提供 Tauri invoke 或 HTTP
+// 调用来运行真正的图布局后端。
 
-import { useMemo, useRef, useState } from 'react';
-import { Button, RelationGraph } from 'flowcloudai-ui';
+import {useMemo, useRef, useState} from 'react';
 import type {
     LayoutFunction,
     LayoutNode,
@@ -16,8 +15,9 @@ import type {
     RelationLayoutState,
     RelationNodeInput,
 } from 'flowcloudai-ui';
+import {Button, RelationGraph} from 'flowcloudai-ui';
 
-// ─── EntryBrief-style node (mirrors the Rust struct) ─────────────────────────
+// ─── EntryBrief 风格节点（对应 Rust 结构体）─────────────────────────
 interface EntryNode extends RelationNodeInput {
     id:           string;
     title:        string;
@@ -27,14 +27,14 @@ interface EntryNode extends RelationNodeInput {
     category_id?: string;
 }
 
-// ─── Mock layout function (grid arrangement) ─────────────────────────────────
-// This simulates a backend that takes a LayoutRequest and returns positions.
-// Replace this with `invoke('layout', request)` or `fetch('/api/layout', ...)`.
+// ─── 模拟布局函数（网格排列）─────────────────────────────────
+// 模拟接受 LayoutRequest 并返回位置的后端。
+// 替换为 `invoke('layout', request)` 或 `fetch('/api/layout', ...)`。
 
 const mockGridLayout: LayoutFunction = async (
     request: LayoutRequest,
 ): Promise<LayoutResponse> => {
-    // Simulate async round-trip (e.g. IPC or HTTP)
+    // 模拟异步往返（如 IPC 或 HTTP）
     await new Promise(resolve => setTimeout(resolve, 600));
 
     if (request.nodes.length === 0) {
@@ -67,7 +67,7 @@ const mockGridLayout: LayoutFunction = async (
     };
 };
 
-// ─── Dataset fixtures ─────────────────────────────────────────────────────────
+// ─── 数据集固定样本 ─────────────────────────────────────────────────────────
 
 const SCENARIO_SMALL: { nodes: RelationNodeInput[]; edges: RelationEdgeInput[] } = {
     nodes: [
@@ -78,7 +78,7 @@ const SCENARIO_SMALL: { nodes: RelationNodeInput[]; edges: RelationEdgeInput[] }
     ],
     edges: [
         { source: 'alice', target: 'bob',   label: '同事',   kind: 'two_way' },
-        { source: 'bob',   target: 'alice',                  kind: 'two_way' },   // reverse of above
+        { source: 'bob',   target: 'alice',                  kind: 'two_way' },   // 与上相反
         { source: 'alice', target: 'carol', label: '朋友' },
         { source: 'bob',   target: 'dave',  label: '上级' },
         { source: 'carol', target: 'dave',  label: '认识' },
@@ -96,7 +96,7 @@ const SCENARIO_LARGE: { nodes: RelationNodeInput[]; edges: RelationEdgeInput[] }
         { source: 'node-2',  target: 'node-3'  },
         { source: 'node-3',  target: 'node-0'  },
         { source: 'node-4',  target: 'node-5'  },
-        { source: 'node-5',  target: 'node-4',  kind: 'two_way' },  // bidirectional pair
+        { source: 'node-5',  target: 'node-4',  kind: 'two_way' },  // 双向配对
         { source: 'node-4',  target: 'node-6'  },
         { source: 'node-7',  target: 'node-8'  },
         { source: 'node-8',  target: 'node-9'  },
@@ -149,7 +149,7 @@ const ENTRY_EDGES: RelationEdgeInput[] = [
     { source: 'e5', target: 'e6', kind: 'one_way', label: '输入' },
 ];
 
-// ─── Demo ─────────────────────────────────────────────────────────────────────
+// ─── 演示 ─────────────────────────────────────────────────────────────────────
 
 export function RelationGraphDemo() {
     const graphRef = useRef<RelationGraphRef>(null);
@@ -198,7 +198,7 @@ export function RelationGraphDemo() {
         <div className="demo-section" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <h4>关系图谱（RelationGraph）</h4>
 
-            {/* Controls */}
+            {/* 控件 */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 {(Object.keys(SCENARIOS) as ScenarioKey[]).map(key => (
                     <button
@@ -276,7 +276,7 @@ export function RelationGraphDemo() {
                     导出 JPEG
                 </Button>
 
-                {/* Layout status badge */}
+                {/* 布局状态徽标 */}
                 <span
                     style={{
                         marginLeft: 'auto',
@@ -309,7 +309,7 @@ export function RelationGraphDemo() {
                 </p>
             )}
 
-            {/* Graph canvas */}
+            {/* 图谱画布 */}
             <div style={{ height: 500, borderRadius: 8, overflow: 'hidden' }}>
                 <RelationGraph
                     ref={graphRef}

@@ -1,6 +1,6 @@
-/* ===== Demo Shell Layout ===== */
-/* NOTE: flowcloudai-ui/style is injected via the JS module import in main.tsx.
-   Theme variable overrides live in theme-override.css (imported last in main.tsx). */
+/* ===== 演示外壳布局 ===== */
+/* 注意：flowcloudai-ui/style 通过 main.tsx 中的 JS 模块导入注入。
+   主题变量覆盖位于 theme-override.css（在 main.tsx 中最后导入）。 */
 
 .app-shell {
     display: flex;
@@ -11,7 +11,7 @@
     color: var(--fc-color-text);
 }
 
-/* Top bar */
+/* 顶部栏 */
 .app-topbar {
     flex-shrink: 0;
     height: 48px;
@@ -31,14 +31,14 @@
     letter-spacing: 0.01em;
 }
 
-/* Body (nav + content) */
+/* 主体（导航 + 内容） */
 .app-body {
     display: flex;
     flex: 1;
     overflow: hidden;
 }
 
-/* Left nav panel */
+/* 左侧导航面板 */
 .app-nav {
     flex-shrink: 0;
     width: 176px;
@@ -83,7 +83,7 @@
     font-weight: 500;
 }
 
-/* Content area */
+/* 内容区 */
 .app-content {
     flex: 1;
     overflow-y: auto;
@@ -97,7 +97,7 @@
     margin: 0 0 28px;
 }
 
-/* ===== Demo Page Helpers ===== */
+/* ===== 演示页面辅助 ===== */
 
 .demo-section {
     margin-bottom: 32px;

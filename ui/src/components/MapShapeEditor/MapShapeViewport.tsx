@@ -26,15 +26,15 @@ export interface MapShapeViewportProps {
     canvas: MapEditorCanvas;
     scene: MapPreviewScene | null;
     /**
-     * Controlled viewBox for the edit layer.  Required in edit mode to keep
-     * the SVG editor and deck preview in sync.  Ignored in preview mode.
-     * If omitted in edit mode, the viewport manages viewBox internally.
+     * 编辑图层的受控 viewBox。编辑模式下必需，以使
+     * SVG 编辑器与 deck 预览保持同步。预览模式下忽略。
+     * 编辑模式下若省略，视口将在内部管理 viewBox。
      */
     viewBox?: MapShapeEditorViewBox;
     onViewBoxChange?: (viewBox: MapShapeEditorViewBox) => void;
     /**
-     * Props forwarded to `MapShapeSvgEditor`.  `canvas`, `viewBox`, and
-     * `onViewBoxChange` are controlled by the viewport and must not be set here.
+     * 转发给 `MapShapeSvgEditor` 的 props。`canvas`、`viewBox` 和
+     * `onViewBoxChange` 由视口控制，不可在此设置。
      */
     svgProps?: Omit<MapShapeSvgEditorProps, 'canvas' | 'viewBox' | 'onViewBoxChange'>;
     /** 通用图形样式，会转发给当前预览渲染器。 */

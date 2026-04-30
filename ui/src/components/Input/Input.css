@@ -1,4 +1,4 @@
-/* Input.css */
+/* Input.css —— 输入框组件样式 */
 .fc-input {
     position: relative;
     display: inline-flex;
@@ -154,7 +154,7 @@
     background: var(--fc-color-bg-tertiary);
 }
 
-/* Addon */
+/* 附加组件 */
 .fc-input__addon {
     padding: 0 var(--fc-space-md);
     background: var(--fc-color-bg-secondary);
@@ -190,7 +190,7 @@
     border-bottom-right-radius: 0;
 }
 
-/* Helper text */
+/* 帮助文本 */
 .fc-input__helper {
     position: absolute;
     top: 100%;
@@ -203,7 +203,7 @@
 .fc-input--warning .fc-input__helper { color: var(--fc-color-warning); }
 .fc-input--success .fc-input__helper { color: var(--fc-color-success); }
 
-/* Disabled */
+/* 禁用 */
 .fc-input--disabled {
     opacity: 0.6;
     cursor: not-allowed;

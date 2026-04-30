@@ -86,7 +86,7 @@ export type TreeActionItem =
         showInMenu?: boolean
     }
 
-// ── Contexts (split: stable actions / tree state / high-freq dnd state) ─────
+// ── Context（拆分：稳定 actions / 树状态 / 高频拖拽状态）─────
 
 interface TreeActionsValue {
     toggleExpand: (key: string) => void
@@ -139,7 +139,7 @@ const TreeStateCtx   = createContext<TreeStateValue>(null!)
 const DndStateCtx    = createContext<DndStateValue>(null!)
 const TreeOptionsCtx = createContext<TreeOptionsValue>(null!)
 
-// ── CollapsePanel ─────────────────────────────────────────────────────────────
+// ── 折叠面板 ─────────────────────────────────────────────────────────────
 
 const CollapsePanel = memo(function CollapsePanel(
     { open, children }: { open: boolean; children: React.ReactNode }
@@ -174,7 +174,7 @@ const CollapsePanel = memo(function CollapsePanel(
     )
 })
 
-// ── DndSlot (isolates dnd-kit hooks — only this wrapper re-renders on dnd) ──
+// ── 拖拽插槽（隔离 dnd-kit hooks — 仅此包装器在拖拽时重新渲染）──
 
 const DndSlot = memo(function DndSlot({
                                           nodeKey,
@@ -251,7 +251,7 @@ function normaliseContextMenuItems(items: ContextMenuItem[]): ContextMenuItem[] 
     return result
 }
 
-// ── TreeNodeItem (memo — skips re-render unless own props change) ────────────
+// ── 树节点项（memo — 仅在自身 props 变化时重新渲染）────────────
 
 interface TreeNodeItemProps {
     node: CategoryTreeNode
@@ -265,11 +265,11 @@ interface TreeNodeItemCoreProps extends TreeNodeItemProps {
     isEditing: boolean
 }
 
-// Core: memo'd heavy component — state comes from props so memo can intercept
+// 核心：memo 化的重型组件 — 状态来自 props，因此 memo 可以拦截
 const TreeNodeItemCore = memo(function TreeNodeItemCore({
     node, level, hidden = false, isSelected, isExpanded, isEditing,
 }: TreeNodeItemCoreProps) {
-    const actions = useContext(TreeActionsCtx)   // stable — never triggers re-render
+    const actions = useContext(TreeActionsCtx)   // 稳定 — 从不触发重新渲染
     const options = useContext(TreeOptionsCtx)
     const { showContextMenu } = useContextMenu()
 
@@ -499,7 +499,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                         onClick={handleItemClick}
                         onContextMenu={isEditing || contextMenuItems.length === 0 ? undefined : openNodeMenu}
                     >
-                        {/* Drag handle */}
+                        {/* 拖拽手柄 */}
                         <span
                             className={[
                                 'fc-tree__drag-handle',
@@ -510,7 +510,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                             onMouseDown={e => e.stopPropagation()}
                         >⠿</span>
 
-                        {/* Expand toggle */}
+                        {/* 展开/折叠 */}
                         <span
                             className={[
                                 'fc-tree__switcher',
@@ -522,7 +522,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                             {hasChildren ? '▶' : ''}
                         </span>
 
-                        {/* Title / inline edit */}
+                        {/* 标题 / 内联编辑 */}
                         {isEditing ? (
                             <input
                                 autoFocus
@@ -547,7 +547,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                             </span>
                         )}
 
-                        {/* Hover actions */}
+                        {/* 悬停操作 */}
                         {!isEditing && (compactActions || inlineActions.length > 0) && (
                             <span className={[
                                 'fc-tree__actions',
@@ -590,7 +590,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                         )}
                     </div>
 
-                    {/* Children */}
+                    {/* 子节点 */}
                     {hasChildren && (
                         <CollapsePanel open={isExpanded}>
                             {node.children.map(child => (
@@ -604,8 +604,8 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
     )
 })
 
-// Connector: cheap, subscribes to TreeStateCtx, passes derived booleans to memoised core.
-// Only TreeNodeItemCore (the expensive part) re-renders when isSelected/isExpanded/isEditing unchanged.
+// 连接器：轻量，订阅 TreeStateCtx，将派生布尔值传递给 memo 化核心。
+// 当 isSelected/isExpanded/isEditing 未变化时，仅 TreeNodeItemCore（重部件）重新渲染。
 function TreeNodeItem({ node, level, hidden = false }: TreeNodeItemProps) {
     const state = useContext(TreeStateCtx)
     return (
@@ -620,7 +620,7 @@ function TreeNodeItem({ node, level, hidden = false }: TreeNodeItemProps) {
     )
 }
 
-// ── Tree ──────────────────────────────────────────────────────────────────────
+// ── 树 ──────────────────────────────────────────────────────────────────────
 
 export interface TreeProps {
     treeData: CategoryTreeNode[]
@@ -696,7 +696,7 @@ export function Tree({
     const [editingKey, setEditingKey]     = useState<string | null>(null)
     const [uncontrolledSearchValue, setUncontrolledSearchValue] = useState(defaultSearchValue)
 
-    // DnD state — single object so one setState = one render
+    // 拖拽状态 — 单个对象，一次 setState = 一次渲染
     const [dndState, setDndState] = useState<DndStateValue>({
         dropTargetKey: null,
         dropPosition: null,
@@ -713,8 +713,8 @@ export function Tree({
         () => new Set(controlledExpandedKeys ?? uncontrolledExpandedKeys),
         [controlledExpandedKeys, uncontrolledExpandedKeys]
     )
-    // Ref lets setExpandedKeys read the latest value without being a dep, so the
-    // whole toggleExpand/expandSubtree/collapseSubtree → actionsValue chain stays stable.
+    // Ref 让 setExpandedKeys 读取最新值而不作为依赖，因此
+    // toggleExpand/expandSubtree/collapseSubtree → actionsValue 链条保持稳定。
     const expandedKeysRef = useRef(currentExpandedKeys)
     expandedKeysRef.current = currentExpandedKeys
 
@@ -731,7 +731,7 @@ export function Tree({
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
     )
 
-    // ── Actions (stable — deps rarely change) ────────────────────────────────
+    // ── 操作（稳定 — 依赖很少变化）────────────────────────────────
 
     const commitExpandedKeys = useCallback((next: Set<string>) => {
         if (controlledExpandedKeys === undefined) {
@@ -793,15 +793,15 @@ export function Tree({
         onDeleteRequest?.(node)
     }, [onDeleteRequest])
 
-    // ── DnD handlers ─────────────────────────────────────────────────────────
+    // ── 拖拽处理器 ─────────────────────────────────────────────────────────
 
-    // Use refs to avoid recreating callbacks when treeData / permissions change
+    // 使用 refs 避免在 treeData/permissions 变化时重新创建回调
     const treeDataRef  = useRef(treeData)
     const canDropRef   = useRef(canDrop)
     treeDataRef.current  = treeData
     canDropRef.current   = canDrop
 
-    // O(1) node and parent-chain lookups — rebuilt only when treeData changes
+    // O(1) 节点和父链查找 — 仅在 treeData 变化时重建
     const { nodeMap: _nodeMap, parentMap: _parentMap } = useMemo(() => {
         const nodeMap   = new Map<string, CategoryTreeNode>()
         const parentMap = new Map<string, string | null>()
@@ -841,7 +841,7 @@ export function Tree({
         const targetKey = over.id as string
         const activeKey = active.id as string
 
-        // O(depth) ancestor check — walk up the parentMap instead of full tree scan
+        // O(depth) 祖先检查 — 沿 parentMap 向上遍历而非全树扫描
         let ancestor = parentMapRef.current.get(targetKey)
         while (ancestor !== undefined && ancestor !== null) {
             if (ancestor === activeKey) { clearDropTarget(); return }
@@ -869,7 +869,7 @@ export function Tree({
             return
         }
 
-        // Bail out — same target + same zone → skip setState entirely
+        // 退出 — 相同目标 + 相同区域 → 完全跳过 setState
         if (dropRef.current.key === targetKey && dropRef.current.pos === position) return
 
         dropRef.current = { key: targetKey, pos: position }
@@ -889,7 +889,7 @@ export function Tree({
         setDndState({ dropTargetKey: null, dropPosition: null, dragKey: null })
     }, [])
 
-    // ── Search (memoised) ────────────────────────────────────────────────────
+    // ── 搜索（memo 化）────────────────────────────────────────────────────
 
     const setSearchValue = useCallback((value: string) => {
         if (controlledSearchValue === undefined) {
@@ -912,7 +912,7 @@ export function Tree({
         return filter(treeData)
     }, [currentSearchValue, treeData])
 
-    // ── Context values (memoised separately) ─────────────────────────────────
+    // ── Context 值（分别 memo 化）─────────────────────────────────
 
     const actionsValue = useMemo<TreeActionsValue>(() => ({
         toggleExpand, expandSubtree, collapseSubtree, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete,
@@ -924,8 +924,8 @@ export function Tree({
         editingKey,
     }), [currentExpandedKeys, selectedKey, editingKey])
 
-    // Stable ref wrappers for function props — caller need not useCallback/useMemo these.
-    // optionsValue only rebuilds when a prop transitions between defined ↔ undefined.
+    // 函数 props 的稳定 ref 包装 — 调用者无需对这些使用 useCallback/useMemo。
+    // optionsValue 仅在 prop 在 defined ↔ undefined 之间转换时重建。
     const renderTitleRef    = useRef(renderTitle);    renderTitleRef.current    = renderTitle
     const getNodeActionsRef = useRef(getNodeActions); getNodeActionsRef.current = getNodeActions
     const canDragFnRef      = useRef(canDrag);        canDragFnRef.current      = canDrag
@@ -954,7 +954,7 @@ export function Tree({
         indentSize,
         actionDisplayMode,
         actionCollapseThreshold,
-        // Boolean flags: optionsValue rebuilds only when a prop transitions defined ↔ undefined
+        // 布尔标记：optionsValue 仅在 prop 在 defined ↔ undefined 之间转换时重建
         !!renderTitle, !!getNodeActions, !!canDrag, !!canDrop, !!canRename, !!canDelete, !!canCreate,
         dragEnabled,
         renameEnabled,
@@ -981,9 +981,9 @@ export function Tree({
         return style as React.CSSProperties
     }, [colorTokens])
 
-    // dndState identity only changes when values actually change (single setState)
+    // dndState 引用仅在值实际变化时变更（单次 setState）
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    // ── 渲染 ────────────────────────────────────────────────────────────────
 
     return (
         <TreeActionsCtx.Provider value={actionsValue}>

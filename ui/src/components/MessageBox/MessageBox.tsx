@@ -19,6 +19,7 @@ export interface ToolCallInfo {
 export type MessageBoxBlock =
     | { id?: string; type: 'reasoning'; content: string; seconds?: number; streaming?: boolean }
     | { id?: string; type: 'tool'; tool: ToolCallInfo; detail?: 'simple' | 'verbose' }
+    | { id?: string; type: 'tool_use'; tools: ToolCallInfo[]; detail?: 'simple' | 'verbose' }
     | { id?: string; type: 'content'; content: string; markdown?: boolean; streaming?: boolean }
     | { id?: string; type: 'children'; children: React.ReactNode };
 
@@ -212,6 +213,61 @@ const ToolCallItem: React.FC<{
 };
 
 // ========================================
+// 子组件：工具调用组（双层折叠）
+// ========================================
+
+const ToolUseSection: React.FC<{
+    tools: ToolCallInfo[];
+    detail: 'simple' | 'verbose';
+}> = ({tools, detail}) => {
+    const hasCalling = tools.some(t => t.result === undefined);
+    const [expanded, setExpanded] = useState(hasCalling);
+
+    useEffect(() => {
+        if (hasCalling) setExpanded(true);
+    }, [hasCalling]);
+
+    if (tools.length === 0) return null;
+
+    const errorCount = tools.filter(t => t.isError).length;
+    const name = tools[0].name;
+    const homogeneous = tools.every(t => t.name === name);
+    const count = tools.length;
+
+    let statusText: string;
+    if (hasCalling) {
+        statusText = '调用中…';
+    } else if (errorCount > 0) {
+        statusText = `${errorCount} 失败`;
+    } else {
+        statusText = '已完成';
+    }
+
+    return (
+        <div className="message-box-tool-use">
+            <button
+                className="message-box-tool-use-header"
+                onClick={() => setExpanded(v => !v)}
+                type="button"
+            >
+                <span className="message-box-tool-label">调用工具</span>
+                {homogeneous && <span className="message-box-tool-name">{name}</span>}
+                <span className="message-box-tool-count">×{count}</span>
+                <span className="message-box-tool-status-text">{statusText}</span>
+                <span className={`message-box-tool-use-chevron${expanded ? ' expanded' : ''}`}/>
+            </button>
+            {expanded && (
+                <div className="message-box-tool-use-items">
+                    {tools.map(tool => (
+                        <ToolCallItem key={tool.index} tool={tool} detail={detail}/>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ========================================
 // 工具栏图标
 // ========================================
 
@@ -248,6 +304,11 @@ const IconPlay = () => <svg {...sz}>
 </svg>;
 
 const markdownRemarkPlugins = [remarkGfm, remarkBreaks];
+
+const stopToolbarEvent = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+};
 
 // ========================================
 // 主组件：MessageBox
@@ -338,6 +399,13 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
               <div key={key} className="message-box-tools">
                 <ToolCallItem tool={block.tool} detail={block.detail ?? 'simple'}/>
               </div>
+          );
+          case 'tool_use':
+              if (rolePlaying) return null;
+              return (
+                  <div key={key} className="message-box-tools">
+                      <ToolUseSection tools={block.tools} detail={block.detail ?? 'simple'}/>
+                  </div>
           );
         case 'content':
           return (
@@ -439,7 +507,11 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
                   className="message-box-action message-box-branch-btn"
                   data-tooltip="上一个分支"
                   disabled={branchIndex === 1}
-                  onClick={() => onSwitchBranch?.('prev')}
+                  onMouseDown={stopToolbarEvent}
+                  onClick={(event) => {
+                      stopToolbarEvent(event);
+                      onSwitchBranch?.('prev');
+                  }}
                   type="button"
               >◀</button>
               <span className="message-box-branch-label">{branchIndex}/{branchTotal}</span>
@@ -447,7 +519,11 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
                   className="message-box-action message-box-branch-btn"
                   data-tooltip="下一个分支"
                   disabled={branchIndex === branchTotal}
-                  onClick={() => onSwitchBranch?.('next')}
+                  onMouseDown={stopToolbarEvent}
+                  onClick={(event) => {
+                      stopToolbarEvent(event);
+                      onSwitchBranch?.('next');
+                  }}
                   type="button"
               >▶</button>
             </span>
@@ -455,23 +531,54 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
         <button
             className={`message-box-action${contentCopied ? ' message-box-action--active' : ''}`}
             data-tooltip={contentCopied ? '已复制' : '复制'}
-            onClick={handleCopy}
+            onMouseDown={stopToolbarEvent}
+            onClick={(event) => {
+                stopToolbarEvent(event);
+                handleCopy();
+            }}
             type="button"
         >
           {contentCopied ? <IconCheck/> : <IconCopy/>}
         </button>
         {role === 'user' && (
-            <button className="message-box-action" data-tooltip="编辑" onClick={onEdit} type="button">
+            <button
+                className="message-box-action"
+                data-tooltip="编辑"
+                onMouseDown={stopToolbarEvent}
+                onClick={(event) => {
+                    stopToolbarEvent(event);
+                    onEdit?.();
+                }}
+                type="button"
+            >
               <IconEdit/>
             </button>
         )}
         {role === 'assistant' && (
-            <button className="message-box-action" data-tooltip="重说" onClick={onRegenerate} type="button">
+            <button
+                className="message-box-action"
+                data-tooltip="重说"
+                onMouseDown={stopToolbarEvent}
+                onClick={(event) => {
+                    stopToolbarEvent(event);
+                    onRegenerate?.();
+                }}
+                type="button"
+            >
               <IconRetry/>
             </button>
         )}
         {role === 'assistant' && rolePlaying && (
-            <button className="message-box-action" data-tooltip="播放" onClick={onPlay} type="button">
+            <button
+                className="message-box-action"
+                data-tooltip="播放"
+                onMouseDown={stopToolbarEvent}
+                onClick={(event) => {
+                    stopToolbarEvent(event);
+                    onPlay?.();
+                }}
+                type="button"
+            >
               <IconPlay/>
             </button>
         )}

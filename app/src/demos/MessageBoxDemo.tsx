@@ -265,6 +265,73 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
         return () => clearInterval(interval)
     }, [])
 
+    // ── tool_use 容器 block 演示：同类型工具合并 ──
+    const [toolUseBlocks, setToolUseBlocks] = useState<MessageBoxBlock[]>([])
+    const toolUseStepRef = useRef(0)
+
+    useEffect(() => {
+        const sequence: MessageBoxBlock[] = [
+            {
+                type: 'reasoning',
+                content: '我需要同时搜索多个方向来获取全面的信息。',
+                streaming: false,
+                seconds: 1,
+            },
+            {
+                type: 'tool_use',
+                tools: [
+                    {
+                        index: 0,
+                        name: 'web_search',
+                        args: JSON.stringify({query: '2024 AI trends'}, null, 2),
+                        result: JSON.stringify([{
+                            title: 'AI Trends 2024',
+                            summary: 'Multimodal and agentic AI dominate.'
+                        }], null, 2),
+                    },
+                    {
+                        index: 1,
+                        name: 'web_search',
+                        args: JSON.stringify({query: '2024 AI market size'}),
+                        result: JSON.stringify([{
+                            title: 'AI Market 2024',
+                            summary: 'Generative AI market reached $67B.'
+                        }], null, 2),
+                    },
+                    {
+                        index: 2,
+                        name: 'web_search',
+                        args: JSON.stringify({query: '2024 AI agents adoption'}),
+                        result: JSON.stringify([{
+                            title: 'AI Agents 2024',
+                            summary: 'Enterprise adoption exceeding 50%.'
+                        }], null, 2),
+                    },
+                ],
+                detail: 'verbose',
+            },
+            {
+                type: 'content',
+                content: '搜索结果显示：多模态AI成为主流，市场规模达670亿美元，企业AI Agent采用率超过50%。',
+                markdown: false,
+            },
+        ]
+
+        toolUseStepRef.current = 0
+        setToolUseBlocks([])
+        const interval = setInterval(() => {
+            if (toolUseStepRef.current < sequence.length) {
+                const current = sequence[toolUseStepRef.current]
+                setToolUseBlocks(prev => [...prev, current])
+                toolUseStepRef.current += 1
+            } else {
+                clearInterval(interval)
+            }
+        }, 700)
+
+        return () => clearInterval(interval)
+    }, [])
+
     return (
         <>
             <div className="demo-section">
@@ -395,6 +462,16 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
                         <MessageBox
                             role="assistant"
                             blocks={complexBlockMessages}
+                        />
+
+                        {/* tool_use 容器 block：同类工具合并，双层折叠 */}
+                        <MessageBox
+                            role="user"
+                            content="帮我搜索一下 AI 发展趋势、市场规模和 Agent 采用率"
+                        />
+                        <MessageBox
+                            role="assistant"
+                            blocks={toolUseBlocks}
                         />
                     </div>
                 </div>

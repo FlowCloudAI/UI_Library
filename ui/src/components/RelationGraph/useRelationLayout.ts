@@ -1,11 +1,11 @@
 // ui/src/components/RelationGraph/useRelationLayout.ts
-// Manages the full layout lifecycle:
-//  - waits for React Flow to measure all nodes (useNodesInitialized)
-//  - computes a graph signature to detect actual changes
-//  - triggers the host-supplied async layout function
-//  - guards against stale responses from concurrent/superseded requests
-//  - executes a one-time fitBounds on first successful layout
-//  - handles empty graphs without calling the layout function at all
+// 管理完整的布局生命周期：
+//  - 等待 React Flow 测量所有节点 (useNodesInitialized)
+//  - 计算图签名以检测实际变化
+//  - 触发宿主提供的异步布局函数
+//  - 防止来自并发/已取代请求的过期响应
+//  - 首次成功布局时执行一次性 fitBounds
+//  - 处理空图而不调用布局函数
 
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {Edge, Node} from '@xyflow/react';
@@ -19,9 +19,9 @@ export interface UseRelationLayoutOptions {
     edges: Edge[];
     layoutFn: LayoutFunction;
     nodeOrigin?: [number, number];
-    /** Padding passed to fitBounds (fraction of viewport, e.g. 0.1 = 10%). Default 0.1 */
+    /** 传递给 fitBounds 的内边距（视口比例，例如 0.1 = 10%）。默认 0.1 */
     fitPadding?: number;
-    /** fitBounds animation duration in ms. Default 500 */
+    /** fitBounds 动画持续时间（毫秒）。默认 500 */
     fitDuration?: number;
 }
 
@@ -40,18 +40,18 @@ export function useRelationLayout({
     const [layoutLoading, setLayoutLoading] = useState(false);
     const [layoutError, setLayoutError] = useState<Error | null>(null);
 
-    // Signature of the last successfully applied layout — skip re-layout when equal
+    // 上次成功应用的布局签名 — 相等时跳过重新布局
     const appliedSigRef = useRef<string | null>(null);
-    // Signature of the most recently dispatched request — used for stale-response detection
+    // 最近一次派发的请求签名 — 用于过期响应检测
     const pendingSigRef = useRef<string | null>(null);
-    // Whether the one-time initial fitBounds has been executed
+    // 是否已执行一次性初始 fitBounds
     const hasFitRef = useRef(false);
 
     const runLayout = useCallback(
         async (sig: string, snapshot: { nodes: Node[]; edges: Edge[] }) => {
-            // Only nodes that have been measured by React Flow are included in the request.
-            // Nodes without dimensions are silently excluded; the layout backend must
-            // handle a partial node list gracefully.
+            // 仅包含 React Flow 已测量的节点。
+            // 无尺寸的节点被静默排除；布局后端必须
+            // 优雅处理部分节点列表。
             const measuredNodes = snapshot.nodes.filter(
                 n => (n.measured?.width ?? 0) > 0 && (n.measured?.height ?? 0) > 0,
             );
@@ -76,7 +76,7 @@ export function useRelationLayout({
                 }),
             };
 
-            // Mark this as the currently-expected response
+            // 标记此为当前期望的响应
             pendingSigRef.current = sig;
             setLayoutLoading(true);
             setLayoutError(null);
@@ -85,10 +85,10 @@ export function useRelationLayout({
             try {
                 const response = await layoutFn(request);
 
-                // ── Async safety: discard if a newer request superseded this one ──
+                // ── 异步安全：若较新请求已取代此请求则丢弃 ──
                 if (pendingSigRef.current !== sig) return;
 
-                // Apply returned positions; nodes absent from positions keep their coords
+                // 应用返回的位置；positions 中缺失的节点保持原坐标
                 setNodes(prev =>
                     prev.map(node => {
                         const pos = response.positions[node.id];
@@ -101,10 +101,10 @@ export function useRelationLayout({
                 setLayoutReady(true);
                 setLayoutLoading(false);
 
-                // One-time viewport fit after the first successful layout
+                // 首次成功布局后的一次性视口适配
                 if (!hasFitRef.current && response.bounds) {
                     hasFitRef.current = true;
-                    // Defer to the next frame so React Flow has flushed the position update
+                    // 推迟到下一帧，使 React Flow 已刷新位置更新
                     setTimeout(() => {
                         fitBounds(response.bounds!, {
                             padding: fitPadding,
@@ -113,19 +113,19 @@ export function useRelationLayout({
                     }, 0);
                 }
             } catch (err) {
-                // Discard errors from superseded requests
+                // 丢弃已被取代的请求的错误
                 if (pendingSigRef.current !== sig) return;
                 setLayoutError(err instanceof Error ? err : new Error(String(err)));
                 setLayoutLoading(false);
             }
         },
-        // layoutFn, nodeOrigin, fitPadding, fitDuration control the request/fit shape;
-        // setNodes and fitBounds are stable references from useReactFlow.
+        // layoutFn, nodeOrigin, fitPadding, fitDuration 控制请求/适配行为；
+        // setNodes 和 fitBounds 来自 useReactFlow 的稳定引用。
         [layoutFn, nodeOrigin, fitPadding, fitDuration, setNodes, fitBounds],
     );
 
     useEffect(() => {
-        // ── Empty graph: mark ready without calling the layout function ──
+        // ── 空图：标记就绪而不调用布局函数 ──
         if (nodes.length === 0) {
             pendingSigRef.current = 'empty';
             appliedSigRef.current = 'empty';
@@ -135,15 +135,15 @@ export function useRelationLayout({
             return;
         }
 
-        // ── Wait for React Flow to measure all nodes ──
+        // ── 等待 React Flow 测量所有节点 ──
         if (!nodesInitialized) return;
 
         const sig = computeGraphSignature(nodes, edges);
 
-        // ── Skip if the graph hasn't changed since the last applied layout ──
+        // ── 若图自上次布局以来未变化则跳过 ──
         if (sig === appliedSigRef.current) return;
 
-        // Reset ready state before starting a new layout pass
+        // 在新的布局回合开始前重置就绪状态
         setLayoutReady(false);
         void runLayout(sig, {nodes, edges});
     }, [nodesInitialized, nodes, edges, runLayout]);

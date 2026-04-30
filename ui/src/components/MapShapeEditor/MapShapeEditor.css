@@ -557,7 +557,7 @@
     }
 }
 
-/* ---------- MapShapeViewport ---------- */
+/* ---------- 地图形状视口 ---------- */
 .fc-map-shape-viewport__layer {
     position: absolute;
     inset: 0;
@@ -569,7 +569,7 @@
     z-index: 1;
 }
 
-/* Make SVG editor fill viewport layer */
+/* 使 SVG 编辑器填满视口层 */
 .fc-map-shape-viewport__svg-layer .fc-map-shape-svg-editor {
     height: 100%;
 }
@@ -594,7 +594,7 @@
     height: 100%;
 }
 
-/* preview fills its layer */
+/* 预览填满其所在层 */
 .fc-map-shape-viewport__preview-layer .fc-map-deck-preview,
 .fc-map-shape-viewport__preview-layer .fc-map-pixi-preview {
     width: 100%;

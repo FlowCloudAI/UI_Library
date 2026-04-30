@@ -7,7 +7,7 @@ export type DeleteMode = 'lift' | 'cascade'
 interface DeleteDialogProps {
     node: CategoryTreeNode | null
     onClose: () => void
-    /** Parent handles DB logic. mode='lift' → move children & entries up; mode='cascade' → delete all. */
+    /** 父组件处理数据库逻辑。mode='lift' → 将子节点及条目上移；mode='cascade' → 全部删除。 */
     onDelete: (key: string, mode: DeleteMode) => Promise<void>
 }
 

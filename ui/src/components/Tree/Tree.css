@@ -1,4 +1,4 @@
-/* Tree.css */
+/* Tree.css —— 树组件样式 */
 
 .fc-tree {
     --fc-tree-text: var(--fc-color-text);
@@ -18,7 +18,7 @@
     flex-direction: column;
 }
 
-/* ── Search ──────────────────────────────────────────────────────────────────── */
+/* ── 搜索 ──────────────────────────────────────────────────────────────────── */
 
 .fc-tree__search {
     position: relative;
@@ -63,7 +63,7 @@
     color: var(--fc-tree-text);
 }
 
-/* ── List ────────────────────────────────────────────────────────────────────── */
+/* ── 列表 ────────────────────────────────────────────────────────────────────── */
 
 .fc-tree__list {
     padding: var(--fc-space-sm) 0;
@@ -76,7 +76,7 @@
     font-size: var(--fc-font-size-sm);
 }
 
-/* ── Node ────────────────────────────────────────────────────────────────────── */
+/* ── 节点 ────────────────────────────────────────────────────────────────────── */
 
 .fc-tree__node {
     position: relative;
@@ -87,7 +87,7 @@
     pointer-events: none;
 }
 
-/* ── Item ────────────────────────────────────────────────────────────────────── */
+/* ── 项 ────────────────────────────────────────────────────────────────────── */
 
 .fc-tree__item {
     --fc-indent: 12px;
@@ -122,14 +122,14 @@
     background: var(--fc-tree-bg-hover);
 }
 
-/* Drop target: highlight + indent hint */
+/* 拖放目标：高亮 + 缩进提示 */
 .fc-tree__item--drop-into {
     background: var(--fc-tree-primary-subtle) !important;
     outline: 2px solid var(--fc-tree-primary);
     outline-offset: -1px;
 }
 
-/* Drop target: insert-before line */
+/* 拖放目标：插入到前方 */
 .fc-tree__item--drop-before {
     background: transparent !important;
     z-index: 1;
@@ -159,7 +159,7 @@
     pointer-events: none;
 }
 
-/* Drop target: insert-after line */
+/* 拖放目标：插入到后方 */
 .fc-tree__item--drop-after {
     background: transparent !important;
     z-index: 1;
@@ -189,7 +189,7 @@
     pointer-events: none;
 }
 
-/* ── Drag handle ─────────────────────────────────────────────────────────────── */
+/* ── 拖拽手柄 ─────────────────────────────────────────────────────────────── */
 
 .fc-tree__drag-handle {
     display: flex;
@@ -223,7 +223,7 @@
     cursor: default;
 }
 
-/* ── Expand switcher ─────────────────────────────────────────────────────────── */
+/* ── 展开开关 ─────────────────────────────────────────────────────────── */
 
 .fc-tree__switcher {
     display: flex;
@@ -251,7 +251,7 @@
     pointer-events: none;
 }
 
-/* ── Title ───────────────────────────────────────────────────────────────────── */
+/* ── 标题 ───────────────────────────────────────────────────────────────────── */
 
 .fc-tree__title-slot {
     min-width: 0;
@@ -267,7 +267,7 @@
     cursor: pointer;
 }
 
-/* ── Inline edit ─────────────────────────────────────────────────────────────── */
+/* ── 行内编辑 ─────────────────────────────────────────────────────────────── */
 
 .fc-tree__edit-input {
     width: 100%;
@@ -284,7 +284,7 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--fc-tree-primary) 15%, transparent);
 }
 
-/* ── Hover actions ───────────────────────────────────────────────────────────── */
+/* ── 悬停操作 ───────────────────────────────────────────────────────────── */
 
 .fc-tree__actions {
     display: inline-flex;
@@ -357,7 +357,7 @@
     pointer-events: none;
 }
 
-/* ── Add root ────────────────────────────────────────────────────────────────── */
+/* ── 添加根节点 ────────────────────────────────────────────────────────────────── */
 
 .fc-tree__add-root {
     padding: var(--fc-space-sm) var(--fc-space-md);
@@ -386,7 +386,7 @@
     background: var(--fc-tree-primary-subtle);
 }
 
-/* ── Dark theme ──────────────────────────────────────────────────────────────── */
+/* ── 暗色主题 ──────────────────────────────────────────────────────────────── */
 
 [data-theme='dark'] .fc-tree__search-input,
 [data-theme='dark'] .fc-tree__edit-input {

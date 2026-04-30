@@ -79,7 +79,7 @@ export function TreeDemo() {
         }
     }, [customColors])
 
-    // ── Callbacks ─────────────────────────────────────────────────────────────
+    // ── 回调 ─────────────────────────────────────────────────────────────
 
     const handleRename = async (key: string, newName: string) => {
         setRows(prev => prev.map(r => r.id === key ? {...r, name: newName} : r))
@@ -123,7 +123,7 @@ export function TreeDemo() {
         setDeleteTarget(node)
     }
 
-    // Drop on target = become target's last child
+    // 拖放到目标上 = 成为目标的最后一个子节点
     const handleMove = async (key: string, targetKey: string, position: DropPosition) => {
         const prev = rows
         const target = prev.find(r => r.id === targetKey)
@@ -277,7 +277,7 @@ export function TreeDemo() {
         return actions
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    // ── 渲染 ────────────────────────────────────────────────────────────────
 
     return (
         <div className="demo-section">

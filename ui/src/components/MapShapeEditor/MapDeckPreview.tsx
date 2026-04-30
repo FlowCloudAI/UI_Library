@@ -43,21 +43,21 @@ import './MapShapeEditor.css';
 
 const PREVIEW_VIEW = new OrthographicView({ id: 'fc-map-deck-preview' });
 const MIN_RENDER_SIZE = 2;
-const DECK_MIN_VIEWBOX_SCALE = 0.18; // matches SVG editor — most zoomed in (~556%)
-const DECK_MAX_VIEWBOX_SCALE = 2;    // matches SVG editor — most zoomed out (50%)
+const DECK_MIN_VIEWBOX_SCALE = 0.18; // 匹配 SVG 编辑器 — 最大缩放 (~556%)
+const DECK_MAX_VIEWBOX_SCALE = 2;    // 匹配 SVG 编辑器 — 最小缩放 (50%)
 const CANVAS_CONTEXT_PATCH_FLAG = '__fcMapDeckPreviewCanvasContextPatched__';
 
-// ── Shader inject ──────────────────────────────────────────────────────────────
+// ── Shader 注入 ──────────────────────────────────────────────────────────────
 
 /**
- * Per-layer GLSL injection map.  Keys are deck.gl shader hook names, e.g.:
+ * 各图层 GLSL 注入映射表。键为 deck.gl shader hook 名称，例如：
  *   'vs:#decl', 'fs:#decl', 'vs:DECKGL_FILTER_COLOR', 'fs:DECKGL_FILTER_COLOR'
  */
 export type MapDeckShaderInject = Record<string, string>;
 
 /**
- * Wraps a `MapDeckShaderInject` map in an anonymous `LayerExtension` so it can
- * be passed to any layer's `extensions` prop.
+ * 将 `MapDeckShaderInject` 映射表包装在匿名 `LayerExtension` 中，以便
+ * 传递给任意图层的 `extensions` prop。
  */
 export function makeInjectExtension(inject: MapDeckShaderInject): LayerExtension {
     return new class extends LayerExtension {
@@ -72,7 +72,7 @@ interface DeckViewState {
     zoom: number;
 }
 
-// ── Internal types ─────────────────────────────────────────────────────────────
+// ── 内部类型 ─────────────────────────────────────────────────────────────
 
 interface ElementSize {
     width: number;
@@ -107,7 +107,7 @@ type MutableCanvasContextPrototype = MutableCanvasContext & {
     [CANVAS_CONTEXT_PATCH_FLAG]?: boolean;
 };
 
-// ── Public prop types ──────────────────────────────────────────────────────────
+// ── 公开 prop 类型 ──────────────────────────────────────────────────────────
 
 export interface MapDeckPreviewProps {
     scene: MapPreviewScene | null;
@@ -115,7 +115,7 @@ export interface MapDeckPreviewProps {
     style?: CSSProperties;
     emptyHint?: string;
 
-    /** Show/hide TextLayer labels above key locations. Default: true */
+    /** 显示/隐藏关键位置上的 TextLayer 标签。默认值: true */
     showLabels?: boolean;
 
     /** 通用图形样式。建议优先使用，`polygonLayerProps` 仅作为 Deck 高级覆盖口。 */
@@ -152,43 +152,43 @@ export interface MapDeckPreviewProps {
      */
     textLayerProps?: Omit<TextLayerProps<MapPreviewKeyLocation>, 'id' | 'data' | 'getText'>;
 
-    /** GLSL inject map for the PolygonLayer. Merged with `polygonLayerProps.extensions`. */
+    /** PolygonLayer 的 GLSL 注入映射表。与 `polygonLayerProps.extensions` 合并。 */
     polygonShaderInject?: MapDeckShaderInject;
-    /** GLSL inject map for the ScatterplotLayer. */
+    /** ScatterplotLayer 的 GLSL 注入映射表。 */
     scatterplotShaderInject?: MapDeckShaderInject;
-    /** GLSL inject map for the IconLayer. */
+    /** IconLayer 的 GLSL 注入映射表。 */
     iconShaderInject?: MapDeckShaderInject;
-    /** GLSL inject map for the TextLayer. */
+    /** TextLayer 的 GLSL 注入映射表。 */
     textShaderInject?: MapDeckShaderInject;
 
-    /** Additional deck.gl layers appended after the built-in layers. */
+    /** 附加在内置图层之后的 deck.gl 图层。 */
     extraLayers?: Layer[];
 
-    /** deck.gl `effects` array (e.g. PostProcessEffect). */
+    /** deck.gl `effects` 数组（例如 PostProcessEffect）。 */
     deckEffects?: Effect[];
 
     /**
-     * When provided, the view-state is derived from this viewBox instead of
-     * auto-fitting the scene.  Pass the SVG editor's viewBox to keep both
-     * layers perfectly in sync.
+     * 当提供时，视图状态从此 viewBox 派生，而非
+     * 自动适应场景。传入 SVG 编辑器的 viewBox 可使两个
+     * 图层完美同步。
      */
     syncViewBox?: MapShapeEditorViewBox;
 
-    /** When true, `getTooltip` is disabled (no hover tooltip). */
+    /** 为 true 时，`getTooltip` 被禁用（无悬停提示）。 */
     disableTooltip?: boolean;
 
     /**
-     * Customize the built-in hover tooltip. Return `undefined` to use the default tooltip.
-     * Return `null` to suppress the current object's tooltip. Returning a string is equivalent to `{ text: string }`.
+     * 自定义内置悬停提示。返回 `undefined` 使用默认提示。
+     * 返回 `null` 可隐藏当前对象的提示。返回字符串等同于 `{ text: string }`。
      */
     getTooltip?: (detail: MapPreviewPickDetail) => MapPreviewTooltip | string | null | undefined;
 
     /** @deprecated 使用 `enablePanZoom` 和 `enablePicking` 分别控制预览交互能力。 */
     interactive?: boolean;
     /**
-     * When true, enables zoom (wheel) and pan (drag) via OrthographicController.
-     * View state is managed internally and resets to auto-fit when `scene` changes.
-     * Has no effect when `syncViewBox` is set. Defaults to `interactive`.
+     * 为 true 时，启用 OrthographicController 的缩放（滚轮）和平移（拖拽）。
+     * 视图状态在内部管理，并在 `scene` 变化时重置为自动适应。
+     * 当设置了 `syncViewBox` 时无效。默认为 `interactive`。
      */
     enablePanZoom?: boolean;
     /** 是否启用 deck picking、hover、click 与 tooltip。未传入时默认启用。 */
@@ -218,13 +218,13 @@ export type MapDeckPreviewPickDetail = MapPreviewPickDetail;
 /** @deprecated 使用 {@link MapPreviewTooltip} */
 export type MapDeckPreviewTooltip = MapPreviewTooltip;
 
-// ── Defaults ───────────────────────────────────────────────────────────────────
+// ── 默认值 ───────────────────────────────────────────────────────────────────
 
 const DEFAULT_LOCATION_STROKE_COLOR: [number, number, number, number] = [255, 255, 255, 255];
 const DEFAULT_LABEL_COLOR: [number, number, number, number] = [38, 43, 56, 255];
 const DEFAULT_LABEL_FONT_FAMILY = '"Microsoft YaHei UI", sans-serif';
 
-// ── luma.gl canvas context safety patch ───────────────────────────────────────
+// ── luma.gl canvas context 安全补丁 ───────────────────────────────────────
 
 function normalizeElementSize(width: number, height: number): ElementSize {
     return {
@@ -359,7 +359,7 @@ function ensureCanvasContextSafetyPatch() {
 
 ensureCanvasContextSafetyPatch();
 
-// ── Background image support ───────────────────────────────────────────────────
+// ── 背景图片支持 ───────────────────────────────────────────────────
 
 type BackgroundBounds = [number, number, number, number];
 
@@ -561,7 +561,7 @@ function requestDeckRedraw(deckRef: RefObject<DeckGLRef | null>, reason: string)
     return () => window.cancelAnimationFrame(frameId);
 }
 
-// ── View state ─────────────────────────────────────────────────────────────────
+// ── 视图状态 ─────────────────────────────────────────────────────────────────
 
 function buildAutoViewState(canvas: MapEditorCanvas, size: ElementSize) {
     return buildSyncedViewState(createInitialMapShapeEditorViewBox(canvas), size.width);
@@ -576,11 +576,11 @@ function buildSyncedViewState(viewBox: MapShapeEditorViewBox, containerWidth: nu
 }
 
 /**
- * Clamp an interactive deck view state so zoom and pan stay within the same
- * limits as the SVG editor's clampMapShapeEditorViewBox.
+ * 限制交互式 deck 视图状态，使缩放和平移保持在
+ * 与 SVG 编辑器的 clampMapShapeEditorViewBox 相同的范围内。
  *
- * Pan formula mirrors the SVG editor:
- *   viewBox.x ∈ [min(0, xMargin), max(0, xMargin)]  where xMargin = canvas.width - vw
+ * 平移公式与 SVG 编辑器一致：
+ *   viewBox.x ∈ [min(0, xMargin), max(0, xMargin)] 其中 xMargin = canvas.width - vw
  *   → target.x ∈ [min(vw/2, canvas.width − vw/2), max(vw/2, canvas.width − vw/2)]
  */
 function clampDeckViewState(
@@ -607,7 +607,7 @@ function clampDeckViewState(
     return {...state, target: [tx, ty, state.target[2]], zoom};
 }
 
-// ── Layer builder ──────────────────────────────────────────────────────────────
+// ── 图层构建器 ──────────────────────────────────────────────────────────────
 
 interface BuildLayersOptions {
     scene: MapPreviewScene;
@@ -784,7 +784,7 @@ function buildLayers({
     return layers;
 }
 
-// ── Tooltip ────────────────────────────────────────────────────────────────────
+// ── 提示 ────────────────────────────────────────────────────────────────────
 
 function getTooltipText(object: unknown): string | null {
     if (!object || typeof object !== 'object') return null;
@@ -882,7 +882,7 @@ function toPickDetail(info: PickingInfo): MapPreviewPickDetail {
     };
 }
 
-// ── Component ──────────────────────────────────────────────────────────────────
+// ── 组件 ──────────────────────────────────────────────────────────────────
 
 export function MapDeckPreview({
     scene,

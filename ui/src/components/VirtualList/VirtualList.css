@@ -1,4 +1,4 @@
-/* VirtualList.css */
+/* VirtualList.css —— 虚拟列表组件样式 */
 .fc-virtual-list {
     /* 组件局部变量 */
     --vl-bg:            var(--fc-color-bg);

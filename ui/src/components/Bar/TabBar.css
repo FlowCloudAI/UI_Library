@@ -1,4 +1,4 @@
-/* src/components/TabBar/TabBar.css */
+/* src/components/TabBar/TabBar.css —— 标签栏组件样式 */
 
 /* ==========================================================
    可覆盖的 CSS 变量（在 .fc-tab-bar 或父容器上设置即可）
@@ -94,10 +94,10 @@
     flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none; /* Firefox 浏览器 */
 }
 .fc-tab-bar__nav-wrap::-webkit-scrollbar {
-    display: none; /* Chrome / Safari / WebKit */
+    display: none; /* Chrome / Safari / WebKit 浏览器 */
 }
 
 .fc-tab-bar--fit .fc-tab-bar__nav-wrap {

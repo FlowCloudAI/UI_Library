@@ -242,7 +242,7 @@ export interface MapShapeSaveErrorResponse extends MapShapeExtensible {
     fieldErrors?: MapShapeFieldError[];
 }
 
-// ── Renderer-agnostic preview types ────────────────────────────────────────────
+// ── 渲染器无关的预览类型 ────────────────────────────────────────────
 
 export interface MapPreviewPickBaseDetail {
     index: number;

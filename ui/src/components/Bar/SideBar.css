@@ -1,4 +1,4 @@
-/* src/components/SideBar/SideBar.css */
+/* src/components/SideBar/SideBar.css —— 侧栏组件样式 */
 
 /* ==========================================================
    可覆盖的 CSS 变量（在 .fc-sidebar 或父容器上设置）
@@ -31,7 +31,7 @@
     border-left: 1px solid var(--fc-color-border);
 }
 
-/* ========== Header ========== */
+/* ========== 头部 ========== */
 .fc-sidebar__header {
     position: relative;
     padding: var(--fc-space-md, 12px);
@@ -75,7 +75,7 @@
     transition: transform var(--fc-transition, 150ms ease);
 }
 
-/* ========== Menu ========== */
+/* ========== 菜单 ========== */
 .fc-sidebar__menu {
     flex: 1;
     overflow-y: auto;
@@ -83,14 +83,14 @@
     padding: var(--fc-space-sm, 8px) 0;
 }
 
-/* ========== Footer ========== */
+/* ========== 底部 ========== */
 .fc-sidebar__footer {
     flex-shrink: 0;
     padding: var(--fc-space-sm, 8px) 0;
     border-top: 1px solid var(--fc-color-border);
 }
 
-/* ========== Menu Item ========== */
+/* ========== 菜单项 ========== */
 .fc-sidebar__item {
     display: flex;
     align-items: center;
@@ -110,7 +110,7 @@
     color var(--fc-transition, 150ms ease);
 }
 
-/* hover */
+/* 悬停 */
 .fc-sidebar__item:hover:not(.fc-sidebar__item--disabled):not(.fc-sidebar__item--selected) {
     background: var(--sidebar-item-hover-bg, var(--fc-color-bg-tertiary));
     color: var(--sidebar-item-hover-color, var(--fc-color-text));
@@ -127,7 +127,7 @@
     color: var(--sidebar-item-selected-color, var(--fc-color-primary));
 }
 
-/* disabled */
+/* 禁用 */
 .fc-sidebar__item--disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -154,7 +154,7 @@
     stroke: currentColor;
 }
 
-/* ========== Label ========== */
+/* ========== 标签 ========== */
 .fc-sidebar__label {
     flex: 1;
     min-width: 0;

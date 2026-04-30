@@ -1,44 +1,44 @@
 // ui/src/components/RelationGraph/types.ts
-// Fixed protocol types shared between the frontend component and the host-supplied layout function.
-// Field names must not be changed — they form the public contract.
+// 前端组件与宿主提供的布局函数之间共享的固定协议类型。
+// 字段名称不可更改 — 它们构成公开约定。
 
-// ─── Layout protocol ──────────────────────────────────────────────────────────
+// ─── 布局协议 ──────────────────────────────────────────────────────────
 
-/** A node descriptor sent to the layout backend.  Width/height MUST come from real DOM measurements. */
+/** 发送给布局后端的节点描述符。宽度/高度必须来自真实的 DOM 测量值。 */
 export interface LayoutNode {
     id: string;
     width: number;
     height: number;
 }
 
-/** An edge descriptor sent to the layout backend. */
+/** 发送给布局后端的边描述符。 */
 export interface LayoutEdge {
     id?: string;
     source: string;
     target: string;
     sourceHandle?: string;
     targetHandle?: string;
-    /** Directionality hint: 'one_way' (default) or 'two_way'. */
+    /** 方向提示：'one_way'（默认）或 'two_way'。 */
     kind?: 'one_way' | 'two_way';
 }
 
-/** Layout request payload — frontend → backend. */
+/** 布局请求负载 — 前端 → 后端。 */
 export interface LayoutRequest {
-    /** React Flow nodeOrigin. Default [0, 0] means node position is the top-left corner. */
+    /** React Flow nodeOrigin。默认 [0, 0] 表示节点位置为左上角。 */
     nodeOrigin?: [number, number];
     nodes: LayoutNode[];
     edges: LayoutEdge[];
 }
 
-/** Position of a single node as returned by the layout backend. */
+/** 布局后端返回的单个节点位置。 */
 export interface LayoutPosition {
     x: number;
     y: number;
 }
 
 /**
- * Bounding box of the laid-out graph.
- * Coordinates use the left-top corner of the bounding rect.
+ * 已布局图的包围盒。
+ * 坐标使用包围矩形左上角。
  */
 export interface LayoutBounds {
     x: number;
@@ -47,54 +47,54 @@ export interface LayoutBounds {
     height: number;
 }
 
-/** Layout response payload — backend → frontend. */
+/** 布局响应负载 — 后端 → 前端。 */
 export interface LayoutResponse {
-    /** Keyed by node id. Nodes missing from the map keep their current position. */
+    /** 以节点 id 为键。映射表中缺失的节点保持当前位置。 */
     positions: Record<string, LayoutPosition>;
-    /** If present the component will fitBounds to this rect after the first successful layout. */
+    /** 若存在，组件将在首次成功布局后 fitBounds 到此矩形。 */
     bounds?: LayoutBounds;
-    /** Optional opaque hash; unused by the frontend but may be forwarded in future requests. */
+    /** 可选不透明哈希；前端未使用，但可能在后续请求中转发。 */
     layoutHash?: string;
 }
 
 /**
- * The async layout function the host injects into RelationGraph.
- * The component never writes network calls or `invoke()` directly — it only calls this.
+ * 宿主注入 RelationGraph 的异步布局函数。
+ * 组件从不直接发起网络调用或 `invoke()` — 仅调用此函数。
  */
 export type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>;
 
-// ─── Component input types ────────────────────────────────────────────────────
+// ─── 组件输入类型 ────────────────────────────────────────────────────
 
-/** Node data provided by the host application. */
+/** 宿主应用程序提供的节点数据。 */
 export interface RelationNodeInput {
     id: string;
-    /** Displayed as the node label. Falls back to id when absent. */
+    /** 显示为节点标签。缺失时回退到 id。 */
     label?: string;
     [key: string]: unknown;
 }
 
-/** Edge data provided by the host application. */
+/** 宿主应用程序提供的边数据。 */
 export interface RelationEdgeInput {
-    /** If omitted, an id is generated from source + target + index. */
+    /** 若省略，将从 source + target + index 生成 id。 */
     id?: string;
     source: string;
     target: string;
-    /** Displayed as the edge label when present. */
+    /** 存在时显示为边标签。 */
     label?: string;
-    /** 'one_way' (default) or 'two_way'. */
+    /** 'one_way'（默认）或 'two_way'。 */
     kind?: 'one_way' | 'two_way';
     sourceHandle?: string;
     targetHandle?: string;
 }
 
-// ─── Layout state ─────────────────────────────────────────────────────────────
+// ─── 布局状态 ─────────────────────────────────────────────────────────────
 
-/** Current state of the layout lifecycle, exposed via onLayoutStateChange. */
+/** 布局生命周期的当前状态，通过 onLayoutStateChange 暴露。 */
 export interface RelationLayoutState {
-    /** True after the first successful layout has been applied. */
+    /** 首次成功布局应用后为 true。 */
     layoutReady: boolean;
-    /** True while a layout request is in-flight. */
+    /** 布局请求进行中时为 true。 */
     layoutLoading: boolean;
-    /** Set when the most recent layout call threw or rejected. */
+    /** 最近一次布局调用抛出异常或拒绝时设置。 */
     layoutError: Error | null;
 }

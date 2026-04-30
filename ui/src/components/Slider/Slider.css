@@ -1,4 +1,4 @@
-/* Slider.css */
+/* Slider.css —— 滑块组件样式 */
 .fc-slider {
     position: relative;
     user-select: none;
@@ -87,7 +87,7 @@
     transform: translate(-50%, 50%) scale(1.2);
 }
 
-/* Tooltip */
+/* 工具提示 */
 .fc-slider__tooltip {
     position: absolute;
     bottom: 100%;
@@ -118,7 +118,7 @@
     transform: translateY(-50%) translateX(8px);
 }
 
-/* Marks */
+/* 刻度 */
 .fc-slider__mark {
     position: absolute;
     transform: translate(-50%, -50%);
@@ -151,7 +151,7 @@
     transform: translateY(-50%);
 }
 
-/* Disabled */
+/* 禁用 */
 .fc-slider--disabled {
     opacity: 0.5;
     cursor: not-allowed;

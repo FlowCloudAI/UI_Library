@@ -1,6 +1,6 @@
-/* ui/src/components/RelationGraph/RelationGraph.css */
+/* ui/src/components/RelationGraph/RelationGraph.css —— 关系图组件样式 */
 
-/* ─── Design tokens (override to theme the graph) ─────────────────────────── */
+/* ─── 设计令牌（覆盖以定制主题） ─────────────────────────── */
 .fc-rg {
     --fc-rg-node-bg:           var(--fc-color-bg-elevated, #fff);
     --fc-rg-node-border:       var(--fc-color-border, #d0d0d0);
@@ -29,7 +29,7 @@
     --fc-rg-overlay-error-bg:  rgba(60, 20, 20, 0.92);
 }
 
-/* ─── Outer container ─────────────────────────────────────────────────────── */
+/* ─── 外层容器 ─────────────────────────────────────────────────────── */
 .fc-rg {
     position: relative;
     overflow: hidden;
@@ -37,14 +37,14 @@
     background-color: var(--fc-color-bg-secondary, #f5f5f5);
 }
 
-/* ─── Canvas wrapper (fills the outer container) ──────────────────────────── */
+/* ─── 画布包装器（填满外层容器） ──────────────────────────── */
 .fc-rg__canvas {
     width: 100%;
     height: 100%;
     position: relative;
 }
 
-/* ─── React Flow root override ────────────────────────────────────────────── */
+/* ─── React Flow 根节点覆盖 ────────────────────────────────────────────── */
 .fc-rg .react-flow {
     width: 100%;
     height: 100%;
@@ -103,8 +103,8 @@
     padding: 0;
 }
 
-/* Ghost handles: zero-size, invisible, non-interactive.
-   Actual edge attachment points are computed by the floating-edge algorithm. */
+/* 幽灵手柄：零尺寸、不可见、不可交互。
+   实际的边连接点由浮动边算法计算。 */
 .fc-rg-handle--ghost.react-flow__handle {
     width: 0 !important;
     height: 0 !important;
@@ -116,7 +116,7 @@
     opacity: 0 !important;
 }
 
-/* ─── Edge label ──────────────────────────────────────────────────────────── */
+/* ─── 边标签 ──────────────────────────────────────────────────────────── */
 .fc-rg-edge-label {
     position: absolute;
     pointer-events: all;
@@ -130,7 +130,7 @@
     line-height: 1.4;
 }
 
-/* ─── Loading / error overlays ────────────────────────────────────────────── */
+/* ─── 加载 / 错误覆盖层 ────────────────────────────────────────────── */
 .fc-rg__overlay {
     position: absolute;
     inset: 0;
@@ -156,7 +156,7 @@
     backdrop-filter: blur(2px);
 }
 
-/* ─── Spinner ─────────────────────────────────────────────────────────────── */
+/* ─── 加载动画 ─────────────────────────────────────────────────────────────── */
 .fc-rg__spinner {
     display: inline-block;
     width: 16px;

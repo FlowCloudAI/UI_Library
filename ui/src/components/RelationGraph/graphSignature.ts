@@ -1,22 +1,22 @@
 // ui/src/components/RelationGraph/graphSignature.ts
-// Computes a stable string signature for the current graph state.
-// The signature ONLY captures node dimensions and edge topology — never node positions.
-// A change in signature means a new layout run is required.
+// 计算当前图状态的稳定字符串签名。
+// 签名仅捕获节点尺寸和边拓扑结构 — 从不包含节点位置。
+// 签名变化意味着需要重新执行布局。
 
 import type { Edge, Node } from '@xyflow/react';
 
 /**
- * Compute a deterministic graph signature string.
+ * 计算确定性的图签名字符串。
  *
- * Included fields:
- *  - Nodes:  id + measured.width + measured.height
- *  - Edges:  source + target + kind + sourceHandle + targetHandle
+ * 包含的字段：
+ *  - 节点: id + measured.width + measured.height
+ *  - 边: source + target + kind + sourceHandle + targetHandle
  *
- * Both lists are sorted before joining so signature is order-independent.
+ * 两个列表在拼接前均会排序，因此签名与顺序无关。
  *
- * A node whose dimensions are not yet measured contributes `id:?x?` — this
- * signature will differ from the post-measurement version, ensuring a layout
- * is triggered once all nodes are measured.
+ * 尚未测量尺寸的节点贡献 `id:?x?` — 此签名
+ * 与测量后的版本不同，从而确保所有节点测量完成后
+ * 触发布局。
  */
 export function computeGraphSignature(nodes: Node[], edges: Edge[]): string {
     const nodePart = nodes

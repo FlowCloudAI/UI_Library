@@ -1,12 +1,11 @@
 // ui/src/components/RelationGraph/BidirectionalEdge.tsx
 //
-// Floating-edge implementation: attachment points are computed as the
-// intersection of the node-center → opposite-center ray with the node's
-// bounding-rectangle border, so edges always leave/arrive at the geometrically
-// nearest border point rather than a fixed anchor.
+// 浮动边实现：附着点计算为从节点中心到对侧中心的射线与节点
+// 边界矩形相交的点，因此边总是从几何上最近的边界点
+// 出发/到达，而非固定锚点。
 //
-// For bidirectional pairs (A→B and B→A) the shared perpendicular offset
-// naturally separates the two lines to opposite sides — no extra flag needed.
+// 对于双向配对 (A→B 和 B→A)，共享的垂直偏移
+// 自然地将两条线分离到相反两侧——无需额外标记。
 
 import {
     BaseEdge,
@@ -25,11 +24,10 @@ export interface RelationEdgeData extends Record<string, unknown> {
 
 const BIDIR_OFFSET = 8;
 
-// ─── Geometry helpers ─────────────────────────────────────────────────────────
+// ─── 几何辅助函数 ─────────────────────────────────────────────────────────
 
 /**
- * Find the point where the ray from the rect's centre toward `toward`
- * exits the rectangle border.
+ * 找到从矩形中心朝向 `toward` 的射线与矩形边界相交的出射点。
  */
 function getRectBorderPoint(
     rx: number, ry: number, rw: number, rh: number,
@@ -41,7 +39,7 @@ function getRectBorderPoint(
     const dy = toward.y - cy;
 
     if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
-        // Degenerate: same point — return right-edge midpoint as fallback
+        // 退化情况：同一点 — 返回右边缘中点作为回退
         return { x: cx + rw / 2, y: cy };
     }
 
@@ -55,9 +53,9 @@ function getRectBorderPoint(
 }
 
 /**
- * Convert a border exit point into the React Flow `Position` enum value
- * (which side of the node the edge exits from).
- * Used to give getBezierPath the correct control-point direction.
+ * 将边界出射点转换为 React Flow `Position` 枚举值
+ *（边从节点的哪一侧穿出）。
+ * 用于为 getBezierPath 提供正确的控制点方向。
  */
 function getBorderSide(
     bp: { x: number; y: number },
@@ -68,7 +66,7 @@ function getBorderSide(
     const dx = bp.x - cx;
     const dy = bp.y - cy;
 
-    // Compare normalised distances to decide which side dominates
+    // 比较归一化距离以确定哪一侧占主导
     const normX = rw > 0 ? Math.abs(dx) / (rw / 2) : 0;
     const normY = rh > 0 ? Math.abs(dy) / (rh / 2) : 0;
 
@@ -79,7 +77,7 @@ function getBorderSide(
     }
 }
 
-// ─── Edge component ───────────────────────────────────────────────────────────
+// ─── 边组件 ───────────────────────────────────────────────────────────
 
 export function BidirectionalEdge({
     id,
@@ -99,7 +97,7 @@ export function BidirectionalEdge({
     const sNode = getNode(source);
     const tNode = getNode(target);
 
-    // Nodes not yet measured — skip rendering until layout arrives
+    // 节点尚未测量 — 跳过渲染直到布局就绪
     if (
         !sNode?.measured?.width  || !sNode.measured.height  ||
         !tNode?.measured?.width  || !tNode.measured.height
@@ -112,23 +110,23 @@ export function BidirectionalEdge({
     const tw = tNode.measured.width;
     const th = tNode.measured.height;
 
-    // Canvas-space node centres
+    // 画布空间中的节点中心
     const scx = sNode.position.x + sw / 2;
     const scy = sNode.position.y + sh / 2;
     const tcx = tNode.position.x + tw / 2;
     const tcy = tNode.position.y + th / 2;
 
-    // Perpendicular offset for bidirectional pairs
-    // (A→B and B→A have mirrored dx/dy → opposite perpendicular → they separate naturally)
+    // 双向配对的垂直偏移
+    // (A→B 和 B→A 的 dx/dy 互为镜像 → 垂直方向相反 → 自然分离)
     const ddx = tcx - scx;
     const ddy = tcy - scy;
     const dlen = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
     const perpX = isBidirectional ? (-ddy / dlen) * BIDIR_OFFSET : 0;
     const perpY = isBidirectional ? ( ddx / dlen) * BIDIR_OFFSET : 0;
 
-    // Border intersection: bias the "toward" direction by the offset so the
-    // exit point itself shifts slightly, avoiding both lines exiting at the
-    // exact same pixel when nodes are axis-aligned.
+    // 边界交点：通过偏移量偏置"朝向"方向，使出射点
+    // 产生轻微偏移，避免节点轴对齐时两条线从
+    // 完全相同的像素点穿出。
     const sp = getRectBorderPoint(
         sNode.position.x, sNode.position.y, sw, sh,
         { x: tcx + perpX, y: tcy + perpY },
@@ -138,13 +136,13 @@ export function BidirectionalEdge({
         { x: scx + perpX, y: scy + perpY },
     );
 
-    // Final attachment points (apply perpendicular translation)
+    // 最终附着点（应用垂直平移）
     const ex1 = sp.x + perpX;
     const ey1 = sp.y + perpY;
     const ex2 = tp.x + perpX;
     const ey2 = tp.y + perpY;
 
-    // Derive bezier handle direction from which side the edge exits/enters
+    // 根据边穿出/进入的方向推导贝塞尔手柄方向
     const srcSide = getBorderSide(sp, sNode.position.x, sNode.position.y, sw, sh);
     const tgtSide = getBorderSide(tp, tNode.position.x, tNode.position.y, tw, th);
 

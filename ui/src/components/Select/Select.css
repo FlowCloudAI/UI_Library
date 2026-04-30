@@ -1,4 +1,4 @@
-/* Select.css */
+/* Select.css —— 选择器组件样式 */
 .fc-select {
     /* 组件局部变量 */
     --select-trigger-bg:             var(--fc-color-bg);
@@ -53,7 +53,7 @@
     transform: rotate(180deg);
 }
 
-/* Dropdown */
+/* 下拉菜单 */
 .fc-select__dropdown {
     position: absolute;
     top: 100%;
@@ -76,7 +76,7 @@
 .fc-select--radius-xl   { --select-radius: var(--fc-radius-xl, 16px); }
 .fc-select--radius-full { --select-radius: var(--fc-radius-full, 9999px); }
 
-/* Search */
+/* 搜索 */
 .fc-select__search {
     padding: var(--fc-space-sm);
     border-bottom: 1px solid var(--fc-color-border-light);
@@ -95,13 +95,13 @@
     border-color: var(--fc-color-border-focus);
 }
 
-/* List */
+/* 列表 */
 .fc-select__list {
     overflow-y: auto;
     padding: var(--fc-space-xs) 0;
 }
 
-/* Group */
+/* 分组 */
 .fc-select__group-label {
     padding: var(--fc-space-xs) var(--fc-space-lg);
     font-size: var(--fc-font-size-xs);
@@ -111,7 +111,7 @@
     letter-spacing: 0.05em;
 }
 
-/* Option */
+/* 选项 */
 .fc-select__option {
     display: flex;
     align-items: center;
@@ -141,7 +141,7 @@
     font-size: var(--fc-font-size-md);
 }
 
-/* Checkbox for multiple */
+/* 多选复选框 */
 .fc-select__checkbox {
     width: 16px;
     height: 16px;
@@ -160,7 +160,7 @@
     border-color: var(--fc-color-primary);
 }
 
-/* Highlight */
+/* 高亮 */
 .fc-select__highlight {
     background: var(--fc-color-warning-bg);
     color: var(--fc-color-warning);
@@ -168,12 +168,12 @@
     border-radius: var(--fc-radius-xs);
 }
 
-/* Check mark */
+/* 选中标记 */
 .fc-select__check {
     font-size: var(--fc-font-size-sm);
 }
 
-/* Disabled */
+/* 禁用 */
 .fc-select--disabled .fc-select__trigger {
     opacity: 0.6;
     cursor: not-allowed;

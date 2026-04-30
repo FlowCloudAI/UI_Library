@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { ThemeProvider, AlertProvider, ContextMenuProvider } from 'flowcloudai-ui';
 
-// @ts-ignore - CSS import, no types needed
+// @ts-ignore - CSS 导入，无需类型
 import 'flowcloudai-ui/style'
 import './theme-override.css'
 

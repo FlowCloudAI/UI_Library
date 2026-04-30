@@ -1,5 +1,5 @@
 /* ========================================
-   FC Design System - Global Styles
+   FC 设计系统 - 全局样式
    ======================================== */
 
 :root {
@@ -110,29 +110,29 @@
     --fc-color-pink-bg: var(--fc-pink-50);
 
     /* ---------- 间距 ---------- */
-    --fc-space-xs: 0.25rem; /* 4px */
-    --fc-space-sm: 0.5rem; /* 8px */
-    --fc-space-md: 0.75rem; /* 12px */
-    --fc-space-lg: 1rem; /* 16px */
-    --fc-space-xl: 1.5rem; /* 24px */
-    --fc-space-2xl: 2rem; /* 32px */
-    --fc-space-3xl: 3rem; /* 48px */
+    --fc-space-xs: 0.25rem; /* 4 像素 */
+    --fc-space-sm: 0.5rem; /* 8 像素 */
+    --fc-space-md: 0.75rem; /* 12 像素 */
+    --fc-space-lg: 1rem; /* 16 像素 */
+    --fc-space-xl: 1.5rem; /* 24 像素 */
+    --fc-space-2xl: 2rem; /* 32 像素 */
+    --fc-space-3xl: 3rem; /* 48 像素 */
 
     /* ---------- 圆角 ---------- */
-    --fc-radius-xs: 0.125rem; /* 2px */
-    --fc-radius-sm: 0.25rem; /* 4px */
-    --fc-radius-md: 0.5rem; /* 8px */
-    --fc-radius-lg: 0.75rem; /* 12px */
-    --fc-radius-xl: 1rem; /* 16px */
+    --fc-radius-xs: 0.125rem; /* 2 像素 */
+    --fc-radius-sm: 0.25rem; /* 4 像素 */
+    --fc-radius-md: 0.5rem; /* 8 像素 */
+    --fc-radius-lg: 0.75rem; /* 12 像素 */
+    --fc-radius-xl: 1rem; /* 16 像素 */
     --fc-radius-full: 9999px;
 
     /* ---------- 字体 ---------- */
     --fc-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --fc-font-size-xs: 0.6875rem; /* 11px */
-    --fc-font-size-sm: 0.8125rem; /* 13px */
-    --fc-font-size-md: 0.9375rem; /* 15px */
-    --fc-font-size-lg: 1.125rem; /* 18px */
-    --fc-font-size-xl: 1.375rem; /* 22px */
+    --fc-font-size-xs: 0.6875rem; /* 11 像素 */
+    --fc-font-size-sm: 0.8125rem; /* 13 像素 */
+    --fc-font-size-md: 0.9375rem; /* 15 像素 */
+    --fc-font-size-lg: 1.125rem; /* 18 像素 */
+    --fc-font-size-xl: 1.375rem; /* 22 像素 */
     --fc-font-weight-normal: 400;
     --fc-font-weight-medium: 500;
     --fc-font-weight-bold: 600;
@@ -150,7 +150,7 @@
     --fc-transition-slow: 250ms ease;
     --fc-transition-fast: 100ms ease;
 
-    /* ---------- z-index ---------- */
+    /* ---------- z-index 层级 ---------- */
     --fc-z-dropdown: 100;
     --fc-z-sticky: 200;
     --fc-z-modal: 300;

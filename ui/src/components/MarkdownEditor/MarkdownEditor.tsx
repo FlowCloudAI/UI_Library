@@ -155,7 +155,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
             wrapRef.current?.querySelector<HTMLTextAreaElement>('.w-md-editor-text-input') ?? null,
     }), []);
 
-    // Stable onChange wrapper — MDEditor won't see a new function reference each render
+    // 稳定的 onChange 包装 — MDEditor 每次渲染不会看到新的函数引用
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
     const handleChange = useCallback((v: string | undefined) => { onChangeRef.current(v ?? ""); }, []);

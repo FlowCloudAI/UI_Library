@@ -51,8 +51,8 @@
 
 .message-box-avatar {
   flex-shrink: 0;
-  width: 2rem; /* 32px */
-  height: 2rem; /* 32px */
+  width: 2rem; /* 32 像素 */
+  height: 2rem; /* 32 像素 */
   border-radius: var(--fc-radius-full, 9999px);
   background-color: var(--fc-color-bg-secondary, #F5F5F5);
   display: flex;
@@ -79,7 +79,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 0.75rem 1rem; /* 12px 16px */
+  padding: 0.75rem 1rem; /* 12 像素 16 像素 */
   border-radius: var(--fc-radius-lg, 0.75rem);
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -695,10 +695,87 @@
   margin-top: 0;
 }
 
+/* ========================================
+   工具调用组（ToolUseSection 双层折叠）
+   ======================================== */
+
+.message-box-tool-use {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.message-box-tool-use-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.3125rem 0.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--fc-color-text-secondary, #5F5F5F);
+  text-align: left;
+  white-space: normal;
+}
+
+.message-box-tool-use-header:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: var(--fc-radius-md, 0.5rem);
+}
+
+.message-box-tool-count {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.message-box-tool-use-chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.message-box-tool-use-chevron::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  transition: transform 0.2s;
+}
+
+.message-box-tool-use-chevron.expanded::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.message-box-tool-use-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding-left: 0.25rem;
+  border-left: 2px solid rgba(0, 0, 0, 0.08);
+  margin-left: 0.5rem;
+}
+
 /* 暗色主题 */
 
 [data-theme="dark"] .message-box-tool-item--error {
   color: #fca5a5;
+}
+
+[data-theme="dark"] .message-box-tool-use-header:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .message-box-tool-use-items {
+  border-left-color: rgba(255, 255, 255, 0.1);
 }
 
 
@@ -785,7 +862,7 @@
   color: var(--fc-color-primary, #378ADD);
 }
 
-/* tooltip */
+/* 工具提示 */
 .message-box-action::after {
   content: attr(data-tooltip);
   position: absolute;

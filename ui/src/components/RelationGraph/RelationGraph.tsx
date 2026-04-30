@@ -44,14 +44,14 @@ import type {
 } from './types';
 
 // ─── renderNode context ───────────────────────────────────────────────────────
-// Stored at module level so NODE_TYPES never changes reference — prevents
-// React Flow from unmounting/remounting all nodes when the prop updates.
+// 存储在模块级别，使 NODE_TYPES 引用不变 — 防止
+// React Flow 在 prop 更新时卸载/重新挂载所有节点。
 
 type RenderNodeFn = (data: RelationNodeInput, selected: boolean) => ReactNode;
 
 const RenderNodeCtx = createContext<RenderNodeFn | undefined>(undefined);
 
-// ─── Node component ───────────────────────────────────────────────────────────
+// ─── 节点组件 ───────────────────────────────────────────────────────────
 
 interface RGNodeData extends Record<string, unknown> {
     label?: string;
@@ -245,8 +245,8 @@ function RelationNode({ data, selected }: NodeProps<Node<RGNodeData>>) {
                 selected && !isCustom ? 'fc-rg-node--selected' : '',
             ].filter(Boolean).join(' ')}
         >
-            {/* Ghost handles: zero-size, invisible — actual edge coordinates are
-                computed by the floating-edge algorithm in BidirectionalEdge. */}
+            {/* Ghost handles：零尺寸、不可见 — 实际边坐标由
+                BidirectionalEdge 中的浮动边算法计算。 */}
             <Handle type="target" position={Position.Top}    id="t" className="fc-rg-handle--ghost" />
             <Handle type="source" position={Position.Bottom} id="s" className="fc-rg-handle--ghost" />
 
@@ -261,7 +261,7 @@ function RelationNode({ data, selected }: NodeProps<Node<RGNodeData>>) {
 const NODE_TYPES: NodeTypes = { relationNode: RelationNode as NodeTypes['relationNode'] };
 const EDGE_TYPES: EdgeTypes = { relationEdge: BidirectionalEdge };
 
-// ─── Edge / node builders ─────────────────────────────────────────────────────
+// ─── 边/节点构建器 ─────────────────────────────────────────────────────
 
 function buildRFEdges(inputEdges: RelationEdgeInput[]): Edge[] {
     const edgeKeySet = new Set(inputEdges.map(e => `${e.source}|${e.target}`));
@@ -306,7 +306,7 @@ function buildRFNodes(
     });
 }
 
-// ─── Inner component ──────────────────────────────────────────────────────────
+// ─── 内部组件 ──────────────────────────────────────────────────────────
 
 interface RelationGraphInnerProps {
     inputNodes: RelationNodeInput[];
@@ -480,7 +480,7 @@ function RelationGraphInner({
     );
 }
 
-// ─── Public component ─────────────────────────────────────────────────────────
+// ─── 公开组件 ─────────────────────────────────────────────────────────
 
 export interface RelationGraphProps {
     nodes: RelationNodeInput[];

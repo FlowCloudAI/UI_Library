@@ -1,6 +1,6 @@
 // flatToTree.ts
-// Converts flat DB category rows (with parent_id) into a nested tree structure.
-// Also detects and returns orphan nodes (parent_id points to non-existent id).
+// 将扁平的数据库分类行（含 parent_id）转换为嵌套树结构。
+// 同时检测并返回孤立节点（parent_id 指向不存在的 id）。
 
 export interface FlatCategory {
     id: string
@@ -24,7 +24,7 @@ export interface FlatToTreeResult {
 }
 
 export function flatToTree(list: FlatCategory[]): FlatToTreeResult {
-    // Build id → node map
+    // 构建 id → 节点映射表
     const nodeMap = new Map<string, CategoryTreeNode>()
     for (const item of list) {
         nodeMap.set(item.id, {
@@ -45,12 +45,12 @@ export function flatToTree(list: FlatCategory[]): FlatToTreeResult {
         } else if (nodeMap.has(item.parent_id)) {
             nodeMap.get(item.parent_id)!.children.push(node)
         } else {
-            // parent_id exists but points to an unknown id → orphan
+            // parent_id 存在但指向未知 id → 孤立节点
             orphans.push(node)
         }
     }
 
-    // Sort each level by sort_order (ascending)
+    // 按 sort_order 对每层排序（升序）
     const sortLevel = (nodes: CategoryTreeNode[]): void => {
         nodes.sort((a, b) => a.raw.sort_order - b.raw.sort_order)
         for (const node of nodes) sortLevel(node.children)
@@ -60,9 +60,9 @@ export function flatToTree(list: FlatCategory[]): FlatToTreeResult {
     return { roots, orphans }
 }
 
-// ── Tree traversal helpers (re-exported for use in parent components) ─────────
+// ── 树遍历辅助函数（重新导出供父组件使用）─────────
 
-/** Find a node and its context in the tree. */
+/** 在树中查找节点及其上下文。 */
 export function findNodeInfo(
     nodes: CategoryTreeNode[],
     key: string,
@@ -82,7 +82,7 @@ export function findNodeInfo(
     return null
 }
 
-/** Returns true if `targetKey` is a descendant of `ancestorKey`. */
+/** 如果 `targetKey` 是 `ancestorKey` 的后代则返回 true。 */
 export function isDescendantOf(
     roots: CategoryTreeNode[],
     ancestorKey: string,
