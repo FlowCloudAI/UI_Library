@@ -24,6 +24,7 @@ import { TreeDemo }           from './demos/TreeDemo'
 import TimeDemo               from './demos/TimeDemo'
 import { RelationGraphDemo }  from './demos/RelationGraphDemo'
 import { MapShapeEditorDemo } from './demos/MapShapeEditorDemo'
+import { TeraEditorDemo } from './demos/TeraEditorDemo'
 
 /* ===== 导航注册表 ===== */
 
@@ -54,6 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
             { key: 'VirtualList', label: 'VirtualList' },
             { key: 'Card',        label: 'Card' },
             { key: 'Markdown',    label: 'MarkdownEditor' },
+            { key: 'TeraEditor',  label: 'TeraEditor' },
             { key: 'Relation',    label: '关系图谱' },
             { key: 'MapShapeEditor', label: '地图编辑器' },
             { key: 'Time',        label: 'Timeline' },
@@ -93,6 +95,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     VirtualList: VirtualListDemo,
     Card:        CardDemo,
     Markdown:    MarkdownEditorDemo,
+    TeraEditor:  TeraEditorDemo,
     TabBar:      TabBarDemo,
     SideBar:     SideBarDemo,
     Tree:        TreeDemo,

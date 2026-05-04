@@ -1,0 +1,64 @@
+.fc-tera-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.fc-tera-editor__surface {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--fc-color-border);
+    border-radius: var(--fc-radius-md);
+    background: var(--fc-color-bg-elevated);
+    box-shadow: var(--fc-shadow-xs);
+}
+
+.fc-tera-editor__surface:focus-within {
+    border-color: var(--fc-color-border-focus);
+    box-shadow: 0 0 0 1px rgba(55, 138, 221, 0.22);
+}
+
+.fc-tera-editor__placeholder {
+    position: absolute;
+    top: 12px;
+    left: 52px;
+    right: 12px;
+    color: var(--fc-color-text-tertiary);
+    font-size: var(--fc-font-size-md);
+    line-height: 1.6;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.fc-tera-editor__status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 28px;
+    padding: 0 4px;
+    color: var(--fc-color-text-secondary);
+    font-size: var(--fc-font-size-sm);
+}
+
+.fc-tera-editor__status-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fc-tera-editor__status-count::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--fc-color-success);
+}
+
+.fc-tera-editor__status--has-problems .fc-tera-editor__status-count::before {
+    background: var(--fc-color-danger);
+}
+
+.fc-tera-editor__status-note {
+    color: var(--fc-color-text-tertiary);
+}

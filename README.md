@@ -1,6 +1,6 @@
 # FlowCloud UI Library
 
-基于 React 19、TypeScript 和 Vite/tsup 构建的 UI 组件库，包含主题系统、基础表单、导航组件、内容展示、关系图谱和时间线等能力。
+基于 React 19、TypeScript 和 Vite/tsup 构建的 UI 组件库，包含主题系统、基础表单、导航组件、内容展示、关系图谱、Tera 模板编辑器和时间线等能力。
 
 本文档只列组件和工具的自定义参数。`button`、`input`、`div`、`ul`、`li` 等原生 HTML 元素自带属性，以及通用的 `className`、`style` 等常规容器参数，不重复说明。
 
@@ -719,6 +719,65 @@ function Example() {
   )
 }
 ```
+
+### `TeraEditor`
+
+用途：基于 Monaco 的 Tera 模板编辑器，支持 `HTML + Tera` 语法高亮、内置基础语法检查，以及外部 diagnostics / validate 增强校验。
+
+参数：
+
+- `value: string`：编辑器内容
+- `onChange: (value: string) => void`：内容变化回调
+- `height?: number | string`：编辑区高度
+- `minHeight?: number`：最小高度，默认 `360`
+- `placeholder?: string`：占位提示
+- `readOnly?: boolean`：是否只读
+- `diagnostics?: TeraEditorDiagnostic[]`：外部直接注入的问题列表
+- `validate?: (value: string) => TeraEditorDiagnostic[] | Promise<TeraEditorDiagnostic[]>`：外部增强校验函数
+- `onDiagnosticsChange?: (diagnostics: TeraEditorDiagnostic[]) => void`：最终问题列表变化回调
+- `showMinimap?: boolean`：是否显示 minimap
+- `wordWrap?: 'off' | 'on'`：自动换行模式
+
+说明：
+
+- 内置校验覆盖未闭合 `{{ }}` / `{% %}` / `{# #}`、`if/for/block/macro/raw` 配对错误、孤立结束标签，以及 `else/elif` 误用
+- `diagnostics` 适合直接展示后端或宿主传入的结果
+- `validate` 适合做异步增强校验，组件内部会自动处理最新输入的竞态覆盖
+- v1 仅面向单模板，不处理 `extends/include` 关联模板上下文
+
+基础示例：
+
+```tsx
+import { useState } from 'react'
+import { TeraEditor } from 'flowcloudai-ui'
+
+function Example() {
+  const [value, setValue] = useState(`{% if user %}\n  <p>{{ user.name }}</p>\n{% endif %}`)
+
+  return (
+    <TeraEditor
+      value={value}
+      onChange={setValue}
+      minHeight={320}
+      validate={async (template) => {
+        if (template.includes('danger')) {
+          return [{
+            message: '检测到 danger 关键字',
+            severity: 'warning',
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: 1,
+            endColumn: 7,
+          }]
+        }
+        return []
+      }}
+    />
+  )
+}
+```
+
+更详细的说明见 `docs/TeraEditor.md`。
 
 ### `MessageBox`
 
@@ -2055,6 +2114,7 @@ function EditorPage() {
 - 全局样式：`ui/src/style/index.css`
 - 基础组件：`ui/src/components/Button/`
 - 表单组件：`ui/src/components/Input/`、`Select/`、`Slider/`
+- 模板编辑器：`ui/src/components/TeraEditor/`
 - 树组件：`ui/src/components/Tree/`
 - 图谱组件：`ui/src/components/RelationGraph/`
 - 时间线：`ui/src/components/Time/`
