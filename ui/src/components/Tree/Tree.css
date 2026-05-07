@@ -80,6 +80,7 @@
 
 .fc-tree__node {
     position: relative;
+    transition: opacity var(--fc-tree-row-transition, 0.12s ease-out);
 }
 
 .fc-tree__node.is-dragging > .fc-tree__item {

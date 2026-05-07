@@ -87,7 +87,7 @@ export type TreeActionItem =
         showInMenu?: boolean
     }
 
-// ── Context（拆分：稳定 actions / 树状态 / 高频拖拽状态）─────
+// ── Context（拆分：稳定 actions / 高频拖拽状态 / 选项）─────
 
 interface TreeActionsValue {
     toggleExpand: (key: string) => void
@@ -99,12 +99,6 @@ interface TreeActionsValue {
     cancelEdit: () => void
     requestCreate: (parentKey: string | null) => Promise<void>
     requestDelete: (node: CategoryTreeNode) => void
-}
-
-interface TreeStateValue {
-    expandedKeys: Set<string>
-    selectedKey: string | null
-    editingKey: string | null
 }
 
 interface DndStateValue {
@@ -137,44 +131,8 @@ interface TreeOptionsValue {
 }
 
 const TreeActionsCtx = createContext<TreeActionsValue>(null!)
-const TreeStateCtx   = createContext<TreeStateValue>(null!)
 const DndStateCtx    = createContext<DndStateValue>(null!)
 const TreeOptionsCtx = createContext<TreeOptionsValue>(null!)
-
-// ── 折叠面板 ─────────────────────────────────────────────────────────────
-
-const CollapsePanel = memo(function CollapsePanel(
-    { open, children }: { open: boolean; children: React.ReactNode }
-) {
-    const { collapseDuration } = useContext(TreeOptionsCtx)
-    const innerRef = useRef<HTMLDivElement>(null)
-    const [height, setHeight] = useState(0)
-    const [ready, setReady] = useState(false)
-
-    useEffect(() => {
-        const el = innerRef.current
-        if (!el) return
-        const ro = new ResizeObserver((entries) => {
-            // 使用 entry 数据，避免读取 el.offsetHeight 触发同步 layout
-            const h = entries[0]?.contentRect.height
-            if (h !== undefined) setHeight(h)
-        })
-        ro.observe(el)
-        setHeight(el.offsetHeight) // 挂载时一次性读取，可以接受
-        requestAnimationFrame(() => requestAnimationFrame(() => setReady(true)))
-        return () => ro.disconnect()
-    }, [])
-
-    return (
-        <div style={{
-            height: open ? height : 0,
-            overflow: 'hidden',
-            transition: ready ? `height ${collapseDuration}s ease-out` : 'none',
-        }}>
-            <div ref={innerRef}>{children}</div>
-        </div>
-    )
-})
 
 // ── 拖拽插槽（隔离 dnd-kit hooks — 仅此包装器在拖拽时重新渲染）──
 
@@ -260,21 +218,23 @@ function normaliseContextMenuItems(items: ContextMenuItem[]): ContextMenuItem[] 
 
 // ── 树节点项（memo — 仅在自身 props 变化时重新渲染）────────────
 
-interface TreeNodeItemProps {
+interface TreeVisibleRow {
     node: CategoryTreeNode
     level: number
-    hidden?: boolean
-}
-
-interface TreeNodeItemCoreProps extends TreeNodeItemProps {
     isSelected: boolean
     isExpanded: boolean
     isEditing: boolean
 }
 
+interface TreeNodeItemProps {
+    row: TreeVisibleRow
+}
+
+interface TreeNodeItemCoreProps extends TreeVisibleRow {}
+
 // 核心：memo 化的重型组件 — 状态来自 props，因此 memo 可以拦截
 const TreeNodeItemCore = memo(function TreeNodeItemCore({
-    node, level, hidden = false, isSelected, isExpanded, isEditing,
+    node, level, isSelected, isExpanded, isEditing,
 }: TreeNodeItemCoreProps) {
     const actions = useContext(TreeActionsCtx)   // 稳定 — 从不触发重新渲染
     const options = useContext(TreeOptionsCtx)
@@ -307,7 +267,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
 
     const renderState = useMemo<TreeNodeRenderState>(() => ({
         level,
-        hidden,
+        hidden: false,
         isExpanded,
         isSelected,
         isEditing,
@@ -319,7 +279,6 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
         canCreate: canCreateNode,
     }), [
         level,
-        hidden,
         isExpanded,
         isSelected,
         isEditing,
@@ -457,7 +416,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
     const Slot = options.dragEnabled ? DndSlot : PlainSlot
 
     return (
-        <Slot nodeKey={node.key} disabled={isEditing || hidden || !canDragNode}>
+        <Slot nodeKey={node.key} disabled={isEditing || !canDragNode}>
             {({ setRef, handleProps, isDragging, isDragSource, dropPosition }) => (
                 <div className={`fc-tree__node ${isDragging ? 'is-dragging' : ''}`}>
                     <div
@@ -570,32 +529,20 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                         )}
                     </div>
 
-                    {/* 子节点 */}
-                    {hasChildren && isExpanded && (
-                        <CollapsePanel open={isExpanded}>
-                            {node.children.map(child => (
-                                <TreeNodeItem key={child.key} node={child} level={level + 1} hidden={hidden || !isExpanded} />
-                            ))}
-                        </CollapsePanel>
-                    )}
                 </div>
             )}
         </Slot>
     )
 })
 
-// 连接器：轻量，订阅 TreeStateCtx，将派生布尔值传递给 memo 化核心。
-// 当 isSelected/isExpanded/isEditing 未变化时，仅 TreeNodeItemCore（重部件）重新渲染。
-function TreeNodeItem({ node, level, hidden = false }: TreeNodeItemProps) {
-    const state = useContext(TreeStateCtx)
+function TreeNodeItem({ row }: TreeNodeItemProps) {
     return (
         <TreeNodeItemCore
-            node={node}
-            level={level}
-            hidden={hidden}
-            isSelected={state.selectedKey === node.key}
-            isExpanded={state.expandedKeys.has(node.key)}
-            isEditing={state.editingKey === node.key}
+            node={row.node}
+            level={row.level}
+            isSelected={row.isSelected}
+            isExpanded={row.isExpanded}
+            isEditing={row.isEditing}
         />
     )
 }
@@ -940,17 +887,34 @@ export function Tree({
         return filter(treeData)
     }, [deferredSearchValue, treeData])
 
+    const visibleRows = useMemo<TreeVisibleRow[]>(() => {
+        const rows: TreeVisibleRow[] = []
+        const visit = (nodes: CategoryTreeNode[], level: number) => {
+            for (const node of nodes) {
+                const isExpanded = currentExpandedKeys.has(node.key)
+                rows.push({
+                    node,
+                    level,
+                    isExpanded,
+                    isSelected: selectedKey === node.key,
+                    isEditing: editingKey === node.key,
+                })
+
+                if (isExpanded && node.children.length > 0) {
+                    visit(node.children, level + 1)
+                }
+            }
+        }
+
+        visit(displayData, 0)
+        return rows
+    }, [currentExpandedKeys, displayData, editingKey, selectedKey])
+
     // ── Context 值（分别 memo 化）─────────────────────────────────
 
     const actionsValue = useMemo<TreeActionsValue>(() => ({
         toggleExpand, expandSubtree, collapseSubtree, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete,
     }), [toggleExpand, expandSubtree, collapseSubtree, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete])
-
-    const stateValue = useMemo<TreeStateValue>(() => ({
-        expandedKeys: currentExpandedKeys,
-        selectedKey: selectedKey ?? null,
-        editingKey,
-    }), [currentExpandedKeys, selectedKey, editingKey])
 
     // 函数 props 的稳定 ref 包装 — 调用者无需对这些使用 useCallback/useMemo。
     // optionsValue 仅在 prop 在 defined ↔ undefined 之间转换时重建。
@@ -1007,9 +971,10 @@ export function Tree({
         if (colorTokens?.danger) style['--fc-tree-danger'] = colorTokens.danger
         if (colorTokens?.actionHoverBg) style['--fc-tree-action-hover-bg'] = colorTokens.actionHoverBg
         if (colorTokens?.dropIndicator) style['--fc-tree-drop-indicator'] = colorTokens.dropIndicator
+        style['--fc-tree-row-transition'] = `${collapseDuration}s ease-out`
 
         return style as React.CSSProperties
-    }, [colorTokens])
+    }, [collapseDuration, colorTokens])
 
     // dndState 引用仅在值实际变化时变更（单次 setState）
 
@@ -1036,13 +1001,13 @@ export function Tree({
 
             <RollingBox showThumb="show" style={{ height: scrollHeight }}>
                 <div className="fc-tree__list">
-                    {displayData.length === 0 && (
+                    {visibleRows.length === 0 && (
                         <div className="fc-tree__empty">
                             {currentSearchValue ? '无匹配分类' : '暂无分类'}
                         </div>
                     )}
-                    {displayData.map(node => (
-                        <TreeNodeItem key={node.key} node={node} level={0} />
+                    {visibleRows.map(row => (
+                        <TreeNodeItem key={row.node.key} row={row} />
                     ))}
                 </div>
             </RollingBox>
@@ -1062,23 +1027,21 @@ export function Tree({
 
     return (
         <TreeActionsCtx.Provider value={actionsValue}>
-            <TreeStateCtx.Provider value={stateValue}>
-                <TreeOptionsCtx.Provider value={optionsValue}>
-                    {dragEnabled ? (
-                        <DndStateCtx.Provider value={dndState}>
-                            <DndContext
-                                sensors={sensors}
-                                onDragStart={handleDragStart}
-                                onDragMove={handleDragMove}
-                                onDragEnd={handleDragEnd}
-                                onDragCancel={handleDragCancel}
-                            >
-                                {treeContent}
-                            </DndContext>
-                        </DndStateCtx.Provider>
-                    ) : treeContent}
-                </TreeOptionsCtx.Provider>
-            </TreeStateCtx.Provider>
+            <TreeOptionsCtx.Provider value={optionsValue}>
+                {dragEnabled ? (
+                    <DndStateCtx.Provider value={dndState}>
+                        <DndContext
+                            sensors={sensors}
+                            onDragStart={handleDragStart}
+                            onDragMove={handleDragMove}
+                            onDragEnd={handleDragEnd}
+                            onDragCancel={handleDragCancel}
+                        >
+                            {treeContent}
+                        </DndContext>
+                    </DndStateCtx.Provider>
+                ) : treeContent}
+            </TreeOptionsCtx.Provider>
         </TreeActionsCtx.Provider>
     )
 }
