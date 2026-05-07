@@ -231,18 +231,6 @@ const DndSlot = memo(function DndSlot({
     return <>{children({ setRef, handleProps, isDragging, isDragSource, dropPosition })}</>
 })
 
-function collectExpandableKeys(node: CategoryTreeNode): string[] {
-    const keys: string[] = []
-    const visit = (current: CategoryTreeNode) => {
-        if (current.children.length > 0) {
-            keys.push(current.key)
-            current.children.forEach(visit)
-        }
-    }
-    visit(node)
-    return keys
-}
-
 function isTreeActionDivider(item: TreeActionItem): item is Extract<TreeActionItem, { type: 'divider' }> {
     return item.type === 'divider'
 }
@@ -710,6 +698,7 @@ export function Tree({
     // toggleExpand/expandSubtree/collapseSubtree → actionsValue 链条保持稳定。
     const expandedKeysRef = useRef(currentExpandedKeys)
     expandedKeysRef.current = currentExpandedKeys
+    const expandableKeysMapRef = useRef<Map<string, string[]>>(new Map())
 
     const currentSearchValue = controlledSearchValue ?? uncontrolledSearchValue
     const canCreateRoot = createEnabled && (!canCreate || canCreate(null))
@@ -719,6 +708,7 @@ export function Tree({
         window.addEventListener('pointermove', handler)
         return () => window.removeEventListener('pointermove', handler)
     }, [])
+
     useEffect(() => {
         if (actionDisplayMode !== 'auto') {
             setTreeWidth(prev => prev === null ? prev : null)
@@ -741,6 +731,7 @@ export function Tree({
 
         return () => observer.disconnect()
     }, [actionDisplayMode])
+
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
     )
@@ -767,7 +758,7 @@ export function Tree({
     }, [setExpandedKeys])
 
     const expandSubtree = useCallback((node: CategoryTreeNode) => {
-        const keys = collectExpandableKeys(node)
+        const keys = expandableKeysMapRef.current.get(node.key) ?? []
         if (keys.length === 0) return
         setExpandedKeys(prev => {
             const next = new Set(prev)
@@ -777,7 +768,7 @@ export function Tree({
     }, [setExpandedKeys])
 
     const collapseSubtree = useCallback((node: CategoryTreeNode) => {
-        const keys = collectExpandableKeys(node)
+        const keys = expandableKeysMapRef.current.get(node.key) ?? []
         if (keys.length === 0) return
         setExpandedKeys(prev => {
             const next = new Set(prev)
@@ -815,22 +806,43 @@ export function Tree({
     treeDataRef.current  = treeData
     canDropRef.current   = canDrop
 
-    // O(1) 节点和父链查找 — 仅在 treeData 变化时重建
-    const { nodeMap: _nodeMap, parentMap: _parentMap } = useMemo(() => {
+    // O(1) 节点、父链、标题和可展开后代查找 — 仅在 treeData 变化时重建
+    const {
+        nodeMap: _nodeMap,
+        parentMap: _parentMap,
+        titleMap: _titleMap,
+        expandableKeysMap: _expandableKeysMap,
+    } = useMemo(() => {
         const nodeMap   = new Map<string, CategoryTreeNode>()
         const parentMap = new Map<string, string | null>()
-        const visit = (nodes: CategoryTreeNode[], pk: string | null) => {
+        const titleMap  = new Map<string, string>()
+        const expandableKeysMap = new Map<string, string[]>()
+
+        const visit = (nodes: CategoryTreeNode[], pk: string | null): string[] => {
+            const levelExpandableKeys: string[] = []
+
             for (const n of nodes) {
                 nodeMap.set(n.key, n)
                 parentMap.set(n.key, pk)
-                visit(n.children, n.key)
+                titleMap.set(n.key, n.title.toLowerCase())
+
+                const childExpandableKeys = visit(n.children, n.key)
+                const nodeExpandableKeys = n.children.length > 0
+                    ? [n.key, ...childExpandableKeys]
+                    : []
+                expandableKeysMap.set(n.key, nodeExpandableKeys)
+                levelExpandableKeys.push(...nodeExpandableKeys)
             }
+
+            return levelExpandableKeys
         }
         visit(treeData, null)
-        return { nodeMap, parentMap }
+        return { nodeMap, parentMap, titleMap, expandableKeysMap }
     }, [treeData])
     const nodeMapRef   = useRef(_nodeMap);   nodeMapRef.current   = _nodeMap
     const parentMapRef = useRef(_parentMap); parentMapRef.current = _parentMap
+    const titleMapRef  = useRef(_titleMap);  titleMapRef.current  = _titleMap
+    expandableKeysMapRef.current = _expandableKeysMap
 
     const clearDropTarget = useCallback(() => {
         dropRef.current = { key: null, pos: null }
