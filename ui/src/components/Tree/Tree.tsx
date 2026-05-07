@@ -591,7 +591,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                     </div>
 
                     {/* 子节点 */}
-                    {hasChildren && (
+                    {hasChildren && isExpanded && (
                         <CollapsePanel open={isExpanded}>
                             {node.children.map(child => (
                                 <TreeNodeItem key={child.key} node={child} level={level + 1} hidden={hidden || !isExpanded} />
