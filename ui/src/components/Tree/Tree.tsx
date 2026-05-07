@@ -4,6 +4,7 @@ import React, {
     memo,
     useCallback,
     useContext,
+    useDeferredValue,
     useEffect,
     useMemo,
     useRef,
@@ -701,6 +702,7 @@ export function Tree({
     const expandableKeysMapRef = useRef<Map<string, string[]>>(new Map())
 
     const currentSearchValue = controlledSearchValue ?? uncontrolledSearchValue
+    const deferredSearchValue = useDeferredValue(currentSearchValue)
     const canCreateRoot = createEnabled && (!canCreate || canCreate(null))
 
     useEffect(() => {
@@ -925,18 +927,18 @@ export function Tree({
     }, [controlledSearchValue, onSearchChange])
 
     const displayData = useMemo(() => {
-        if (!currentSearchValue) return treeData
-        const kw = currentSearchValue.toLowerCase()
+        if (!deferredSearchValue) return treeData
+        const kw = deferredSearchValue.toLowerCase()
         const filter = (nodes: CategoryTreeNode[]): CategoryTreeNode[] =>
             nodes.reduce<CategoryTreeNode[]>((acc, node) => {
-                const match = node.title.toLowerCase().includes(kw)
+                const match = (titleMapRef.current.get(node.key) ?? node.title.toLowerCase()).includes(kw)
                 const filteredChildren = filter(node.children)
                 if (match || filteredChildren.length > 0)
                     acc.push({ ...node, children: filteredChildren })
                 return acc
             }, [])
         return filter(treeData)
-    }, [currentSearchValue, treeData])
+    }, [deferredSearchValue, treeData])
 
     // ── Context 值（分别 memo 化）─────────────────────────────────
 
