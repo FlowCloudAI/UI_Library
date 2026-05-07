@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { VirtualList, Avatar } from 'flowcloudai-ui'
+import { useMemo, useState } from 'react'
+import { Avatar, VirtualList, type VirtualListVisibleRange } from 'flowcloudai-ui'
 
 export function VirtualListDemo() {
     const data = useMemo(() => Array.from({ length: 10000 }, (_, i) => ({
@@ -8,16 +8,35 @@ export function VirtualListDemo() {
         description: `第 ${i + 1} 个项目的描述信息`,
         avatar: `https://i.pravatar.cc/40?u=${i}`,
     })), [])
+    const [visibleRange, setVisibleRange] = useState<VirtualListVisibleRange>({
+        startIndex: 0,
+        endIndexExclusive: 0,
+    })
 
     return (
         <>
             <div className="demo-section">
                 <h4>10000 条数据</h4>
+                <div style={{
+                    marginBottom: 12,
+                    padding: 12,
+                    border: '1px solid var(--fc-color-border, #e2e8f0)',
+                    borderRadius: 8,
+                    background: 'var(--fc-color-bg-secondary, #f8fafc)',
+                    fontSize: 12,
+                    color: 'var(--fc-color-text-secondary)',
+                }}>
+                    当前真实视口范围：{visibleRange.startIndex} - {visibleRange.endIndexExclusive}
+                    <span style={{ marginLeft: 8 }}>
+                        （共 {Math.max(0, visibleRange.endIndexExclusive - visibleRange.startIndex)} 行）
+                    </span>
+                </div>
                 <div className="demo-row">
                     <div style={{ flex: 1, minWidth: 280 }}>
                         <p style={{ fontSize: 12, marginBottom: 8, color: 'var(--fc-color-text-secondary)' }}>带头像</p>
                         <VirtualList
                             data={data} height={400} itemHeight={60}
+                            onVisibleRangeChange={setVisibleRange}
                             renderItem={(item) => (
                                 <div style={{
                                     height: 60, padding: '10px 15px',

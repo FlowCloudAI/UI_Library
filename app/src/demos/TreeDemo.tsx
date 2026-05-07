@@ -10,6 +10,8 @@ import {
     type TreeColorTokens,
     type TreeNodeActionHelpers,
     type TreeNodeRenderState,
+    type TreeViewportRowsPayload,
+    type TreeVisibleRow,
 } from 'flowcloudai-ui'
 
 const NAV_MIN = 180
@@ -37,6 +39,12 @@ export function TreeDemo() {
     const [actionDisplayMode, setActionDisplayMode] = useState<'auto' | 'inline' | 'overflow'>('auto')
     const [customColors, setCustomColors] = useState(true)
     const [deleteTarget, setDeleteTarget] = useState<CategoryTreeNode | null>(null)
+    const [visibleRows, setVisibleRows] = useState<TreeVisibleRow[]>([])
+    const [viewportRows, setViewportRows] = useState<TreeViewportRowsPayload>({
+        startIndex: 0,
+        endIndexExclusive: 0,
+        rows: [],
+    })
 
     const handleDividerMouseDown = (e: ReactMouseEvent<HTMLDivElement>) => {
         e.preventDefault()
@@ -401,6 +409,8 @@ export function TreeDemo() {
                         onCreate={handleCreate}
                         onDeleteRequest={handleDeleteRequest}
                         onMove={handleMove}
+                        onVisibleRowsChange={setVisibleRows}
+                        onViewportRowsChange={setViewportRows}
                         searchable
                         collapseDuration={0.2}
                     />
@@ -441,6 +451,31 @@ export function TreeDemo() {
                     fontSize: 13,
                     borderLeft: 'none',
                 }}>
+                    <div style={{
+                        marginBottom: 12,
+                        padding: 12,
+                        border: '1px solid var(--fc-color-border, #e2e8f0)',
+                        borderRadius: 8,
+                        background: 'var(--fc-color-bg-secondary, #f8fafc)',
+                    }}>
+                        <div style={{fontWeight: 600, marginBottom: 8}}>可见行回调</div>
+                        <div style={{fontSize: 12, color: 'var(--fc-color-text-secondary)', marginBottom: 6}}>
+                            结构可见：{visibleRows.length} 行
+                        </div>
+                        <div style={{fontSize: 12, color: 'var(--fc-color-text-secondary)', marginBottom: 6}}>
+                            真实视口：{viewportRows.startIndex} - {viewportRows.endIndexExclusive}
+                            <span style={{marginLeft: 8}}>（{viewportRows.rows.length} 行）</span>
+                        </div>
+                        <div style={{
+                            fontSize: 12,
+                            color: 'var(--fc-color-text-secondary)',
+                            fontFamily: 'monospace',
+                            lineHeight: 1.6,
+                            wordBreak: 'break-all',
+                        }}>
+                            视口 keys：{viewportRows.rows.slice(0, 10).map(row => row.key).join(', ') || '无'}
+                        </div>
+                    </div>
                     <div style={{fontWeight: 600, marginBottom: 8}}>操作日志</div>
                     {log.length === 0 && (
                         <div style={{color: '#94a3b8', fontSize: 12}}>
