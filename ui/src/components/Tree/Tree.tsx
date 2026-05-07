@@ -9,6 +9,7 @@ import React, {
     useMemo,
     useRef,
     useState,
+    useSyncExternalStore,
 } from 'react'
 import {
     DndContext,
@@ -107,6 +108,13 @@ interface DndStateValue {
     dragKey: string | null
 }
 
+interface DragVisualStore {
+    getState: () => DndStateValue
+    getSnapshot: (key: string) => string
+    subscribe: (key: string, listener: () => void) => () => void
+    setState: (next: DndStateValue) => void
+}
+
 interface TreeOptionsValue {
     indentSize: number
     actionDisplayMode: TreeActionDisplayMode
@@ -131,8 +139,57 @@ interface TreeOptionsValue {
 }
 
 const TreeActionsCtx = createContext<TreeActionsValue>(null!)
-const DndStateCtx    = createContext<DndStateValue>(null!)
+const DndStateCtx    = createContext<DragVisualStore>(null!)
 const TreeOptionsCtx = createContext<TreeOptionsValue>(null!)
+
+function createDragVisualStore(): DragVisualStore {
+    let state: DndStateValue = {
+        dropTargetKey: null,
+        dropPosition: null,
+        dragKey: null,
+    }
+    const listeners = new Map<string, Set<() => void>>()
+
+    const notify = (key: string | null) => {
+        if (!key) return
+        listeners.get(key)?.forEach(listener => listener())
+    }
+
+    return {
+        getState: () => state,
+        getSnapshot: (key: string) => {
+            const isDragSource = state.dragKey === key ? '1' : '0'
+            const dropPosition = state.dropTargetKey === key ? state.dropPosition ?? '' : ''
+            return `${isDragSource}:${dropPosition}`
+        },
+        subscribe: (key: string, listener: () => void) => {
+            const set = listeners.get(key) ?? new Set<() => void>()
+            set.add(listener)
+            listeners.set(key, set)
+
+            return () => {
+                set.delete(listener)
+                if (set.size === 0) listeners.delete(key)
+            }
+        },
+        setState: (next: DndStateValue) => {
+            if (
+                state.dropTargetKey === next.dropTargetKey
+                && state.dropPosition === next.dropPosition
+                && state.dragKey === next.dragKey
+            ) {
+                return
+            }
+
+            const prev = state
+            state = next
+            notify(prev.dropTargetKey)
+            notify(next.dropTargetKey)
+            notify(prev.dragKey)
+            notify(next.dragKey)
+        },
+    }
+}
 
 // ── 拖拽插槽（隔离 dnd-kit hooks — 仅此包装器在拖拽时重新渲染）──
 
@@ -168,11 +225,18 @@ const DndSlot = memo(function DndSlot({
                                            disabled,
                                            children,
                                        }: TreeNodeSlotProps) {
-    const dndState = useContext(DndStateCtx)
+    const dragVisualStore = useContext(DndStateCtx)
 
-    const isDropTarget = dndState.dropTargetKey === nodeKey
-    const dropPosition = isDropTarget ? dndState.dropPosition : null
-    const isDragSource = dndState.dragKey === nodeKey
+    const visualSnapshot = useSyncExternalStore(
+        useCallback(listener => dragVisualStore.subscribe(nodeKey, listener), [dragVisualStore, nodeKey]),
+        useCallback(() => dragVisualStore.getSnapshot(nodeKey), [dragVisualStore, nodeKey]),
+        () => '0:'
+    )
+    const [dragSourceToken, dropPositionToken] = visualSnapshot.split(':')
+    const isDragSource = dragSourceToken === '1'
+    const dropPosition = dropPositionToken === ''
+        ? null
+        : dropPositionToken as DropPosition
 
     const { attributes, listeners, setNodeRef: setDragRef, isDragging } =
         useDraggable({ id: nodeKey, disabled })
@@ -631,12 +695,11 @@ export function Tree({
     const [treeWidth, setTreeWidth] = useState<number | null>(null)
     const [listViewportHeight, setListViewportHeight] = useState(0)
 
-    // 拖拽状态 — 单个对象，一次 setState = 一次渲染
-    const [dndState, setDndState] = useState<DndStateValue>({
-        dropTargetKey: null,
-        dropPosition: null,
-        dragKey: null,
-    })
+    const dragVisualStoreRef = useRef<DragVisualStore | null>(null)
+    if (dragVisualStoreRef.current === null) {
+        dragVisualStoreRef.current = createDragVisualStore()
+    }
+    const dragVisualStore = dragVisualStoreRef.current
 
     const dropRef     = useRef<{ key: string | null; pos: DropPosition | null }>({ key: null, pos: null })
     const pointerYRef = useRef(0)
@@ -819,17 +882,14 @@ export function Tree({
 
     const clearDropTarget = useCallback(() => {
         dropRef.current = { key: null, pos: null }
-        setDndState(prev => (
-            prev.dropTargetKey === null && prev.dropPosition === null
-                ? prev
-                : { ...prev, dropTargetKey: null, dropPosition: null }
-        ))
-    }, [])
+        const prev = dragVisualStore.getState()
+        dragVisualStore.setState({ ...prev, dropTargetKey: null, dropPosition: null })
+    }, [dragVisualStore])
 
     const handleDragStart = useCallback(({ active }: DragStartEvent) => {
         dropRef.current = { key: null, pos: null }
-        setDndState({ dropTargetKey: null, dropPosition: null, dragKey: active.id as string })
-    }, [])
+        dragVisualStore.setState({ dropTargetKey: null, dropPosition: null, dragKey: active.id as string })
+    }, [dragVisualStore])
 
     const handleDragMove = useCallback(({ over, active }: DragMoveEvent) => {
         if (!over || over.id === active.id) {
@@ -872,21 +932,22 @@ export function Tree({
         if (dropRef.current.key === targetKey && dropRef.current.pos === position) return
 
         dropRef.current = { key: targetKey, pos: position }
-        setDndState(prev => ({ ...prev, dropTargetKey: targetKey, dropPosition: position }))
-    }, [clearDropTarget])
+        const prev = dragVisualStore.getState()
+        dragVisualStore.setState({ ...prev, dropTargetKey: targetKey, dropPosition: position })
+    }, [clearDropTarget, dragVisualStore])
 
     const handleDragEnd = useCallback(({ active }: DragEndEvent) => {
         const { key: target, pos: position } = dropRef.current
         dropRef.current = { key: null, pos: null }
-        setDndState({ dropTargetKey: null, dropPosition: null, dragKey: null })
+        dragVisualStore.setState({ dropTargetKey: null, dropPosition: null, dragKey: null })
         if (!target || !position || active.id === target) return
         onMove?.(active.id as string, target, position)
-    }, [onMove])
+    }, [dragVisualStore, onMove])
 
     const handleDragCancel = useCallback(() => {
         dropRef.current = { key: null, pos: null }
-        setDndState({ dropTargetKey: null, dropPosition: null, dragKey: null })
-    }, [])
+        dragVisualStore.setState({ dropTargetKey: null, dropPosition: null, dragKey: null })
+    }, [dragVisualStore])
 
     // ── 搜索（memo 化）────────────────────────────────────────────────────
 
@@ -1006,7 +1067,7 @@ export function Tree({
         return style as React.CSSProperties
     }, [collapseDuration, colorTokens])
 
-    // dndState 引用仅在值实际变化时变更（单次 setState）
+    // 拖拽视觉状态由按 key 订阅的 store 通知，避免拖动时刷新所有行。
 
     // ── 渲染 ────────────────────────────────────────────────────────────────
 
@@ -1067,7 +1128,7 @@ export function Tree({
         <TreeActionsCtx.Provider value={actionsValue}>
             <TreeOptionsCtx.Provider value={optionsValue}>
                 {dragEnabled ? (
-                    <DndStateCtx.Provider value={dndState}>
+                    <DndStateCtx.Provider value={dragVisualStore}>
                         <DndContext
                             sensors={sensors}
                             onDragStart={handleDragStart}
