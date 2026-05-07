@@ -176,21 +176,38 @@ const CollapsePanel = memo(function CollapsePanel(
 
 // ── 拖拽插槽（隔离 dnd-kit hooks — 仅此包装器在拖拽时重新渲染）──
 
-const DndSlot = memo(function DndSlot({
-                                          nodeKey,
-                                          disabled,
-                                          children,
-                                      }: {
+interface TreeNodeSlotBag {
+    setRef: (el: HTMLDivElement | null) => void
+    handleProps: Record<string, unknown>
+    isDragging: boolean
+    isDragSource: boolean
+    dropPosition: DropPosition | null
+}
+
+interface TreeNodeSlotProps {
     nodeKey: string
     disabled: boolean
-    children: (bag: {
-        setRef: (el: HTMLDivElement | null) => void
-        handleProps: Record<string, unknown>
-        isDragging: boolean
-        isDragSource: boolean
-        dropPosition: DropPosition | null
-    }) => React.ReactNode
-}) {
+    children: (bag: TreeNodeSlotBag) => React.ReactNode
+}
+
+const PlainSlot = memo(function PlainSlot({ children }: TreeNodeSlotProps) {
+    const setRef = useCallback(() => {}, [])
+    const handleProps = useMemo<Record<string, unknown>>(() => ({}), [])
+
+    return <>{children({
+        setRef,
+        handleProps,
+        isDragging: false,
+        isDragSource: false,
+        dropPosition: null,
+    })}</>
+})
+
+const DndSlot = memo(function DndSlot({
+                                           nodeKey,
+                                           disabled,
+                                           children,
+                                       }: TreeNodeSlotProps) {
     const dndState = useContext(DndStateCtx)
 
     const isDropTarget = dndState.dropTargetKey === nodeKey
@@ -474,9 +491,10 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
     }, [actions, contextMenuItems, node.key, showContextMenu])
 
     const titleContent = options.renderTitle?.(node, renderState) ?? node.title
+    const Slot = options.dragEnabled ? DndSlot : PlainSlot
 
     return (
-        <DndSlot nodeKey={node.key} disabled={isEditing || hidden || !canDragNode}>
+        <Slot nodeKey={node.key} disabled={isEditing || hidden || !canDragNode}>
             {({ setRef, handleProps, isDragging, isDragSource, dropPosition }) => (
                 <div className={`fc-tree__node ${isDragging ? 'is-dragging' : ''}`}>
                     <div
@@ -600,7 +618,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                     )}
                 </div>
             )}
-        </DndSlot>
+        </Slot>
     )
 })
 
@@ -985,65 +1003,68 @@ export function Tree({
 
     // ── 渲染 ────────────────────────────────────────────────────────────────
 
+    const treeContent = (
+        <div className={`fc-tree ${className}`} style={treeStyle}>
+            {searchable && (
+                <div className="fc-tree__search">
+                    <input
+                        type="text"
+                        value={currentSearchValue}
+                        onChange={e => setSearchValue(e.target.value)}
+                        placeholder={searchPlaceholder}
+                        className="fc-tree__search-input"
+                    />
+                    {currentSearchValue && (
+                        <button className="fc-tree__search-clear" onClick={() => setSearchValue('')}>
+                            ✕
+                        </button>
+                    )}
+                </div>
+            )}
+
+            <RollingBox showThumb="show" style={{ height: scrollHeight }}>
+                <div className="fc-tree__list">
+                    {displayData.length === 0 && (
+                        <div className="fc-tree__empty">
+                            {currentSearchValue ? '无匹配分类' : '暂无分类'}
+                        </div>
+                    )}
+                    {displayData.map(node => (
+                        <TreeNodeItem key={node.key} node={node} level={0} />
+                    ))}
+                </div>
+            </RollingBox>
+
+            {onCreate && canCreateRoot && (
+                <div className="fc-tree__add-root">
+                    <button
+                        className="fc-tree__add-root-btn"
+                        onClick={() => requestCreate(null)}
+                    >
+                        + 新建顶级分类
+                    </button>
+                </div>
+            )}
+        </div>
+    )
+
     return (
         <TreeActionsCtx.Provider value={actionsValue}>
             <TreeStateCtx.Provider value={stateValue}>
                 <TreeOptionsCtx.Provider value={optionsValue}>
-                    <DndStateCtx.Provider value={dndState}>
-                        <DndContext
-                            sensors={sensors}
-                            onDragStart={handleDragStart}
-                            onDragMove={handleDragMove}
-                            onDragEnd={handleDragEnd}
-                            onDragCancel={handleDragCancel}
-                        >
-                            <div className={`fc-tree ${className}`} style={treeStyle}>
-
-                                {searchable && (
-                                    <div className="fc-tree__search">
-                                        <input
-                                            type="text"
-                                            value={currentSearchValue}
-                                            onChange={e => setSearchValue(e.target.value)}
-                                            placeholder={searchPlaceholder}
-                                            className="fc-tree__search-input"
-                                        />
-                                        {currentSearchValue && (
-                                            <button className="fc-tree__search-clear" onClick={() => setSearchValue('')}>
-                                                ✕
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-
-                                <RollingBox showThumb="show" style={{ height: scrollHeight }}>
-                                    <div className="fc-tree__list">
-                                        {displayData.length === 0 && (
-                                            <div className="fc-tree__empty">
-                                                {currentSearchValue ? '无匹配分类' : '暂无分类'}
-                                            </div>
-                                        )}
-                                        {displayData.map(node => (
-                                            <TreeNodeItem key={node.key} node={node} level={0} />
-                                        ))}
-                                    </div>
-                                </RollingBox>
-
-                                {onCreate && canCreateRoot && (
-                                    <div className="fc-tree__add-root">
-                                        <button
-                                            className="fc-tree__add-root-btn"
-                                            onClick={() => requestCreate(null)}
-                                        >
-                                            + 新建顶级分类
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-
-                        </DndContext>
-                    </DndStateCtx.Provider>
+                    {dragEnabled ? (
+                        <DndStateCtx.Provider value={dndState}>
+                            <DndContext
+                                sensors={sensors}
+                                onDragStart={handleDragStart}
+                                onDragMove={handleDragMove}
+                                onDragEnd={handleDragEnd}
+                                onDragCancel={handleDragCancel}
+                            >
+                                {treeContent}
+                            </DndContext>
+                        </DndStateCtx.Provider>
+                    ) : treeContent}
                 </TreeOptionsCtx.Provider>
             </TreeStateCtx.Provider>
         </TreeActionsCtx.Provider>
