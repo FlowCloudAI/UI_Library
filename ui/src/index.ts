@@ -29,6 +29,5 @@ export * from "./components/RelationGraph/RelationGraph";
 export * from "./components/RelationGraph/types";
 export * from "./components/TeraEditor/TeraEditor";
 export type * from "./components/TeraEditor/types";
-export * from "./components/MapShapeEditor";
 
 import "./style/index.css"
