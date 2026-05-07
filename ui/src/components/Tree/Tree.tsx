@@ -116,6 +116,7 @@ interface TreeOptionsValue {
     indentSize: number
     actionDisplayMode: TreeActionDisplayMode
     actionCollapseThreshold: number
+    actionViewportWidth: number | null
     renderTitle?: (node: CategoryTreeNode, state: TreeNodeRenderState) => React.ReactNode
     getNodeActions?: (
         node: CategoryTreeNode,
@@ -298,40 +299,10 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
     const canCreateNode = options.createEnabled && (!options.canCreate || options.canCreate(node))
 
     const [localEdit, setLocalEdit] = useState('')
-    const itemRef = useRef<HTMLDivElement | null>(null)
-    const [isAutoCompact, setIsAutoCompact] = useState(false)
 
     useEffect(() => {
         if (isEditing) setLocalEdit(node.title)
     }, [isEditing, node.title])
-
-    useEffect(() => {
-        if (options.actionDisplayMode !== 'auto') {
-            setIsAutoCompact(false)
-            return
-        }
-
-        const el = itemRef.current
-        if (!el) return
-
-        // 初始化时一次性同步读取（挂载时可接受）
-        const style = window.getComputedStyle(el)
-        const initialWidth =
-            el.clientWidth
-            - Number.parseFloat(style.paddingLeft || '0')
-            - Number.parseFloat(style.paddingRight || '0')
-        setIsAutoCompact(initialWidth < options.actionCollapseThreshold)
-
-        const observer = new ResizeObserver((entries) => {
-            // 用 entry.contentRect.width 替代 getComputedStyle + clientWidth，
-            // 避免 ResizeObserver 回调内触发同步强制 layout
-            const w = entries[0]?.contentRect.width
-            if (w !== undefined) setIsAutoCompact(w < options.actionCollapseThreshold)
-        })
-        observer.observe(el)
-
-        return () => observer.disconnect()
-    }, [indent, options.actionCollapseThreshold, options.actionDisplayMode])
 
     const handleEditKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         e.stopPropagation()
@@ -339,8 +310,11 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
         if (e.key === 'Escape') actions.cancelEdit()
     }, [actions, node.key, localEdit])
 
+    const availableActionWidth = options.actionViewportWidth === null
+        ? Number.POSITIVE_INFINITY
+        : Math.max(0, options.actionViewportWidth - indent)
     const requestedCompactActions = options.actionDisplayMode === 'overflow'
-        || (options.actionDisplayMode === 'auto' && isAutoCompact)
+        || (options.actionDisplayMode === 'auto' && availableActionWidth < options.actionCollapseThreshold)
 
     const renderState = useMemo<TreeNodeRenderState>(() => ({
         level,
@@ -499,7 +473,6 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                 <div className={`fc-tree__node ${isDragging ? 'is-dragging' : ''}`}>
                     <div
                         ref={el => {
-                            itemRef.current = el
                             setRef(el)
                         }}
                         className={[
@@ -713,6 +686,8 @@ export function Tree({
     )
     const [editingKey, setEditingKey]     = useState<string | null>(null)
     const [uncontrolledSearchValue, setUncontrolledSearchValue] = useState(defaultSearchValue)
+    const treeRef = useRef<HTMLDivElement | null>(null)
+    const [treeWidth, setTreeWidth] = useState<number | null>(null)
 
     // 拖拽状态 — 单个对象，一次 setState = 一次渲染
     const [dndState, setDndState] = useState<DndStateValue>({
@@ -744,7 +719,28 @@ export function Tree({
         window.addEventListener('pointermove', handler)
         return () => window.removeEventListener('pointermove', handler)
     }, [])
+    useEffect(() => {
+        if (actionDisplayMode !== 'auto') {
+            setTreeWidth(prev => prev === null ? prev : null)
+            return
+        }
 
+        const el = treeRef.current
+        if (!el) return
+
+        const updateWidth = (width: number) => {
+            setTreeWidth(prev => Math.round(prev ?? -1) === Math.round(width) ? prev : width)
+        }
+
+        updateWidth(el.clientWidth)
+        const observer = new ResizeObserver((entries) => {
+            const width = entries[0]?.contentRect.width
+            if (width !== undefined) updateWidth(width)
+        })
+        observer.observe(el)
+
+        return () => observer.disconnect()
+    }, [actionDisplayMode])
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
     )
@@ -956,6 +952,7 @@ export function Tree({
         indentSize,
         actionDisplayMode,
         actionCollapseThreshold,
+        actionViewportWidth: treeWidth,
         renderTitle:    renderTitleRef.current    ? (n, s)    => renderTitleRef.current!(n, s)       : undefined,
         getNodeActions: getNodeActionsRef.current ? (n, s, h) => getNodeActionsRef.current!(n, s, h) : undefined,
         canDrag:        canDragFnRef.current      ? (n)       => canDragFnRef.current!(n)            : undefined,
@@ -972,6 +969,7 @@ export function Tree({
         indentSize,
         actionDisplayMode,
         actionCollapseThreshold,
+        treeWidth,
         // 布尔标记：optionsValue 仅在 prop 在 defined ↔ undefined 之间转换时重建
         !!renderTitle, !!getNodeActions, !!canDrag, !!canDrop, !!canRename, !!canDelete, !!canCreate,
         dragEnabled,
@@ -1004,7 +1002,7 @@ export function Tree({
     // ── 渲染 ────────────────────────────────────────────────────────────────
 
     const treeContent = (
-        <div className={`fc-tree ${className}`} style={treeStyle}>
+        <div ref={treeRef} className={`fc-tree ${className}`} style={treeStyle}>
             {searchable && (
                 <div className="fc-tree__search">
                     <input
