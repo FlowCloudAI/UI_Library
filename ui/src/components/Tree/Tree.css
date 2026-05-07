@@ -69,6 +69,19 @@
     padding: var(--fc-space-sm) 0;
 }
 
+.fc-tree__viewport {
+    min-height: 0;
+}
+
+.fc-tree__virtual-list {
+    background: transparent;
+    border-radius: 0;
+}
+
+.fc-tree__virtual-list .fc-virtual-list__item {
+    overflow: visible;
+}
+
 .fc-tree__empty {
     padding: var(--fc-space-md);
     text-align: center;

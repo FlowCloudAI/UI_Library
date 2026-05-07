@@ -12,6 +12,8 @@ interface VirtualListProps<T = any> {
     itemHeight: number;
     /** 渲染函数 */
     renderItem: (item: T, index: number) => React.ReactNode;
+    /** 稳定 key 生成函数；未提供时回退为 index。 */
+    getKey?: (item: T, index: number) => React.Key;
     /** 容器类名 */
     className?: string;
     /** 滚动偏移量（预加载区域） */
@@ -37,6 +39,7 @@ export function VirtualList<T>({
                                    height,
                                    itemHeight,
                                    renderItem,
+                                   getKey,
                                    className = '',
                                    overscan = 3,
                                    showScrollbar = true,
@@ -104,7 +107,7 @@ export function VirtualList<T>({
                     {visibleData.map((item, idx) => {
                         const actualIndex = visibleRange.startIndex + idx;
                         return (
-                            <VirtualItem key={actualIndex} height={itemHeight}>
+                            <VirtualItem key={getKey?.(item, actualIndex) ?? actualIndex} height={itemHeight}>
                                 {renderItem(item, actualIndex)}
                             </VirtualItem>
                         );

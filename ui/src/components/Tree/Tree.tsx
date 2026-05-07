@@ -21,8 +21,8 @@ import {
     useSensor,
     useSensors,
 } from '@dnd-kit/core'
-import { RollingBox } from '../Box/RollingBox'
 import { useContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenuContext'
+import { VirtualList } from '../VirtualList/VirtualList'
 
 import { CategoryTreeNode } from './flatToTree'
 import './Tree.css'
@@ -581,6 +581,8 @@ export interface TreeProps {
     actionCollapseThreshold?: number
     colorTokens?: TreeColorTokens
     scrollHeight?: string
+    virtualRowHeight?: number
+    virtualOverscan?: number
     className?: string
     /** 折叠/展开动画时长（秒），默认 0.12 */
     collapseDuration?: number
@@ -614,6 +616,8 @@ export function Tree({
                          actionCollapseThreshold = 208,
                          colorTokens,
                          scrollHeight = '400px',
+                         virtualRowHeight = 34,
+                         virtualOverscan = 8,
                          className = '',
                          collapseDuration = 0.12,
                      }: TreeProps) {
@@ -623,7 +627,9 @@ export function Tree({
     const [editingKey, setEditingKey]     = useState<string | null>(null)
     const [uncontrolledSearchValue, setUncontrolledSearchValue] = useState(defaultSearchValue)
     const treeRef = useRef<HTMLDivElement | null>(null)
+    const listViewportRef = useRef<HTMLDivElement | null>(null)
     const [treeWidth, setTreeWidth] = useState<number | null>(null)
+    const [listViewportHeight, setListViewportHeight] = useState(0)
 
     // 拖拽状态 — 单个对象，一次 setState = 一次渲染
     const [dndState, setDndState] = useState<DndStateValue>({
@@ -680,6 +686,24 @@ export function Tree({
 
         return () => observer.disconnect()
     }, [actionDisplayMode])
+
+    useEffect(() => {
+        const el = listViewportRef.current
+        if (!el) return
+
+        const updateHeight = (height: number) => {
+            setListViewportHeight(prev => Math.round(prev) === Math.round(height) ? prev : height)
+        }
+
+        updateHeight(el.clientHeight)
+        const observer = new ResizeObserver((entries) => {
+            const height = entries[0]?.contentRect.height
+            if (height !== undefined) updateHeight(height)
+        })
+        observer.observe(el)
+
+        return () => observer.disconnect()
+    }, [])
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -910,6 +934,12 @@ export function Tree({
         return rows
     }, [currentExpandedKeys, displayData, editingKey, selectedKey])
 
+    const renderVirtualRow = useCallback((row: TreeVisibleRow) => (
+        <TreeNodeItem row={row} />
+    ), [])
+
+    const getVirtualRowKey = useCallback((row: TreeVisibleRow) => row.node.key, [])
+
     // ── Context 值（分别 memo 化）─────────────────────────────────
 
     const actionsValue = useMemo<TreeActionsValue>(() => ({
@@ -999,18 +1029,26 @@ export function Tree({
                 </div>
             )}
 
-            <RollingBox showThumb="show" style={{ height: scrollHeight }}>
-                <div className="fc-tree__list">
-                    {visibleRows.length === 0 && (
-                        <div className="fc-tree__empty">
-                            {currentSearchValue ? '无匹配分类' : '暂无分类'}
-                        </div>
-                    )}
-                    {visibleRows.map(row => (
-                        <TreeNodeItem key={row.node.key} row={row} />
-                    ))}
-                </div>
-            </RollingBox>
+            <div ref={listViewportRef} className="fc-tree__viewport" style={{ height: scrollHeight }}>
+                {visibleRows.length === 0 ? (
+                    <div className="fc-tree__empty">
+                        {currentSearchValue ? '无匹配分类' : '暂无分类'}
+                    </div>
+                ) : (
+                    listViewportHeight > 0 && (
+                        <VirtualList
+                            data={visibleRows}
+                            height={listViewportHeight}
+                            itemHeight={virtualRowHeight}
+                            renderItem={renderVirtualRow}
+                            getKey={getVirtualRowKey}
+                            overscan={virtualOverscan}
+                            className="fc-tree__virtual-list"
+                            style={{ background: 'transparent', borderRadius: 0 }}
+                        />
+                    )
+                )}
+            </div>
 
             {onCreate && canCreateRoot && (
                 <div className="fc-tree__add-root">
