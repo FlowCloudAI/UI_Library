@@ -26,7 +26,9 @@ export interface FlatToTreeResult {
 export function flatToTree(list: FlatCategory[]): FlatToTreeResult {
     // 构建 id → 节点映射表
     const nodeMap = new Map<string, CategoryTreeNode>()
+    const itemMap = new Map<string, FlatCategory>()
     for (const item of list) {
+        itemMap.set(item.id, item)
         nodeMap.set(item.id, {
             key: item.id,
             title: item.name,
@@ -38,10 +40,65 @@ export function flatToTree(list: FlatCategory[]): FlatToTreeResult {
     const roots: CategoryTreeNode[] = []
     const orphans: CategoryTreeNode[] = []
 
+    type ParentVisitState = 'visiting' | 'valid' | 'invalid'
+    const parentState = new Map<string, ParentVisitState>()
+    const invalidIds = new Set<string>()
+    const parentStack: string[] = []
+    const parentStackIndex = new Map<string, number>()
+
+    const markInvalid = (id: string) => {
+        invalidIds.add(id)
+        parentState.set(id, 'invalid')
+    }
+
+    const resolveParentChain = (id: string): boolean => {
+        const cached = parentState.get(id)
+        if (cached === 'valid') return false
+        if (cached === 'invalid') return true
+
+        const cycleStart = parentStackIndex.get(id)
+        if (cycleStart !== undefined) {
+            for (let i = cycleStart; i < parentStack.length; i++) {
+                markInvalid(parentStack[i])
+            }
+            return true
+        }
+
+        const item = itemMap.get(id)
+        if (!item) return true
+
+        parentState.set(id, 'visiting')
+        parentStackIndex.set(id, parentStack.length)
+        parentStack.push(id)
+
+        let invalidParent = false
+        if (item.parent_id !== null) {
+            invalidParent = !itemMap.has(item.parent_id) || resolveParentChain(item.parent_id)
+        }
+
+        parentStack.pop()
+        parentStackIndex.delete(id)
+
+        if (invalidParent) {
+            markInvalid(id)
+            return true
+        }
+
+        parentState.set(id, 'valid')
+        return false
+    }
+
+    for (const item of list) {
+        resolveParentChain(item.id)
+    }
+
     for (const item of list) {
         const node = nodeMap.get(item.id)!
         if (item.parent_id === null) {
             roots.push(node)
+        } else if (invalidIds.has(item.id)) {
+            // 缺失父节点、自引用、环以及追溯到异常父链的节点均按孤立节点返回。
+            orphans.push(node)
         } else if (nodeMap.has(item.parent_id)) {
             nodeMap.get(item.parent_id)!.children.push(node)
         } else {
@@ -66,7 +123,8 @@ export function flatToTree(list: FlatCategory[]): FlatToTreeResult {
 export function findNodeInfo(
     nodes: CategoryTreeNode[],
     key: string,
-    parent: CategoryTreeNode | null = null
+    parent: CategoryTreeNode | null = null,
+    visited: Set<string> = new Set()
 ): {
     node: CategoryTreeNode
     parent: CategoryTreeNode | null
@@ -74,9 +132,11 @@ export function findNodeInfo(
     index: number
 } | null {
     for (let i = 0; i < nodes.length; i++) {
+        if (visited.has(nodes[i].key)) continue
+        visited.add(nodes[i].key)
         if (nodes[i].key === key)
             return { node: nodes[i], parent, siblings: nodes, index: i }
-        const found = findNodeInfo(nodes[i].children, key, nodes[i])
+        const found = findNodeInfo(nodes[i].children, key, nodes[i], visited)
         if (found) return found
     }
     return null
@@ -90,7 +150,12 @@ export function isDescendantOf(
 ): boolean {
     const info = findNodeInfo(roots, ancestorKey)
     if (!info) return false
+    const visited = new Set<string>()
     const check = (children: CategoryTreeNode[]): boolean =>
-        children.some(n => n.key === targetKey || check(n.children))
+        children.some(n => {
+            if (visited.has(n.key)) return false
+            visited.add(n.key)
+            return n.key === targetKey || check(n.children)
+        })
     return check(info.node.children)
 }
