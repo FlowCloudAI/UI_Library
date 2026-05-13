@@ -27,6 +27,9 @@ export interface TeraEditorProps {
     onChange: (value: string) => void;
     height?: number | string;
     minHeight?: number;
+    fontFamily?: string;
+    fontSize?: number;
+    lineHeight?: number;
     placeholder?: string;
     readOnly?: boolean;
     className?: string;

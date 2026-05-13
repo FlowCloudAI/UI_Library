@@ -4,6 +4,48 @@ import * as React from 'react'
 type SliderValue = number | [number, number]
 type SliderOrientation = 'horizontal' | 'vertical'
 
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production')
+}
+
+function warnSlider(message: string): void {
+    if (isDevelopmentRuntime()) {
+        console.warn(`[flowcloudai-ui][Slider] ${message}`)
+    }
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value))
+}
+
+function normalizeSliderConfig(min: number, max: number, step: number) {
+    const safeMin = Number.isFinite(min) ? min : 0
+    let safeMax = Number.isFinite(max) ? max : 100
+    const safeStep = Number.isFinite(step) && step > 0 ? step : 1
+
+    if (safeMax <= safeMin) {
+        safeMax = safeMin + safeStep
+    }
+
+    return {safeMin, safeMax, safeStep}
+}
+
+function normalizeSliderValue(value: SliderValue, range: boolean, min: number, max: number): SliderValue {
+    if (range) {
+        const tuple = Array.isArray(value)
+            ? value
+            : [min, Number.isFinite(value) ? value : max]
+        const start = clampNumber(Number.isFinite(tuple[0]) ? tuple[0] : min, min, max)
+        const end = clampNumber(Number.isFinite(tuple[1]) ? tuple[1] : max, min, max)
+        return [Math.min(start, end), Math.max(start, end)]
+    }
+
+    const singleValue = Array.isArray(value) ? value[1] : value
+    return clampNumber(Number.isFinite(singleValue) ? singleValue : min, min, max)
+}
+
 interface SliderProps {
     value?: SliderValue
     defaultValue?: SliderValue
@@ -62,11 +104,45 @@ export function Slider({
         return () => { dragCleanupRef.current?.() }
     }, [])
 
-    const initialValue = defaultValue ?? (range ? [min, max] : min)
+    const {safeMin, safeMax, safeStep} = React.useMemo(
+        () => normalizeSliderConfig(min, max, step),
+        [min, max, step],
+    )
+
+    React.useEffect(() => {
+        if (!Number.isFinite(min)) warnSlider('min 不是有限数字，已回退为 0。')
+        if (!Number.isFinite(max)) warnSlider('max 不是有限数字，已回退为 100。')
+        if (Number.isFinite(min) && Number.isFinite(max) && max <= min) {
+            warnSlider('max 必须大于 min，已使用安全范围渲染。')
+        }
+        if (!Number.isFinite(step) || step <= 0) warnSlider('step 必须大于 0，已回退为 1。')
+    }, [max, min, step])
+
+    React.useEffect(() => {
+        if (range && controlledValue !== undefined && !Array.isArray(controlledValue)) {
+            warnSlider('range=true 时 value 应传入 [number, number]，已临时归一化。')
+        }
+    }, [controlledValue, range])
+
+    React.useEffect(() => {
+        if (range && defaultValue !== undefined && !Array.isArray(defaultValue)) {
+            warnSlider('range=true 时 defaultValue 应传入 [number, number]，已临时归一化。')
+        }
+    }, [defaultValue, range])
+
+    const initialValue = React.useMemo(
+        () => normalizeSliderValue(defaultValue ?? (range ? [safeMin, safeMax] : safeMin), range, safeMin, safeMax),
+        [defaultValue, range, safeMax, safeMin],
+    )
     const [internalValue, setInternalValue] = React.useState<SliderValue>(initialValue)
 
     const isControlled = controlledValue !== undefined
-    const currentValue = isControlled ? controlledValue : internalValue
+    const currentValue = normalizeSliderValue(
+        isControlled ? controlledValue : internalValue,
+        range,
+        safeMin,
+        safeMax,
+    )
 
     // 将 props 映射为 CSS 变量，过滤 undefined
     const colorVars: Record<string, string | undefined> = {
@@ -90,18 +166,20 @@ export function Slider({
     const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style }
 
     const getPercent = (val: number) =>
-        Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100))
+        Math.max(0, Math.min(100, ((val - safeMin) / (safeMax - safeMin)) * 100))
 
     const getValueFromPercent = (percent: number) => {
-        const raw = min + (percent / 100) * (max - min)
-        const stepped = Math.round(raw / step) * step
-        return Math.max(min, Math.min(max, stepped))
+        const raw = safeMin + (percent / 100) * (safeMax - safeMin)
+        const stepped = safeMin + Math.round((raw - safeMin) / safeStep) * safeStep
+        return Math.max(safeMin, Math.min(safeMax, stepped))
     }
 
     const handleMove = React.useCallback((clientX: number, clientY: number, activeIndex: number) => {
         if (!trackRef.current || disabled) return
 
         const rect = trackRef.current.getBoundingClientRect()
+        const trackSize = orientation === 'horizontal' ? rect.width : rect.height
+        if (trackSize <= 0) return
         const percent = orientation === 'horizontal'
             ? ((clientX - rect.left) / rect.width) * 100
             : ((rect.bottom - clientY) / rect.height) * 100
@@ -120,7 +198,7 @@ export function Slider({
 
         if (!isControlled) setInternalValue(nextValue)
         onChange?.(nextValue)
-    }, [disabled, orientation, range, currentValue, isControlled, onChange, min, max, step])
+    }, [disabled, orientation, range, currentValue, isControlled, onChange, safeMax, safeMin, safeStep])
 
     const startDrag = (index: number, clientX: number, clientY: number) => {
         if (disabled) return
@@ -172,7 +250,7 @@ export function Slider({
 
     const [startVal, endVal] = range
         ? (currentValue as [number, number])
-        : [min, currentValue as number]
+        : [safeMin, currentValue as number]
 
     const startPercent = getPercent(startVal)
     const endPercent = getPercent(endVal)

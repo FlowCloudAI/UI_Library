@@ -128,7 +128,6 @@ export const demoForceLayoutProvider: LayoutProvider = {
         }
 
         const nodeOrigin = request.nodeOrigin || [0, 0]
-        const nodeById = new Map(request.nodes.map((node) => [node.id, node]))
         const degreeMap = new Map(request.nodes.map((node) => [node.id, 0]))
 
         request.edges.forEach((edge) => {

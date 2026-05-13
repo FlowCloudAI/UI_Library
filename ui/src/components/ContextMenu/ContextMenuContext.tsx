@@ -14,6 +14,7 @@ export type ContextMenuAction = {
 };
 
 export type ContextMenuItem = ContextMenuAction | ContextMenuDivider;
+export type ContextMenuTriggerEvent = Pick<MouseEvent, "clientX" | "clientY" | "preventDefault" | "stopPropagation">;
 
 /* ---- 内部状态 ---- */
 type MenuState = {
@@ -25,7 +26,7 @@ type MenuState = {
 
 /* ---- Context ---- */
 const ContextMenuContext = createContext<{
-    showContextMenu: (e: MouseEvent, items: ContextMenuItem[]) => void;
+    showContextMenu: (e: ContextMenuTriggerEvent, items: ContextMenuItem[]) => void;
 }>({
     showContextMenu: () => {},
 });
@@ -46,12 +47,13 @@ export function ContextMenuProvider({
     hoverBackground,
 }: ContextMenuProviderProps) {
     const MENU_CURSOR_OVERLAP = 2;
+    const isBrowser = typeof window !== "undefined";
     const [menu, setMenu] = useState<MenuState>({
         visible: false, x: 0, y: 0, items: [],
     });
     const menuRef = useRef<HTMLUListElement>(null);
 
-    const showContextMenu = (e: MouseEvent, items: ContextMenuItem[]) => {
+    const showContextMenu = (e: ContextMenuTriggerEvent, items: ContextMenuItem[]) => {
         e.preventDefault();
         e.stopPropagation();
         setMenu({ visible: true, x: e.clientX, y: e.clientY, items });
@@ -63,14 +65,17 @@ export function ContextMenuProvider({
     useClickOutside(menuRef, hide, menu.visible);
 
     useEffect(() => {
-        if (!menu.visible) return;
+        if (!menu.visible || !isBrowser) return;
         const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") hide(); };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [menu.visible]);
+    }, [isBrowser, menu.visible]);
 
     /* 防止菜单超出视口 */
     const getPosition = (): CSSProperties => {
+        if (!menu.visible || !isBrowser) {
+            return { left: menu.x, top: menu.y };
+        }
         const W = window.innerWidth;
         const H = window.innerHeight;
         const menuW = 180;
@@ -89,7 +94,7 @@ export function ContextMenuProvider({
         "--ctx-border":        borderColor,
         "--ctx-item-hover-bg": hoverBackground,
     };
-    const overrideStyle: CSSProperties = { ...getPosition() };
+    const overrideStyle: CSSProperties = { ...(menu.visible ? getPosition() : {}) };
     for (const [k, v] of Object.entries(colorVars)) {
         if (v !== undefined) (overrideStyle as any)[k] = v;
     }

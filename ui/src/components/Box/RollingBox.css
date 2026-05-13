@@ -39,6 +39,14 @@
     min-width: max-content;
 }
 
+.fc-roll--both {
+    overflow: auto;
+}
+
+.fc-roll--none {
+    overflow: hidden;
+}
+
 /* ---------- 滚动条尺寸（仅 Webkit 生效，Firefox 统一 thin） ---------- */
 .fc-roll--size-thin  { --roll-size: 0.5rem; }
 .fc-roll--size-thick { --roll-size: 0.6rem; }

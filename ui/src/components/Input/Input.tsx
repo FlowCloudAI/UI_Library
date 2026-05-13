@@ -6,6 +6,12 @@ type InputSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 type InputStatus = 'default' | 'error' | 'warning' | 'success';
 type InputRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
+
 interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix' | 'onChange'> {
     size?: InputSize;
     status?: InputStatus;
@@ -18,7 +24,12 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
     addonBefore?: React.ReactNode;
     addonAfter?: React.ReactNode;
     helperText?: string;
+    /** 推荐使用的值变更回调。 */
+    onValueChange?: (value: string) => void;
+    /** @deprecated 保留兼容，推荐改用 onValueChange。 */
     onChange?: (value: string) => void;
+    /** 在数字输入框中显示可控的加减按钮，默认开启。 */
+    showNumberStepper?: boolean;
     onClear?: () => void;
 }
 
@@ -37,24 +48,76 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
                                                                          type: initialType = 'text',
                                                                          value,
                                                                          defaultValue,
+                                                                         onValueChange,
                                                                          onChange,
+                                                                         showNumberStepper = true,
                                                                          onClear,
+                                                                         step = 1,
+                                                                         min,
+                                                                         max,
                                                                          disabled,
                                                                          ...props
                                                                      }, ref) => {
     const [type, setType] = React.useState(initialType);
     const [internalValue, setInternalValue] = React.useState(defaultValue || '');
+    const warnedLegacyOnChangeRef = React.useRef(false);
     const isControlled = value !== undefined;
     const currentValue = isControlled ? value : internalValue;
+    const currentValueText = (currentValue ?? '').toString();
+    const isNumberType = initialType === 'number';
+    const numberStep = (() => {
+        const parsed = typeof step === 'number' ? step : Number.parseFloat(String(step));
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    })();
+    const numberMin = (() => {
+        if (min === undefined) return undefined;
+        const parsed = typeof min === 'number' ? min : Number.parseFloat(String(min));
+        return Number.isFinite(parsed) ? parsed : undefined;
+    })();
+    const numberMax = (() => {
+        if (max === undefined) return undefined;
+        const parsed = typeof max === 'number' ? max : Number.parseFloat(String(max));
+        return Number.isFinite(parsed) ? parsed : undefined;
+    })();
+    const numberScale = String(numberStep).includes('.') ? String(numberStep).split('.')[1].length : 0;
+    const showStepper = isNumberType && showNumberStepper;
+    const clampNumberValue = (rawValue: number): number => {
+        if (numberMin !== undefined) rawValue = Math.max(rawValue, numberMin);
+        if (numberMax !== undefined) rawValue = Math.min(rawValue, numberMax);
+        return rawValue;
+    };
+    const normalizeNumberValue = (rawValue: number): string => {
+        const fixed = numberScale > 0 ? rawValue.toFixed(numberScale) : String(Math.round(rawValue));
+        return fixed.replace(/\.?0+$/, '');
+    };
+    const handleNumberStep = (delta: number) => {
+        if (!showStepper || disabled) return;
+        const parsedCurrent = Number.parseFloat(currentValueText);
+        const baseValue = Number.isFinite(parsedCurrent) ? parsedCurrent : 0;
+        const nextValue = clampNumberValue(baseValue + delta * numberStep);
+        const normalizedNext = normalizeNumberValue(nextValue);
+
+        if (!isControlled) setInternalValue(normalizedNext);
+        onValueChange?.(normalizedNext);
+        onChange?.(normalizedNext);
+    };
+
+    React.useEffect(() => {
+        if (!onChange || warnedLegacyOnChangeRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacyOnChangeRef.current = true;
+        console.warn('[flowcloudai-ui][Input] onChange(value) 已保留兼容，建议改用 onValueChange。');
+    }, [onChange]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!isControlled) setInternalValue(e.target.value);
+        onValueChange?.(e.target.value);
         onChange?.(e.target.value);
     };
 
     const handleClear = () => {
         if (!isControlled) setInternalValue('');
         onClear?.();
+        onValueChange?.('');
         onChange?.('');
     };
 
@@ -72,6 +135,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
         radius && `fc-input--radius-${radius}`,
         (prefix || addonBefore) && 'fc-input--has-prefix',
         (suffix || addonAfter || showClear || showPasswordToggle) && 'fc-input--has-suffix',
+        isNumberType && 'fc-input--number',
         addonBefore && 'fc-input--addon-before',
         addonAfter && 'fc-input--addon-after',
         disabled && 'fc-input--disabled',
@@ -104,7 +168,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
                 {input}
 
                 <span className="fc-input__actions">
-                    {showClear && (
+                {showClear && (
                         <button
                             type="button"
                             className="fc-input__action fc-input__clear"
@@ -113,6 +177,29 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
                         >
                             ✕
                         </button>
+                )}
+
+                    {showStepper && (
+                        <span className="fc-input__stepper">
+                            <button
+                                type="button"
+                                className="fc-input__stepper-btn"
+                                onClick={() => handleNumberStep(1)}
+                                tabIndex={-1}
+                                aria-label="增加"
+                            >
+                                +
+                            </button>
+                            <button
+                                type="button"
+                                className="fc-input__stepper-btn"
+                                onClick={() => handleNumberStep(-1)}
+                                tabIndex={-1}
+                                aria-label="减少"
+                            >
+                                -
+                            </button>
+                        </span>
                     )}
 
                     {showPasswordToggle && (

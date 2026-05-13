@@ -287,12 +287,18 @@ export function Select({
     }
 
     function renderGroupedOptions() {
-        return Object.entries(groupedOptions).map(([group, opts]) => (
-            <div key={group} className="fc-select__group">
-                {group && <div className="fc-select__group-label">{group}</div>}
-                {renderOptions(opts)}
-            </div>
-        ));
+        let baseIndex = 0;
+        return Object.entries(groupedOptions).map(([group, opts]) => {
+            const currentBaseIndex = baseIndex;
+            baseIndex += opts.length;
+
+            return (
+                <div key={group} className="fc-select__group">
+                    {group && <div className="fc-select__group-label">{group}</div>}
+                    {renderOptions(opts, currentBaseIndex)}
+                </div>
+            );
+        });
     }
 
     function highlightText(text: string, highlight: string) {

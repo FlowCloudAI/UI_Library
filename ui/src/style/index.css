@@ -19,11 +19,17 @@
     --fc-gray-100: #F5F5F5;
     --fc-gray-150: #E0E0E0;
     --fc-gray-200: #D0D0D0;
+    --fc-gray-250: #C8C8C8;
+    --fc-gray-300: #D8D8D8;
+    --fc-gray-350: #D4D4D4;
     --fc-gray-400: #B3B3B3;
+    --fc-gray-500: #808080;
     --fc-gray-600: #5F5F5F;
     --fc-gray-700: #3D3D3A;
     --fc-gray-800: #2C2C2C;
     --fc-gray-900: #1A1A1A;
+    --fc-gray-950: #181818;
+    --fc-gray-1000: #000000;
 
     --fc-red-50: #FDEDED;
     --fc-red-100: #FAD0D0;
@@ -63,8 +69,8 @@
     --fc-color-primary-subtle: var(--fc-blue-50);
 
     --fc-color-bg: #FFFFFF;
-    --fc-color-bg-secondary: var(--fc-gray-100);
-    --fc-color-bg-tertiary: var(--fc-gray-200);
+    --fc-color-bg-secondary: #F0EFEF;
+    --fc-color-bg-tertiary: var(--fc-gray-400);
     --fc-color-bg-elevated: #FFFFFF;
     --fc-color-bg-overlay: rgba(0, 0, 0, 0.4);
 

@@ -2,7 +2,7 @@ import React, {forwardRef, useCallback, useImperativeHandle, useLayoutEffect, us
 import "./MarkdownEditor.css";
 import type {ICommand, MDEditorProps, RefMDEditor} from "@uiw/react-md-editor";
 import MDEditor, {commands} from "@uiw/react-md-editor";
-import {useTheme} from "../../ThemeProvider";
+import {useOptionalTheme} from "../../ThemeProvider";
 
 type MarkdownPreviewOptions = MDEditorProps["previewOptions"];
 type MarkdownPreviewRenderer = NonNullable<MDEditorProps["components"]>["preview"];
@@ -146,7 +146,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
         blockquoteBorderColor,
         selectionBackground,
     } = _ref;
-    const { resolvedTheme } = useTheme();
+    const resolvedTheme = useOptionalTheme()?.resolvedTheme ?? "light";
     const editorRef = useRef<RefMDEditor>(null);
 
     useImperativeHandle(ref, () => ({

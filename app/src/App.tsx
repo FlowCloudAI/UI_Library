@@ -24,6 +24,7 @@ import { TreeDemo }           from './demos/TreeDemo'
 import TimeDemo               from './demos/TimeDemo'
 import { RelationGraphDemo }  from './demos/RelationGraphDemo'
 import { TeraEditorDemo } from './demos/TeraEditorDemo'
+import { SemanticTokensDemo } from './demos/SemanticTokensDemo'
 
 /* ===== 导航注册表 ===== */
 
@@ -36,6 +37,7 @@ const NAV_GROUPS: NavGroup[] = [
             { key: 'Button',  label: 'Button' },
             { key: 'Check',   label: 'CheckButton' },
             { key: 'Alert',   label: 'Alert' },
+            { key: 'SemanticTokens', label: '语义令牌' },
         ],
     },
     {
@@ -83,6 +85,7 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Button:      ButtonDemo,
     Check:       CheckButtonDemo,
     Alert:       AlertDemo,
+    SemanticTokens: SemanticTokensDemo,
     Input:       InputDemo,
     Slider:      SliderDemo,
     Select:      SelectDemo,

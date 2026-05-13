@@ -63,6 +63,11 @@ export interface LayoutResponse {
  */
 export type LayoutFunction = (request: LayoutRequest) => Promise<LayoutResponse>;
 
+/** 可复用的布局提供者包装类型，适合在 demo 或宿主侧组织多套布局实现。 */
+export interface LayoutProvider {
+    computeLayout: LayoutFunction;
+}
+
 // ─── 组件输入类型 ────────────────────────────────────────────────────
 
 /** 宿主应用程序提供的节点数据。 */

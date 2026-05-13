@@ -6,31 +6,90 @@ export const TERA_EDITOR_DARK_THEME = 'fc-tera-editor-dark';
 
 let languageReady = false;
 
+// 这里使用的是库内设计令牌对应的固定色值映射。
+// Monaco theme 不能直接读取 CSS 变量，因此需要在这里复制一份与
+// `ui/src/style/index.css` 语义令牌一致的颜色方案。
+const LIGHT_THEME_COLORS = {
+    primary: '378ADD',          // --fc-color-primary
+    primaryHover: '185FA5',     // --fc-color-primary-hover
+    primarySubtle: 'EBF4FD',    // --fc-color-primary-subtle
+    text: '1A1A1A',             // --fc-color-text
+    textSecondary: '5F5F5F',    // --fc-color-text-secondary
+    textTertiary: 'B3B3B3',     // --fc-color-text-tertiary
+    background: 'FFFFFF',       // --fc-color-bg-elevated
+    backgroundSecondary: 'F5F5F5', // --fc-color-bg-secondary
+    border: 'D0D0D0',           // --fc-color-border
+    borderLight: 'E0E0E0',      // --fc-color-border-light
+    danger: 'E24B4A',           // --fc-color-danger
+    success: '639922',          // --fc-color-success
+    warning: 'D68000',          // --fc-color-warning
+    info: '378ADD',             // --fc-color-info
+    purple: '7C5CE8',           // --fc-color-purple
+    teal: '00A3A3',             // --fc-color-teal
+    orange: 'E8711A',           // --fc-color-orange
+} as const;
+
+const DARK_THEME_COLORS = {
+    primary: '5DA4E8',          // --fc-color-primary（dark）
+    primaryHover: '93C2F0',     // --fc-color-primary-hover（dark）
+    primarySubtle: '1A3044',    // 近似 --fc-color-primary-subtle（dark）
+    text: 'E8E8E6',             // --fc-color-text（dark）
+    textSecondary: '9C9A92',    // --fc-color-text-secondary（dark）
+    textTertiary: '636158',     // --fc-color-text-tertiary（dark）
+    background: '282828',       // --fc-color-bg-elevated（dark）
+    backgroundSecondary: '1A1A1A', // --fc-color-bg-secondary（dark）
+    border: '333330',           // --fc-color-border（dark）
+    borderLight: '2A2A28',      // --fc-color-border-light（dark）
+    danger: 'F06060',           // --fc-color-danger（dark）
+    success: '7EBB38',          // --fc-color-success（dark）
+    warning: 'F0A030',          // --fc-color-warning（dark）
+    info: '5DA4E8',             // --fc-color-info（dark）
+    purple: 'A080F0',           // --fc-color-purple（dark）
+    teal: '20C8C8',             // --fc-color-teal（dark）
+    orange: 'F08840',           // --fc-color-orange（dark）
+} as const;
+
 function defineThemes(monaco: typeof Monaco) {
+    const light = LIGHT_THEME_COLORS;
+    const dark = DARK_THEME_COLORS;
+
     monaco.editor.defineTheme(TERA_EDITOR_LIGHT_THEME, {
         base: 'vs',
         inherit: true,
         rules: [
-            {token: 'tera.comment', foreground: '6B7280'},
-            {token: 'tera.block.delimiter', foreground: '7C3AED'},
-            {token: 'tera.expression.delimiter', foreground: '0F766E'},
-            {token: 'tera.keyword', foreground: '7C3AED', fontStyle: 'bold'},
-            {token: 'tera.identifier', foreground: '1F2937'},
-            {token: 'tera.operator', foreground: 'C2410C'},
-            {token: 'tera.number', foreground: '0F766E'},
-            {token: 'tera.string', foreground: '047857'},
-            {token: 'tag', foreground: '185FA5'},
-            {token: 'attribute.name', foreground: '9A3412'},
-            {token: 'attribute.value', foreground: '047857'},
+            {token: 'tera.comment', foreground: light.textTertiary},
+            {token: 'tera.block.delimiter', foreground: light.purple},
+            {token: 'tera.expression.delimiter', foreground: light.teal},
+            {token: 'tera.keyword', foreground: light.purple, fontStyle: 'bold'},
+            {token: 'tera.identifier', foreground: light.text},
+            {token: 'tera.operator', foreground: light.orange},
+            {token: 'tera.number', foreground: light.teal},
+            {token: 'tera.string', foreground: light.success},
+            {token: 'tag', foreground: light.primaryHover},
+            {token: 'attribute.name', foreground: light.warning},
+            {token: 'attribute.value', foreground: light.success},
         ],
         colors: {
-            'editor.background': '#FFFFFF',
-            'editor.foreground': '#1A1A1A',
-            'editorLineNumber.foreground': '#9CA3AF',
-            'editorLineNumber.activeForeground': '#5F5F5F',
-            'editorIndentGuide.background1': '#E5E7EB',
-            'editor.selectionBackground': '#DBEAFE',
-            'editor.inactiveSelectionBackground': '#E5EEF8',
+            'editor.background': `#${light.background}`,
+            'editor.foreground': `#${light.text}`,
+            'editorLineNumber.foreground': `#${light.textTertiary}`,
+            'editorIndentGuide.background1': `#${light.borderLight}`,
+            'editor.selectionBackground': `#${light.primarySubtle}`,
+            'editor.inactiveSelectionBackground': `#${light.backgroundSecondary}`,
+            'editorCursor.foreground': `#${light.primary}`,
+            'editor.lineHighlightBackground': `#${light.backgroundSecondary}`,
+            'editorLineNumber.activeForeground': `#${light.primaryHover}`,
+            'editorBracketMatch.border': `#${light.primary}`,
+            'editorGutter.background': `#${light.background}`,
+            'editorOverviewRuler.border': `#${light.border}`,
+            'editorError.foreground': `#${light.danger}`,
+            'editorWarning.foreground': `#${light.warning}`,
+            'editorInfo.foreground': `#${light.info}`,
+            'editorHoverWidget.background': `#${light.background}`,
+            'editorHoverWidget.foreground': `#${light.text}`,
+            'editorHoverWidget.border': `#${light.borderLight}`,
+            'editorHoverWidget.statusBarBackground': `#${light.backgroundSecondary}`,
+            'editorHoverWidget.highlightForeground': `#${light.primary}`,
         },
     });
 
@@ -38,26 +97,39 @@ function defineThemes(monaco: typeof Monaco) {
         base: 'vs-dark',
         inherit: true,
         rules: [
-            {token: 'tera.comment', foreground: '6B7280'},
-            {token: 'tera.block.delimiter', foreground: 'C084FC'},
-            {token: 'tera.expression.delimiter', foreground: '5EEAD4'},
-            {token: 'tera.keyword', foreground: 'C084FC', fontStyle: 'bold'},
-            {token: 'tera.identifier', foreground: 'E5E7EB'},
-            {token: 'tera.operator', foreground: 'FDBA74'},
-            {token: 'tera.number', foreground: '5EEAD4'},
-            {token: 'tera.string', foreground: '86EFAC'},
-            {token: 'tag', foreground: '7DD3FC'},
-            {token: 'attribute.name', foreground: 'FDBA74'},
-            {token: 'attribute.value', foreground: '86EFAC'},
+            {token: 'tera.comment', foreground: dark.textTertiary},
+            {token: 'tera.block.delimiter', foreground: dark.purple},
+            {token: 'tera.expression.delimiter', foreground: dark.teal},
+            {token: 'tera.keyword', foreground: dark.purple, fontStyle: 'bold'},
+            {token: 'tera.identifier', foreground: dark.text},
+            {token: 'tera.operator', foreground: dark.orange},
+            {token: 'tera.number', foreground: dark.teal},
+            {token: 'tera.string', foreground: dark.success},
+            {token: 'tag', foreground: dark.primary},
+            {token: 'attribute.name', foreground: dark.warning},
+            {token: 'attribute.value', foreground: dark.success},
         ],
         colors: {
-            'editor.background': '#111827',
-            'editor.foreground': '#E5E7EB',
-            'editorLineNumber.foreground': '#6B7280',
-            'editorLineNumber.activeForeground': '#D1D5DB',
-            'editorIndentGuide.background1': '#1F2937',
-            'editor.selectionBackground': '#1E40AF55',
-            'editor.inactiveSelectionBackground': '#1F293755',
+            'editor.background': `#${dark.background}`,
+            'editor.foreground': `#${dark.text}`,
+            'editorLineNumber.foreground': `#${dark.textTertiary}`,
+            'editorLineNumber.activeForeground': `#${dark.primary}`,
+            'editorIndentGuide.background1': `#${dark.borderLight}`,
+            'editor.selectionBackground': `#${dark.primarySubtle}`,
+            'editor.inactiveSelectionBackground': `#${dark.backgroundSecondary}`,
+            'editorCursor.foreground': `#${dark.primaryHover}`,
+            'editor.lineHighlightBackground': `#${dark.backgroundSecondary}`,
+            'editorBracketMatch.border': `#${dark.primary}`,
+            'editorGutter.background': `#${dark.background}`,
+            'editorOverviewRuler.border': `#${dark.border}`,
+            'editorError.foreground': `#${dark.danger}`,
+            'editorWarning.foreground': `#${dark.warning}`,
+            'editorInfo.foreground': `#${dark.info}`,
+            'editorHoverWidget.background': `#${dark.background}`,
+            'editorHoverWidget.foreground': `#${dark.text}`,
+            'editorHoverWidget.border': `#${dark.borderLight}`,
+            'editorHoverWidget.statusBarBackground': `#${dark.backgroundSecondary}`,
+            'editorHoverWidget.highlightForeground': `#${dark.primary}`,
         },
     });
 }

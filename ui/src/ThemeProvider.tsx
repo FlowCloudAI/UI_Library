@@ -17,6 +17,10 @@ export function useTheme() {
     return ctx
 }
 
+export function useOptionalTheme() {
+    return useContext(ThemeContext)
+}
+
 interface Props {
     children: ReactNode
     defaultTheme?: Theme

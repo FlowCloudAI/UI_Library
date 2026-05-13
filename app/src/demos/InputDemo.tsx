@@ -21,6 +21,12 @@ export function InputDemo() {
                 </div>
             </div>
             <div className="demo-section">
+                <h4>数字输入</h4>
+                <div className="demo-col" style={{ maxWidth: 400 }}>
+                    <Input type="number" min={0} max={20} step={1} defaultValue="8" />
+                </div>
+            </div>
+            <div className="demo-section">
                 <h4>尺寸</h4>
                 <div className="demo-col" style={{ maxWidth: 400 }}>
                     <Input size="sm" placeholder="小 (sm)"/>

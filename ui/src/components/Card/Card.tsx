@@ -40,7 +40,7 @@ export const Card = ({
     hoverContentAreaRatio = 0.7,
     expandContentOnHover = false,
     overlayStartOpacity = 0,
-    overlayEndOpacity = 0.92,
+    overlayEndOpacity = 0.98,
     tag,
     className = '',
     style,
@@ -52,10 +52,8 @@ export const Card = ({
     const hasMedia = Boolean(imageSlot || image);
     const safeOverlayStartOpacity = Math.min(1, Math.max(0, overlayStartOpacity));
     const safeOverlayEndOpacity = Math.min(1, Math.max(0, overlayEndOpacity));
-    const overlayMidOpacity = Math.min(
-        1,
-        Math.max(safeOverlayStartOpacity, (safeOverlayStartOpacity + safeOverlayEndOpacity) / 2)
-    );
+    const overlayLowOpacity = safeOverlayStartOpacity + (safeOverlayEndOpacity - safeOverlayStartOpacity) * 0.18;
+    const overlayMidOpacity = safeOverlayStartOpacity + (safeOverlayEndOpacity - safeOverlayStartOpacity) * 0.56;
     const contentRef = useRef<HTMLDivElement>(null);
     const titleRef = useRef<HTMLDivElement>(null);
     const descriptionRef = useRef<HTMLDivElement>(null);
@@ -86,6 +84,7 @@ export const Card = ({
         '--fc-card-media-height':
             typeof imageHeight === 'number' ? `${imageHeight}px` : imageHeight,
         '--fc-card-overlay-start-opacity': String(safeOverlayStartOpacity),
+        '--fc-card-overlay-low-opacity': String(overlayLowOpacity),
         '--fc-card-overlay-mid-opacity': String(overlayMidOpacity),
         '--fc-card-overlay-end-opacity': String(safeOverlayEndOpacity),
         ...style,

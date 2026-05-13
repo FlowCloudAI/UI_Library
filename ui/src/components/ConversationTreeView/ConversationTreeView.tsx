@@ -42,7 +42,7 @@ function buildTree(nodes: ConversationNode[]): Map<number, TreeNode> {
     map.set(n.id, { ...n, children: [] });
   }
   for (const n of nodes) {
-    if (n.parent !== null) {
+    if (n.parent !== null && n.parent !== n.id) {
       const parent = map.get(n.parent);
       if (parent) parent.children.push(n.id);
     }
@@ -53,7 +53,10 @@ function buildTree(nodes: ConversationNode[]): Map<number, TreeNode> {
 function pathToRoot(tree: Map<number, TreeNode>, nodeId: number | null): number[] {
   const path: number[] = [];
   let cur = nodeId;
+  const visited = new Set<number>();
   while (cur !== null) {
+    if (visited.has(cur)) break;
+    visited.add(cur);
     path.unshift(cur);
     const node = tree.get(cur);
     cur = node?.parent ?? null;

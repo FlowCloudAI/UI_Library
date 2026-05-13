@@ -13,6 +13,7 @@ export function CardDemo() {
                         variant="shadow"
                         hoverable
                         expandContentOnHover
+                        imageHeight={340}
                         contentAreaRatio={0.6}
                         hoverContentAreaRatio={0.9}
                         overlayStartOpacity={0}
@@ -25,6 +26,7 @@ export function CardDemo() {
                         variant="bordered"
                         hoverable
                         expandContentOnHover
+                        imageHeight={300}
                         contentAreaRatio={0.22}
                         hoverContentAreaRatio={0.8}
                         overlayStartOpacity={0}
@@ -38,6 +40,7 @@ export function CardDemo() {
                         variant="shadow"
                         hoverable
                         expandContentOnHover
+                        imageHeight={340}
                         contentAreaRatio={0.12}
                         hoverContentAreaRatio={0.8}
                         overlayStartOpacity={0}

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "install:local": "npm install && install-local --save ../ui"
+    "install:local": "npm install && npm install --no-save ../ui"
   },
   "dependencies": {
     "@pixi/react": "^8.0.5",

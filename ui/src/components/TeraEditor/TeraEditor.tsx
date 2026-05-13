@@ -72,6 +72,9 @@ export const TeraEditor = forwardRef<TeraEditorRef, TeraEditorProps>(function Te
     onChange,
     height,
     minHeight = 360,
+    fontFamily = 'var(--fc-font-family)',
+    fontSize = 14,
+    lineHeight = 22,
     placeholder = '请输入 Tera 模板...',
     readOnly = false,
     className,
@@ -175,9 +178,14 @@ export const TeraEditor = forwardRef<TeraEditorRef, TeraEditorProps>(function Te
         lineNumbers: 'on',
         lineDecorationsWidth: 12,
         glyphMargin: false,
+        fontFamily,
+        fontSize,
+        lineHeight,
+        smoothScrolling: true,
         scrollBeyondLastLine: false,
         overviewRulerBorder: false,
         renderValidationDecorations: 'on',
+        fixedOverflowWidgets: true,
         matchBrackets: 'always',
         tabSize: 2,
         insertSpaces: true,
@@ -185,20 +193,26 @@ export const TeraEditor = forwardRef<TeraEditorRef, TeraEditorProps>(function Te
             top: 12,
             bottom: 12,
         },
-    }), [readOnly, showMinimap, wordWrap]);
+    }), [fontFamily, fontSize, lineHeight, readOnly, showMinimap, wordWrap]);
 
     const editorHeight = height ?? minHeight;
     const surfaceStyle: React.CSSProperties = {
         height: typeof editorHeight === 'number' ? `${editorHeight}px` : editorHeight,
         minHeight,
     };
+    const rootStyle: React.CSSProperties = {
+        '--fc-tera-editor-font-family': fontFamily,
+        '--fc-tera-editor-font-size': `${fontSize}px`,
+        '--fc-tera-editor-line-height': `${lineHeight}px`,
+        ...style,
+    } as React.CSSProperties;
     const statusClassName = [
         'fc-tera-editor__status',
         mergedDiagnostics.length > 0 ? 'fc-tera-editor__status--has-problems' : '',
     ].filter(Boolean).join(' ');
 
     return (
-        <div className={['fc-tera-editor', className].filter(Boolean).join(' ')} style={style}>
+        <div className={['fc-tera-editor', className].filter(Boolean).join(' ')} style={rootStyle}>
             <div className="fc-tera-editor__surface" style={surfaceStyle}>
                 {!value && !focused && placeholder && (
                     <div className="fc-tera-editor__placeholder">{placeholder}</div>

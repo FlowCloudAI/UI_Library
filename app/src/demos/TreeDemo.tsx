@@ -36,6 +36,7 @@ export function TreeDemo() {
     const [expandedKeys, setExpandedKeys] = useState<string[]>(['1', '2', '89'])
     const [searchValue, setSearchValue] = useState('')
     const [indentSize, setIndentSize] = useState(20)
+    const [indentationLine, setIndentationLine] = useState(true)
     const [actionDisplayMode, setActionDisplayMode] = useState<'auto' | 'inline' | 'overflow'>('auto')
     const [customColors, setCustomColors] = useState(true)
     const [deleteTarget, setDeleteTarget] = useState<CategoryTreeNode | null>(null)
@@ -328,6 +329,14 @@ export function TreeDemo() {
                     />
                     <span>{indentSize}px</span>
                 </label>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12}}>
+                    <input
+                        type="checkbox"
+                        checked={indentationLine}
+                        onChange={e => setIndentationLine(e.target.checked)}
+                    />
+                    缩进线
+                </label>
                 <label style={{display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12}}>
                     动作模式
                     <select
@@ -366,17 +375,27 @@ export function TreeDemo() {
                     />
                     启用颜色 tokens
                 </label>
+                <span style={{fontSize: 12, color: 'var(--fc-color-text-secondary, #64748b)'}}>
+                    当前示例未传 scrollHeight，Tree 默认填充左侧容器高度
+                </span>
             </div>
             <div style={{
                 display: 'flex',
                 height: 600,
+                minHeight: 0,
                 overflow: 'hidden',
                 border: '1px solid var(--fc-color-border, #e2e8f0)',
                 borderRadius: 8
             }}>
 
                 {/* 导航区 */}
-                <div style={{width: navWidth, flexShrink: 0, overflow: 'hidden'}}>
+                <div style={{
+                    width: navWidth,
+                    flexShrink: 0,
+                    minHeight: 0,
+                    overflow: 'hidden',
+                    display: 'flex',
+                }}>
                     <Tree
                         treeData={roots}
                         selectedKey={selectedKey}
@@ -397,10 +416,10 @@ export function TreeDemo() {
 
                         }}
                         indentSize={indentSize}
+                        indentationLine={indentationLine}
                         actionDisplayMode={actionDisplayMode}
                         actionCollapseThreshold={240}
                         colorTokens={customColorTokens}
-                        scrollHeight="600px"
                         onSelect={(key: SetStateAction<string | undefined>) => {
                             setSelectedKey(key)
                             addLog(`选中 [${key}]`)
@@ -446,6 +465,8 @@ export function TreeDemo() {
                 {/* 内容区 */}
                 <div style={{
                     flex: 1,
+                    minWidth: 0,
+                    minHeight: 0,
                     overflow: 'auto',
                     padding: '12px 16px',
                     fontSize: 13,

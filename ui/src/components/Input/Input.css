@@ -33,6 +33,21 @@
     color: var(--fc-color-text-tertiary);
 }
 
+/* 数字输入：隐藏系统默认加减按钮，改由组件内按钮统一控制 */
+.fc-input--number .fc-input__field[type='number'] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+}
+
+.fc-input--number .fc-input__field[type='number']::-webkit-inner-spin-button,
+.fc-input--number .fc-input__field[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+    width: 0;
+    height: 0;
+}
+
 /* 尺寸 - 调整 padding 使内容区与 wrapper 高度严格对齐 */
 .fc-input--xs .fc-input__wrapper { height: 1.75rem; }
 .fc-input--xs .fc-input__field {
@@ -152,6 +167,49 @@
 .fc-input__action:hover {
     color: var(--fc-color-text);
     background: var(--fc-color-bg-tertiary);
+}
+
+/* 数字输入的自定义加减按钮 */
+.fc-input__stepper {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--fc-color-border-light);
+    margin-right: var(--fc-space-xs);
+    height: 100%;
+}
+
+.fc-input__stepper-btn {
+    width: 1rem;
+    height: 50%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--fc-color-text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    line-height: 1;
+    transition: color var(--fc-transition), background var(--fc-transition);
+}
+
+.fc-input__stepper-btn:hover {
+    color: var(--fc-color-text);
+    background: var(--fc-color-bg-tertiary);
+}
+
+.fc-input__stepper-btn:active {
+    background: var(--fc-color-bg-secondary);
+}
+
+.fc-input__stepper-btn + .fc-input__stepper-btn {
+    border-top: 1px solid var(--fc-color-border-light);
+}
+
+.fc-input--disabled .fc-input__stepper-btn {
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 /* 附加组件 */

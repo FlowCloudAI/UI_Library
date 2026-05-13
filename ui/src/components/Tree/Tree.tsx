@@ -23,13 +23,26 @@ import {
     useSensors,
 } from '@dnd-kit/core'
 import { useContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenuContext'
-import { VirtualList } from '../VirtualList/VirtualList'
+import { VirtualList, type VirtualListVisibleRange } from '../VirtualList/VirtualList'
 
 import { CategoryTreeNode } from './flatToTree'
 import './Tree.css'
 
 export type DropPosition = 'before' | 'after' | 'into'
 export type TreeActionDisplayMode = 'auto' | 'inline' | 'overflow'
+
+export interface TreeVisibleRow {
+    key: string
+    node: CategoryTreeNode
+    level: number
+    isExpanded: boolean
+}
+
+export interface TreeViewportRowsPayload {
+    startIndex: number
+    endIndexExclusive: number
+    rows: TreeVisibleRow[]
+}
 
 export interface TreeColorTokens {
     text?: string
@@ -282,7 +295,16 @@ function normaliseContextMenuItems(items: ContextMenuItem[]): ContextMenuItem[] 
 
 // ── 树节点项（memo — 仅在自身 props 变化时重新渲染）────────────
 
-interface TreeVisibleRow {
+interface TreeRenderRow extends TreeVisibleRow {
+    isSelected: boolean
+    isEditing: boolean
+}
+
+interface TreeNodeItemProps {
+    row: TreeRenderRow
+}
+
+interface TreeNodeItemCoreProps {
     node: CategoryTreeNode
     level: number
     isSelected: boolean
@@ -290,11 +312,41 @@ interface TreeVisibleRow {
     isEditing: boolean
 }
 
-interface TreeNodeItemProps {
-    row: TreeVisibleRow
+function areVisibleRowsEqual(prev: TreeVisibleRow[] | null, next: TreeVisibleRow[]): boolean {
+    if (prev === next) return true
+    if (prev === null || prev.length !== next.length) return false
+
+    for (let i = 0; i < next.length; i += 1) {
+        const prevRow = prev[i]
+        const nextRow = next[i]
+        if (
+            prevRow.key !== nextRow.key
+            || prevRow.node !== nextRow.node
+            || prevRow.level !== nextRow.level
+            || prevRow.isExpanded !== nextRow.isExpanded
+        ) {
+            return false
+        }
+    }
+
+    return true
 }
 
-interface TreeNodeItemCoreProps extends TreeVisibleRow {}
+function areViewportRowsPayloadEqual(
+    prev: TreeViewportRowsPayload | null,
+    next: TreeViewportRowsPayload
+): boolean {
+    if (prev === next) return true
+    if (prev === null) return false
+    if (
+        prev.startIndex !== next.startIndex
+        || prev.endIndexExclusive !== next.endIndexExclusive
+    ) {
+        return false
+    }
+
+    return areVisibleRowsEqual(prev.rows, next.rows)
+}
 
 // 核心：memo 化的重型组件 — 状态来自 props，因此 memo 可以拦截
 const TreeNodeItemCore = memo(function TreeNodeItemCore({
@@ -312,16 +364,29 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
     const canCreateNode = options.createEnabled && (!options.canCreate || options.canCreate(node))
 
     const [localEdit, setLocalEdit] = useState('')
+    const editCommittedRef = useRef(false)
 
     useEffect(() => {
-        if (isEditing) setLocalEdit(node.title)
+        if (isEditing) {
+            editCommittedRef.current = false
+            setLocalEdit(node.title)
+        }
     }, [isEditing, node.title])
+
+    const commitLocalEdit = useCallback(() => {
+        if (editCommittedRef.current) return
+        editCommittedRef.current = true
+        actions.commitEdit(node.key, localEdit).then()
+    }, [actions, node.key, localEdit])
 
     const handleEditKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         e.stopPropagation()
-        if (e.key === 'Enter')  actions.commitEdit(node.key, localEdit).then()
-        if (e.key === 'Escape') actions.cancelEdit()
-    }, [actions, node.key, localEdit])
+        if (e.key === 'Enter') commitLocalEdit()
+        if (e.key === 'Escape') {
+            editCommittedRef.current = true
+            actions.cancelEdit()
+        }
+    }, [actions, commitLocalEdit])
 
     const availableActionWidth = options.actionViewportWidth === null
         ? Number.POSITIVE_INFINITY
@@ -380,8 +445,16 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
         if (hasChildren) {
             next.push(
                 {
+                    key: 'toggle-expand',
+                    label: isExpanded ? '收起' : '展开',
+                    icon: isExpanded ? '▸' : '▾',
+                    onClick: actionHelpers.toggleExpand,
+                    disabled: !hasChildren,
+                    showInline: false,
+                },
+                {
                     key: 'expand',
-                    label: '全部展开',
+                    label: '递归展开',
                     icon: '▾',
                     onClick: actionHelpers.expandSubtree,
                     disabled: !hasChildren,
@@ -389,7 +462,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                 },
                 {
                     key: 'collapse',
-                    label: '全部收起',
+                    label: '递归收起',
                     icon: '▸',
                     onClick: actionHelpers.collapseSubtree,
                     disabled: !hasChildren,
@@ -424,7 +497,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
         }
 
         return next
-    }, [actionHelpers, canCreateNode, canDeleteNode, canRenameNode, hasChildren])
+    }, [actionHelpers, canCreateNode, canDeleteNode, canRenameNode, hasChildren, isExpanded])
 
     const nodeActions = useMemo<TreeActionItem[]>(() => {
         return options.getNodeActions?.(node, renderState, actionHelpers) ?? defaultNodeActions
@@ -502,6 +575,8 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                         onClick={handleItemClick}
                         onContextMenu={isEditing || contextMenuItems.length === 0 ? undefined : openNodeMenu}
                     >
+                        <span className="fc-tree__indent-lines" aria-hidden="true" />
+
                         {/* 拖拽手柄 */}
                         <span
                             className={[
@@ -532,7 +607,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                                 className="fc-tree__edit-input"
                                 value={localEdit}
                                 onChange={e => setLocalEdit(e.target.value)}
-                                onBlur={() => actions.commitEdit(node.key, localEdit)}
+                                onBlur={commitLocalEdit}
                                 onKeyDown={handleEditKeyDown}
                                 onClick={e => e.stopPropagation()}
                             />
@@ -624,6 +699,10 @@ export interface TreeProps {
     expandedKeys?: string[]
     defaultExpandedKeys?: string[]
     onExpandedKeysChange?: (keys: string[]) => void
+    /** 当前树里实际显示出来的行（已应用搜索与展开/折叠） */
+    onVisibleRowsChange?: (rows: TreeVisibleRow[]) => void
+    /** 当前真实视口内可见的行范围与行数据（不含 overscan） */
+    onViewportRowsChange?: (payload: TreeViewportRowsPayload) => void
     searchable?: boolean
     searchValue?: string
     defaultSearchValue?: string
@@ -640,11 +719,14 @@ export interface TreeProps {
     canRename?: (node: CategoryTreeNode) => boolean
     canDelete?: (node: CategoryTreeNode) => boolean
     canCreate?: (node: CategoryTreeNode | null) => boolean
+    /** 是否显示缩进引导线 */
+    indentationLine?: boolean
     indentSize?: number
     actionDisplayMode?: TreeActionDisplayMode
     actionCollapseThreshold?: number
     colorTokens?: TreeColorTokens
-    scrollHeight?: string
+    /** 列表视口显式高度覆盖；未传时默认填充父容器剩余空间 */
+    scrollHeight?: string | number
     virtualRowHeight?: number
     virtualOverscan?: number
     className?: string
@@ -663,6 +745,8 @@ export function Tree({
                          expandedKeys: controlledExpandedKeys,
                          defaultExpandedKeys,
                          onExpandedKeysChange,
+                         onVisibleRowsChange,
+                         onViewportRowsChange,
                          searchable = false,
                          searchValue: controlledSearchValue,
                          defaultSearchValue = '',
@@ -675,11 +759,12 @@ export function Tree({
                          canRename,
                          canDelete,
                          canCreate,
+                         indentationLine = false,
                          indentSize = 20,
                          actionDisplayMode = 'auto',
                          actionCollapseThreshold = 208,
                          colorTokens,
-                         scrollHeight = '400px',
+                         scrollHeight,
                          virtualRowHeight = 34,
                          virtualOverscan = 8,
                          className = '',
@@ -694,6 +779,11 @@ export function Tree({
     const listViewportRef = useRef<HTMLDivElement | null>(null)
     const [treeWidth, setTreeWidth] = useState<number | null>(null)
     const [listViewportHeight, setListViewportHeight] = useState(0)
+    const [viewportRange, setViewportRange] = useState<VirtualListVisibleRange | null>(null)
+    const lastVisibleRowsRef = useRef<TreeVisibleRow[] | null>(null)
+    const lastVisibleRowsCallbackRef = useRef<typeof onVisibleRowsChange>(undefined)
+    const lastViewportPayloadRef = useRef<TreeViewportRowsPayload | null>(null)
+    const lastViewportRowsCallbackRef = useRef<typeof onViewportRowsChange>(undefined)
 
     const dragVisualStoreRef = useRef<DragVisualStore | null>(null)
     if (dragVisualStoreRef.current === null) {
@@ -978,11 +1068,10 @@ export function Tree({
             for (const node of nodes) {
                 const isExpanded = currentExpandedKeys.has(node.key)
                 rows.push({
+                    key: node.key,
                     node,
                     level,
                     isExpanded,
-                    isSelected: selectedKey === node.key,
-                    isEditing: editingKey === node.key,
                 })
 
                 if (isExpanded && node.children.length > 0) {
@@ -993,13 +1082,89 @@ export function Tree({
 
         visit(displayData, 0)
         return rows
-    }, [currentExpandedKeys, displayData, editingKey, selectedKey])
+    }, [currentExpandedKeys, displayData])
 
-    const renderVirtualRow = useCallback((row: TreeVisibleRow) => (
+    const renderRows = useMemo<TreeRenderRow[]>(() => {
+        return visibleRows.map(row => ({
+            ...row,
+            isSelected: selectedKey === row.key,
+            isEditing: editingKey === row.key,
+        }))
+    }, [editingKey, selectedKey, visibleRows])
+
+    useEffect(() => {
+        const callbackChanged = lastVisibleRowsCallbackRef.current !== onVisibleRowsChange
+        lastVisibleRowsCallbackRef.current = onVisibleRowsChange
+
+        if (!onVisibleRowsChange) {
+            lastVisibleRowsRef.current = null
+            return
+        }
+
+        if (!callbackChanged && areVisibleRowsEqual(lastVisibleRowsRef.current, visibleRows)) return
+
+        lastVisibleRowsRef.current = visibleRows
+        onVisibleRowsChange(visibleRows)
+    }, [onVisibleRowsChange, visibleRows])
+
+    useEffect(() => {
+        const callbackChanged = lastViewportRowsCallbackRef.current !== onViewportRowsChange
+        lastViewportRowsCallbackRef.current = onViewportRowsChange
+
+        if (!onViewportRowsChange) {
+            lastViewportPayloadRef.current = null
+            return
+        }
+
+        if (visibleRows.length === 0) {
+            const emptyPayload: TreeViewportRowsPayload = {
+                startIndex: 0,
+                endIndexExclusive: 0,
+                rows: [],
+            }
+            if (!callbackChanged && areViewportRowsPayloadEqual(lastViewportPayloadRef.current, emptyPayload)) return
+            lastViewportPayloadRef.current = emptyPayload
+            onViewportRowsChange(emptyPayload)
+            return
+        }
+
+        if (listViewportHeight <= 0 || viewportRange === null) return
+
+        const startIndex = Math.min(viewportRange.startIndex, visibleRows.length)
+        const endIndexExclusive = Math.min(
+            visibleRows.length,
+            Math.max(startIndex, viewportRange.endIndexExclusive)
+        )
+        const payload: TreeViewportRowsPayload = {
+            startIndex,
+            endIndexExclusive,
+            rows: visibleRows.slice(startIndex, endIndexExclusive),
+        }
+
+        if (!callbackChanged && areViewportRowsPayloadEqual(lastViewportPayloadRef.current, payload)) return
+
+        lastViewportPayloadRef.current = payload
+        onViewportRowsChange(payload)
+    }, [listViewportHeight, onViewportRowsChange, viewportRange, visibleRows])
+
+    const handleVisibleRangeChange = useCallback((range: VirtualListVisibleRange) => {
+        setViewportRange(prev => {
+            if (
+                prev !== null
+                && prev.startIndex === range.startIndex
+                && prev.endIndexExclusive === range.endIndexExclusive
+            ) {
+                return prev
+            }
+            return range
+        })
+    }, [])
+
+    const renderVirtualRow = useCallback((row: TreeRenderRow) => (
         <TreeNodeItem row={row} />
     ), [])
 
-    const getVirtualRowKey = useCallback((row: TreeVisibleRow) => row.node.key, [])
+    const getVirtualRowKey = useCallback((row: TreeRenderRow) => row.key, [])
 
     // ── Context 值（分别 memo 化）─────────────────────────────────
 
@@ -1062,17 +1227,31 @@ export function Tree({
         if (colorTokens?.danger) style['--fc-tree-danger'] = colorTokens.danger
         if (colorTokens?.actionHoverBg) style['--fc-tree-action-hover-bg'] = colorTokens.actionHoverBg
         if (colorTokens?.dropIndicator) style['--fc-tree-drop-indicator'] = colorTokens.dropIndicator
+        style['--fc-tree-indent-size'] = `${indentSize}px`
+        style['--fc-tree-row-height'] = `${virtualRowHeight}px`
         style['--fc-tree-row-transition'] = `${collapseDuration}s ease-out`
 
         return style as React.CSSProperties
-    }, [collapseDuration, colorTokens])
+    }, [collapseDuration, colorTokens, indentSize, virtualRowHeight])
+
+    const isFillHeight = scrollHeight === undefined
+    const treeClassName = [
+        'fc-tree',
+        isFillHeight && 'fc-tree--fill',
+        indentationLine && 'fc-tree--indentation-line',
+        className,
+    ].filter(Boolean).join(' ')
+    const viewportClassName = [
+        'fc-tree__viewport',
+        !isFillHeight && 'fc-tree__viewport--fixed',
+    ].filter(Boolean).join(' ')
 
     // 拖拽视觉状态由按 key 订阅的 store 通知，避免拖动时刷新所有行。
 
     // ── 渲染 ────────────────────────────────────────────────────────────────
 
     const treeContent = (
-        <div ref={treeRef} className={`fc-tree ${className}`} style={treeStyle}>
+        <div ref={treeRef} className={treeClassName} style={treeStyle}>
             {searchable && (
                 <div className="fc-tree__search">
                     <input
@@ -1090,20 +1269,25 @@ export function Tree({
                 </div>
             )}
 
-            <div ref={listViewportRef} className="fc-tree__viewport" style={{ height: scrollHeight }}>
-                {visibleRows.length === 0 ? (
+            <div
+                ref={listViewportRef}
+                className={viewportClassName}
+                style={scrollHeight === undefined ? undefined : { height: scrollHeight }}
+            >
+                {renderRows.length === 0 ? (
                     <div className="fc-tree__empty">
                         {currentSearchValue ? '无匹配分类' : '暂无分类'}
                     </div>
                 ) : (
                     listViewportHeight > 0 && (
                         <VirtualList
-                            data={visibleRows}
+                            data={renderRows}
                             height={listViewportHeight}
                             itemHeight={virtualRowHeight}
                             renderItem={renderVirtualRow}
                             getKey={getVirtualRowKey}
                             overscan={virtualOverscan}
+                            onVisibleRangeChange={handleVisibleRangeChange}
                             className="fc-tree__virtual-list"
                             style={{ background: 'transparent', borderRadius: 0 }}
                         />

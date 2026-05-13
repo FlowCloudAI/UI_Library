@@ -38,6 +38,12 @@ const TRACK_BOTTOM_PADDING = 16;
 const syncGroups = new Map<string, Set<React.RefObject<HTMLDivElement | null>>>();
 const syncLocks = new WeakMap<React.RefObject<HTMLDivElement | null>, boolean>();
 
+function normalizeYearRange(yearStart: number, yearEnd: number): [number, number] {
+    const safeStart = Number.isFinite(yearStart) ? yearStart : 0;
+    const safeEnd = Number.isFinite(yearEnd) ? yearEnd : safeStart;
+    return safeStart <= safeEnd ? [safeStart, safeEnd] : [safeEnd, safeStart];
+}
+
 export function Timeline({
                              events,
                              yearStart,
@@ -67,8 +73,10 @@ export function Timeline({
         }
     }, [selectedEventId]);
 
-    const currentStart = yearStart;
-    const currentEnd = yearEnd;
+    const [currentStart, currentEnd] = useMemo(
+        () => normalizeYearRange(yearStart, yearEnd),
+        [yearEnd, yearStart],
+    );
 
     const baseTrackWidth = useMemo(() => {
         const range = Math.max(currentEnd - currentStart, 1);
@@ -94,18 +102,21 @@ export function Timeline({
 
     const getX = useCallback((year: number) => {
         const range = currentEnd - currentStart;
-        if (range === 0) return 0;
+        if (range <= 0) return 0;
         return ((year - currentStart) / range) * trackWidth;
     }, [currentStart, currentEnd, trackWidth]);
 
     const getBaseX = useCallback((year: number) => {
         const range = currentEnd - currentStart;
-        if (range === 0) return 0;
+        if (range <= 0) return 0;
         return ((year - currentStart) / range) * layoutTrackWidth;
     }, [currentStart, currentEnd, layoutTrackWidth]);
 
     const ticks = useMemo(() => {
         const range = currentEnd - currentStart;
+        if (range <= 0) {
+            return [{year: currentStart, left: 0, label: `${currentStart}`}];
+        }
         let step = 10;
         if (range > 1000) step = 100;
         else if (range > 500) step = 50;
@@ -322,8 +333,7 @@ export function Timeline({
             <RollingBox
                 className={`timeline-scroll-area ${isDragging ? 'dragging' : ''}`}
                 ref={scrollRef}
-                horizontal
-                vertical={false}
+                axis="x"
                 showThumb="auto"
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}

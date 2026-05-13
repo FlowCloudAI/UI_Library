@@ -4,6 +4,13 @@ import * as React from 'react';
 
 type ShowThumb = 'auto' | 'hide' | 'show';
 type ThumbSize = 'thin' | 'normal' | 'thick';
+type RollingAxis = 'x' | 'y' | 'both' | 'none';
+
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
 
 interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     /** 滚动条显示模式 */
@@ -12,6 +19,8 @@ interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     horizontal?: boolean;
     /** 垂直滚动（默认） */
     vertical?: boolean;
+    /** 滚动轴。设置后优先于 horizontal/vertical。 */
+    axis?: RollingAxis;
     /** 自定义滚动条宽度 */
     thumbSize?: ThumbSize;
     /** 是否显示滚动轨道 */
@@ -37,6 +46,7 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
                                                                                                     showThumb = 'auto',
                                                                                                     horizontal = false,
                                                                                                     vertical = true,
+                                                                                                    axis,
                                                                                                     thumbSize = 'normal',
                                                                                                     showTrack = false,
                                                                                                     children,
@@ -70,6 +80,22 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
     const scrollTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const animationFrameRef = React.useRef<number | null>(null);
     const targetScrollLeftRef = React.useRef<number | null>(null);
+    const warnedLegacyAxisRef = React.useRef(false);
+    const resolvedAxis: RollingAxis = axis ?? (horizontal ? 'x' : (vertical ? 'y' : 'none'));
+    const resolvedDirection = resolvedAxis === 'x'
+        ? 'horizontal'
+        : resolvedAxis === 'y'
+            ? 'vertical'
+            : resolvedAxis;
+
+    React.useEffect(() => {
+        if (axis !== undefined || (!horizontal && vertical) || warnedLegacyAxisRef.current || !isDevelopmentRuntime()) {
+            return;
+        }
+
+        warnedLegacyAxisRef.current = true;
+        console.warn('[flowcloudai-ui][RollingBox] horizontal/vertical 已保留兼容，建议改用 axis。');
+    }, [axis, horizontal, vertical]);
 
     const setContainerRef = React.useCallback((node: HTMLDivElement | null) => {
         containerRef.current = node;
@@ -114,7 +140,7 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
     // 水平模式：将鼠标滚轮的纵向滚动映射为横向滚动，并用 rAF 做平滑过渡
     React.useEffect(() => {
         const el = containerRef.current;
-        if (!el || !horizontal) return;
+        if (!el || resolvedAxis !== 'x') return;
 
         const clampTarget = (value: number) => {
             const maxScrollLeft = Math.max(0, el.scrollWidth - el.clientWidth);
@@ -174,9 +200,7 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
             }
             targetScrollLeftRef.current = null;
         };
-    }, [horizontal, interceptWheel]);
-
-    const resolvedDirection = horizontal ? 'horizontal' : 'vertical';
+    }, [interceptWheel, resolvedAxis]);
 
     const classNames = [
         'fc-roll',

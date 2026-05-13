@@ -31,10 +31,27 @@ export function Example() {
       value={value}
       onChange={setValue}
       minHeight={360}
+      fontFamily="'Consolas', 'Courier New', monospace"
+      fontSize={15}
+      lineHeight={24}
     />
   )
 }
 ```
+
+## 排版定制
+
+`TeraEditor` 对外提供最小排版接口，用于跟宿主的字体体系保持一致：
+
+- `fontFamily?: string`：编辑区字体族，默认 `var(--fc-font-family)`
+- `fontSize?: number`：编辑区字号，默认 `14`
+- `lineHeight?: number`：编辑区行高，默认 `22`
+
+说明：
+
+- 这三个参数会直接作用到 Monaco 编辑器本体
+- 占位文本和局部悬浮样式也会尽量跟随这组参数
+- 如果宿主想切换到典型代码字体，可直接传入 `"'Consolas', 'Courier New', monospace"`
 
 ## 外部增强校验
 

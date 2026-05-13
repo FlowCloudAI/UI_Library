@@ -1,4 +1,23 @@
 .fc-tera-editor {
+    --fc-tera-editor-focus-ring: var(--fc-color-info-border);
+    --fc-tera-editor-surface-bg: var(--fc-color-bg-elevated);
+    --fc-tera-editor-surface-border: var(--fc-color-border);
+    --fc-tera-editor-surface-border-focus: var(--fc-color-border-focus);
+    --fc-tera-editor-placeholder: var(--fc-color-text-tertiary);
+    --fc-tera-editor-status-text: var(--fc-color-text-secondary);
+    --fc-tera-editor-status-note: var(--fc-color-text-tertiary);
+    --fc-tera-editor-status-success: var(--fc-color-success);
+    --fc-tera-editor-status-danger: var(--fc-color-danger);
+    --fc-tera-editor-hover-bg: var(--fc-color-bg-elevated);
+    --fc-tera-editor-hover-border: var(--fc-color-border-light);
+    --fc-tera-editor-hover-text: var(--fc-color-text);
+    --fc-tera-editor-hover-muted: var(--fc-color-text-secondary);
+    --fc-tera-editor-hover-accent: var(--fc-color-primary);
+    --fc-tera-editor-hover-code-bg: var(--fc-color-bg-secondary);
+    --fc-tera-editor-hover-divider: var(--fc-color-border-light);
+    --fc-tera-editor-font-family: var(--fc-font-family);
+    --fc-tera-editor-font-size: 14px;
+    --fc-tera-editor-line-height: 22px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -8,15 +27,15 @@
 .fc-tera-editor__surface {
     position: relative;
     overflow: hidden;
-    border: 1px solid var(--fc-color-border);
+    border: 1px solid var(--fc-tera-editor-surface-border);
     border-radius: var(--fc-radius-md);
-    background: var(--fc-color-bg-elevated);
+    background: var(--fc-tera-editor-surface-bg);
     box-shadow: var(--fc-shadow-xs);
 }
 
 .fc-tera-editor__surface:focus-within {
-    border-color: var(--fc-color-border-focus);
-    box-shadow: 0 0 0 1px rgba(55, 138, 221, 0.22);
+    border-color: var(--fc-tera-editor-surface-border-focus);
+    box-shadow: 0 0 0 1px var(--fc-tera-editor-focus-ring);
 }
 
 .fc-tera-editor__placeholder {
@@ -24,9 +43,10 @@
     top: 12px;
     left: 52px;
     right: 12px;
-    color: var(--fc-color-text-tertiary);
-    font-size: var(--fc-font-size-md);
-    line-height: 1.6;
+    color: var(--fc-tera-editor-placeholder);
+    font-family: var(--fc-tera-editor-font-family);
+    font-size: var(--fc-tera-editor-font-size);
+    line-height: var(--fc-tera-editor-line-height);
     pointer-events: none;
     z-index: 2;
 }
@@ -37,7 +57,8 @@
     justify-content: space-between;
     min-height: 28px;
     padding: 0 4px;
-    color: var(--fc-color-text-secondary);
+    color: var(--fc-tera-editor-status-text);
+    font-family: var(--fc-tera-editor-font-family);
     font-size: var(--fc-font-size-sm);
 }
 
@@ -52,13 +73,79 @@
     width: 8px;
     height: 8px;
     border-radius: 999px;
-    background: var(--fc-color-success);
+    background: var(--fc-tera-editor-status-success);
 }
 
 .fc-tera-editor__status--has-problems .fc-tera-editor__status-count::before {
-    background: var(--fc-color-danger);
+    background: var(--fc-tera-editor-status-danger);
 }
 
 .fc-tera-editor__status-note {
-    color: var(--fc-color-text-tertiary);
+    color: var(--fc-tera-editor-status-note);
+}
+
+.fc-tera-editor .monaco-editor,
+.fc-tera-editor .monaco-editor .margin,
+.fc-tera-editor .monaco-editor .monaco-editor-background {
+    background-color: var(--fc-tera-editor-surface-bg);
+}
+
+.fc-tera-editor .monaco-editor .suggest-widget,
+.fc-tera-editor .monaco-editor .monaco-hover {
+    border-radius: var(--fc-radius-lg);
+}
+
+.monaco-hover {
+    border-radius: var(--fc-radius-lg);
+    border: 1px solid var(--fc-tera-editor-hover-border) !important;
+    background: var(--fc-tera-editor-hover-bg) !important;
+    color: var(--fc-tera-editor-hover-text) !important;
+    box-shadow: var(--fc-shadow-lg);
+    backdrop-filter: blur(8px);
+    font-family: var(--fc-tera-editor-font-family, var(--fc-font-family));
+    font-size: var(--fc-tera-editor-font-size, 14px);
+    line-height: var(--fc-tera-editor-line-height, 22px);
+}
+
+.monaco-hover .hover-contents:not(.html-hover-contents) {
+    padding: 8px 10px;
+}
+
+.monaco-hover .markdown-hover > .hover-contents:not(.code-hover-contents) {
+    max-width: 420px;
+}
+
+.monaco-hover p,
+.monaco-hover .code,
+.monaco-hover ul,
+.monaco-hover h1,
+.monaco-hover h2,
+.monaco-hover h3,
+.monaco-hover h4,
+.monaco-hover h5,
+.monaco-hover h6,
+.monaco-hover .hover-row {
+    color: var(--fc-tera-editor-hover-text);
+}
+
+.monaco-hover a {
+    color: var(--fc-tera-editor-hover-accent) !important;
+}
+
+.monaco-hover code {
+    padding: 1px 5px;
+    border-radius: var(--fc-radius-sm);
+    background: var(--fc-tera-editor-hover-code-bg);
+    color: var(--fc-tera-editor-hover-text);
+    font-size: 0.95em;
+}
+
+.monaco-hover hr {
+    border-color: var(--fc-tera-editor-hover-divider);
+}
+
+.monaco-hover .hover-row.status-bar {
+    border-top: 1px solid var(--fc-tera-editor-hover-divider);
+    color: var(--fc-tera-editor-hover-muted);
+    background: var(--fc-tera-editor-hover-code-bg);
 }

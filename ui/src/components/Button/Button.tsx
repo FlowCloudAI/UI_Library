@@ -56,6 +56,7 @@ export function Button({
                            block = false,
                            circle = false,
                            iconOnly = false,
+                           type = 'button',
                            iconLeft,
                            iconRight,
                            background,
@@ -112,6 +113,7 @@ export function Button({
 
     return (
         <button
+            type={type}
             className={classNames}
             disabled={disabled || loading}
             style={mergedStyle}

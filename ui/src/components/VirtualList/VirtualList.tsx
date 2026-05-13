@@ -1,9 +1,14 @@
 // VirtualList.tsx
 import './VirtualList.css';
 import * as React from "react";
-import { useState, useRef, useCallback, useMemo, memo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect, memo } from "react";
 
-interface VirtualListProps<T = any> {
+export interface VirtualListVisibleRange {
+    startIndex: number;
+    endIndexExclusive: number;
+}
+
+export interface VirtualListProps<T = any> {
     /** 数据源 */
     data: T[];
     /** 容器高度 */
@@ -20,6 +25,8 @@ interface VirtualListProps<T = any> {
     overscan?: number;
     /** 是否显示滚动条 */
     showScrollbar?: boolean;
+    /** 真实视口范围变化回调（不含 overscan） */
+    onVisibleRangeChange?: (range: VirtualListVisibleRange) => void;
     /** 滚动到底部回调 */
     onScrollEnd?: () => void;
     /** 容器样式 */
@@ -43,11 +50,14 @@ export function VirtualList<T>({
                                    className = '',
                                    overscan = 3,
                                    showScrollbar = true,
+                                   onVisibleRangeChange,
                                    onScrollEnd,
                                    style
                                }: VirtualListProps<T>) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [scrollTop, setScrollTop] = useState(0);
+    const lastVisibleRangeRef = useRef<VirtualListVisibleRange | null>(null);
+    const lastVisibleRangeCallbackRef = useRef<typeof onVisibleRangeChange>(undefined);
 
     const totalHeight = data.length * itemHeight;
 
@@ -65,23 +75,56 @@ export function VirtualList<T>({
         }
     }, [onScrollEnd]);
 
-    // 计算可见范围
+    // 计算真实视口范围（不含 overscan）
     const visibleRange = useMemo(() => {
-        const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-        const endIndex = Math.min(
+        const startIndex = Math.min(
             data.length,
-            Math.ceil((scrollTop + height) / itemHeight) + overscan
+            Math.max(0, Math.floor(scrollTop / itemHeight))
         );
-        return { startIndex, endIndex };
-    }, [scrollTop, height, itemHeight, data.length, overscan]);
+        const endIndexExclusive = Math.min(
+            data.length,
+            Math.max(startIndex, Math.ceil((scrollTop + height) / itemHeight))
+        );
+        return { startIndex, endIndexExclusive };
+    }, [scrollTop, height, itemHeight, data.length]);
+
+    // 计算实际渲染范围（含 overscan）
+    const renderedRange = useMemo(() => {
+        const startIndex = Math.max(0, visibleRange.startIndex - overscan);
+        const endIndexExclusive = Math.min(
+            data.length,
+            visibleRange.endIndexExclusive + overscan
+        );
+        return { startIndex, endIndexExclusive };
+    }, [data.length, overscan, visibleRange]);
+
+    useEffect(() => {
+        const callbackChanged = lastVisibleRangeCallbackRef.current !== onVisibleRangeChange;
+        lastVisibleRangeCallbackRef.current = onVisibleRangeChange;
+
+        if (!onVisibleRangeChange) {
+            lastVisibleRangeRef.current = null;
+            return;
+        }
+
+        const prev = lastVisibleRangeRef.current;
+        const rangeUnchanged = prev !== null
+            && prev.startIndex === visibleRange.startIndex
+            && prev.endIndexExclusive === visibleRange.endIndexExclusive;
+
+        if (!callbackChanged && rangeUnchanged) return;
+
+        lastVisibleRangeRef.current = visibleRange;
+        onVisibleRangeChange(visibleRange);
+    }, [onVisibleRangeChange, visibleRange]);
 
     // 可见数据
     const visibleData = useMemo(() => {
-        return data.slice(visibleRange.startIndex, visibleRange.endIndex);
-    }, [data, visibleRange]);
+        return data.slice(renderedRange.startIndex, renderedRange.endIndexExclusive);
+    }, [data, renderedRange]);
 
     // 偏移量
-    const offsetY = visibleRange.startIndex * itemHeight;
+    const offsetY = renderedRange.startIndex * itemHeight;
 
     const classNames = [
         'fc-virtual-list',
@@ -105,7 +148,7 @@ export function VirtualList<T>({
                     style={{ transform: `translateY(${offsetY}px)` }}
                 >
                     {visibleData.map((item, idx) => {
-                        const actualIndex = visibleRange.startIndex + idx;
+                        const actualIndex = renderedRange.startIndex + idx;
                         return (
                             <VirtualItem key={getKey?.(item, actualIndex) ?? actualIndex} height={itemHeight}>
                                 {renderItem(item, actualIndex)}

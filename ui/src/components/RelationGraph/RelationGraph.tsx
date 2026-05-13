@@ -266,25 +266,33 @@ const EDGE_TYPES: EdgeTypes = { relationEdge: BidirectionalEdge };
 function buildRFEdges(inputEdges: RelationEdgeInput[]): Edge[] {
     const edgeKeySet = new Set(inputEdges.map(e => `${e.source}|${e.target}`));
 
-    return inputEdges.map((e, index) => ({
-        id: e.id ?? `rg-edge-${e.source}-${e.target}-${index}`,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle,
-        targetHandle: e.targetHandle,
-        type: 'relationEdge',
-        markerEnd: {
+    return inputEdges.map((e, index) => {
+        const kind = e.kind ?? 'one_way';
+        const hasReverseEdge = edgeKeySet.has(`${e.target}|${e.source}`);
+        const marker = {
             type: MarkerType.ArrowClosed,
             width: 14,
             height: 14,
             color: 'var(--fc-rg-edge-color, var(--fc-gray-400))',
-        },
-        data: {
-            label: e.label,
-            kind: e.kind ?? 'one_way',
-            bidirectional: edgeKeySet.has(`${e.target}|${e.source}`),
-        },
-    }));
+        };
+
+        return {
+            id: e.id ?? `rg-edge-${e.source}-${e.target}-${index}`,
+            source: e.source,
+            target: e.target,
+            sourceHandle: e.sourceHandle,
+            targetHandle: e.targetHandle,
+            type: 'relationEdge',
+            markerStart: kind === 'two_way' ? marker : undefined,
+            markerEnd: marker,
+            data: {
+                label: e.label,
+                kind,
+                bidirectional: kind === 'two_way' || hasReverseEdge,
+                pairedBidirectional: hasReverseEdge,
+            },
+        };
+    });
 }
 
 function buildRFNodes(

@@ -77,12 +77,21 @@ const SideBarItemView = memo<SideBarItemViewProps>(({ item, isSelected, onClick 
     ].filter(Boolean).join(' ');
 
     const Tag = item.href ? 'a' : 'div';
-    const linkProps = item.href ? { href: item.href } : {};
+    const linkProps = item.href && !item.disabled ? { href: item.href } : {};
 
     return (
         <Tag
             className={classes}
-            onClick={() => !item.disabled && onClick(item.key)}
+            aria-disabled={item.disabled || undefined}
+            tabIndex={item.disabled ? -1 : undefined}
+            onClick={(event) => {
+                if (item.disabled) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
+                onClick(item.key);
+            }}
             {...linkProps}
         >
             {item.icon && (

@@ -18,27 +18,37 @@ const INVALID_TEMPLATE = `{% if user %}
 </div>
 {% endfor %}`;
 
+const EXTERNAL_DIAGNOSTIC_TEMPLATE = `{% block content %}
+<section class="hero">
+  <h1>{{ title }}</h1>
+  <p>{{ external_hint }}</p>
+</section>
+{% endblock %}`;
+
 export function TeraEditorDemo() {
     const [value, setValue] = useState(NORMAL_TEMPLATE);
-    const [useMockDiagnostics, setUseMockDiagnostics] = useState(true);
+    const [useMockDiagnostics, setUseMockDiagnostics] = useState(false);
     const [useAsyncValidate, setUseAsyncValidate] = useState(true);
     const [readOnly, setReadOnly] = useState(false);
     const [diagnosticCount, setDiagnosticCount] = useState(0);
+    const [fontSize, setFontSize] = useState(14);
+    const [lineHeight, setLineHeight] = useState(22);
+    const [fontFamily, setFontFamily] = useState<'var(--fc-font-family)' | '\'Consolas\', \'Courier New\', monospace'>('var(--fc-font-family)');
 
     const diagnostics = useMemo<TeraEditorDiagnostic[] | undefined>(() => {
         if (!useMockDiagnostics) return undefined;
-        if (!value.includes('title')) return [];
+        if (!value.includes('external_hint')) return [];
 
         return [
             {
-                message: '演示：title 变量来自外部注入诊断。',
+                message: '演示：这个问题来自外部直接注入的 diagnostics。',
                 severity: 'info',
-                startLineNumber: 3,
-                startColumn: 10,
-                endLineNumber: 3,
-                endColumn: 19,
+                startLineNumber: 4,
+                startColumn: 8,
+                endLineNumber: 4,
+                endColumn: 25,
                 source: 'Demo',
-                code: 'demo-title',
+                code: 'demo-external-diagnostic',
             },
         ];
     }, [useMockDiagnostics, value]);
@@ -83,8 +93,56 @@ export function TeraEditorDemo() {
                     <Button size="sm" variant="warning" onClick={() => setValue(INVALID_TEMPLATE)}>
                         加载错误模板
                     </Button>
+                    <Button size="sm" variant="secondary" onClick={() => setValue(EXTERNAL_DIAGNOSTIC_TEMPLATE)}>
+                        加载外部诊断示例
+                    </Button>
                     <Button size="sm" variant="secondary" onClick={() => setValue('{% block content %}\n<p>danger</p>\n{% endblock %}')}>
                         加载异步校验示例
+                    </Button>
+                </ButtonGroup>
+
+                <ButtonGroup>
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setFontSize(value => Math.max(12, value - 1))}
+                    >
+                        缩小字号
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setFontSize(value => Math.min(20, value + 1))}
+                    >
+                        放大字号
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setLineHeight(value => Math.max(18, value - 2))}
+                    >
+                        紧凑行高
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setLineHeight(value => Math.min(32, value + 2))}
+                    >
+                        舒展行高
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant={fontFamily === 'var(--fc-font-family)' ? 'primary' : 'secondary'}
+                        onClick={() => setFontFamily('var(--fc-font-family)')}
+                    >
+                        主题字体
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant={fontFamily !== 'var(--fc-font-family)' ? 'primary' : 'secondary'}
+                        onClick={() => setFontFamily('\'Consolas\', \'Courier New\', monospace')}
+                    >
+                        等宽字体
                     </Button>
                 </ButtonGroup>
 
@@ -112,13 +170,17 @@ export function TeraEditorDemo() {
             </div>
 
             <div className="demo-row" style={{ marginBottom: 12, color: 'var(--fc-color-text-secondary)' }}>
-                当前问题数：{diagnosticCount}
+                当前问题数：{diagnosticCount}，字号：{fontSize}px，行高：{lineHeight}px，字体：
+                {fontFamily === 'var(--fc-font-family)' ? '主题字体' : 'Consolas / Courier New'}
             </div>
 
             <TeraEditor
                 value={value}
                 onChange={setValue}
                 minHeight={420}
+                fontFamily={fontFamily}
+                fontSize={fontSize}
+                lineHeight={lineHeight}
                 diagnostics={diagnostics}
                 validate={validate}
                 readOnly={readOnly}

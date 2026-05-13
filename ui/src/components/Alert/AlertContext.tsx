@@ -7,12 +7,18 @@ export type AlertType = "success" | "error" | "warning" | "info";
 export type AlertMode = "alert" | "confirm" | "toast" | "nonInvasive";
 
 export type AlertProps = {
+    id: number;
     msg: string;
     type: AlertType;
     mode: AlertMode;
     visible: boolean;
     duration?: number;
     choice: (res: string) => void;
+};
+
+type QueuedAlert = Omit<AlertProps, "visible" | "choice"> & {
+    resolve: (res: string) => void;
+    reject: (reason?: unknown) => void;
 };
 
 const AlertContext = createContext<{
@@ -63,44 +69,90 @@ export interface AlertProviderProps {
 }
 
 export function AlertProvider({children, background, borderColor, offset = "1rem"}: AlertProviderProps) {
-    const [alert, setAlert] = useState<AlertProps>({
-        msg: "", type: "info", mode: "alert", visible: false, choice: () => {},
-    });
+    const [alert, setAlert] = useState<AlertProps | null>(null);
     const mountedRef = useRef(true);
+    const activeAlertRef = useRef<AlertProps | null>(null);
+    const activeRejectRef = useRef<((reason?: unknown) => void) | null>(null);
+    const queueRef = useRef<QueuedAlert[]>([]);
+    const nextAlertIdRef = useRef(1);
+
+    const openAlert = (request: QueuedAlert) => {
+        const active: AlertProps = {
+            id: request.id,
+            msg: request.msg,
+            type: request.type,
+            mode: request.mode,
+            visible: true,
+            duration: request.duration,
+            choice: (res) => {
+                if (!mountedRef.current || activeAlertRef.current?.id !== request.id) return;
+                activeAlertRef.current = null;
+                activeRejectRef.current = null;
+                request.resolve(res);
+                setAlert(current => current?.id === request.id ? null : current);
+            },
+        };
+
+        activeAlertRef.current = active;
+        activeRejectRef.current = request.reject;
+        setAlert(active);
+    };
+
     useEffect(() => {
         mountedRef.current = true;
-        return () => { mountedRef.current = false; };
+        return () => {
+            mountedRef.current = false;
+            const error = new Error("AlertProvider unmounted");
+            activeRejectRef.current?.(error);
+            queueRef.current.forEach(item => item.reject(error));
+            queueRef.current = [];
+        };
     }, []);
 
     const showAlert = (msg: string, type: AlertType, mode: AlertMode = "alert", duration?: number) =>
         new Promise<string>((resolve, reject) => {
             if (!mountedRef.current) { reject(new Error('AlertProvider unmounted')); return; }
-            setAlert({
-                msg, type, mode, visible: true, duration,
-                choice: (res) => {
-                    if (!mountedRef.current) return;
-                    setAlert(p => ({ ...p, visible: false }));
-                    resolve(res);
-                },
-            });
+            const request: QueuedAlert = {
+                id: nextAlertIdRef.current++,
+                msg,
+                type,
+                mode,
+                duration,
+                resolve,
+                reject,
+            };
+
+            if (activeAlertRef.current) {
+                queueRef.current.push(request);
+            } else {
+                openAlert(request);
+            }
         });
 
     useEffect(() => {
-        if (!alert.visible || !alert.duration) return;
-        const timer = setTimeout(() => alert.choice("auto"), alert.duration);
+        if (alert || queueRef.current.length === 0) return;
+        openAlert(queueRef.current.shift()!);
+    }, [alert]);
+
+    useEffect(() => {
+        if (!alert?.visible || !alert.duration) return;
+        const alertId = alert.id;
+        const timer = setTimeout(() => {
+            if (activeAlertRef.current?.id === alertId) alert.choice("auto");
+        }, alert.duration);
         return () => clearTimeout(timer);
-    }, [alert.visible, alert.duration]);
+    }, [alert]);
 
     const overrideStyle: CSSProperties = {};
     if (background !== undefined)  (overrideStyle as any)["--alert-bg"]     = background;
     if (borderColor !== undefined) (overrideStyle as any)["--alert-border"] = borderColor;
 
-    const isNonInvasive = alert.mode === "nonInvasive";
+    const isNonInvasive = alert?.mode === "nonInvasive";
 
     return (
         <AlertContext.Provider value={{ showAlert }}>
             {children}
-            {alert.visible && (
+            {alert?.visible && (
                 <div
                     className={`fc-alert-overlay${isNonInvasive ? " fc-alert-overlay--non-invasive" : ""}`}
                     style={isNonInvasive ? {"--alert-offset": offset} as CSSProperties : undefined}

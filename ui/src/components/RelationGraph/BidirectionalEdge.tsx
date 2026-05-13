@@ -20,6 +20,7 @@ export interface RelationEdgeData extends Record<string, unknown> {
     label?: string;
     kind?: 'one_way' | 'two_way';
     bidirectional?: boolean;
+    pairedBidirectional?: boolean;
 }
 
 const BIDIR_OFFSET = 8;
@@ -84,6 +85,7 @@ export function BidirectionalEdge({
     source,
     target,
     data,
+    markerStart,
     markerEnd,
     style,
     selected,
@@ -91,7 +93,8 @@ export function BidirectionalEdge({
     const { getNode } = useReactFlow();
 
     const edgeData = (data ?? {}) as RelationEdgeData;
-    const isBidirectional = edgeData.bidirectional ?? false;
+    const isBidirectional = edgeData.bidirectional ?? edgeData.kind === 'two_way';
+    const shouldOffset = edgeData.pairedBidirectional ?? false;
     const label = edgeData.label;
 
     const sNode = getNode(source);
@@ -121,8 +124,8 @@ export function BidirectionalEdge({
     const ddx = tcx - scx;
     const ddy = tcy - scy;
     const dlen = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
-    const perpX = isBidirectional ? (-ddy / dlen) * BIDIR_OFFSET : 0;
-    const perpY = isBidirectional ? ( ddx / dlen) * BIDIR_OFFSET : 0;
+    const perpX = shouldOffset ? (-ddy / dlen) * BIDIR_OFFSET : 0;
+    const perpY = shouldOffset ? ( ddx / dlen) * BIDIR_OFFSET : 0;
 
     // 边界交点：通过偏移量偏置"朝向"方向，使出射点
     // 产生轻微偏移，避免节点轴对齐时两条线从
@@ -160,6 +163,7 @@ export function BidirectionalEdge({
             <BaseEdge
                 id={id}
                 path={edgePath}
+                markerStart={markerStart}
                 markerEnd={markerEnd}
                 style={{
                     stroke: selected
@@ -174,7 +178,7 @@ export function BidirectionalEdge({
                     <div
                         className="fc-rg-edge-label nodrag nopan"
                         style={{
-                            transform: `translate(-50%,-50%) translate(${isBidirectional ? labelX - perpX : labelX}px,${isBidirectional ? labelY - perpY : labelY}px)`,
+                            transform: `translate(-50%,-50%) translate(${shouldOffset ? labelX - perpX : labelX}px,${shouldOffset ? labelY - perpY : labelY}px)`,
                         }}
                     >
                         {label}

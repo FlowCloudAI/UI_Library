@@ -12,10 +12,21 @@
     --fc-tree-danger: #ef4444;
     --fc-tree-action-hover-bg: var(--fc-color-border);
     --fc-tree-drop-indicator: var(--fc-color-primary);
+    --fc-tree-indent-size: 20px;
+    --fc-tree-indent-line-start: calc(36px + var(--fc-space-sm));
+    --fc-tree-row-height: 34px;
+    --fc-tree-indent-line-color: color-mix(in srgb, var(--fc-tree-border) 72%, transparent);
     font-family: var(--fc-font-family), sans-serif;
     color: var(--fc-tree-text);
     display: flex;
     flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+.fc-tree--fill {
+    height: 100%;
 }
 
 /* ── 搜索 ──────────────────────────────────────────────────────────────────── */
@@ -70,15 +81,49 @@
 }
 
 .fc-tree__viewport {
+    flex: 1 1 auto;
     min-height: 0;
 }
 
+.fc-tree__viewport--fixed {
+    flex: 0 0 auto;
+}
+
 .fc-tree__virtual-list {
+    --fc-tree-scrollbar-thumb: transparent;
+    --fc-tree-scrollbar-thumb-hover: var(--fc-color-text-tertiary);
+    --fc-tree-scrollbar-track: transparent;
+    --fc-tree-scrollbar-size: 0.5rem;
     background: transparent;
     border-radius: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--fc-tree-scrollbar-thumb) var(--fc-tree-scrollbar-track);
+}
+
+.fc-tree__virtual-list:hover {
+    --fc-tree-scrollbar-thumb: var(--fc-tree-scrollbar-thumb-hover);
+}
+
+.fc-tree__virtual-list::-webkit-scrollbar {
+    width: var(--fc-tree-scrollbar-size);
+    height: var(--fc-tree-scrollbar-size);
+    background: transparent;
+}
+
+.fc-tree__virtual-list::-webkit-scrollbar-track {
+    background: var(--fc-tree-scrollbar-track);
+    border-radius: var(--fc-radius-full);
+}
+
+.fc-tree__virtual-list::-webkit-scrollbar-thumb {
+    background: var(--fc-tree-scrollbar-thumb);
+    border-radius: var(--fc-radius-full);
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 
 .fc-tree__virtual-list .fc-virtual-list__item {
+    height: var(--fc-tree-row-height);
     overflow: visible;
 }
 
@@ -93,6 +138,10 @@
 
 .fc-tree__node {
     position: relative;
+    height: var(--fc-tree-row-height);
+    padding: 1px 0;
+    box-sizing: border-box;
+    overflow: visible;
     transition: opacity var(--fc-tree-row-transition, 0.12s ease-out);
 }
 
@@ -109,10 +158,12 @@
     grid-template-columns: 16px 16px minmax(0, 1fr) auto;
     align-items: center;
     column-gap: var(--fc-space-sm);
+    height: calc(var(--fc-tree-row-height) - 2px);
     padding: 4px var(--fc-space-md) 4px var(--fc-indent);
     border-radius: var(--fc-radius-sm);
-    margin: 1px var(--fc-space-sm);
-    min-height: 32px;
+    margin: 0 var(--fc-space-sm);
+    min-height: 0;
+    box-sizing: border-box;
     cursor: default;
     transition: background var(--fc-transition);
     position: relative;
@@ -201,6 +252,42 @@
     border-radius: 50%;
     background: var(--fc-tree-drop-indicator);
     pointer-events: none;
+}
+
+/* ── 缩进引导线 ───────────────────────────────────────────────────────────── */
+
+.fc-tree__indent-lines {
+    display: none;
+}
+
+.fc-tree--indentation-line .fc-tree__indent-lines {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--fc-tree-indent-line-start);
+    width: max(0px, calc(var(--fc-indent) - 12px));
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+        to right,
+        var(--fc-tree-indent-line-color) 0,
+        var(--fc-tree-indent-line-color) 1px,
+        transparent 1px,
+        transparent var(--fc-tree-indent-size)
+    );
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-position: 0 0;
+    z-index: 0;
+}
+
+.fc-tree--indentation-line .fc-tree__drag-handle,
+.fc-tree--indentation-line .fc-tree__switcher,
+.fc-tree--indentation-line .fc-tree__title-slot,
+.fc-tree--indentation-line .fc-tree__edit-input,
+.fc-tree--indentation-line .fc-tree__actions {
+    position: relative;
+    z-index: 1;
 }
 
 /* ── 拖拽手柄 ─────────────────────────────────────────────────────────────── */

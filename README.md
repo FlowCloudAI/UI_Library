@@ -730,6 +730,9 @@ function Example() {
 - `onChange: (value: string) => void`：内容变化回调
 - `height?: number | string`：编辑区高度
 - `minHeight?: number`：最小高度，默认 `360`
+- `fontFamily?: string`：编辑区字体族，默认 `var(--fc-font-family)`
+- `fontSize?: number`：编辑区字号，默认 `14`
+- `lineHeight?: number`：编辑区行高，默认 `22`
 - `placeholder?: string`：占位提示
 - `readOnly?: boolean`：是否只读
 - `diagnostics?: TeraEditorDiagnostic[]`：外部直接注入的问题列表
@@ -759,6 +762,9 @@ function Example() {
       value={value}
       onChange={setValue}
       minHeight={320}
+      fontFamily="'Consolas', 'Courier New', monospace"
+      fontSize={15}
+      lineHeight={24}
       validate={async (template) => {
         if (template.includes('danger')) {
           return [{
