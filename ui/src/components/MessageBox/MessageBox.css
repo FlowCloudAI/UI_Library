@@ -168,6 +168,7 @@
 }
 
 .message-box-markdown h1 {
+  margin: 1.1em 0 0.7em;
   font-size: 1.4em;
 }
 
@@ -183,6 +184,19 @@
 .message-box-markdown ol {
   margin: 0.4em 0;
   padding-left: 1.5em;
+}
+
+.message-box-markdown h2 + ul,
+.message-box-markdown h2 + ol,
+.message-box-markdown h3 + ul,
+.message-box-markdown h3 + ol,
+.message-box-markdown h4 + ul,
+.message-box-markdown h4 + ol,
+.message-box-markdown h5 + ul,
+.message-box-markdown h5 + ol,
+.message-box-markdown h6 + ul,
+.message-box-markdown h6 + ol {
+  margin-top: 0.6em;
 }
 
 .message-box-markdown li {
