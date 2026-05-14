@@ -31,7 +31,7 @@ export interface MessageBoxProps {
   children?: React.ReactNode;
   className?: string;
   maxWidth?: string;
-  // 行高，覆盖默认 1.65
+  // 行高，覆盖默认 1.815
   lineHeight?: number | string;
   // 深度思考
   reasoning?: string;
