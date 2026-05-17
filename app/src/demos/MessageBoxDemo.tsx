@@ -412,6 +412,41 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
                             ]}
                             toolCallDetail="verbose"
                         />
+                        <MessageBox
+                            role="assistant"
+                            markdown
+                            content="你说得对！我注意到工具列表中确实有两个带‘dev’的开发版工具：
+
+## 🔧 两个开发版工具
+
+### 1. `get_entries_dev`
+- **功能**：按项目或分类的名称/ID 获取词条轻量列表
+- **返回信息**：词条标题、ID 和类型
+- **过滤选项**：可按词条类型名称/ID/key 过滤
+- **参数**：`key`, `kind`
+
+### 2. `get_entry_dev`
+- **功能**：按词条名称/ID 获取高密度词条上下文
+- **返回信息**：默认返回全量，可用 `info` 选择字段
+  - `TITLE`：标题
+  - `TYPE`：类型
+  - `SUM`：摘要
+  - `TAG`：标签
+  - `CONTENT`：正文
+  - `RELATIONS`：关联关系
+- **参数**：`key`, `info`（数组）
+
+---
+
+你想测试哪个工具的哪方面功能呢？比如：
+- 📋 获取项目中的词条列表？
+- 📖 获取特定词条的详细信息？
+- 🔍 按类型过滤词条？
+- 🎯 测试不同的 `info` 字段组合？
+
+请告诉我你想怎么测试，我来帮你执行！### 🔬 测试 3️⃣：仅获取 RELATIONS（关联关系）+ CONTENT（正文）
+"
+                        />
                         {/* 角色扮演 blocks 模式（tool block 被静默跳过） */}
                         <MessageBox
                             role="assistant"

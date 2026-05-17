@@ -1,5 +1,23 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Markdown from 'react-markdown';
+import {PrismLight as SyntaxHighlighter} from 'react-syntax-highlighter';
+import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash.js';
+import c from 'react-syntax-highlighter/dist/esm/languages/prism/c.js';
+import cpp from 'react-syntax-highlighter/dist/esm/languages/prism/cpp.js';
+import csharp from 'react-syntax-highlighter/dist/esm/languages/prism/csharp.js';
+import css from 'react-syntax-highlighter/dist/esm/languages/prism/css.js';
+import go from 'react-syntax-highlighter/dist/esm/languages/prism/go.js';
+import java from 'react-syntax-highlighter/dist/esm/languages/prism/java.js';
+import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript.js';
+import json from 'react-syntax-highlighter/dist/esm/languages/prism/json.js';
+import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx.js';
+import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown.js';
+import python from 'react-syntax-highlighter/dist/esm/languages/prism/python.js';
+import rust from 'react-syntax-highlighter/dist/esm/languages/prism/rust.js';
+import sql from 'react-syntax-highlighter/dist/esm/languages/prism/sql.js';
+import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx.js';
+import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript.js';
+import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml.js';
 import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 import './MessageBox.css';
@@ -64,25 +82,99 @@ const Cursor: React.FC = () => (
     <span className="message-box-cursor"/>
 );
 
+SyntaxHighlighter.registerLanguage('bash', bash);
+SyntaxHighlighter.registerLanguage('c', c);
+SyntaxHighlighter.registerLanguage('cpp', cpp);
+SyntaxHighlighter.registerLanguage('csharp', csharp);
+SyntaxHighlighter.registerLanguage('css', css);
+SyntaxHighlighter.registerLanguage('go', go);
+SyntaxHighlighter.registerLanguage('java', java);
+SyntaxHighlighter.registerLanguage('javascript', javascript);
+SyntaxHighlighter.registerLanguage('json', json);
+SyntaxHighlighter.registerLanguage('jsx', jsx);
+SyntaxHighlighter.registerLanguage('markdown', markdown);
+SyntaxHighlighter.registerLanguage('python', python);
+SyntaxHighlighter.registerLanguage('rust', rust);
+SyntaxHighlighter.registerLanguage('sql', sql);
+SyntaxHighlighter.registerLanguage('tsx', tsx);
+SyntaxHighlighter.registerLanguage('typescript', typescript);
+SyntaxHighlighter.registerLanguage('yaml', yaml);
+SyntaxHighlighter.alias('bash', ['sh', 'shell', 'zsh']);
+SyntaxHighlighter.alias('cpp', ['c++']);
+SyntaxHighlighter.alias('csharp', ['cs']);
+SyntaxHighlighter.alias('javascript', ['js', 'mjs', 'cjs']);
+SyntaxHighlighter.alias('markdown', ['md']);
+SyntaxHighlighter.alias('typescript', ['ts']);
+SyntaxHighlighter.alias('yaml', ['yml']);
+
+const supportedCodeLanguages = new Set([
+  'bash',
+  'c',
+  'cpp',
+  'csharp',
+  'css',
+  'go',
+  'java',
+  'javascript',
+  'json',
+  'jsx',
+  'markdown',
+  'python',
+  'rust',
+  'sql',
+  'tsx',
+  'typescript',
+  'yaml'
+]);
+
+const codeLanguageAliases: Record<string, string> = {
+  'c++': 'cpp',
+  cjs: 'javascript',
+  cs: 'csharp',
+  js: 'javascript',
+  mjs: 'javascript',
+  md: 'markdown',
+  sh: 'bash',
+  shell: 'bash',
+  ts: 'typescript',
+  yml: 'yaml',
+  zsh: 'bash'
+};
+
+const getCodeText = (children: React.ReactNode): string => (
+    React.Children.toArray(children)
+        .map(child => typeof child === 'string' || typeof child === 'number' ? String(child) : '')
+        .join('')
+);
+
+const getCodeLanguage = (className?: string): string | undefined => {
+  const match = /language-(\S+)/.exec(className ?? '');
+  const rawLanguage = match?.[1]?.toLowerCase();
+  if (!rawLanguage) return undefined;
+
+  const normalizedLanguage = codeLanguageAliases[rawLanguage] ?? rawLanguage;
+  return supportedCodeLanguages.has(normalizedLanguage) ? normalizedLanguage : undefined;
+};
+
 // ========================================
 // 子组件：代码块（带复制按钮）
 // ========================================
 
 const CodeBlock: React.FC<React.PropsWithChildren<{ className?: string }>> = ({children, className}) => {
   const [copied, setCopied] = useState(false);
-  const preRef = useRef<HTMLPreElement>(null);
+  const rawCode = getCodeText(children);
+  const code = rawCode.replace(/\n$/, '');
+  const language = getCodeLanguage(className);
+  const isBlock = Boolean(className?.includes('language-')) || rawCode.includes('\n');
 
   const handleCopy = () => {
-    const text = preRef.current?.innerText ?? '';
-    navigator.clipboard?.writeText(text).then(() => {
+    navigator.clipboard?.writeText(code).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   };
 
-  // 行内代码没有 language-xxx 类名
-  const isInline = !className?.includes('language-');
-  if (isInline) {
+  if (!isBlock) {
     return <code className={className}>{children}</code>;
   }
 
@@ -91,7 +183,19 @@ const CodeBlock: React.FC<React.PropsWithChildren<{ className?: string }>> = ({c
         <button className="message-box-code-copy" onClick={handleCopy} type="button">
           {copied ? '✓ 已复制' : '复制'}
         </button>
-        <pre ref={preRef} className={className}>{children}</pre>
+        {language ? (
+            <SyntaxHighlighter
+                className={className}
+                language={language}
+                PreTag="pre"
+                CodeTag="span"
+                useInlineStyles={false}
+            >
+              {code}
+            </SyntaxHighlighter>
+        ) : (
+            <pre className={className}>{code}</pre>
+        )}
       </div>
   );
 };

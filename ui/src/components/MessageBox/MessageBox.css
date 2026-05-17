@@ -235,6 +235,7 @@
 
 .message-box-code-block pre {
   margin: 0;
+  padding-right: 4.75rem;
 }
 
 .message-box-code-copy {
@@ -266,6 +267,73 @@
   padding: 0;
   background: none;
   font-size: 0.85em;
+}
+
+.message-box-markdown .message-box-code-block pre code {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.message-box-markdown pre .token.comment,
+.message-box-markdown pre .token.prolog,
+.message-box-markdown pre .token.doctype,
+.message-box-markdown pre .token.cdata {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.message-box-markdown pre .token.punctuation,
+.message-box-markdown pre .token.operator {
+  color: inherit;
+}
+
+.message-box-markdown pre .token.property,
+.message-box-markdown pre .token.tag,
+.message-box-markdown pre .token.constant,
+.message-box-markdown pre .token.symbol,
+.message-box-markdown pre .token.deleted {
+  color: #b91c1c;
+}
+
+.message-box-markdown pre .token.boolean,
+.message-box-markdown pre .token.number {
+  color: #b45309;
+}
+
+.message-box-markdown pre .token.selector,
+.message-box-markdown pre .token.attr-name,
+.message-box-markdown pre .token.string,
+.message-box-markdown pre .token.char,
+.message-box-markdown pre .token.builtin,
+.message-box-markdown pre .token.inserted {
+  color: #047857;
+}
+
+.message-box-markdown pre .token.keyword,
+.message-box-markdown pre .token.atrule,
+.message-box-markdown pre .token.attr-value {
+  color: #7c3aed;
+}
+
+.message-box-markdown pre .token.function,
+.message-box-markdown pre .token.class-name {
+  color: #2563eb;
+}
+
+.message-box-markdown pre .token.regex,
+.message-box-markdown pre .token.important,
+.message-box-markdown pre .token.variable {
+  color: #c2410c;
+}
+
+.message-box-markdown pre .token.bold,
+.message-box-markdown pre .token.important {
+  font-weight: 600;
+}
+
+.message-box-markdown pre .token.italic {
+  font-style: italic;
 }
 
 .message-box-markdown table {
@@ -335,6 +403,49 @@
   border-top-color: rgba(255, 255, 255, 0.3);
 }
 
+.message-box-item--user .message-box-markdown pre .token.comment,
+.message-box-item--user .message-box-markdown pre .token.prolog,
+.message-box-item--user .message-box-markdown pre .token.doctype,
+.message-box-item--user .message-box-markdown pre .token.cdata {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.message-box-item--user .message-box-markdown pre .token.property,
+.message-box-item--user .message-box-markdown pre .token.tag,
+.message-box-item--user .message-box-markdown pre .token.constant,
+.message-box-item--user .message-box-markdown pre .token.symbol,
+.message-box-item--user .message-box-markdown pre .token.deleted {
+  color: #fecaca;
+}
+
+.message-box-item--user .message-box-markdown pre .token.boolean,
+.message-box-item--user .message-box-markdown pre .token.number,
+.message-box-item--user .message-box-markdown pre .token.regex,
+.message-box-item--user .message-box-markdown pre .token.important,
+.message-box-item--user .message-box-markdown pre .token.variable {
+  color: #fed7aa;
+}
+
+.message-box-item--user .message-box-markdown pre .token.selector,
+.message-box-item--user .message-box-markdown pre .token.attr-name,
+.message-box-item--user .message-box-markdown pre .token.string,
+.message-box-item--user .message-box-markdown pre .token.char,
+.message-box-item--user .message-box-markdown pre .token.builtin,
+.message-box-item--user .message-box-markdown pre .token.inserted {
+  color: #bbf7d0;
+}
+
+.message-box-item--user .message-box-markdown pre .token.keyword,
+.message-box-item--user .message-box-markdown pre .token.atrule,
+.message-box-item--user .message-box-markdown pre .token.attr-value {
+  color: #fde68a;
+}
+
+.message-box-item--user .message-box-markdown pre .token.function,
+.message-box-item--user .message-box-markdown pre .token.class-name {
+  color: #bfdbfe;
+}
+
 /* 暗色主题适配 */
 [data-theme="dark"] .message-box-markdown code {
   background: rgba(255, 255, 255, 0.1);
@@ -346,6 +457,49 @@
 
 [data-theme="dark"] .message-box-markdown th {
   background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .message-box-markdown pre .token.comment,
+[data-theme="dark"] .message-box-markdown pre .token.prolog,
+[data-theme="dark"] .message-box-markdown pre .token.doctype,
+[data-theme="dark"] .message-box-markdown pre .token.cdata {
+  color: #8b949e;
+}
+
+[data-theme="dark"] .message-box-markdown pre .token.property,
+[data-theme="dark"] .message-box-markdown pre .token.tag,
+[data-theme="dark"] .message-box-markdown pre .token.constant,
+[data-theme="dark"] .message-box-markdown pre .token.symbol,
+[data-theme="dark"] .message-box-markdown pre .token.deleted {
+  color: #ff7b72;
+}
+
+[data-theme="dark"] .message-box-markdown pre .token.boolean,
+[data-theme="dark"] .message-box-markdown pre .token.number,
+[data-theme="dark"] .message-box-markdown pre .token.regex,
+[data-theme="dark"] .message-box-markdown pre .token.important,
+[data-theme="dark"] .message-box-markdown pre .token.variable {
+  color: #ffa657;
+}
+
+[data-theme="dark"] .message-box-markdown pre .token.selector,
+[data-theme="dark"] .message-box-markdown pre .token.attr-name,
+[data-theme="dark"] .message-box-markdown pre .token.string,
+[data-theme="dark"] .message-box-markdown pre .token.char,
+[data-theme="dark"] .message-box-markdown pre .token.builtin,
+[data-theme="dark"] .message-box-markdown pre .token.inserted {
+  color: #7ee787;
+}
+
+[data-theme="dark"] .message-box-markdown pre .token.keyword,
+[data-theme="dark"] .message-box-markdown pre .token.atrule,
+[data-theme="dark"] .message-box-markdown pre .token.attr-value {
+  color: #d2a8ff;
+}
+
+[data-theme="dark"] .message-box-markdown pre .token.function,
+[data-theme="dark"] .message-box-markdown pre .token.class-name {
+  color: #79c0ff;
 }
 
 /* ========================================

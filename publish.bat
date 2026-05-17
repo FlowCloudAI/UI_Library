@@ -1,0 +1,1 @@
+cd ui && npm login && npm publish
