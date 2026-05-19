@@ -34,10 +34,10 @@ interface NavGroup { label: string; items: NavItem[] }
 const NAV_GROUPS: NavGroup[] = [
     {
         label: '基础', items: [
+            { key: 'SemanticTokens', label: '语义令牌' },
             { key: 'Button',  label: 'Button' },
             { key: 'Check',   label: 'CheckButton' },
             { key: 'Alert',   label: 'Alert' },
-            { key: 'SemanticTokens', label: '语义令牌' },
         ],
     },
     {
@@ -82,10 +82,10 @@ const NAV_GROUPS: NavGroup[] = [
 ]
 
 const DEMO_COMPONENTS: Record<string, ComponentType> = {
+    SemanticTokens: SemanticTokensDemo,
     Button:      ButtonDemo,
     Check:       CheckButtonDemo,
     Alert:       AlertDemo,
-    SemanticTokens: SemanticTokensDemo,
     Input:       InputDemo,
     Slider:      SliderDemo,
     Select:      SelectDemo,
