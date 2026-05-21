@@ -141,6 +141,7 @@
     --fc-font-size-xl: 1.375rem; /* 22 像素 */
     --fc-font-weight-normal: 400;
     --fc-font-weight-medium: 500;
+    --fc-font-weight-semibold: 600;
     --fc-font-weight-bold: 600;
     --fc-line-height-tight: 1.3;
     --fc-line-height-normal: 1.6;
