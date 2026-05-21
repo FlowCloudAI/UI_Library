@@ -68,9 +68,9 @@
     --fc-color-primary-active: var(--fc-blue-700);
     --fc-color-primary-subtle: var(--fc-blue-50);
 
-    --fc-color-bg: #FFFFFF;
-    --fc-color-bg-secondary: #F0EFEF;
-    --fc-color-bg-tertiary: var(--fc-gray-400);
+    --fc-color-bg: #FFFDFA;
+    --fc-color-bg-secondary: #F8F7F6;
+    --fc-color-bg-tertiary: #EFEEEA;
     --fc-color-bg-elevated: #FFFFFF;
     --fc-color-bg-overlay: rgba(0, 0, 0, 0.4);
 
@@ -177,8 +177,8 @@ body {
     --fc-color-primary-active: var(--fc-blue-100);
     --fc-color-primary-subtle: rgba(55, 138, 221, 0.12);
 
-    --fc-color-bg: #0F0F0F;
-    --fc-color-bg-secondary: #1A1A1A;
+    --fc-color-bg: #10100F;
+    --fc-color-bg-secondary: #1B1B1B;
     --fc-color-bg-tertiary: #222222;
     --fc-color-bg-elevated: #282828;
     --fc-color-bg-overlay: rgba(0, 0, 0, 0.6);

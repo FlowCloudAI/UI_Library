@@ -29,7 +29,7 @@
 
 ### 1. 修复编译错误：`BranchChanged` 事件未处理
 
-**文件：** `App/src-tauri/src/apis/ai_client/common.rs`
+**文件：** `app_main/src-tauri/src/apis/ai_client/common.rs`
 
 `spawn_session_event_loop` 中的 `match event` 目前没有 `BranchChanged` 分支，编译器会报错。
 
@@ -58,7 +58,7 @@ SessionEvent::BranchChanged { node_id } => {
 
 ### 2. 前端监听 `ai:branch_changed` 事件
 
-**文件：** `App/src/features/ai-chat/hooks/useAiSession.ts`
+**文件：** `app_main/src/features/ai-chat/hooks/useAiSession.ts`
 
 - 新增 `AiEventBranchChanged` 类型（在 `api/ai_client.ts` 或 hook 内）
 - 在 `useEffect` 中 `listen<AiEventBranchChanged>('ai:branch_changed', ...)`
@@ -66,7 +66,7 @@ SessionEvent::BranchChanged { node_id } => {
 
 ### 3. 暴露树查询 Tauri Command
 
-**文件：** `App/src-tauri/src/apis/ai_client/sessions.rs`
+**文件：** `app_main/src-tauri/src/apis/ai_client/sessions.rs`
 
 新增 `ai_get_conversation_tree` command，调用 `SessionHandle::get_all_nodes()`：
 
@@ -90,7 +90,7 @@ pub async fn ai_get_conversation_tree(
 
 ### 4. 前端对接树数据并计算分支信息
 
-**文件：** `App/src/features/ai-chat/hooks/useAiSession.ts`（或新建 `useConversationTree.ts`）
+**文件：** `app_main/src/features/ai-chat/hooks/useAiSession.ts`（或新建 `useConversationTree.ts`）
 
 - 新增 `ai_get_conversation_tree` 的 TypeScript 封装（在 `api/ai_client.ts`）
 - Hook 中维护 `ConversationNode[]` 状态

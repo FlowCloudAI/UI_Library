@@ -1,228 +1,95 @@
-# AGENTS.md
+# lib_ui — AGENTS.md
 
-本文件为 AI 编码助手在本仓库中进行开发工作时提供指导。
+> 本文档面向 AI 编码助手。`README.md` 面向使用者，本文只保留开发、维护和禁止事项。
 
 ## 项目概览
 
-**flowcloudai-ui-monorepo** 是一个基于 React 19 的组件库 monorepo，包含一个集成的演示/ playgrounds 应用。它旨在构建一个可复用的
-UI 组件库，供内部使用以及作为 npm 包（`flowcloudai-ui`）发布。
+`lib_ui` 是 FlowCloudAI 的 React 组件库仓库，发布包名为 `flowcloudai-ui`。仓库包含 `ui/` 组件库源码和 `app/` Vite 演示应用，桌面端 `app_main` 通过本地路径依赖消费该包。
 
-### 目录结构
+## 构建 / 运行 / 测试 / lint
 
+```bash
+cd lib_ui
+
+# 检查组件库边界、公共导出和新增大文件
+npm install
+npm run lint
+npm run lint:boundaries
+
+# 构建组件库，输出 ui/dist/
+cd ui
+npm install
+npm run build
+
+# 启动演示应用，默认 http://localhost:5174
+cd ../app
+npm install
+npm run install:local
+npm run dev
 ```
-flowcloudai-ui-monorepo/
-├── package.json        # 根工作区存根，仅包含 devDependencies
-├── ui/                 # 组件库（以 flowcloudai-ui 发布到 npm）
+
+当前未配置 Jest / Vitest / Playwright。修改组件库源码至少运行 `cd ui && npm run build`；修改演示应用需手动打开 `npm run dev` 验证。
+
+## 代码风格与命名约定
+
+- React 19 + TypeScript 5.9，`ui/` 和 `app/` 均使用严格 TypeScript 配置。
+- 注释、文档和示例文本使用中文。
+- 组件文件使用 PascalCase，工具函数使用 camelCase，类型使用 PascalCase。
+- 组件 CSS 类名沿用 `fc-` 前缀，例如 `.fc-button`、`.fc-input`、`.fc-tree`。
+- 新增设计令牌必须先写入 `ui/src/style/index.css`，再在组件 CSS 中引用 `var(--fc-...)`。
+- 公共入口只允许从 `ui/src/index.ts` 显式导出，禁止 `export *`。
+- 演示应用必须从包名导入：`import { Button } from 'flowcloudai-ui'`；禁止相对导入 `../../ui/src`。
+
+## 目录结构与模块职责
+
+```text
+lib_ui/
+├── app/                 # Vite 演示应用和各组件 demo
+├── docs/                # 版本记录和历史设计文档
+├── memory/              # 维护记忆
+├── scripts/             # 边界检查脚本
+├── ui/
 │   ├── src/
-│   │   ├── components/ # 按类型组织的所有 UI 组件
-│   │   ├── hooks/      # 共享 hooks（例如 useClickOutside）
-│   │   ├── style/
-│   │   │   └── index.css   # 全局设计令牌 + 组件 CSS 导入
+│   │   ├── components/  # 组件源码，每个组件独立目录
+│   │   ├── hooks/       # 共享 hooks
+│   │   ├── style/       # 全局 CSS token 和组件样式入口
 │   │   ├── ThemeProvider.tsx
-│   │   └── index.ts    # 单一公共入口
-│   ├── package.json    # 库导出：ESM、types、CSS
-│   └── tsup.config.ts  # tsup 构建配置
-├── app/                # 基于 Vite 的演示 playgrounds
-│   ├── src/
-│   │   ├── demos/      # 每个组件一个演示文件
-│   │   ├── App.tsx     # 带导航的演示外壳
-│   │   └── main.tsx    # 应用入口，包裹 providers
-│   ├── index.html
-│   ├── vite.config.ts  # 含 Tauri 集成的 Vite 配置
-│   └── package.json    # 通过 install-local 链接本地 ui 包
-└── memory/             # 项目记忆笔记（RelationGraph 等）
+│   │   └── index.ts     # 唯一公共导出入口
+│   ├── package.json     # 发布包配置、exports 和 peerDependencies
+│   └── tsup.config.ts   # ESM + d.ts + CSS 构建
+├── package.json         # 根级 lint 脚本
+└── README.md
 ```
 
-## 技术栈
+重点模块：
 
-- **React 19** — 现代 React，支持 hooks
-- **TypeScript ~5.9** — 两个包均启用严格模式
-- **Vite 8** — 开发服务器与应用打包
-- **tsup 8** — 零配置库打包工具（仅 ESM）
-- **CSS 自定义属性** — 通过 `--fc-*` 设计令牌实现主题化
-- **关键运行时依赖**
-  - `@dnd-kit/core`, `@dnd-kit/sortable` — 拖拽功能（Tree、TabBar）
-  - `@xyflow/react` — 关系图渲染
-  - `@deck.gl/core`, `@deck.gl/layers`, `@deck.gl/react` — 地图预览层
-  - `@uiw/react-md-editor` — Markdown 编辑器
-  - `html-to-image` — 关系图图片导出
-  - `d3-force` — RelationGraph 力导向布局（UI 库与演示应用均依赖）
-  - `lucide-react` — playgrounds 中的图标
+- `ui/src/style/index.css`：主题变量和组件样式导入链。
+- `ui/src/ThemeProvider.tsx`：light / dark / system 主题上下文。
+- `ui/src/components/Alert/`：全局提示和确认上下文。
+- `ui/src/components/Box/RollingBox.tsx`：滚动展示容器，已在 demo 中作为展示类组件维护。
+- `ui/src/components/ContextMenu/`：右键菜单上下文。
+- `ui/src/components/Tree/`、`MessageBox/`、`MarkdownEditor/`、`TeraEditor/`：复杂组件，改动前先阅读现有类型和 demo。
+- `app/vite.config.ts`：将 `flowcloudai-ui` 和 `flowcloudai-ui/style` 指向 `../ui/dist`，因此运行 demo 前要先构建 `ui/`。
 
-## 关键命令
+## 提交信息与 PR 规范
 
-### UI 库开发
+- 提交信息默认使用中文，格式建议为“动词 + 范围 + 目的”，例如 `拆分树组件删除弹窗`。
+- 一个提交只包含一个明确任务，不混入构建产物、格式化或无关组件调整。
+- PR 说明需写明影响的组件、是否修改公共 API / CSS token、运行过的 `npm run lint`、`npm run build` 和手动 demo 验证。
+- 新增组件需同时提供 `app/src/demos/<ComponentName>Demo.tsx`，并在 `app/src/App.tsx` 注册。
 
-**构建库**（输出到 `ui/dist/`）：
+## 安全 / 禁止事项
 
-```bash
-cd ui && npm run build
-```
+- 不提交 `node_modules/`、`ui/dist/`、本地日志或临时截图。
+- 不在组件库中依赖 `@tauri-apps/api`、`app_main`、`worldflow_core` 或 `core_ai_client`。
+- 不把业务状态、真实用户数据或 API Key 写入 demo。
+- 不直接修改打包产物；所有变更应落在 `ui/src`、`app/src` 或脚本源码。
+- 不新增超过 300 行的 TSX / CSS 文件；确需承接历史大文件时，先写拆分计划。
 
-构建产物：
+## 项目特有坑点
 
-- `dist/index.js` — ESM 包
-- `dist/index.d.ts` — TypeScript 声明
-- `dist/index.css` — 打包后的全局 + 组件样式
-
-**开发应用**（通过 Vite 别名同时监听 `ui` 和 `app`）：
-
-```bash
-cd app && npm run dev
-```
-
-这将启动一个 Vite 开发服务器，地址为 `http://localhost:5174`。
-
-**克隆后初始化**（安装依赖并链接本地 `ui` 包）：
-
-```bash
-cd app && npm run install:local
-```
-
-> 注意：根目录的 `package.json` 未定义工作区脚本。请从 `ui/` 或 `app/` 目录运行命令。
-
-## 架构与重要模式
-
-### UI 库 (`ui/`)
-
-**导出策略**：所有组件、hooks、类型和工具函数均从 `ui/src/index.ts` 导出。这是唯一的公共入口点。
-
-**构建输出**：tsup 配置为仅生成 ESM（`format: ['esm']`）。没有 CJS 输出。
-
-**样式**：CSS 被单独打包到一个 `dist/index.css` 文件中。它**不会**注入到各个组件中。使用者必须显式导入样式：
-
-```tsx
-import 'flowcloudai-ui/style'
-```
-
-全局样式表（`ui/src/style/index.css`）使用 `--fc-*` CSS 自定义属性定义设计系统，并通过 tsup 消费的导入链包含所有组件级 CSS。
-
-**ThemeProvider**：提供 light/dark/system 主题上下文。它会将 `data-theme="light"` 或 `data-theme="dark"` 写入
-`document.documentElement`（或自定义的 `target` 元素）。使用 `useTheme()` 来读取或更改主题。
-
-**上下文 Providers**：导出了三个基于上下文的系统：
-
-- `ThemeProvider` — 主题
-- `AlertProvider` + `useAlert` — 警告、提示、确认
-- `ContextMenuProvider` + `useContextMenu` — 右键菜单
-
-### 演示应用 (`app/`)
-
-**用途**：展示所有库组件，并作为开发 playgrounds。
-
-**本地链接**：使用 `install-local` npm 包为本地 `ui/` 包创建符号链接。Vite 配置还添加了别名，使 `flowcloudai-ui` 解析到
-`../ui/dist/index.js`，`flowcloudai-ui/style` 解析到 `../ui/dist/index.css`。
-
-**⚠️ 关键导入规则**：始终从 `flowcloudai-ui` 包名导入，**切勿**使用 `../../ui/src` 等相对路径。直接从源文件导入会导致 React
-上下文不匹配和运行时错误（例如 "useTheme must be used within <ThemeProvider>"）。
-
-- ✅ `import { useTheme, Button } from 'flowcloudai-ui'`
-- ❌ `import { useTheme, Button } from '../../ui/src'`
-
-### Tauri 集成
-
-`app/vite.config.ts` 包含 Tauri 专用配置：
-
-- 检测 `TAURI_ENV_PLATFORM` 并设置构建目标（Windows 为 `chrome105`，macOS/Linux 为 `safari13`）
-- 当存在 `HOST` 环境变量时，通过 WebSocket 处理 HMR
-- 暴露前缀为 `VITE_` 和 `TAURI_ENV_*` 的环境变量
-- 在调试构建中禁用压缩（`TAURI_ENV_DEBUG`）
-
-## 组件库导览
-
-组件位于 `ui/src/components/<Name>/<Name>.tsx`，并附带同目录的 `<Name>.css`。
-
-**Providers**
-
-- `ThemeProvider` — 主题上下文
-- `AlertProvider` — 警告/提示/确认上下文
-- `ContextMenuProvider` — 右键菜单上下文
-
-**基础组件**
-
-- `Button` — 通用按钮
-- `CheckButton` — 切换/开关按钮
-- `ButtonGroup` — 按钮组
-- `ButtonToolbar` — 按钮组的工具栏布局容器
-
-**表单组件**
-
-- `Input` — 文本输入框，支持前缀、后缀、清空、密码切换
-- `Slider` — 单滑块或范围滑块
-- `Select` — 单选/多选下拉框，支持搜索、分组、虚拟滚动
-- `TagItem` — 结构化标签展示/编辑器（字符串/数字/布尔值）
-
-**展示组件**
-
-- `Avatar` — 图片头像，支持 fallback 和懒加载
-- `Card` — 内容容器，支持图片、悬停效果、标签
-- `ListGroup` / `ListGroupItem` — 垂直列表容器和列表项
-- `RollingBox` — 自定义滚动内容容器（水平方向时将滚轮转换为滚动）
-- `VirtualList` — 窗口化高性能列表
-- `MarkdownEditor` — Markdown 编辑 + 预览（基于 `@uiw/react-md-editor`）
-- `MessageBox` — 富 AI 聊天消息（推理、工具、Markdown、流式）
-- `Timeline` (`Time.tsx`) — 水平时间轴，支持缩放、选择和同步组
-- `RelationGraph` — 关系图可视化（基于 React Flow）；宿主注入 `layoutFn`
-- `MapShapeEditor` — 基于 SVG 的形状编辑器，带 deck.gl 预览层
-
-**导航 / 结构组件**
-
-- `TabBar` — 标签页，支持附着/浮动样式、关闭、新增、拖拽排序
-- `SideBar` — 可折叠侧边导航
-- `Tree` — 层级树，支持搜索、编辑、创建、删除、拖拽
-  - `DeleteDialog` — 删除确认，支持 lift/cascade 模式
-  - `OrphanDialog` — 孤儿节点处理
-  - `flatToTree` — 将扁平列表转换为树的工具函数
-
-**覆盖层 / 工具组件**
-
-- `Alert` / `AlertContext` — 警告系统
-- `ContextMenu` / `ContextMenuContext` — 右键菜单系统
-- `LazyLoad` — 懒加载辅助工具，带超时 fallback
-
-### 添加新组件
-
-1. 创建 `ui/src/components/ComponentName/ComponentName.tsx` 和 `ComponentName.css`
-2. 在 `ui/src/index.ts` 中导出该组件
-3. 创建 `app/src/demos/ComponentNameDemo.tsx`
-4. 在 `app/src/App.tsx` 的 `DEMO_COMPONENTS` 和 `NAV_GROUPS` 中注册该演示
-
-## TypeScript 配置
-
-`ui/` 和 `app/` 均使用严格的 TypeScript 设置（`tsconfig.app.json`）：
-
-- `"strict": true`
-- `"noUnusedLocals": true`
-- `"noUnusedParameters": true`
-- `"erasableSyntaxOnly": true`
-- `"noUncheckedSideEffectImports": true`
-- `"moduleResolution": "bundler"`
-- `"jsx": "react-jsx"`
-
-为所有组件的 props 和返回值添加类型。避免隐式 `any`。
-
-## 代码风格与约定
-
-- **语言**：源代码注释和文档使用**中文**编写。Agent 在修改代码注释或文档时应尊重这一点。
-- **文件命名**：组件使用 PascalCase，工具函数使用 camelCase。
-- **CSS 命名**：组件类名使用前缀，如 `.fc-button`、`.fc-input`、`.fc-rg`（RelationGraph）。
-- **CSS 变量**：所有设计令牌使用 `--fc-*` 前缀（例如 `--fc-color-primary`、`--fc-color-bg`）。
-- **Props 模式**：组件接受大量的颜色覆盖 props（例如 `background`、`borderColor`、`hoverBackground`），以便宿主可以在不更改全局
-  CSS 的情况下为单个实例设置主题。
-
-## 测试与质量
-
-- 本仓库**当前未配置测试框架**（不存在 Jest、Vitest 或 Playwright 配置）。
-- 仓库根目录**不存在 ESLint 配置文件**。如需进行代码检查，必须先创建配置。
-- 严格的 `tsconfig.app.json` 设置强制执行类型检查。
-
-## 安全注意事项
-
-- 应用在本地运行 Vite 开发服务器。开发时请勿将其暴露给不受信任的网络。
-- 仓库中未存储任何密钥或 API token。
-- `MapShapeEditor` 和 `RelationGraph` 消费宿主注入的函数（`api`、`layoutFn`）。在信任之前，请在宿主边界验证所有数据。
-
-## Git 说明
-
-- `dist/` 和 `node_modules/` 已加入 gitignore。
-- 除非明确要求，否则请勿运行 `git commit`、`git push` 或其他 git 变更操作。
+- `flowcloudai-ui` 的 React 是 peer dependency；演示应用通过 alias 和 dedupe 避免双 React。
+- `app/package.json` 的 `install:local` 会安装 `../ui`，但 Vite alias 仍指向 `ui/dist`，所以 demo 依赖最新构建结果。
+- `scripts/check-boundaries.mjs` 会阻止相对导入 `ui/src`、反向依赖业务层、`export *`、已删除地图编辑组件残留和新增大文件。
+- 样式不会自动注入，使用方必须导入 `flowcloudai-ui/style`。
+- 修改 CSS token 名称会影响 `app_main`，需要同步搜索使用处并更新文档。

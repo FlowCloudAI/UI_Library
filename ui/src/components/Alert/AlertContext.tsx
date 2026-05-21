@@ -1,5 +1,5 @@
 import "./AlertContext.css"
-import {createContext, CSSProperties, ReactNode, useContext, useEffect, useRef, useState} from "react";
+import {createContext, CSSProperties, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import {RollingBox} from "../Box/RollingBox";
 import {Button} from "../Button/Button";
 
@@ -76,7 +76,7 @@ export function AlertProvider({children, background, borderColor, offset = "1rem
     const queueRef = useRef<QueuedAlert[]>([]);
     const nextAlertIdRef = useRef(1);
 
-    const openAlert = (request: QueuedAlert) => {
+    const openAlert = useCallback((request: QueuedAlert) => {
         const active: AlertProps = {
             id: request.id,
             msg: request.msg,
@@ -96,7 +96,7 @@ export function AlertProvider({children, background, borderColor, offset = "1rem
         activeAlertRef.current = active;
         activeRejectRef.current = request.reject;
         setAlert(active);
-    };
+    }, []);
 
     useEffect(() => {
         mountedRef.current = true;
@@ -109,7 +109,7 @@ export function AlertProvider({children, background, borderColor, offset = "1rem
         };
     }, []);
 
-    const showAlert = (msg: string, type: AlertType, mode: AlertMode = "alert", duration?: number) =>
+    const showAlert = useCallback((msg: string, type: AlertType, mode: AlertMode = "alert", duration?: number) =>
         new Promise<string>((resolve, reject) => {
             if (!mountedRef.current) { reject(new Error('AlertProvider unmounted')); return; }
             const request: QueuedAlert = {
@@ -127,12 +127,12 @@ export function AlertProvider({children, background, borderColor, offset = "1rem
             } else {
                 openAlert(request);
             }
-        });
+        }), [openAlert]);
 
     useEffect(() => {
         if (alert || queueRef.current.length === 0) return;
         openAlert(queueRef.current.shift()!);
-    }, [alert]);
+    }, [alert, openAlert]);
 
     useEffect(() => {
         if (!alert?.visible || !alert.duration) return;
@@ -148,9 +148,10 @@ export function AlertProvider({children, background, borderColor, offset = "1rem
     if (borderColor !== undefined) (overrideStyle as any)["--alert-border"] = borderColor;
 
     const isNonInvasive = alert?.mode === "nonInvasive";
+    const contextValue = useMemo(() => ({showAlert}), [showAlert]);
 
     return (
-        <AlertContext.Provider value={{ showAlert }}>
+        <AlertContext.Provider value={contextValue}>
             {children}
             {alert?.visible && (
                 <div

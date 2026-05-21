@@ -32,14 +32,6 @@ export default defineConfig({
                 replacement: path.resolve(__dirname, './node_modules/react-dom'),
             },
             {
-                find: '@pixi/react',
-                replacement: path.resolve(__dirname, './node_modules/@pixi/react'),
-            },
-            {
-                find: 'pixi.js',
-                replacement: path.resolve(__dirname, './node_modules/pixi.js'),
-            },
-            {
                 find: 'flowcloudai-ui/style',
                 replacement: path.resolve(__dirname, '../ui/dist/index.css'),
             },
@@ -48,7 +40,7 @@ export default defineConfig({
                 replacement: path.resolve(__dirname, '../ui/dist/index.js'),
             },
         ],
-        dedupe: ['react', 'react-dom', '@pixi/react', 'pixi.js'],
+        dedupe: ['react', 'react-dom'],
         extensions: ['.cts', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json']
     },
     // 防止 Vite 清除 Rust 显示的错误

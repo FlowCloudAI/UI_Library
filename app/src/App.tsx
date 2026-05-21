@@ -22,7 +22,6 @@ import MessageBoxDemo from './demos/MessageBoxDemo.tsx'
 import { LazyLoadDemo }       from './demos/LazyLoadDemo'
 import { TreeDemo }           from './demos/TreeDemo'
 import TimeDemo               from './demos/TimeDemo'
-import { RelationGraphDemo }  from './demos/RelationGraphDemo'
 import { TeraEditorDemo } from './demos/TeraEditorDemo'
 import { SemanticTokensDemo } from './demos/SemanticTokensDemo'
 
@@ -57,7 +56,6 @@ const NAV_GROUPS: NavGroup[] = [
             { key: 'Card',        label: 'Card' },
             { key: 'Markdown',    label: 'MarkdownEditor' },
             { key: 'TeraEditor',  label: 'TeraEditor' },
-            { key: 'Relation',    label: '关系图谱' },
             { key: 'Time',        label: 'Timeline' },
         ],
     },
@@ -104,7 +102,6 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Chat:        MessageBoxDemo,
     LazyLoad:    LazyLoadDemo,
     Time:        TimeDemo,
-    Relation:    RelationGraphDemo,
 }
 
 const ALL_ITEMS = NAV_GROUPS.flatMap(g => g.items)
