@@ -286,7 +286,7 @@
     justify-content: center;
     width: 18px;
     height: 18px;
-    font-size: 16px;
+    font-size: var(--fc-font-size-icon-lg);
     line-height: 1;
     color: var(--fc-color-text-tertiary);
     border-radius: var(--fc-radius-sm, 4px);
@@ -311,7 +311,7 @@
     justify-content: center;
     width: 32px;
     margin: 0 var(--fc-space-sm, 8px);
-    font-size: 20px;
+    font-size: var(--fc-font-size-icon-xl);
     font-weight: bold;
     user-select: none;
     color: var(--fc-color-text-secondary);

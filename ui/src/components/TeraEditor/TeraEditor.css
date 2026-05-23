@@ -16,7 +16,7 @@
     --fc-tera-editor-hover-code-bg: var(--fc-color-bg-secondary);
     --fc-tera-editor-hover-divider: var(--fc-color-border-light);
     --fc-tera-editor-font-family: var(--fc-font-family);
-    --fc-tera-editor-font-size: 14px;
+    --fc-tera-editor-font-size: var(--fc-font-size-control);
     --fc-tera-editor-line-height: 22px;
     display: flex;
     flex-direction: column;
@@ -45,7 +45,7 @@
     right: 12px;
     color: var(--fc-tera-editor-placeholder);
     font-family: var(--fc-tera-editor-font-family);
-    font-size: var(--fc-tera-editor-font-size);
+    font-size: var(--fc-tera-editor-font-size, var(--fc-font-size-control));
     line-height: var(--fc-tera-editor-line-height);
     pointer-events: none;
     z-index: 2;
@@ -103,7 +103,7 @@
     box-shadow: var(--fc-shadow-lg);
     backdrop-filter: blur(8px);
     font-family: var(--fc-tera-editor-font-family, var(--fc-font-family));
-    font-size: var(--fc-tera-editor-font-size, 14px);
+    font-size: var(--fc-tera-editor-font-size, var(--fc-font-size-control));
     line-height: var(--fc-tera-editor-line-height, 22px);
 }
 

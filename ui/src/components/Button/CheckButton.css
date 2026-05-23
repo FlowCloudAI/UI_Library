@@ -87,7 +87,7 @@
 
 /* ---------- 标签 ---------- */
 .fc-check__label {
-    font-size: var(--label-size);
+    font-size: var(--label-size, var(--fc-font-size-md));
     font-weight: var(--fc-font-weight-medium);
     line-height: var(--fc-line-height-tight);
     color: var(--check-label-color, var(--fc-color-text));

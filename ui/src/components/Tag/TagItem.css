@@ -124,7 +124,7 @@
     border-radius: 999px;
     background: transparent;
     color: var(--fc-color-text-tertiary);
-    font-size: 12px;
+    font-size: var(--fc-font-size-caption);
     line-height: 1;
     cursor: pointer;
     flex-shrink: 0;
