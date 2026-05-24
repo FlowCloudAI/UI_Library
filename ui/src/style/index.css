@@ -87,6 +87,11 @@
     --fc-color-border-hover: var(--fc-gray-600);
     --fc-color-border-focus: var(--fc-blue-500);
 
+    --fc-color-scrollbar-track: var(--fc-color-bg-tertiary);
+    --fc-color-scrollbar-thumb: var(--fc-color-border);
+    --fc-color-scrollbar-thumb-hover: var(--fc-color-text-tertiary);
+    --fc-color-scrollbar-thumb-active: var(--fc-color-text-secondary);
+
     --fc-color-danger: var(--fc-red-500);
     --fc-color-danger-hover: var(--fc-red-700);
     --fc-color-danger-bg: var(--fc-red-50);
@@ -274,30 +279,17 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--fc-color-bg-tertiary, #F1EFE8);
+    background: var(--fc-color-scrollbar-track, #F1EFE8);
     border-radius: var(--fc-radius-full, 9999px);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--fc-color-border, #D3D1C7);
+    background: var(--fc-color-scrollbar-thumb, #D3D1C7);
     border-radius: var(--fc-radius-full, 9999px);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--fc-color-border-hover, #5F5E5A);
-}
-
-/* 暗色主题滚动条 */
-[data-theme="dark"] ::-webkit-scrollbar-track {
-    background: var(--fc-color-bg-tertiary, #222222);
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-    background: var(--fc-color-border, #333330);
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-    background: var(--fc-color-border-hover, #555550);
+    background: var(--fc-color-scrollbar-thumb-hover, #5F5E5A);
 }
 
 /* 选中文本样式 */

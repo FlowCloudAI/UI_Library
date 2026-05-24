@@ -91,7 +91,7 @@
 
 .fc-tree__virtual-list {
     --fc-tree-scrollbar-thumb: transparent;
-    --fc-tree-scrollbar-thumb-hover: var(--fc-color-text-tertiary);
+    --fc-tree-scrollbar-thumb-hover: var(--fc-color-scrollbar-thumb-hover);
     --fc-tree-scrollbar-track: transparent;
     --fc-tree-scrollbar-size: 0.5rem;
     background: transparent;

@@ -2,15 +2,17 @@
 .fc-virtual-list {
     /* 组件局部变量 */
     --vl-bg:            var(--fc-color-bg);
-    --vl-track-bg:      var(--fc-color-bg-tertiary);
-    --vl-thumb-bg:      var(--fc-color-border);
-    --vl-thumb-hover:   var(--fc-color-border-hover);
+    --vl-track-bg:      var(--fc-color-scrollbar-track);
+    --vl-thumb-bg:      var(--fc-color-scrollbar-thumb);
+    --vl-thumb-hover:   var(--fc-color-scrollbar-thumb-hover);
 
     position: relative;
     overflow-y: auto;
     overflow-x: hidden;
     background-color: var(--vl-bg);
     border-radius: var(--fc-radius-md, 8px);
+    scrollbar-width: thin;
+    scrollbar-color: var(--vl-thumb-bg) var(--vl-track-bg);
 }
 
 .fc-virtual-list--hide-scrollbar {
@@ -60,11 +62,4 @@
 
 .fc-virtual-list::-webkit-scrollbar-thumb:hover {
     background: var(--vl-thumb-hover);
-}
-
-/* ========== 暗色主题 ========== */
-[data-theme="dark"] .fc-virtual-list {
-    --vl-track-bg:    #222222;
-    --vl-thumb-bg:    #333330;
-    --vl-thumb-hover: #555550;
 }
