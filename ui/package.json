@@ -18,6 +18,129 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./Alert": {
+      "types": "./dist/Alert.d.ts",
+      "import": "./dist/Alert.js"
+    },
+    "./Avatar": {
+      "types": "./dist/Avatar.d.ts",
+      "import": "./dist/Avatar.js"
+    },
+    "./Button": {
+      "types": "./dist/Button.d.ts",
+      "import": "./dist/Button.js"
+    },
+    "./Card": {
+      "types": "./dist/Card.d.ts",
+      "import": "./dist/Card.js"
+    },
+    "./CheckButton": {
+      "types": "./dist/CheckButton.d.ts",
+      "import": "./dist/CheckButton.js"
+    },
+    "./ContextMenu": {
+      "types": "./dist/ContextMenu.d.ts",
+      "import": "./dist/ContextMenu.js"
+    },
+    "./ConversationTreeView": {
+      "types": "./dist/ConversationTreeView.d.ts",
+      "import": "./dist/ConversationTreeView.js"
+    },
+    "./DeleteDialog": {
+      "types": "./dist/DeleteDialog.d.ts",
+      "import": "./dist/DeleteDialog.js"
+    },
+    "./Input": {
+      "types": "./dist/Input.d.ts",
+      "import": "./dist/Input.js"
+    },
+    "./LazyLoad": {
+      "types": "./dist/LazyLoad.d.ts",
+      "import": "./dist/LazyLoad.js"
+    },
+    "./ListGroup": {
+      "types": "./dist/ListGroup.d.ts",
+      "import": "./dist/ListGroup.js"
+    },
+    "./MarkdownEditor": {
+      "types": "./dist/MarkdownEditor.d.ts",
+      "import": "./dist/MarkdownEditor.js"
+    },
+    "./MessageBox": {
+      "types": "./dist/MessageBox.d.ts",
+      "import": "./dist/MessageBox.js"
+    },
+    "./OrphanDialog": {
+      "types": "./dist/OrphanDialog.d.ts",
+      "import": "./dist/OrphanDialog.js"
+    },
+    "./RollingBox": {
+      "types": "./dist/RollingBox.d.ts",
+      "import": "./dist/RollingBox.js"
+    },
+    "./Select": {
+      "types": "./dist/Select.d.ts",
+      "import": "./dist/Select.js"
+    },
+    "./SideBar": {
+      "types": "./dist/SideBar.d.ts",
+      "import": "./dist/SideBar.js"
+    },
+    "./Slider": {
+      "types": "./dist/Slider.d.ts",
+      "import": "./dist/Slider.js"
+    },
+    "./TabBar": {
+      "types": "./dist/TabBar.d.ts",
+      "import": "./dist/TabBar.js"
+    },
+    "./TagItem": {
+      "types": "./dist/TagItem.d.ts",
+      "import": "./dist/TagItem.js"
+    },
+    "./TeraEditor": {
+      "types": "./dist/TeraEditor.d.ts",
+      "import": "./dist/TeraEditor.js"
+    },
+    "./ThemeProvider": {
+      "types": "./dist/ThemeProvider.d.ts",
+      "import": "./dist/ThemeProvider.js"
+    },
+    "./Timeline": {
+      "types": "./dist/Timeline.d.ts",
+      "import": "./dist/Timeline.js"
+    },
+    "./Tree": {
+      "types": "./dist/Tree.d.ts",
+      "import": "./dist/Tree.js"
+    },
+    "./VirtualList": {
+      "types": "./dist/VirtualList.d.ts",
+      "import": "./dist/VirtualList.js"
+    },
+    "./Alert/style": "./dist/Alert.css",
+    "./Avatar/style": "./dist/Avatar.css",
+    "./Button/style": "./dist/Button.css",
+    "./Card/style": "./dist/Card.css",
+    "./CheckButton/style": "./dist/CheckButton.css",
+    "./ContextMenu/style": "./dist/ContextMenu.css",
+    "./ConversationTreeView/style": "./dist/ConversationTreeView.css",
+    "./DeleteDialog/style": "./dist/Tree.css",
+    "./Input/style": "./dist/Input.css",
+    "./ListGroup/style": "./dist/ListGroup.css",
+    "./MarkdownEditor/style": "./dist/MarkdownEditor.css",
+    "./MessageBox/style": "./dist/MessageBox.css",
+    "./OrphanDialog/style": "./dist/Tree.css",
+    "./RollingBox/style": "./dist/RollingBox.css",
+    "./Select/style": "./dist/Select.css",
+    "./SideBar/style": "./dist/SideBar.css",
+    "./Slider/style": "./dist/Slider.css",
+    "./TabBar/style": "./dist/TabBar.css",
+    "./TagItem/style": "./dist/TagItem.css",
+    "./TeraEditor/style": "./dist/TeraEditor.css",
+    "./Timeline/style": "./dist/Timeline.css",
+    "./Tree/style": "./dist/Tree.css",
+    "./VirtualList/style": "./dist/VirtualList.css",
     "./style": "./dist/index.css"
   },
   "scripts": {
