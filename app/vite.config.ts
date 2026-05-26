@@ -10,6 +10,51 @@ const buildTarget =
             ? 'safari13'
             : 'es2020'
 
+const flowcloudaiUiEntries = [
+    'Alert',
+    'Avatar',
+    'Button',
+    'Card',
+    'CheckButton',
+    'ContextMenu',
+    'ConversationTreeView',
+    'DeleteDialog',
+    'Input',
+    'LazyLoad',
+    'ListGroup',
+    'MarkdownEditor',
+    'MessageBox',
+    'OrphanDialog',
+    'RollingBox',
+    'Select',
+    'SideBar',
+    'Slider',
+    'TabBar',
+    'TagItem',
+    'TeraEditor',
+    'ThemeProvider',
+    'Timeline',
+    'Tree',
+    'VirtualList',
+]
+
+const flowcloudaiUiStyleEntries: Record<string, string> = {
+    ...Object.fromEntries(flowcloudaiUiEntries.map(name => [name, name])),
+    DeleteDialog: 'Tree',
+    OrphanDialog: 'Tree',
+}
+
+const flowcloudaiUiAliases = [
+    ...Object.entries(flowcloudaiUiStyleEntries).map(([entry, styleEntry]) => ({
+        find: `flowcloudai-ui/${entry}/style`,
+        replacement: path.resolve(__dirname, `../ui/dist/${styleEntry}.css`),
+    })),
+    ...flowcloudaiUiEntries.map(entry => ({
+        find: `flowcloudai-ui/${entry}`,
+        replacement: path.resolve(__dirname, `../ui/dist/${entry}.js`),
+    })),
+]
+
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react()],
@@ -31,6 +76,7 @@ export default defineConfig({
                 find: 'react-dom',
                 replacement: path.resolve(__dirname, './node_modules/react-dom'),
             },
+            ...flowcloudaiUiAliases,
             {
                 find: 'flowcloudai-ui/style',
                 replacement: path.resolve(__dirname, '../ui/dist/index.css'),

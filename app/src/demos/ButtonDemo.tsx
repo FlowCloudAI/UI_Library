@@ -1,4 +1,4 @@
-import { Button, ButtonGroup, ButtonToolbar } from 'flowcloudai-ui'
+import { Button, ButtonGroup, ButtonToolbar } from 'flowcloudai-ui/Button'
 
 export function ButtonDemo() {
     return (

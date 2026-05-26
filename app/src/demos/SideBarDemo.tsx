@@ -1,6 +1,6 @@
 import {useState} from 'react'
 import type {CSSProperties} from 'react'
-import {SideBar, type SideBarItem} from 'flowcloudai-ui'
+import {SideBar, type SideBarItem} from 'flowcloudai-ui/SideBar'
 
 const HomeIcon = (<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z" strokeWidth="1.5" strokeLinecap="round"

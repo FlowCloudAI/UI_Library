@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckButton } from 'flowcloudai-ui'
+import { CheckButton } from 'flowcloudai-ui/CheckButton'
 
 export function CheckButtonDemo() {
     const [enabled, setEnabled] = useState(false)

@@ -16,7 +16,12 @@ import {
     UploadCloud,
     Zap,
 } from 'lucide-react'
-import { Avatar, Button, CheckButton, Input, Select, Slider } from 'flowcloudai-ui'
+import { Avatar } from 'flowcloudai-ui/Avatar'
+import { Button } from 'flowcloudai-ui/Button'
+import { CheckButton } from 'flowcloudai-ui/CheckButton'
+import { Input } from 'flowcloudai-ui/Input'
+import { Select } from 'flowcloudai-ui/Select'
+import { Slider } from 'flowcloudai-ui/Slider'
 import './SemanticTokensDemo.css'
 
 const riskOptions = [

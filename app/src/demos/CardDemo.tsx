@@ -1,4 +1,4 @@
-import { Card } from 'flowcloudai-ui';
+import { Card } from 'flowcloudai-ui/Card';
 
 export function CardDemo() {
     return (

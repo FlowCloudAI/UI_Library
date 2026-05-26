@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react'
-import {MessageBox, type MessageBoxBlock} from 'flowcloudai-ui'
+import {MessageBox, type MessageBoxBlock} from 'flowcloudai-ui/MessageBox'
 
 export default function MessageBoxDemo() {
     const [messages] = useState<Array<{
@@ -36,7 +36,7 @@ export default function MessageBoxDemo() {
 ## 简单示例
 
 \`\`\`tsx
-import { VirtualList } from 'flowcloudai-ui'
+import { VirtualList } from 'flowcloudai-ui/VirtualList'
 
 const items = Array.from({ length: 100000 }, (_, i) => ({
   id: i,

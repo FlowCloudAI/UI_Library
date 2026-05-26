@@ -1,4 +1,5 @@
-import {Button, useAlert} from 'flowcloudai-ui'
+import {Button} from 'flowcloudai-ui/Button'
+import {useAlert} from 'flowcloudai-ui/Alert'
 
 export function AlertDemo() {
     const { showAlert } = useAlert()

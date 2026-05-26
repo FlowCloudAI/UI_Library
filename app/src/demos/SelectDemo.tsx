@@ -1,4 +1,4 @@
-import { Select } from 'flowcloudai-ui'
+import { Select } from 'flowcloudai-ui/Select'
 
 export function SelectDemo() {
     return (

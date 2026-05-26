@@ -1,4 +1,4 @@
-import { Input } from 'flowcloudai-ui'
+import { Input } from 'flowcloudai-ui/Input'
 
 export function InputDemo() {
     return (

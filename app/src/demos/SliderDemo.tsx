@@ -1,4 +1,4 @@
-import { Slider } from 'flowcloudai-ui'
+import { Slider } from 'flowcloudai-ui/Slider'
 
 export function SliderDemo() {
     return (

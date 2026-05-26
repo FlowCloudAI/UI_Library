@@ -9,6 +9,11 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
+    "baseUrl": ".",
+    "paths": {
+      "flowcloudai-ui": ["../ui/dist/index.d.ts"],
+      "flowcloudai-ui/*": ["../ui/dist/*.d.ts"]
+    },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "moduleDetection": "force",

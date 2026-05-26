@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Timeline, type TimelineEvent} from 'flowcloudai-ui';
+import {Timeline, type TimelineEvent} from 'flowcloudai-ui/Timeline';
 
 const TimeDemo: React.FC = () => {
     // 时间范围配置

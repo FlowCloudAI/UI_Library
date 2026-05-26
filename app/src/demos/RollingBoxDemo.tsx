@@ -1,4 +1,4 @@
-import { RollingBox } from 'flowcloudai-ui'
+import { RollingBox } from 'flowcloudai-ui/RollingBox'
 
 const boxStyle = {
     height: 180,

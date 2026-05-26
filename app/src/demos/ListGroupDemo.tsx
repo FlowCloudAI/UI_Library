@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ListGroup, ListGroupItem } from 'flowcloudai-ui'
+import { ListGroup, ListGroupItem } from 'flowcloudai-ui/ListGroup'
 
 export function ListGroupDemo() {
     const [selected, setSelected] = useState('1')

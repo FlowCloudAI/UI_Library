@@ -1,5 +1,7 @@
 import {useMemo, useState} from 'react';
-import {Button, ButtonGroup, CheckButton, TeraEditor, type TeraEditorDiagnostic} from 'flowcloudai-ui';
+import {Button, ButtonGroup} from 'flowcloudai-ui/Button';
+import {CheckButton} from 'flowcloudai-ui/CheckButton';
+import {TeraEditor, type TeraEditorDiagnostic} from 'flowcloudai-ui/TeraEditor';
 
 const NORMAL_TEMPLATE = `{% block content %}
 <section class="hero">

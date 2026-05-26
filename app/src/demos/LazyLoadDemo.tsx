@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button } from 'flowcloudai-ui'
+import { Button } from 'flowcloudai-ui/Button'
 
 function LazyContent() {
     return (

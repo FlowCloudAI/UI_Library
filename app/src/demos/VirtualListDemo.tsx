@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Avatar, VirtualList, type VirtualListVisibleRange } from 'flowcloudai-ui'
+import { Avatar } from 'flowcloudai-ui/Avatar'
+import { VirtualList, type VirtualListVisibleRange } from 'flowcloudai-ui/VirtualList'
 
 export function VirtualListDemo() {
     const data = useMemo(() => Array.from({ length: 10000 }, (_, i) => ({

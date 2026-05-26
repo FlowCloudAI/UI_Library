@@ -1,5 +1,7 @@
 import {useRef, useState} from 'react'
-import {Button, ButtonGroup, MarkdownEditor, type MarkdownEditorRef, useAlert} from 'flowcloudai-ui'
+import {useAlert} from 'flowcloudai-ui/Alert'
+import {Button, ButtonGroup} from 'flowcloudai-ui/Button'
+import {MarkdownEditor, type MarkdownEditorRef} from 'flowcloudai-ui/MarkdownEditor'
 
 type Mode = 'edit' | 'preview'
 

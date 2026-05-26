@@ -12,7 +12,7 @@ import {
     type TreeNodeRenderState,
     type TreeViewportRowsPayload,
     type TreeVisibleRow,
-} from 'flowcloudai-ui'
+} from 'flowcloudai-ui/Tree'
 
 const NAV_MIN = 180
 const NAV_MAX = 600
