@@ -69,7 +69,7 @@
     --fc-color-primary-subtle: var(--fc-blue-50);
 
     --fc-color-bg: #FFFDFA;
-    --fc-color-bg-secondary: #F8F7F6;
+    --fc-color-bg-secondary: #F5F4F3;
     --fc-color-bg-tertiary: #EFEEEA;
     --fc-color-bg-elevated: #FFFFFF;
     --fc-color-bg-overlay: rgba(0, 0, 0, 0.4);
@@ -120,29 +120,29 @@
     --fc-color-pink: var(--fc-pink-500);
     --fc-color-pink-bg: var(--fc-pink-50);
 
-    /* ---------- 间距 ---------- */
-    --fc-space-xs: 0.25rem; /* 4 像素 */
-    --fc-space-sm: 0.5rem; /* 8 像素 */
-    --fc-space-md: 0.75rem; /* 12 像素 */
-    --fc-space-lg: 1rem; /* 16 像素 */
-    --fc-space-xl: 1.5rem; /* 24 像素 */
-    --fc-space-2xl: 2rem; /* 32 像素 */
-    --fc-space-3xl: 3rem; /* 48 像素 */
+        /* ---------- 间距 ---------- */
+        --fc-space-xs: 0.25rem; /* 4 像素 */
+        --fc-space-sm: 0.5rem; /* 8 像素 */
+        --fc-space-md: 0.75rem; /* 12 像素 */
+        --fc-space-lg: 1rem; /* 16 像素 */
+        --fc-space-xl: 1.5rem; /* 24 像素 */
+        --fc-space-2xl: 2rem; /* 32 像素 */
+        --fc-space-3xl: 3rem; /* 48 像素 */
 
-    /* ---------- 圆角 ---------- */
-    --fc-radius-xs: 0.125rem; /* 2 像素 */
-    --fc-radius-sm: 0.25rem; /* 4 像素 */
-    --fc-radius-md: 0.5rem; /* 8 像素 */
-    --fc-radius-lg: 0.75rem; /* 12 像素 */
-    --fc-radius-xl: 1rem; /* 16 像素 */
-    --fc-radius-full: 9999px;
+        /* ---------- 圆角 ---------- */
+        --fc-radius-xs: 0.125rem; /* 2 像素 */
+        --fc-radius-sm: 0.25rem; /* 4 像素 */
+        --fc-radius-md: 0.5rem; /* 8 像素 */
+        --fc-radius-lg: 0.75rem; /* 12 像素 */
+        --fc-radius-xl: 1rem; /* 16 像素 */
+        --fc-radius-full: 9999px;
 
     /* ---------- 字体 ---------- */
     --fc-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --fc-font-size-2xs: 0.625rem; /* 10 像素 */
-    --fc-font-size-xs: 0.6875rem; /* 11 像素 */
-    --fc-font-size-caption: 0.75rem; /* 12 像素 */
-    --fc-font-size-sm: 0.8125rem; /* 13 像素 */
+    --fc-font-size-2xs: 0.7rem; /* 10 像素 */
+    --fc-font-size-xs: 0.75rem; /* 11 像素 */
+    --fc-font-size-caption: 0.85rem; /* 12 像素 */
+    --fc-font-size-sm: 0.9rem; /* 13 像素 */
     --fc-font-size-control: 0.875rem; /* 14 像素 */
     --fc-font-size-reading: 0.9rem; /* 约 14.4 像素 */
     --fc-font-size-md: 0.9375rem; /* 15 像素 */
@@ -150,6 +150,7 @@
     --fc-font-size-lg: 1.125rem; /* 18 像素 */
     --fc-font-size-title-sm: 1.25rem; /* 20 像素 */
     --fc-font-size-xl: 1.375rem; /* 22 像素 */
+
     --fc-font-size-icon-xs: 0.5rem; /* 8 像素 */
     --fc-font-size-icon-sm: 0.5625rem; /* 9 像素 */
     --fc-font-size-icon-md: 0.65rem; /* 约 10.4 像素 */
@@ -194,7 +195,7 @@ body {
     --fc-color-primary-active: var(--fc-blue-100);
     --fc-color-primary-subtle: rgba(55, 138, 221, 0.12);
 
-    --fc-color-bg: #10100F;
+    --fc-color-bg: #101010;
     --fc-color-bg-secondary: #1B1B1B;
     --fc-color-bg-tertiary: #222222;
     --fc-color-bg-elevated: #282828;
