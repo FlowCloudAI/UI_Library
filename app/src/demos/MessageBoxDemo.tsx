@@ -332,6 +332,71 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
         return () => clearInterval(interval)
     }, [])
 
+    // ── 紧凑过程上下文演示 ───────────────────────────────────────────────────
+    const compactContextBlocks: MessageBoxBlock[] = [
+        {
+            type: 'reasoning',
+            content: '用户需要了解项目结构，我先确认词条、标签和关联关系，再组织最终回答。',
+            seconds: 2,
+        },
+        {
+            type: 'content',
+            content: '我会先查看项目词条，再补充标签定义，避免只凭局部信息回答。',
+            markdown: false,
+        },
+        {
+            type: 'tool',
+            tool: {
+                index: 0,
+                name: 'list_entries',
+                args: JSON.stringify({project: 'demo'}, null, 2),
+                result: JSON.stringify([{title: '世界设定'}, {title: '角色档案'}], null, 2),
+            },
+            detail: 'verbose',
+        },
+        {
+            type: 'content',
+            content: '词条列表显示项目重点集中在世界设定和角色档案，我继续查看标签定义。',
+            markdown: false,
+        },
+        {
+            type: 'tool',
+            tool: {
+                index: 1,
+                name: 'get_tags',
+                args: JSON.stringify({project: 'demo'}, null, 2),
+                result: JSON.stringify(['势力', '角色', '地点'], null, 2),
+            },
+            detail: 'verbose',
+        },
+        {
+            type: 'content',
+            content: '这个项目主要围绕世界设定、角色档案和地点信息组织内容。标签体系以“势力、角色、地点”为主，适合继续补充角色关系和地点归属，下一步建议先完善核心势力与角色之间的关联。',
+            markdown: true,
+        },
+    ]
+
+    const riskyCompactContextBlocks: MessageBoxBlock[] = [
+        {
+            type: 'content',
+            content: '过程信息：我查到项目里有“世界设定、角色档案、地点索引”三类核心词条，其中角色档案数量最多；标签里“势力”和“地点”使用频率最高，说明后续整理时应该优先补全角色和势力之间的关系。',
+            markdown: false,
+        },
+        {
+            type: 'tool',
+            tool: {
+                index: 0,
+                name: 'get_project_summary',
+                result: '项目摘要已获取',
+            },
+        },
+        {
+            type: 'content',
+            content: '我已经了解完了。',
+            markdown: false,
+        },
+    ]
+
     return (
         <>
             <div className="demo-section">
@@ -507,6 +572,28 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
                         <MessageBox
                             role="assistant"
                             blocks={toolUseBlocks}
+                        />
+
+                        {/* 紧凑过程上下文：完整保留过程，默认只突出最终回答 */}
+                        <MessageBox
+                            role="user"
+                            content="了解这个项目，并给出整理建议"
+                        />
+                        <MessageBox
+                            role="assistant"
+                            blocks={compactContextBlocks}
+                            contextDisplay="compact"
+                        />
+
+                        {/* 风险降级：最终回答太短时，过程上下文默认展开 */}
+                        <MessageBox
+                            role="user"
+                            content="如果重要信息出现在过程中，会不会被隐藏？"
+                        />
+                        <MessageBox
+                            role="assistant"
+                            blocks={riskyCompactContextBlocks}
+                            contextDisplay="compact"
                         />
                     </div>
                 </div>

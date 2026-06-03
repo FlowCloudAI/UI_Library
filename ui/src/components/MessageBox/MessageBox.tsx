@@ -41,6 +41,8 @@ export type MessageBoxBlock =
     | { id?: string; type: 'content'; content: string; markdown?: boolean; streaming?: boolean }
     | { id?: string; type: 'children'; children: React.ReactNode };
 
+export type MessageBoxContextDisplay = 'full' | 'compact';
+
 export interface MessageBoxProps {
   role: 'user' | 'assistant' | 'system';
   content?: string;
@@ -60,6 +62,8 @@ export interface MessageBoxProps {
   toolCallDetail?: 'simple' | 'verbose';
   // 按顺序渲染的块（优先级高于独立字段）
   blocks?: MessageBoxBlock[];
+  // 过程上下文展示方式：compact 会在完成后折叠最终回答前的过程块
+  contextDisplay?: MessageBoxContextDisplay;
   // 角色扮演模式（仅对 assistant 生效）
   rolePlaying?: boolean;
   // 分支信息
@@ -414,6 +418,147 @@ const stopToolbarEvent = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
 };
 
+const isAnswerBlock = (block: MessageBoxBlock) => (
+    block.type === 'content' || block.type === 'children'
+);
+
+const isActiveBlock = (block: MessageBoxBlock) => {
+    if (block.type === 'reasoning' || block.type === 'content') {
+        return block.streaming === true;
+    }
+    if (block.type === 'tool') {
+        return block.tool.result === undefined;
+    }
+    if (block.type === 'tool_use') {
+        return block.tools.some(tool => tool.result === undefined);
+    }
+    return false;
+};
+
+const getContentLength = (blocks: MessageBoxBlock[]) => (
+    blocks.reduce((total, block) => (
+        block.type === 'content' ? total + block.content.trim().length : total
+    ), 0)
+);
+
+const getContentText = (blocks: MessageBoxBlock[]) => (
+    blocks
+        .filter((block): block is Extract<MessageBoxBlock, { type: 'content' }> => block.type === 'content')
+        .map(block => block.content.trim())
+        .filter(Boolean)
+        .join('\n')
+);
+
+const looksLikeWeakFinalAnswer = (text: string) => {
+    const normalized = text.replace(/\s+/g, ' ').trim();
+    if (normalized.length === 0 || normalized.length >= 80) return false;
+    return /^(好的|我已|我已经|已经|了解|我了解|完成|这是|以上|接下来)/.test(normalized);
+};
+
+const shouldExpandProcessContext = (contextBlocks: MessageBoxBlock[], answerBlocks: MessageBoxBlock[]) => {
+    const answerText = getContentText(answerBlocks);
+    const answerLength = answerText.length;
+    const contextContentLength = getContentLength(contextBlocks);
+    const hasLongContextContent = contextContentLength >= Math.max(120, answerLength * 2);
+
+    return answerLength === 0 || (answerLength < 80 && hasLongContextContent) || looksLikeWeakFinalAnswer(answerText);
+};
+
+const splitCompactBlocks = (blocks: MessageBoxBlock[]) => {
+    let answerStart = blocks.length;
+    while (answerStart > 0 && isAnswerBlock(blocks[answerStart - 1])) {
+        answerStart -= 1;
+    }
+
+    if (answerStart === 0 || answerStart === blocks.length) return null;
+
+    const contextBlocks = blocks.slice(0, answerStart);
+    const answerBlocks = blocks.slice(answerStart);
+    if (contextBlocks.length === 0 || answerBlocks.length === 0) return null;
+
+    return {
+        contextBlocks,
+        answerBlocks,
+        defaultExpanded: shouldExpandProcessContext(contextBlocks, answerBlocks),
+    };
+};
+
+const summarizeProcessContext = (blocks: MessageBoxBlock[]) => {
+    let reasoningCount = 0;
+    let contentCount = 0;
+    let childrenCount = 0;
+    let toolCount = 0;
+    let errorToolCount = 0;
+
+    for (const block of blocks) {
+        if (block.type === 'reasoning') reasoningCount += 1;
+        if (block.type === 'content' && block.content.trim()) contentCount += 1;
+        if (block.type === 'children') childrenCount += 1;
+        if (block.type === 'tool') {
+            toolCount += 1;
+            if (block.tool.isError) errorToolCount += 1;
+        }
+        if (block.type === 'tool_use') {
+            toolCount += block.tools.length;
+            errorToolCount += block.tools.filter(tool => tool.isError).length;
+        }
+    }
+
+    const parts = [
+        reasoningCount > 0 && `${reasoningCount} 条思考`,
+        toolCount > 0 && `${toolCount} 次工具调用`,
+        contentCount > 0 && `${contentCount} 段过程说明`,
+        childrenCount > 0 && `${childrenCount} 段附加内容`,
+    ].filter(Boolean);
+
+    return {
+        label: parts.length > 0 ? `已收起 ${parts.join('、')}` : '已收起过程上下文',
+        errorToolCount,
+    };
+};
+
+const ProcessContextSection: React.FC<{
+    blocks: MessageBoxBlock[];
+    defaultExpanded: boolean;
+    renderBlock: (block: MessageBoxBlock, index: number, keyPrefix: string) => React.ReactNode;
+}> = ({blocks, defaultExpanded, renderBlock}) => {
+    const [expanded, setExpanded] = useState(defaultExpanded);
+
+    useEffect(() => {
+        if (defaultExpanded) setExpanded(true);
+    }, [defaultExpanded]);
+
+    const summary = summarizeProcessContext(blocks);
+
+    return (
+        <div className={`message-box-process-context${expanded ? ' is-expanded' : ''}`}>
+            <button
+                className="message-box-process-header"
+                onClick={() => setExpanded(v => !v)}
+                type="button"
+            >
+                <span className="message-box-process-label">{summary.label}</span>
+                {summary.errorToolCount > 0 && (
+                    <span className="message-box-process-warning">
+                        包含 {summary.errorToolCount} 个失败工具
+                    </span>
+                )}
+                {defaultExpanded && (
+                    <span className="message-box-process-warning">
+                        可能包含中间结论
+                    </span>
+                )}
+                <span className={`message-box-process-chevron${expanded ? ' expanded' : ''}`}/>
+            </button>
+            {expanded && (
+                <div className="message-box-process-content">
+                    {blocks.map((block, idx) => renderBlock(block, idx, 'process'))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // ========================================
 // 主组件：MessageBox
 // ========================================
@@ -433,6 +578,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
                                                         toolCalls,
                                                         toolCallDetail = 'simple',
                                                         blocks,
+                                                        contextDisplay = 'full',
                                                         rolePlaying,
                                                         nodeId,
                                                         branchIndex,
@@ -483,10 +629,8 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
   const style: React.CSSProperties | undefined = role !== 'assistant' && hasNewline ? {maxWidth} : undefined;
   const bubbleStyle: React.CSSProperties | undefined = lineHeight !== undefined ? {lineHeight} : undefined;
 
-  const renderBlocks = () => {
-    if (!blocks || blocks.length === 0) return null;
-    return blocks.map((block, idx) => {
-      const key = block.id ?? `${block.type}-${idx}`;
+  const renderBlock = (block: MessageBoxBlock, idx: number, keyPrefix: string) => {
+      const key = block.id ?? `${keyPrefix}-${block.type}-${idx}`;
       switch (block.type) {
         case 'reasoning':
           return (
@@ -543,12 +687,36 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
         default:
           return null;
       }
-    });
   };
+
+  const renderBlocks = (targetBlocks: MessageBoxBlock[], keyPrefix: string) => {
+    if (targetBlocks.length === 0) return null;
+    return targetBlocks.map((block, idx) => renderBlock(block, idx, keyPrefix));
+  };
+
+  const canCompactBlocks = contextDisplay === 'compact'
+      && !streaming
+      && !rolePlaying
+      && blocks !== undefined
+      && blocks.length > 0
+      && !blocks.some(isActiveBlock);
+  const compactBlocks = canCompactBlocks ? splitCompactBlocks(blocks) : null;
+  const blockContent = compactBlocks ? (
+      <>
+        <ProcessContextSection
+            blocks={compactBlocks.contextBlocks}
+            defaultExpanded={compactBlocks.defaultExpanded}
+            renderBlock={renderBlock}
+        />
+        {renderBlocks(compactBlocks.answerBlocks, 'answer')}
+      </>
+  ) : (
+      blocks ? renderBlocks(blocks, 'block') : null
+  );
 
   const bubble = blocks && blocks.length > 0 ? (
       <div className="message-box-bubble" style={bubbleStyle}>
-        {renderBlocks()}
+        {blockContent}
       </div>
   ) : (
       <div className="message-box-bubble" style={bubbleStyle}>
