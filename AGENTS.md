@@ -2,8 +2,8 @@
 
 ## 项目概览
 
-`lib_ui` 是 FlowCloudAI 组件体系仓库，包含可发布包 `flowcloudai-ui` 与前端演示项目。  
-上层应用应通过包名依赖，避免源码级穿透造成 React 实例重复或样式污染。
+`lib_ui` 是 FlowCloudAI 的前端组件仓库，维护可发布的 `flowcloudai-ui` 包与接入示例。  
+目标是让桌面端、站点和插件能力复用一致的组件体系和 Token 约定。
 
 ## 构建 / 运行 / 测试 / lint
 
@@ -21,41 +21,42 @@ npm install
 npm run install:local
 ```
 
-`lib_ui` 无统一 `npm run test`，`npm run lint` 与组件 build 是最小验证边界。
-
 ## 代码风格与命名约定
 
-- React/TypeScript 采用严格模式，组件与 hook 命名清晰。  
-- `flowcloudai-ui` 包公共 API 优先保证向后兼容。  
-- 样式以语义化 token 为主，避免魔法常量。
+- TypeScript/React 使用 ESM 严格模式。  
+- 组件与导出 API 遵循稳定语义，兼容策略优先于激进重构。  
+- 样式优先使用 `flowcloudai-ui` 的 `--fc-*` Token。  
 
-## 目录结构与职责
+## 目录结构与模块职责
 
 ```text
 lib_ui/
-├── ui/      # 核心组件源码与发布构建
-├── app/     # 演示应用与接入验证
-└── docs/    # 说明文档与设计约定
+├── ui/          # 组件源代码、构建与发布配置
+│   └── src/
+├── app/         # 演示与接入校验场景
+│   └── src/
+├── docs/        # 设计与维护文档
+└── scripts/     # 边界检查/发布辅助脚本
 ```
 
 ## 安全 / 禁止事项
 
-- 不在组件库提交真实密钥、私有地址或环境变量示例。  
-- 禁止直接引用上游私有资源路径，所有测试数据使用示例值。  
-- 合并前确认 `npm run lint` 与 `npm run build` 通过。
+- 不提交敏感密钥、服务端地址与测试账号。  
+- 避免提交无版权授权的大体量素材。  
+- 组件修改需补充兼容说明和 lint/build 结果。  
 
-## 贡献方式与 PR 规范
+## 提交与 PR 规范
 
-- 组件/API 变更需补齐使用示例或演示步骤。  
-- PR 说明需包含兼容性影响与视觉回归观察点。  
-- 提交信息默认中文。
+- 提交信息默认中文，单次聚焦单一组件或 API。  
+- PR 需包含组件兼容性、发布影响、最小复现步骤。  
+- 包名或样式 Token 改动前需补充示例场景回归。  
 
 ## 项目特有坑点
 
-- 避免直接引用 `../../ui/src`，必须通过 `flowcloudai-ui` 包名。  
-- 演示链路依赖 npm 链接行为，`npm run install:local` 与本地 `dist` 要求一致。
+- 禁止跨仓库直接引用 `../../ui/src` 路径，必须通过 `flowcloudai-ui` 包或本地链接接入。  
+- `npm run install:local` 依赖 `app` 与 `ui` 的目录结构，改动时同步验证。  
 
 ## 文档同步依据（本次核对）
 
-- 同步时间：2026-05-28 18:02:58 +08:00  
-- 依据文件：`lib_ui/package.json`、`lib_ui/ui/package.json`、`lib_ui/app/package.json`
+- 同步时间：2026-06-03 16:28:02 +08:00
+- 依据文件：`lib_ui/package.json`、`lib_ui/ui/package.json`、`lib_ui/app/package.json`、`lib_ui/ui/src`、`lib_ui/app/src`
