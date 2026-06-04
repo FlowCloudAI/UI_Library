@@ -18,6 +18,7 @@ dist-ssr
 
 .claude
 .claude/*
+.codegraph/
 
 # Editor directories and files
 .vscode/*

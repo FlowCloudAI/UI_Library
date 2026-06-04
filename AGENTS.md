@@ -59,5 +59,5 @@ lib_ui/
 
 ## 文档同步依据（本次核对）
 
-- 同步时间：2026-06-03 21:04:46 +08:00
+- 同步时间：2026-06-04 17:03:10 +08:00
 - 依据文件：`lib_ui/package.json`、`lib_ui/ui/package.json`、`lib_ui/app/package.json`、`lib_ui/ui/src`、`lib_ui/app/src`
