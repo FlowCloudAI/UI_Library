@@ -1,12 +1,12 @@
 # FlowCloudAI 组件库（lib_ui）
 
-`lib_ui` 提供统一组件包 `flowcloudai-ui`，用于桌面端、网站端和演示应用的 UI 一致性复用。  
-通过统一 token 与组件接口减少跨项目重复实现成本。
+`lib_ui` 提供统一组件包 `flowcloudai-ui`，用于桌面端、网站端与演示应用的 UI 一致性复用。  
+仓库核心任务是对外提供稳定 API 与统一设计 token，并通过演示应用验证接入行为。
 
 ## 项目简介
 
-仓库包含组件源码、演示应用和构建发布链路。  
-上层项目应通过包名/本地链接接入，不建议源码穿透。
+`ui` 目录定义可复用组件与构建配置，`app` 目录作为接入演示和回归入口。  
+上层项目建议通过包名方式依赖，减少源码穿透导致的样式和版本漂移。
 
 ## 快速开始
 
@@ -28,19 +28,19 @@ npm run install:local
 
 ### 最小示例
 
-1. 在 `ui` 下运行 `npm run build`。  
-2. 在 `app` 运行 `npm run install:local` 进行本地接入。  
-3. 打开演示页验证关键组件。  
+1. 在 `ui` 下执行 `npm run build`。  
+2. 在 `app` 下执行 `npm run install:local`。  
+3. 启动演示页确认关键组件渲染与 token 兼容。  
 
 ## 主要功能 / 使用方式
 
-- 统一 UI 组件与 `--fc-*` Token。  
-- `tsup` 打包与发布配置。  
-- 演示应用用于接入回归验证。  
+- 统一组件库与 `--fc-*` Token。  
+- 组件打包、边界检查与本地接入脚本。  
+- 演示应用用于接入样例与回归验证。  
 
 ## 技术栈
 
-- React 19、TypeScript、Vite、tsup。  
+- React 19、TypeScript、Vite、tsup  
 
 ## 目录结构（仅顶层）
 
@@ -48,13 +48,14 @@ npm run install:local
 lib_ui/
 ├── ui/
 ├── app/
-└── docs/
+├── docs/
+└── scripts/
 ```
 
 ## 许可证与贡献方式
 
-- 许可证按仓库声明。  
-- 提交前补充 `npm run lint` 与 `ui` 的 `npm run build` 结果。  
-- PR 说明包含样式兼容性与 API 影响。  
+- 许可证：仓库未发现独立 `LICENSE` 文件（TODO：确认授权与分发策略）。  
+- 贡献前请补充 `npm run lint` 与 `ui` 的 `npm run build` 结果。  
+- PR 需附样式兼容性与 API 影响说明。  
 
-文档同步时间：2026-06-03 16:28:02 +08:00
+文档同步时间：2026-06-03 21:04:46 +08:00
