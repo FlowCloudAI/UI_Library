@@ -4,9 +4,12 @@ export type {
     TreeActionDisplayMode,
     TreeActionItem,
     TreeColorTokens,
+    TreeTokens,
     TreeNodeActionHelpers,
     TreeNodeRenderState,
     TreeProps,
+    TreeSelectedKeyChangeHandler,
+    TreeSelectedKeyChangeMeta,
     TreeViewportRowsPayload,
     TreeVisibleRow,
 } from '../components/Tree/Tree'

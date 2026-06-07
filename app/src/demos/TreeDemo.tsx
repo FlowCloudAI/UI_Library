@@ -1,4 +1,4 @@
-import {type CSSProperties, type MouseEvent as ReactMouseEvent, SetStateAction, useMemo, useState} from 'react'
+import {type CSSProperties, type MouseEvent as ReactMouseEvent, useMemo, useState} from 'react'
 import {
     type CategoryTreeNode,
     DeleteDialog,
@@ -7,7 +7,7 @@ import {
     flatToTree,
     Tree,
     type TreeActionItem,
-    type TreeColorTokens,
+    type TreeTokens,
     type TreeNodeActionHelpers,
     type TreeNodeRenderState,
     type TreeViewportRowsPayload,
@@ -71,7 +71,7 @@ export function TreeDemo() {
     )
 
     const rootKeys = useMemo(() => roots.map((node: { key: any }) => node.key), [roots])
-    const customColorTokens = useMemo<TreeColorTokens | undefined>(() => {
+    const customColorTokens = useMemo<TreeTokens | undefined>(() => {
         if (!customColors) return undefined
         return {
             text: '#dbe4ff',
@@ -419,8 +419,8 @@ export function TreeDemo() {
                         indentationLine={indentationLine}
                         actionDisplayMode={actionDisplayMode}
                         actionCollapseThreshold={240}
-                        colorTokens={customColorTokens}
-                        onSelect={(key: SetStateAction<string | undefined>) => {
+                        tokens={customColorTokens}
+                        onSelectedKeyChange={(key) => {
                             setSelectedKey(key)
                             addLog(`选中 [${key}]`)
                         }}

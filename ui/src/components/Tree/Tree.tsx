@@ -24,6 +24,7 @@ import {
 } from '@dnd-kit/core'
 import { useContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenuContext'
 import { VirtualList, type VirtualListVisibleRange } from '../VirtualList/VirtualList'
+import type {FcChangeHandler, FcChangeMeta} from '../../types/common'
 
 import { CategoryTreeNode } from './flatToTree'
 import './Tree.css'
@@ -44,7 +45,7 @@ export interface TreeViewportRowsPayload {
     rows: TreeVisibleRow[]
 }
 
-export interface TreeColorTokens {
+export interface TreeTokens {
     text?: string
     textMuted?: string
     bgHover?: string
@@ -57,6 +58,12 @@ export interface TreeColorTokens {
     actionHoverBg?: string
     dropIndicator?: string
 }
+
+/** @deprecated 推荐改用 TreeTokens。 */
+export type TreeColorTokens = TreeTokens
+
+export type TreeSelectedKeyChangeMeta = FcChangeMeta<React.MouseEvent>
+export type TreeSelectedKeyChangeHandler = FcChangeHandler<string, TreeSelectedKeyChangeMeta>
 
 export interface TreeNodeRenderState {
     level: number
@@ -107,7 +114,7 @@ interface TreeActionsValue {
     toggleExpand: (key: string) => void
     expandSubtree: (node: CategoryTreeNode) => void
     collapseSubtree: (node: CategoryTreeNode) => void
-    select: (key: string) => void
+    select: (key: string, meta?: TreeSelectedKeyChangeMeta) => void
     startEdit: (key: string) => void
     commitEdit: (key: string, newTitle: string) => Promise<void>
     cancelEdit: () => void
@@ -420,7 +427,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
     ])
 
     const actionHelpers = useMemo<TreeNodeActionHelpers>(() => ({
-        select: () => actions.select(node.key),
+        select: () => actions.select(node.key, {source: 'programmatic'}),
         toggleExpand: () => actions.toggleExpand(node.key),
         expandSubtree: () => actions.expandSubtree(node),
         collapseSubtree: () => actions.collapseSubtree(node),
@@ -530,9 +537,9 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
         )
     }, [compactActions, nodeActions])
 
-    const handleItemClick = useCallback(() => {
+    const handleItemClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
         if (!isSelected) {
-            actions.select(node.key)
+            actions.select(node.key, {source: 'click', event})
             return
         }
         if (hasChildren) actions.toggleExpand(node.key)
@@ -545,7 +552,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
 
     const openNodeMenu = useCallback((e: React.MouseEvent) => {
         if (contextMenuItems.length === 0) return
-        actions.select(node.key)
+        actions.select(node.key, {source: 'click', event: e})
         showContextMenu(e as unknown as MouseEvent, contextMenuItems)
     }, [actions, contextMenuItems, node.key, showContextMenu])
 
@@ -688,14 +695,23 @@ function TreeNodeItem({ row }: TreeNodeItemProps) {
 
 // ── 树 ──────────────────────────────────────────────────────────────────────
 
-export interface TreeProps {
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production')
+}
+
+export interface TreeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
     treeData: CategoryTreeNode[]
     onRename?: (key: string, newName: string) => Promise<void>
     onCreate?: (parentKey: string | null) => Promise<string>
     onDeleteRequest?: (node: CategoryTreeNode) => void
     onMove?: (key: string, targetKey: string, position: DropPosition) => Promise<void>
+    /** @deprecated 保留兼容，推荐改用 onSelectedKeyChange。 */
     onSelect?: (key: string) => void
     selectedKey?: string
+    /** 推荐使用的选中项变更回调。 */
+    onSelectedKeyChange?: TreeSelectedKeyChangeHandler
     expandedKeys?: string[]
     defaultExpandedKeys?: string[]
     onExpandedKeysChange?: (keys: string[]) => void
@@ -724,12 +740,13 @@ export interface TreeProps {
     indentSize?: number
     actionDisplayMode?: TreeActionDisplayMode
     actionCollapseThreshold?: number
+    tokens?: TreeTokens
+    /** @deprecated 保留兼容，推荐改用 tokens。 */
     colorTokens?: TreeColorTokens
     /** 列表视口显式高度覆盖；未传时默认填充父容器剩余空间 */
     scrollHeight?: string | number
     virtualRowHeight?: number
     virtualOverscan?: number
-    className?: string
     /** 折叠/展开动画时长（秒），默认 0.12 */
     collapseDuration?: number
 }
@@ -742,6 +759,7 @@ export function Tree({
                          onMove,
                          onSelect,
                          selectedKey,
+                         onSelectedKeyChange,
                          expandedKeys: controlledExpandedKeys,
                          defaultExpandedKeys,
                          onExpandedKeysChange,
@@ -763,12 +781,15 @@ export function Tree({
                          indentSize = 20,
                          actionDisplayMode = 'auto',
                          actionCollapseThreshold = 208,
+                         tokens,
                          colorTokens,
                          scrollHeight,
                          virtualRowHeight = 34,
                          virtualOverscan = 8,
                          className = '',
+                         style,
                          collapseDuration = 0.12,
+                         ...props
                      }: TreeProps) {
     const [uncontrolledExpandedKeys, setUncontrolledExpandedKeys] = useState<Set<string>>(
         () => new Set(defaultExpandedKeys ?? [])
@@ -784,6 +805,8 @@ export function Tree({
     const lastVisibleRowsCallbackRef = useRef<typeof onVisibleRowsChange>(undefined)
     const lastViewportPayloadRef = useRef<TreeViewportRowsPayload | null>(null)
     const lastViewportRowsCallbackRef = useRef<typeof onViewportRowsChange>(undefined)
+    const warnedLegacyOnSelectRef = useRef(false)
+    const warnedLegacyColorTokensRef = useRef(false)
 
     const dragVisualStoreRef = useRef<DragVisualStore | null>(null)
     if (dragVisualStoreRef.current === null) {
@@ -810,6 +833,25 @@ export function Tree({
     const currentSearchValue = controlledSearchValue ?? uncontrolledSearchValue
     const deferredSearchValue = useDeferredValue(currentSearchValue)
     const canCreateRoot = createEnabled && (!canCreate || canCreate(null))
+    const resolvedTokens = useMemo<TreeTokens | undefined>(() => {
+        if (!tokens && !colorTokens) return undefined
+        return {
+            ...colorTokens,
+            ...tokens,
+        }
+    }, [colorTokens, tokens])
+
+    useEffect(() => {
+        if (!onSelect || warnedLegacyOnSelectRef.current || !isDevelopmentRuntime()) return
+        warnedLegacyOnSelectRef.current = true
+        console.warn('[flowcloudai-ui][Tree] onSelect 已保留兼容，建议改用 onSelectedKeyChange。')
+    }, [onSelect])
+
+    useEffect(() => {
+        if (!colorTokens || warnedLegacyColorTokensRef.current || !isDevelopmentRuntime()) return
+        warnedLegacyColorTokensRef.current = true
+        console.warn('[flowcloudai-ui][Tree] colorTokens 已废弃，推荐改用 tokens。')
+    }, [colorTokens])
 
     useEffect(() => {
         const handler = (e: PointerEvent) => { pointerYRef.current = e.clientY }
@@ -903,7 +945,13 @@ export function Tree({
         })
     }, [setExpandedKeys])
 
-    const select     = useCallback((key: string) => onSelect?.(key), [onSelect])
+    const select = useCallback((key: string, meta?: TreeSelectedKeyChangeMeta) => {
+        if (onSelectedKeyChange) {
+            onSelectedKeyChange(key, meta)
+        } else {
+            onSelect?.(key)
+        }
+    }, [onSelect, onSelectedKeyChange])
     const startEdit  = useCallback((key: string) => setEditingKey(key), [])
     const cancelEdit = useCallback(() => setEditingKey(null), [])
 
@@ -1214,25 +1262,29 @@ export function Tree({
     ])
 
     const treeStyle = useMemo<React.CSSProperties>(() => {
-        const style: Record<string, string> = {}
+        const nextStyle: Record<string, string> = {}
 
-        if (colorTokens?.text) style['--fc-tree-text'] = colorTokens.text
-        if (colorTokens?.textMuted) style['--fc-tree-text-muted'] = colorTokens.textMuted
-        if (colorTokens?.bgHover) style['--fc-tree-bg-hover'] = colorTokens.bgHover
-        if (colorTokens?.bgSelected) style['--fc-tree-bg-selected'] = colorTokens.bgSelected
-        if (colorTokens?.border) style['--fc-tree-border'] = colorTokens.border
-        if (colorTokens?.borderFocus) style['--fc-tree-border-focus'] = colorTokens.borderFocus
-        if (colorTokens?.primary) style['--fc-tree-primary'] = colorTokens.primary
-        if (colorTokens?.primarySubtle) style['--fc-tree-primary-subtle'] = colorTokens.primarySubtle
-        if (colorTokens?.danger) style['--fc-tree-danger'] = colorTokens.danger
-        if (colorTokens?.actionHoverBg) style['--fc-tree-action-hover-bg'] = colorTokens.actionHoverBg
-        if (colorTokens?.dropIndicator) style['--fc-tree-drop-indicator'] = colorTokens.dropIndicator
-        style['--fc-tree-indent-size'] = `${indentSize}px`
-        style['--fc-tree-row-height'] = `${virtualRowHeight}px`
-        style['--fc-tree-row-transition'] = `${collapseDuration}s ease-out`
+        if (resolvedTokens?.text) nextStyle['--fc-tree-text'] = resolvedTokens.text
+        if (resolvedTokens?.textMuted) nextStyle['--fc-tree-text-muted'] = resolvedTokens.textMuted
+        if (resolvedTokens?.bgHover) nextStyle['--fc-tree-bg-hover'] = resolvedTokens.bgHover
+        if (resolvedTokens?.bgSelected) nextStyle['--fc-tree-bg-selected'] = resolvedTokens.bgSelected
+        if (resolvedTokens?.border) nextStyle['--fc-tree-border'] = resolvedTokens.border
+        if (resolvedTokens?.borderFocus) nextStyle['--fc-tree-border-focus'] = resolvedTokens.borderFocus
+        if (resolvedTokens?.primary) nextStyle['--fc-tree-primary'] = resolvedTokens.primary
+        if (resolvedTokens?.primarySubtle) nextStyle['--fc-tree-primary-subtle'] = resolvedTokens.primarySubtle
+        if (resolvedTokens?.danger) nextStyle['--fc-tree-danger'] = resolvedTokens.danger
+        if (resolvedTokens?.actionHoverBg) nextStyle['--fc-tree-action-hover-bg'] = resolvedTokens.actionHoverBg
+        if (resolvedTokens?.dropIndicator) nextStyle['--fc-tree-drop-indicator'] = resolvedTokens.dropIndicator
+        nextStyle['--fc-tree-indent-size'] = `${indentSize}px`
+        nextStyle['--fc-tree-row-height'] = `${virtualRowHeight}px`
+        nextStyle['--fc-tree-row-transition'] = `${collapseDuration}s ease-out`
 
-        return style as React.CSSProperties
-    }, [collapseDuration, colorTokens, indentSize, virtualRowHeight])
+        return nextStyle as React.CSSProperties
+    }, [collapseDuration, indentSize, resolvedTokens, virtualRowHeight])
+    const mergedTreeStyle = useMemo<React.CSSProperties>(() => ({
+        ...treeStyle,
+        ...style,
+    }), [style, treeStyle])
 
     const isFillHeight = scrollHeight === undefined
     const treeClassName = [
@@ -1251,7 +1303,7 @@ export function Tree({
     // ── 渲染 ────────────────────────────────────────────────────────────────
 
     const treeContent = (
-        <div ref={treeRef} className={treeClassName} style={treeStyle}>
+        <div {...props} ref={treeRef} className={treeClassName} style={mergedTreeStyle}>
             {searchable && (
                 <div className="fc-tree__search">
                     <input
