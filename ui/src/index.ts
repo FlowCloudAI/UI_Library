@@ -131,7 +131,15 @@ export {lazyLoad} from './components/LazyLoad/LazyLoad'
 export type {LazyLoadOptions} from './components/LazyLoad/LazyLoad'
 
 export {MarkdownEditor} from './components/MarkdownEditor/MarkdownEditor'
-export type {MarkdownEditorProps, MarkdownEditorRef} from './components/MarkdownEditor/MarkdownEditor'
+export type {
+    MarkdownEditorProps,
+    MarkdownEditorRef,
+    MarkdownEditorTokens,
+    MarkdownEditorValueChangeHandler,
+    MarkdownEditorValueChangeMeta,
+    MarkdownPreviewOptions,
+    MarkdownPreviewRenderer,
+} from './components/MarkdownEditor/MarkdownEditor'
 export {MessageBox} from './components/MessageBox/MessageBox'
 export type {
     MessageBoxBlock,

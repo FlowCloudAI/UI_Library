@@ -1,11 +1,34 @@
-import React, {forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState,} from "react";
+import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState,} from "react";
 import "./MarkdownEditor.css";
 import type {ICommand, MDEditorProps, RefMDEditor} from "@uiw/react-md-editor";
 import MDEditor, {commands} from "@uiw/react-md-editor";
 import {useOptionalTheme} from "../../ThemeProvider";
+import type {FcChangeHandler, FcChangeMeta} from "../../types/common";
 
-type MarkdownPreviewOptions = MDEditorProps["previewOptions"];
-type MarkdownPreviewRenderer = NonNullable<MDEditorProps["components"]>["preview"];
+export type MarkdownPreviewOptions = MDEditorProps["previewOptions"];
+export type MarkdownPreviewRenderer = NonNullable<MDEditorProps["components"]>["preview"];
+type MarkdownEditorChangeEvent = Parameters<NonNullable<MDEditorProps["onChange"]>>[1];
+export type MarkdownEditorValueChangeMeta = FcChangeMeta<MarkdownEditorChangeEvent>;
+export type MarkdownEditorValueChangeHandler = FcChangeHandler<string, MarkdownEditorValueChangeMeta>;
+
+export interface MarkdownEditorTokens {
+    background?: string;
+    toolbarBackground?: string;
+    borderColor?: string;
+    textColor?: string;
+    mutedTextColor?: string;
+    toolbarButtonHoverBackground?: string;
+    toolbarButtonHoverColor?: string;
+    primaryColor?: string;
+    primaryBackground?: string;
+    editorTextBackground?: string;
+    previewBackground?: string;
+    fontSizeScale?: number;
+    codeInlineBackground?: string;
+    codeBlockBackground?: string;
+    blockquoteBorderColor?: string;
+    selectionBackground?: string;
+}
 
 export interface MarkdownEditorRef {
     /** 获取底层 @uiw/react-md-editor 的 ref 实例 */
@@ -14,9 +37,18 @@ export interface MarkdownEditorRef {
     getTextareaElement: () => HTMLTextAreaElement | null;
 }
 
-export interface MarkdownEditorProps {
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
+
+export interface MarkdownEditorProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange" | "onFocus" | "onBlur" | "onKeyDown"> {
     value:        string;
-    onChange:     (v: string) => void;
+    /** 推荐使用的内容变更回调。 */
+    onValueChange?: MarkdownEditorValueChangeHandler;
+    /** @deprecated 保留兼容，推荐改用 onValueChange。 */
+    onChange?:     (v: string) => void;
     /** AI 补全回调 */
     onAiComplete?: () => void;
     minHeight?:   number;
@@ -25,8 +57,6 @@ export interface MarkdownEditorProps {
     autoHeight?:  boolean;
     placeholder?: string;
     disabled?:    boolean;
-    className?:   string;
-    style?:       React.CSSProperties;
     /** 透传到底层 textarea，用于监听键盘、输入、光标等事件 */
     textareaProps?: MDEditorProps["textareaProps"];
     onFocus?: MDEditorProps["textareaProps"] extends infer T
@@ -58,22 +88,40 @@ export interface MarkdownEditorProps {
     hideFullscreen?: boolean;
     previewOptions?: MarkdownPreviewOptions;
     previewRender?: MarkdownPreviewRenderer;
-    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    /** 深度样式覆盖，优先级高于旧样式 props。 */
+    tokens?: Partial<MarkdownEditorTokens>;
+    /* ---- 兼容旧样式 props；新用法推荐 tokens ---- */
+    /** @deprecated 推荐改用 tokens.background。 */
     background?:      string;
+    /** @deprecated 推荐改用 tokens.toolbarBackground。 */
     toolbarBackground?: string;
+    /** @deprecated 推荐改用 tokens.borderColor。 */
     borderColor?:     string;
+    /** @deprecated 推荐改用 tokens.textColor。 */
     textColor?:       string;
+    /** @deprecated 推荐改用 tokens.mutedTextColor。 */
     mutedTextColor?:  string;
+    /** @deprecated 推荐改用 tokens.toolbarButtonHoverBackground。 */
     toolbarButtonHoverBackground?: string;
+    /** @deprecated 推荐改用 tokens.toolbarButtonHoverColor。 */
     toolbarButtonHoverColor?: string;
+    /** @deprecated 推荐改用 tokens.primaryColor。 */
     primaryColor?:    string;
+    /** @deprecated 推荐改用 tokens.primaryBackground。 */
     primaryBackground?: string;
+    /** @deprecated 推荐改用 tokens.editorTextBackground。 */
     editorTextBackground?: string;
+    /** @deprecated 推荐改用 tokens.previewBackground。 */
     previewBackground?: string;
+    /** @deprecated 推荐改用 tokens.fontSizeScale。 */
     fontSizeScale?: number;
+    /** @deprecated 推荐改用 tokens.codeInlineBackground。 */
     codeInlineBackground?: string;
+    /** @deprecated 推荐改用 tokens.codeBlockBackground。 */
     codeBlockBackground?: string;
+    /** @deprecated 推荐改用 tokens.blockquoteBorderColor。 */
     blockquoteBorderColor?: string;
+    /** @deprecated 推荐改用 tokens.selectionBackground。 */
     selectionBackground?: string;
 }
 
@@ -104,6 +152,7 @@ const TOOLBAR_COMMANDS: ICommand[] = [
 export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(function MarkdownEditor(_ref, ref) {
     const {
         value,
+        onValueChange,
         onChange,
         onAiComplete,
         minHeight = 200,
@@ -129,6 +178,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
         hideFullscreen = false,
         previewOptions,
         previewRender,
+        tokens,
         background,
         toolbarBackground,
         borderColor,
@@ -145,6 +195,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
         codeBlockBackground,
         blockquoteBorderColor,
         selectionBackground,
+        ...props
     } = _ref;
     const resolvedTheme = useOptionalTheme()?.resolvedTheme ?? "light";
     const editorRef = useRef<RefMDEditor>(null);
@@ -155,10 +206,67 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
             wrapRef.current?.querySelector<HTMLTextAreaElement>('.w-md-editor-text-input') ?? null,
     }), []);
 
-    // 稳定的 onChange 包装 — MDEditor 每次渲染不会看到新的函数引用
+    const warnedLegacyOnChangeRef = useRef(false);
+    const deprecatedStylePropNames = useMemo(() => [
+        background !== undefined && "background",
+        toolbarBackground !== undefined && "toolbarBackground",
+        borderColor !== undefined && "borderColor",
+        textColor !== undefined && "textColor",
+        mutedTextColor !== undefined && "mutedTextColor",
+        toolbarButtonHoverBackground !== undefined && "toolbarButtonHoverBackground",
+        toolbarButtonHoverColor !== undefined && "toolbarButtonHoverColor",
+        primaryColor !== undefined && "primaryColor",
+        primaryBackground !== undefined && "primaryBackground",
+        editorTextBackground !== undefined && "editorTextBackground",
+        previewBackground !== undefined && "previewBackground",
+        fontSizeScale !== undefined && "fontSizeScale",
+        codeInlineBackground !== undefined && "codeInlineBackground",
+        codeBlockBackground !== undefined && "codeBlockBackground",
+        blockquoteBorderColor !== undefined && "blockquoteBorderColor",
+        selectionBackground !== undefined && "selectionBackground",
+    ].filter((name): name is string => Boolean(name)), [
+        background,
+        toolbarBackground,
+        borderColor,
+        textColor,
+        mutedTextColor,
+        toolbarButtonHoverBackground,
+        toolbarButtonHoverColor,
+        primaryColor,
+        primaryBackground,
+        editorTextBackground,
+        previewBackground,
+        fontSizeScale,
+        codeInlineBackground,
+        codeBlockBackground,
+        blockquoteBorderColor,
+        selectionBackground,
+    ]);
+
+    useEffect(() => {
+        if (!onChange || warnedLegacyOnChangeRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacyOnChangeRef.current = true;
+        console.warn("[flowcloudai-ui][MarkdownEditor] onChange(value) 已保留兼容，建议改用 onValueChange。");
+    }, [onChange]);
+
+    useEffect(() => {
+        if (deprecatedStylePropNames.length === 0 || !isDevelopmentRuntime()) return;
+        console.warn(`[flowcloudai-ui][MarkdownEditor] ${deprecatedStylePropNames.join("/")} 已废弃，推荐改用 tokens。`);
+    }, [deprecatedStylePropNames]);
+
+    // 稳定的 change 包装 — MDEditor 每次渲染不会看到新的函数引用
+    const onValueChangeRef = useRef(onValueChange);
+    onValueChangeRef.current = onValueChange;
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
-    const handleChange = useCallback((v: string | undefined) => { onChangeRef.current(v ?? ""); }, []);
+    const handleChange = useCallback<NonNullable<MDEditorProps["onChange"]>>((v, event) => {
+        const nextValue = v ?? "";
+        if (onValueChangeRef.current) {
+            onValueChangeRef.current(nextValue, {source: "input", event});
+        } else {
+            onChangeRef.current?.(nextValue);
+        }
+    }, []);
 
     const [uncontrolledSplit, setUncontrolledSplit] = useState(defaultSplitView);
     const wrapRef = useRef<HTMLDivElement>(null);
@@ -176,22 +284,22 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 
     // --- CSS 变量注入 ---
     const colorVars: Record<string, string | undefined> = {
-        "--md-bg":                         background,
-        "--md-toolbar-bg":                 toolbarBackground,
-        "--md-border":                     borderColor,
-        "--md-text":                       textColor,
-        "--md-text-muted":                 mutedTextColor,
-        "--md-toolbar-hover-bg":           toolbarButtonHoverBackground,
-        "--md-toolbar-hover-color":        toolbarButtonHoverColor,
-        "--md-primary":                    primaryColor,
-        "--md-primary-bg":                 primaryBackground,
-        "--md-editor-text-bg":             editorTextBackground,
-        "--md-preview-bg":                 previewBackground,
-        "--md-font-size-scale":            fontSizeScale?.toString(),
-        "--md-code-inline-bg":             codeInlineBackground,
-        "--md-code-block-bg":              codeBlockBackground,
-        "--md-blockquote-border":          blockquoteBorderColor,
-        "--md-selection-bg":               selectionBackground,
+        "--md-bg":                         tokens?.background ?? background,
+        "--md-toolbar-bg":                 tokens?.toolbarBackground ?? toolbarBackground,
+        "--md-border":                     tokens?.borderColor ?? borderColor,
+        "--md-text":                       tokens?.textColor ?? textColor,
+        "--md-text-muted":                 tokens?.mutedTextColor ?? mutedTextColor,
+        "--md-toolbar-hover-bg":           tokens?.toolbarButtonHoverBackground ?? toolbarButtonHoverBackground,
+        "--md-toolbar-hover-color":        tokens?.toolbarButtonHoverColor ?? toolbarButtonHoverColor,
+        "--md-primary":                    tokens?.primaryColor ?? primaryColor,
+        "--md-primary-bg":                 tokens?.primaryBackground ?? primaryBackground,
+        "--md-editor-text-bg":             tokens?.editorTextBackground ?? editorTextBackground,
+        "--md-preview-bg":                 tokens?.previewBackground ?? previewBackground,
+        "--md-font-size-scale":            (tokens?.fontSizeScale ?? fontSizeScale)?.toString(),
+        "--md-code-inline-bg":             tokens?.codeInlineBackground ?? codeInlineBackground,
+        "--md-code-block-bg":              tokens?.codeBlockBackground ?? codeBlockBackground,
+        "--md-blockquote-border":          tokens?.blockquoteBorderColor ?? blockquoteBorderColor,
+        "--md-selection-bg":               tokens?.selectionBackground ?? selectionBackground,
     };
     const overrideStyle: React.CSSProperties = { ...style };
     for (const [k, v] of Object.entries(colorVars)) {
@@ -347,6 +455,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 
     return (
         <div
+            {...props}
             ref={wrapRef}
             className={["fc-md-wrap", className].filter(Boolean).join(" ")}
             style={overrideStyle}
