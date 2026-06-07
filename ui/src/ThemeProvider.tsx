@@ -2,14 +2,24 @@ import type {ReactNode} from 'react'
 import {createContext, useContext, useEffect, useState} from 'react'
 
 export type Theme = 'light' | 'dark' | 'system'
+export type ResolvedTheme = 'light' | 'dark'
 
-interface ThemeContextType {
+export interface ThemeContextValue {
     theme: Theme
-    resolvedTheme: 'light' | 'dark'
+    resolvedTheme: ResolvedTheme
     setTheme: (theme: Theme) => void
 }
 
-const ThemeContext = createContext<ThemeContextType | null>(null)
+export type ThemeAppliedHandler = (resolvedTheme: ResolvedTheme) => void
+
+export interface ThemeProviderProps {
+    children: ReactNode
+    defaultTheme?: Theme
+    target?: HTMLElement
+    onThemeApplied?: ThemeAppliedHandler
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 export function useTheme() {
     const ctx = useContext(ThemeContext)
@@ -21,22 +31,15 @@ export function useOptionalTheme() {
     return useContext(ThemeContext)
 }
 
-interface Props {
-    children: ReactNode
-    defaultTheme?: Theme
-    target?: HTMLElement
-    onThemeApplied?: (resolvedTheme: 'light' | 'dark') => void
-}
-
-function getSystemTheme(): 'light' | 'dark' {
+function getSystemTheme(): ResolvedTheme {
     return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light'
 }
 
-export function ThemeProvider({children, defaultTheme = 'system', target, onThemeApplied}: Props) {
+export function ThemeProvider({children, defaultTheme = 'system', target, onThemeApplied}: ThemeProviderProps) {
     const [theme, setTheme] = useState<Theme>(defaultTheme)
-    const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(getSystemTheme)
+    const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme)
 
     const resolvedTheme = theme === 'system' ? systemTheme : theme
 
