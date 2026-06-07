@@ -1,10 +1,15 @@
 import "./AlertContext.css"
-import {createContext, CSSProperties, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
+import {createContext, CSSProperties, HTMLAttributes, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import {RollingBox} from "../Box/RollingBox";
 import {Button} from "../Button/Button";
 
 export type AlertType = "success" | "error" | "warning" | "info";
 export type AlertMode = "alert" | "confirm" | "toast" | "nonInvasive";
+
+export interface AlertProviderTokens {
+    background?: string;
+    borderColor?: string;
+}
 
 export type AlertProps = {
     id: number;
@@ -61,16 +66,35 @@ const ICONS: Record<AlertType, ReactNode> = {
     ),
 };
 
-export interface AlertProviderProps {
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
+
+export interface AlertProviderProps extends HTMLAttributes<HTMLDivElement> {
     children: ReactNode;
-    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    /** 深度样式覆盖，优先级高于旧颜色 props。 */
+    tokens?: Partial<AlertProviderTokens>;
+    /* ---- 兼容旧颜色 props；新用法推荐 tokens ---- */
+    /** @deprecated 推荐改用 tokens.background。 */
     background?: string;
+    /** @deprecated 推荐改用 tokens.borderColor。 */
     borderColor?: string;
     /** nonInvasive 模式下弹出条距视口顶部的距离，如 "3rem"、"10px"，默认 "1rem" */
     offset?: string;
 }
 
-export function AlertProvider({children, background, borderColor, offset = "1rem"}: AlertProviderProps) {
+export function AlertProvider({
+    children,
+    tokens,
+    background,
+    borderColor,
+    offset = "1rem",
+    className = "",
+    style,
+    ...overlayProps
+}: AlertProviderProps) {
     const [alert, setAlert] = useState<AlertProps | null>(null);
     const mountedRef = useRef(true);
     const activeAlertRef = useRef<AlertProps | null>(null);
@@ -150,11 +174,31 @@ export function AlertProvider({children, background, borderColor, offset = "1rem
         return () => clearTimeout(timer);
     }, [alert]);
 
+    const deprecatedColorPropNames = useMemo(() => [
+        background !== undefined && 'background',
+        borderColor !== undefined && 'borderColor',
+    ].filter((name): name is string => Boolean(name)), [background, borderColor]);
+
+    useEffect(() => {
+        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
+        console.warn(`[flowcloudai-ui][AlertProvider] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
+    }, [deprecatedColorPropNames]);
+
     const overrideStyle: CSSProperties = {};
-    if (background !== undefined)  (overrideStyle as any)["--alert-bg"]     = background;
-    if (borderColor !== undefined) (overrideStyle as any)["--alert-border"] = borderColor;
+    const resolvedBackground = tokens?.background ?? background;
+    const resolvedBorderColor = tokens?.borderColor ?? borderColor;
+    if (resolvedBackground !== undefined)  (overrideStyle as any)["--alert-bg"]     = resolvedBackground;
+    if (resolvedBorderColor !== undefined) (overrideStyle as any)["--alert-border"] = resolvedBorderColor;
 
     const isNonInvasive = alert?.mode === "nonInvasive";
+    const overlayClassName = [
+        'fc-alert-overlay',
+        isNonInvasive && "fc-alert-overlay--non-invasive",
+        className,
+    ].filter(Boolean).join(' ');
+    const overlayStyle = isNonInvasive
+        ? {"--alert-offset": offset, ...style} as CSSProperties
+        : style;
     const contextValue = useMemo(() => ({showAlert}), [showAlert]);
 
     return (
@@ -162,8 +206,9 @@ export function AlertProvider({children, background, borderColor, offset = "1rem
             {children}
             {alert?.visible && (
                 <div
-                    className={`fc-alert-overlay${isNonInvasive ? " fc-alert-overlay--non-invasive" : ""}`}
-                    style={isNonInvasive ? {"--alert-offset": offset} as CSSProperties : undefined}
+                    {...overlayProps}
+                    className={overlayClassName}
+                    style={overlayStyle}
                 >
                     <div
                         className={`fc-alert fc-alert--${alert.type} fc-alert--${alert.mode}`}
