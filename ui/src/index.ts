@@ -124,6 +124,7 @@ export type {
     ContextMenuDivider,
     ContextMenuItem,
     ContextMenuProviderProps,
+    ContextMenuProviderTokens,
     ContextMenuTriggerEvent,
 } from './components/ContextMenu/ContextMenuContext'
 export {lazyLoad} from './components/LazyLoad/LazyLoad'

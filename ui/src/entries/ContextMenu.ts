@@ -4,5 +4,6 @@ export type {
     ContextMenuDivider,
     ContextMenuItem,
     ContextMenuProviderProps,
+    ContextMenuProviderTokens,
     ContextMenuTriggerEvent,
 } from '../components/ContextMenu/ContextMenuContext'

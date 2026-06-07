@@ -1,5 +1,5 @@
 import "./ContextMenuContext.css";
-import {createContext, CSSProperties, ReactNode, useContext, useEffect, useRef, useState} from "react";
+import {createContext, CSSProperties, HTMLAttributes, ReactNode, useContext, useEffect, useMemo, useRef, useState} from "react";
 import { useClickOutside } from '../../hooks/useClickOutside';
 
 /* ---- 菜单项类型 ---- */
@@ -15,6 +15,11 @@ export type ContextMenuAction = {
 
 export type ContextMenuItem = ContextMenuAction | ContextMenuDivider;
 export type ContextMenuTriggerEvent = Pick<MouseEvent, "clientX" | "clientY" | "preventDefault" | "stopPropagation">;
+export interface ContextMenuProviderTokens {
+    background?: string;
+    borderColor?: string;
+    hoverBackground?: string;
+}
 
 /* ---- 内部状态 ---- */
 type MenuState = {
@@ -32,19 +37,34 @@ const ContextMenuContext = createContext<{
 });
 
 /* ---- Provider Props ---- */
-export interface ContextMenuProviderProps {
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
+
+export interface ContextMenuProviderProps extends HTMLAttributes<HTMLUListElement> {
     children: ReactNode;
-    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    /** 深度样式覆盖，优先级高于旧颜色 props。 */
+    tokens?: Partial<ContextMenuProviderTokens>;
+    /* ---- 兼容旧颜色 props；新用法推荐 tokens ---- */
+    /** @deprecated 推荐改用 tokens.background。 */
     background?:      string;
+    /** @deprecated 推荐改用 tokens.borderColor。 */
     borderColor?:     string;
+    /** @deprecated 推荐改用 tokens.hoverBackground。 */
     hoverBackground?: string;
 }
 
 export function ContextMenuProvider({
     children,
+    tokens,
     background,
     borderColor,
     hoverBackground,
+    className = "",
+    style,
+    ...menuProps
 }: ContextMenuProviderProps) {
     const MENU_CURSOR_OVERLAP = 2;
     const isBrowser = typeof window !== "undefined";
@@ -71,6 +91,17 @@ export function ContextMenuProvider({
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [isBrowser, menu.visible]);
 
+    const deprecatedColorPropNames = useMemo(() => [
+        background !== undefined && 'background',
+        borderColor !== undefined && 'borderColor',
+        hoverBackground !== undefined && 'hoverBackground',
+    ].filter((name): name is string => Boolean(name)), [background, borderColor, hoverBackground]);
+
+    useEffect(() => {
+        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
+        console.warn(`[flowcloudai-ui][ContextMenuProvider] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
+    }, [deprecatedColorPropNames]);
+
     /* 防止菜单超出视口 */
     const getPosition = (): CSSProperties => {
         if (!menu.visible || !isBrowser) {
@@ -90,23 +121,26 @@ export function ContextMenuProvider({
 
     /* CSS 变量注入 */
     const colorVars: Record<string, string | undefined> = {
-        "--ctx-bg":            background,
-        "--ctx-border":        borderColor,
-        "--ctx-item-hover-bg": hoverBackground,
+        "--ctx-bg":            tokens?.background ?? background,
+        "--ctx-border":        tokens?.borderColor ?? borderColor,
+        "--ctx-item-hover-bg": tokens?.hoverBackground ?? hoverBackground,
     };
     const overrideStyle: CSSProperties = { ...(menu.visible ? getPosition() : {}) };
     for (const [k, v] of Object.entries(colorVars)) {
         if (v !== undefined) (overrideStyle as any)[k] = v;
     }
+    const menuStyle: CSSProperties = {...overrideStyle, ...style};
+    const menuClassName = ['fc-context-menu', className].filter(Boolean).join(' ');
 
     return (
         <ContextMenuContext.Provider value={{ showContextMenu }}>
             {children}
             {menu.visible && (
                 <ul
+                    {...menuProps}
                     ref={menuRef}
-                    className="fc-context-menu"
-                    style={overrideStyle}
+                    className={menuClassName}
+                    style={menuStyle}
                 >
                     {menu.items.map((item, i) => {
                         if ("type" in item && item.type === "divider") {
