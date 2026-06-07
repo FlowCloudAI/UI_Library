@@ -53,7 +53,15 @@ export type {
     SideBarSelectedKeyChangeMeta,
 } from './components/Bar/SideBar'
 export {TabBar} from './components/Bar/TabBar'
-export type {TabBarProps, TabItem} from './components/Bar/TabBar'
+export type {
+    TabBarProps,
+    TabBarRadius,
+    TabBarSelectedKeyChangeHandler,
+    TabBarSelectedKeyChangeMeta,
+    TabBarTokens,
+    TabBarVariant,
+    TabItem,
+} from './components/Bar/TabBar'
 
 export {Input} from './components/Input/Input'
 export type {

@@ -1,6 +1,7 @@
 // src/components/TabBar/TabBar.tsx
 import React, {useRef, useCallback, memo, useEffect, useMemo, useState} from 'react';
 import './TabBar.css';
+import type {FcChangeHandler, FcChangeMeta, FcRadius} from '../../types/common';
 import {
     DndContext,
     closestCenter,
@@ -57,11 +58,36 @@ export interface TabItem {
     closable?: boolean;
 }
 
-export interface TabBarProps {
+export type TabBarVariant = 'attached' | 'floating';
+export type TabBarRadius = FcRadius;
+export type TabBarSelectedKeyChangeMeta = FcChangeMeta<
+    React.MouseEvent<HTMLDivElement> | {active: {id: React.Key}}
+>;
+export type TabBarSelectedKeyChangeHandler = FcChangeHandler<string, TabBarSelectedKeyChangeMeta>;
+
+export interface TabBarTokens {
+    background?: string;
+    tabColor?: string;
+    tabHoverColor?: string;
+    tabHoverBackground?: string;
+    tabActiveColor?: string;
+    tabActiveBackground?: string;
+    activeIndicatorColor?: string;
+}
+
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
+
+export interface TabBarProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
     /** Tab 列表（受控） */
     items: TabItem[];
-    /** 当前激活的 Tab key（受控） */
-    activeKey: string;
+    /** 当前选中的 Tab key（受控）。 */
+    selectedKey?: string;
+    /** @deprecated 保留兼容，推荐改用 selectedKey。 */
+    activeKey?: string;
 
     /**
      * 布局变体
@@ -69,12 +95,12 @@ export interface TabBarProps {
      * - floating: 悬浮模式 — 标签垂直居中悬浮，胶囊形态，背景填充作为激活指示器
      * @default 'attached'
      */
-    variant?: 'attached' | 'floating';
+    variant?: TabBarVariant;
 
     /** TabBar 容器圆角 */
-    radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    radius?: TabBarRadius;
     /** 单个 Tab 项的圆角（仅在 floating 模式下或需要四周圆角时使用） */
-    tabRadius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    tabRadius?: TabBarRadius;
     /** 是否显示关闭按钮 */
     closable?: boolean;
     /** 是否显示添加按钮 */
@@ -104,7 +130,10 @@ export interface TabBarProps {
 
     /* ---- 回调 ---- */
 
-    onChange: (activeKey: string) => void;
+    /** 推荐使用的选中项变更回调。 */
+    onSelectedKeyChange?: TabBarSelectedKeyChangeHandler;
+    /** @deprecated 保留兼容，推荐改用 onSelectedKeyChange。 */
+    onChange?: (activeKey: string) => void;
     onClose?: (key: string) => void;
     onAdd?: () => void;
     onReorder?: (reorderedItems: TabItem[]) => void;
@@ -125,23 +154,23 @@ export interface TabBarProps {
     /** 自定义添加按钮渲染 */
     renderAddButton?: () => React.ReactNode;
 
-    className?: string;
-    style?: React.CSSProperties;
+    /** 深度样式覆盖，优先级高于旧颜色 props。 */
+    tokens?: Partial<TabBarTokens>;
 
-    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
-    /** 容器背景色 */
+    /* ---- 兼容旧颜色 props；新用法推荐 tokens ---- */
+    /** @deprecated 推荐改用 tokens.background。 */
     background?: string;
-    /** 标签默认文字色 */
+    /** @deprecated 推荐改用 tokens.tabColor。 */
     tabColor?: string;
-    /** 标签 hover 文字色 */
+    /** @deprecated 推荐改用 tokens.tabHoverColor。 */
     tabHoverColor?: string;
-    /** 标签 hover 背景色 */
+    /** @deprecated 推荐改用 tokens.tabHoverBackground。 */
     tabHoverBackground?: string;
-    /** 激活态文字色 */
+    /** @deprecated 推荐改用 tokens.tabActiveColor。 */
     tabActiveColor?: string;
-    /** 激活态背景色 */
+    /** @deprecated 推荐改用 tokens.tabActiveBackground。 */
     tabActiveBackground?: string;
-    /** 激活态指示器颜色（attached 模式底线 / floating 模式无效） */
+    /** @deprecated 推荐改用 tokens.activeIndicatorColor。 */
     activeIndicatorColor?: string;
     /**
      * 将 TabBar 空白区域标记为 Tauri 窗口拖拽区域。
@@ -165,7 +194,7 @@ interface TabItemViewProps {
     tabStyle?: React.CSSProperties;
     activeTabStyle?: React.CSSProperties;
     renderCloseIcon?: (key: string) => React.ReactNode;
-    onClick: (key: string) => void;
+    onClick: (key: string, event: React.MouseEvent<HTMLDivElement>) => void;
     onClose: (e: React.MouseEvent, key: string) => void;
 }
 
@@ -234,7 +263,7 @@ const TabItemView = memo<TabItemViewProps>(({
             ref={setNodeRef}
             className={classes}
             style={mergedStyle}
-            onClick={() => !item.disabled && onClick(item.key)}
+            onClick={(event) => !item.disabled && onClick(item.key, event)}
             onPointerDown={handlePointerDown}
             onMouseDown={handleMouseDown}
             {...attributes}
@@ -266,6 +295,7 @@ TabItemView.displayName = 'TabItemView';
 
 export const TabBar = memo<TabBarProps>(({
     items,
+    selectedKey,
     activeKey,
     variant = 'attached',
     radius = 'md',
@@ -276,6 +306,7 @@ export const TabBar = memo<TabBarProps>(({
     minTabWidth = '80px',
     maxTabWidth = '200px',
     fillWidth = true,
+    onSelectedKeyChange,
     onChange,
     onClose,
     onAdd,
@@ -289,6 +320,7 @@ export const TabBar = memo<TabBarProps>(({
     className = '',
     style,
     tauriDragRegion = false,
+    tokens,
     background,
     tabColor,
     tabHoverColor,
@@ -296,15 +328,36 @@ export const TabBar = memo<TabBarProps>(({
     tabActiveColor,
     tabActiveBackground,
     activeIndicatorColor,
+    ...props
 }) => {
+    const currentSelectedKey = selectedKey ?? activeKey ?? '';
+
+    const deprecatedColorPropNames = useMemo(() => [
+        background !== undefined && 'background',
+        tabColor !== undefined && 'tabColor',
+        tabHoverColor !== undefined && 'tabHoverColor',
+        tabHoverBackground !== undefined && 'tabHoverBackground',
+        tabActiveColor !== undefined && 'tabActiveColor',
+        tabActiveBackground !== undefined && 'tabActiveBackground',
+        activeIndicatorColor !== undefined && 'activeIndicatorColor',
+    ].filter((name): name is string => Boolean(name)), [
+        background,
+        tabColor,
+        tabHoverColor,
+        tabHoverBackground,
+        tabActiveColor,
+        tabActiveBackground,
+        activeIndicatorColor,
+    ]);
+
     const colorVars: Record<string, string | undefined> = {
-        '--tab-bar-bg': background,
-        '--tab-color': tabColor,
-        '--tab-hover-color': tabHoverColor,
-        '--tab-hover-bg': tabHoverBackground,
-        '--tab-active-color': tabActiveColor,
-        '--tab-active-bg': tabActiveBackground,
-        '--tab-active-indicator': activeIndicatorColor,
+        '--tab-bar-bg': tokens?.background ?? background,
+        '--tab-color': tokens?.tabColor ?? tabColor,
+        '--tab-hover-color': tokens?.tabHoverColor ?? tabHoverColor,
+        '--tab-hover-bg': tokens?.tabHoverBackground ?? tabHoverBackground,
+        '--tab-active-color': tokens?.tabActiveColor ?? tabActiveColor,
+        '--tab-active-bg': tokens?.tabActiveBackground ?? tabActiveBackground,
+        '--tab-active-indicator': tokens?.activeIndicatorColor ?? activeIndicatorColor,
     };
 
     const overrideStyle: React.CSSProperties = {};
@@ -323,6 +376,25 @@ export const TabBar = memo<TabBarProps>(({
     const [isRefreshingDragRegion, setIsRefreshingDragRegion] = useState(false);
     const [pendingItems, setPendingItems] = useState<TabItem[] | null>(null);
     const displayItems = pendingItems ?? items;
+    const warnedLegacyActiveKeyRef = useRef(false);
+    const warnedLegacyOnChangeRef = useRef(false);
+
+    useEffect(() => {
+        if (activeKey === undefined || warnedLegacyActiveKeyRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacyActiveKeyRef.current = true;
+        console.warn('[flowcloudai-ui][TabBar] activeKey 已保留兼容，建议改用 selectedKey。');
+    }, [activeKey]);
+
+    useEffect(() => {
+        if (!onChange || warnedLegacyOnChangeRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacyOnChangeRef.current = true;
+        console.warn('[flowcloudai-ui][TabBar] onChange(activeKey) 已保留兼容，建议改用 onSelectedKeyChange。');
+    }, [onChange]);
+
+    useEffect(() => {
+        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
+        console.warn(`[flowcloudai-ui][TabBar] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
+    }, [deprecatedColorPropNames]);
 
     // 新增 tab 时自动滚动到末尾
     const prevItemsLengthRef = useRef(items.length);
@@ -398,12 +470,26 @@ export const TabBar = memo<TabBarProps>(({
         }
     }, []);
 
-    // 稳定的 handler ref — 调用者无需将 onChange/onClose/onAdd 包裹在 useCallback 中。
+    // 稳定的 handler ref — 调用者无需将变更/关闭回调包裹在 useCallback 中。
     // 即使调用者传入匿名函数，TabItemView 的 memo 仍然有效。
+    const onSelectedKeyChangeRef = useRef(onSelectedKeyChange); onSelectedKeyChangeRef.current = onSelectedKeyChange;
     const onChangeRef = useRef(onChange); onChangeRef.current = onChange;
     const onCloseRef  = useRef(onClose);  onCloseRef.current  = onClose;
 
-    const handleClick = useCallback((key: string) => { onChangeRef.current(key); }, []);
+    const emitSelectedKeyChange = useCallback((key: string, meta: TabBarSelectedKeyChangeMeta) => {
+        if (onSelectedKeyChangeRef.current) {
+            onSelectedKeyChangeRef.current(key, meta);
+        } else {
+            onChangeRef.current?.(key);
+        }
+    }, []);
+
+    const handleClick = useCallback(
+        (key: string, event: React.MouseEvent<HTMLDivElement>) => {
+            emitSelectedKeyChange(key, {source: 'click', event});
+        },
+        [emitSelectedKeyChange],
+    );
 
     const handleItemMouseDown = useCallback(() => {
         if (!tauriDragRegion) return;
@@ -424,12 +510,12 @@ export const TabBar = memo<TabBarProps>(({
 
     const handleDragStart = useCallback((event: {active: {id: React.Key}}) => {
         setIsSorting(true);
-        onChange(String(event.active.id));
+        emitSelectedKeyChange(String(event.active.id), {source: 'drag', event});
         if (tauriDragRegion) {
             setIsPressingTab(true);
             setIsRefreshingDragRegion(true);
         }
-    }, [onChange, tauriDragRegion]);
+    }, [emitSelectedKeyChange, tauriDragRegion]);
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         setIsSorting(false);
@@ -475,7 +561,7 @@ export const TabBar = memo<TabBarProps>(({
         <TabItemView
             key={item.key}
             item={item}
-            isActive={activeKey === item.key}
+            isActive={currentSelectedKey === item.key}
             closable={closable}
             draggable={draggable}
             stopMouseDown={tauriDragRegion}
@@ -489,13 +575,13 @@ export const TabBar = memo<TabBarProps>(({
             onClose={handleClose}
         />
     )), [
-        displayItems, activeKey, closable, draggable, tauriDragRegion,
+        displayItems, currentSelectedKey, closable, draggable, tauriDragRegion,
         handleItemMouseDown, tabClassName, activeTabClassName, tabStyle, activeTabStyle,
         renderCloseIcon, handleClick, handleClose,
     ]);
 
     return (
-        <div className={rootClasses} style={mergedStyle} role="tablist" {...dragRegion}>
+        <div {...props} className={rootClasses} style={mergedStyle} role="tablist" {...dragRegion}>
             <div className="fc-tab-bar__nav-outer" {...dragRegion}>
                 <div className="fc-tab-bar__nav-wrap" ref={navRef} style={navWrapStyle}>
                     <DndContext
