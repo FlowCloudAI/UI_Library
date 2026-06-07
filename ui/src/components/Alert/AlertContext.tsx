@@ -16,6 +16,8 @@ export type AlertProps = {
     choice: (res: string) => void;
 };
 
+const DEFAULT_AUTO_DISMISS_DURATION_MS = 1500;
+
 type QueuedAlert = Omit<AlertProps, "visible" | "choice"> & {
     resolve: (res: string) => void;
     reject: (reason?: unknown) => void;
@@ -112,12 +114,17 @@ export function AlertProvider({children, background, borderColor, offset = "1rem
     const showAlert = useCallback((msg: string, type: AlertType, mode: AlertMode = "alert", duration?: number) =>
         new Promise<string>((resolve, reject) => {
             if (!mountedRef.current) { reject(new Error('AlertProvider unmounted')); return; }
+            const resolvedDuration = duration ?? (
+                mode === "toast" || mode === "nonInvasive"
+                    ? DEFAULT_AUTO_DISMISS_DURATION_MS
+                    : undefined
+            );
             const request: QueuedAlert = {
                 id: nextAlertIdRef.current++,
                 msg,
                 type,
                 mode,
-                duration,
+                duration: resolvedDuration,
                 resolve,
                 reject,
             };
