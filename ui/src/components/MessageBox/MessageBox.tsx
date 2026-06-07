@@ -43,13 +43,12 @@ export type MessageBoxBlock =
 
 export type MessageBoxContextDisplay = 'full' | 'compact';
 
-export interface MessageBoxProps {
+export interface MessageBoxProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children' | 'onCopy' | 'role'> {
   role: 'user' | 'assistant' | 'system';
   content?: string;
   streaming?: boolean;
   markdown?: boolean;
   children?: React.ReactNode;
-  className?: string;
   maxWidth?: string;
   // 行高，覆盖默认 1.815
   lineHeight?: number | string;
@@ -570,6 +569,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
                                                         markdown = false,
   children,
                                                         className = '',
+                                                        style,
                                                         maxWidth = '80%',
                                                         lineHeight,
                                                         reasoning,
@@ -588,6 +588,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
                                                         onEdit,
                                                         onRegenerate,
                                                         onPlay,
+                                                        ...props
 }) => {
   const [contentCopied, setContentCopied] = useState(false);
 
@@ -626,7 +627,8 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
     const showTools = toolCalls && toolCalls.length > 0 && !rolePlaying;
   const showContent = content.length > 0 || streaming;
   // assistant 默认撑满父容器，不受 maxWidth 约束
-  const style: React.CSSProperties | undefined = role !== 'assistant' && hasNewline ? {maxWidth} : undefined;
+  const widthStyle: React.CSSProperties | undefined = role !== 'assistant' && hasNewline ? {maxWidth} : undefined;
+  const rootStyle: React.CSSProperties | undefined = widthStyle || style ? {...widthStyle, ...style} : undefined;
   const bubbleStyle: React.CSSProperties | undefined = lineHeight !== undefined ? {lineHeight} : undefined;
 
   const renderBlock = (block: MessageBoxBlock, idx: number, keyPrefix: string) => {
@@ -859,8 +861,9 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
 
   return (
       <div
+          {...props}
           className={`message-box-item ${getRoleClass()} ${className}`}
-          style={style}
+          style={rootStyle}
       >
         <div className="message-box-content">
           {role === 'assistant' && rolePlaying ? (
