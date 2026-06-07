@@ -1,8 +1,27 @@
 import './Slider.css'
 import * as React from 'react'
+import type {FcChangeHandler, FcChangeMeta} from '../../types/common'
 
-type SliderValue = number | [number, number]
-type SliderOrientation = 'horizontal' | 'vertical'
+export type SliderValue = number | [number, number]
+export type SliderOrientation = 'horizontal' | 'vertical'
+export interface SliderTokens {
+    trackBackground?: string
+    fillBackground?: string
+    thumbBackground?: string
+    thumbBorderColor?: string
+    markDotColor?: string
+    markLabelColor?: string
+    tooltipBackground?: string
+    tooltipColor?: string
+}
+
+export interface SliderValueChangeMeta extends FcChangeMeta<
+    MouseEvent | TouchEvent | React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
+> {
+    activeIndex: number
+}
+
+export type SliderValueChangeHandler = FcChangeHandler<SliderValue, SliderValueChangeMeta>
 
 function isDevelopmentRuntime(): boolean {
     const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env
@@ -46,9 +65,11 @@ function normalizeSliderValue(value: SliderValue, range: boolean, min: number, m
     return clampNumber(Number.isFinite(singleValue) ? singleValue : min, min, max)
 }
 
-interface SliderProps {
+export interface SliderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange' | 'value'> {
     value?: SliderValue
     defaultValue?: SliderValue
+    onValueChange?: SliderValueChangeHandler
+    /** @deprecated 推荐改用 onValueChange。 */
     onChange?: (value: SliderValue) => void
     min?: number
     max?: number
@@ -60,21 +81,32 @@ interface SliderProps {
     tooltip?: boolean
     className?: string
     style?: React.CSSProperties
+    /** 深度样式覆盖，优先级高于旧颜色 props。 */
+    tokens?: Partial<SliderTokens>
 
-    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
-    trackBackground?: string       // 轨道底色
-    fillBackground?: string        // 已填充进度色
-    thumbBackground?: string       // 滑块背景
-    thumbBorderColor?: string      // 滑块边框色
-    markDotColor?: string          // 刻度点颜色
-    markLabelColor?: string        // 刻度标签文字色
-    tooltipBackground?: string     // Tooltip 背景
-    tooltipColor?: string          // Tooltip 文字色
+    /* ---- 兼容旧颜色 props；新用法推荐 tokens ---- */
+    /** @deprecated 推荐改用 tokens.trackBackground。 */
+    trackBackground?: string
+    /** @deprecated 推荐改用 tokens.fillBackground。 */
+    fillBackground?: string
+    /** @deprecated 推荐改用 tokens.thumbBackground。 */
+    thumbBackground?: string
+    /** @deprecated 推荐改用 tokens.thumbBorderColor。 */
+    thumbBorderColor?: string
+    /** @deprecated 推荐改用 tokens.markDotColor。 */
+    markDotColor?: string
+    /** @deprecated 推荐改用 tokens.markLabelColor。 */
+    markLabelColor?: string
+    /** @deprecated 推荐改用 tokens.tooltipBackground。 */
+    tooltipBackground?: string
+    /** @deprecated 推荐改用 tokens.tooltipColor。 */
+    tooltipColor?: string
 }
 
 export function Slider({
                            value: controlledValue,
                            defaultValue,
+                           onValueChange,
                            onChange,
                            min = 0,
                            max = 100,
@@ -94,6 +126,8 @@ export function Slider({
                            markLabelColor,
                            tooltipBackground,
                            tooltipColor,
+                           tokens,
+                           ...props
                        }: SliderProps) {
     const trackRef = React.useRef<HTMLDivElement>(null)
     const [dragging, setDragging] = React.useState<number | null>(null)
@@ -144,16 +178,48 @@ export function Slider({
         safeMax,
     )
 
+    const warnedLegacyOnChangeRef = React.useRef(false)
+    React.useEffect(() => {
+        if (!onChange || warnedLegacyOnChangeRef.current || !isDevelopmentRuntime()) return
+        warnedLegacyOnChangeRef.current = true
+        console.warn('[flowcloudai-ui][Slider] onChange 已废弃，推荐改用 onValueChange。')
+    }, [onChange])
+
+    const deprecatedColorPropNames = React.useMemo(() => [
+        trackBackground !== undefined && 'trackBackground',
+        fillBackground !== undefined && 'fillBackground',
+        thumbBackground !== undefined && 'thumbBackground',
+        thumbBorderColor !== undefined && 'thumbBorderColor',
+        markDotColor !== undefined && 'markDotColor',
+        markLabelColor !== undefined && 'markLabelColor',
+        tooltipBackground !== undefined && 'tooltipBackground',
+        tooltipColor !== undefined && 'tooltipColor',
+    ].filter(Boolean) as string[], [
+        fillBackground,
+        markDotColor,
+        markLabelColor,
+        thumbBackground,
+        thumbBorderColor,
+        tooltipBackground,
+        tooltipColor,
+        trackBackground,
+    ])
+
+    React.useEffect(() => {
+        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return
+        console.warn(`[flowcloudai-ui][Slider] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`)
+    }, [deprecatedColorPropNames])
+
     // 将 props 映射为 CSS 变量，过滤 undefined
     const colorVars: Record<string, string | undefined> = {
-        '--slider-track-bg':      trackBackground,
-        '--slider-fill-bg':       fillBackground,
-        '--slider-thumb-bg':      thumbBackground,
-        '--slider-thumb-border':  thumbBorderColor,
-        '--slider-mark-dot-bg':   markDotColor,
-        '--slider-mark-label-color': markLabelColor,
-        '--slider-tooltip-bg':    tooltipBackground,
-        '--slider-tooltip-color': tooltipColor,
+        '--slider-track-bg':      tokens?.trackBackground ?? trackBackground,
+        '--slider-fill-bg':       tokens?.fillBackground ?? fillBackground,
+        '--slider-thumb-bg':      tokens?.thumbBackground ?? thumbBackground,
+        '--slider-thumb-border':  tokens?.thumbBorderColor ?? thumbBorderColor,
+        '--slider-mark-dot-bg':   tokens?.markDotColor ?? markDotColor,
+        '--slider-mark-label-color': tokens?.markLabelColor ?? markLabelColor,
+        '--slider-tooltip-bg':    tokens?.tooltipBackground ?? tooltipBackground,
+        '--slider-tooltip-color': tokens?.tooltipColor ?? tooltipColor,
     }
 
     const overrideStyle: React.CSSProperties = {}
@@ -174,7 +240,20 @@ export function Slider({
         return Math.max(safeMin, Math.min(safeMax, stepped))
     }
 
-    const handleMove = React.useCallback((clientX: number, clientY: number, activeIndex: number) => {
+    const emitValueChange = React.useCallback((nextValue: SliderValue, meta: SliderValueChangeMeta) => {
+        if (onValueChange) {
+            onValueChange(nextValue, meta)
+        } else {
+            onChange?.(nextValue)
+        }
+    }, [onChange, onValueChange])
+
+    const handleMove = React.useCallback((
+        clientX: number,
+        clientY: number,
+        activeIndex: number,
+        meta: Omit<SliderValueChangeMeta, 'activeIndex'>,
+    ) => {
         if (!trackRef.current || disabled) return
 
         const rect = trackRef.current.getBoundingClientRect()
@@ -197,18 +276,23 @@ export function Slider({
         }
 
         if (!isControlled) setInternalValue(nextValue)
-        onChange?.(nextValue)
-    }, [disabled, orientation, range, currentValue, isControlled, onChange, safeMax, safeMin, safeStep])
+        emitValueChange(nextValue, {...meta, activeIndex})
+    }, [disabled, orientation, range, currentValue, isControlled, emitValueChange, safeMax, safeMin, safeStep])
 
-    const startDrag = (index: number, clientX: number, clientY: number) => {
+    const startDrag = (
+        index: number,
+        clientX: number,
+        clientY: number,
+        event: SliderValueChangeMeta['event'],
+    ) => {
         if (disabled) return
         setDragging(index)
 
-        const handleMouseMove = (ev: MouseEvent) => handleMove(ev.clientX, ev.clientY, index)
+        const handleMouseMove = (ev: MouseEvent) => handleMove(ev.clientX, ev.clientY, index, {source: 'drag', event: ev})
         const handleTouchMove = (ev: TouchEvent) => {
             ev.preventDefault()
             const t = ev.touches[0]
-            handleMove(t.clientX, t.clientY, index)
+            handleMove(t.clientX, t.clientY, index, {source: 'drag', event: ev})
         }
         const cleanup = () => {
             document.removeEventListener('mousemove', handleMouseMove)
@@ -227,25 +311,25 @@ export function Slider({
         document.addEventListener('touchend', handleTouchEnd)
 
         // 立即处理初始位置
-        handleMove(clientX, clientY, index)
+        handleMove(clientX, clientY, index, {source: 'drag', event})
     }
 
-    const handleMouseDown = (index: number) => (e: React.MouseEvent) => {
+    const handleMouseDown = (index: number) => (e: React.MouseEvent<HTMLDivElement>) => {
         if (disabled) return
         e.preventDefault()
-        startDrag(index, e.clientX, e.clientY)
+        startDrag(index, e.clientX, e.clientY, e)
     }
 
-    const handleTouchStart = (index: number) => (e: React.TouchEvent) => {
+    const handleTouchStart = (index: number) => (e: React.TouchEvent<HTMLDivElement>) => {
         if (disabled) return
         e.preventDefault()
         const t = e.touches[0]
-        startDrag(index, t.clientX, t.clientY)
+        startDrag(index, t.clientX, t.clientY, e)
     }
 
-    const handleTrackClick = (e: React.MouseEvent) => {
+    const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (disabled || dragging !== null) return
-        handleMove(e.clientX, e.clientY, 0)
+        handleMove(e.clientX, e.clientY, 0, {source: 'click', event: e})
     }
 
     const [startVal, endVal] = range
@@ -270,7 +354,7 @@ export function Slider({
     ].filter(Boolean).join(' ')
 
     return (
-        <div className={cls} style={mergedStyle}>
+        <div {...props} className={cls} style={mergedStyle}>
             <div
                 ref={trackRef}
                 className="fc-slider__track"
