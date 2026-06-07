@@ -2,9 +2,16 @@
 import './RollingBox.css';
 import * as React from 'react';
 
-type ShowThumb = 'auto' | 'hide' | 'show';
-type ThumbSize = 'thin' | 'normal' | 'thick';
-type RollingAxis = 'x' | 'y' | 'both' | 'none';
+export type ShowThumb = 'auto' | 'hide' | 'show';
+export type ThumbSize = 'thin' | 'normal' | 'thick';
+export type RollingAxis = 'x' | 'y' | 'both' | 'none';
+
+export interface RollingBoxTokens {
+    thumbColor?: string;
+    thumbHoverColor?: string;
+    thumbActiveColor?: string;
+    trackColor?: string;
+}
 
 function isDevelopmentRuntime(): boolean {
     const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
@@ -12,12 +19,12 @@ function isDevelopmentRuntime(): boolean {
     return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
 }
 
-interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     /** 滚动条显示模式 */
     showThumb?: ShowThumb;
-    /** 水平滚动 */
+    /** @deprecated 推荐改用 axis="x"。 */
     horizontal?: boolean;
-    /** 垂直滚动（默认） */
+    /** @deprecated 推荐改用 axis="y"。 */
     vertical?: boolean;
     /** 滚动轴。设置后优先于 horizontal/vertical。 */
     axis?: RollingAxis;
@@ -29,16 +36,18 @@ interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
     /** 返回 true 时由外部接管本次滚轮事件，RollingBox 不再处理 */
     interceptWheel?: (event: WheelEvent, container: HTMLDivElement) => boolean;
+    /** 深度样式覆盖，优先级高于旧颜色 props。 */
+    tokens?: Partial<RollingBoxTokens>;
 
-    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    /* ---- 兼容旧颜色 props；新用法推荐 tokens ---- */
 
-    /** 滚动条颜色（show 模式下生效） */
+    /** @deprecated 推荐改用 tokens.thumbColor。 */
     thumbColor?: string;
-    /** hover 时滚动条颜色（auto 模式下生效） */
+    /** @deprecated 推荐改用 tokens.thumbHoverColor。 */
     thumbHoverColor?: string;
-    /** 滚动中滚动条颜色（auto 模式下生效） */
+    /** @deprecated 推荐改用 tokens.thumbActiveColor。 */
     thumbActiveColor?: string;
-    /** 轨道背景色（showTrack=true 时生效） */
+    /** @deprecated 推荐改用 tokens.trackColor。 */
     trackColor?: string;
 }
 
@@ -57,13 +66,15 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
                                                                                                     thumbActiveColor,
                                                                                                     trackColor,
                                                                                                     style,
+                                                                                                    tokens,
+                                                                                                    onScroll,
                                                                                                     ...props
                                                                                                 }: RollingBoxProps, ref) {
     const colorVars: Record<string, string | undefined> = {
-        '--roll-thumb':        thumbColor,
-        '--roll-thumb-hover':  thumbHoverColor,
-        '--roll-thumb-active': thumbActiveColor,
-        '--roll-track':        trackColor,
+        '--roll-thumb':        tokens?.thumbColor ?? thumbColor,
+        '--roll-thumb-hover':  tokens?.thumbHoverColor ?? thumbHoverColor,
+        '--roll-thumb-active': tokens?.thumbActiveColor ?? thumbActiveColor,
+        '--roll-track':        tokens?.trackColor ?? trackColor,
     };
 
     const overrideStyle: React.CSSProperties = {};
@@ -97,6 +108,23 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
         console.warn('[flowcloudai-ui][RollingBox] horizontal/vertical 已保留兼容，建议改用 axis。');
     }, [axis, horizontal, vertical]);
 
+    const deprecatedColorPropNames = React.useMemo(() => [
+        thumbColor !== undefined && 'thumbColor',
+        thumbHoverColor !== undefined && 'thumbHoverColor',
+        thumbActiveColor !== undefined && 'thumbActiveColor',
+        trackColor !== undefined && 'trackColor',
+    ].filter(Boolean) as string[], [
+        thumbActiveColor,
+        thumbColor,
+        thumbHoverColor,
+        trackColor,
+    ]);
+
+    React.useEffect(() => {
+        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
+        console.warn(`[flowcloudai-ui][RollingBox] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
+    }, [deprecatedColorPropNames]);
+
     const setContainerRef = React.useCallback((node: HTMLDivElement | null) => {
         containerRef.current = node;
 
@@ -112,7 +140,8 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
         ref.current = node;
     }, [ref]);
 
-    const handleScroll = React.useCallback(() => {
+    const handleScroll = React.useCallback((event: React.UIEvent<HTMLDivElement>) => {
+        onScroll?.(event);
         if (showThumb !== 'auto') return;
 
         setIsScrolling(true);
@@ -124,7 +153,7 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
         scrollTimeoutRef.current = setTimeout(() => {
             setIsScrolling(false);
         }, 1000);
-    }, [showThumb]);
+    }, [onScroll, showThumb]);
 
     React.useEffect(() => {
         return () => {
@@ -214,11 +243,11 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
 
     return (
         <div
+            {...props}
             ref={setContainerRef}
             className={classNames}
             style={mergedStyle}
             onScroll={handleScroll}
-            {...props}
         >
             <div className="fc-roll__content">
                 {children}

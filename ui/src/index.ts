@@ -34,6 +34,13 @@ export type {
     UncontrolledCheckButtonProps,
 } from './components/Button/CheckButton'
 export {RollingBox} from './components/Box/RollingBox'
+export type {
+    RollingAxis,
+    RollingBoxProps,
+    RollingBoxTokens,
+    ShowThumb,
+    ThumbSize,
+} from './components/Box/RollingBox'
 export {SideBar} from './components/Bar/SideBar'
 export type {SideBarAnchorState, SideBarItem, SideBarPlacement, SideBarProps} from './components/Bar/SideBar'
 export {TabBar} from './components/Bar/TabBar'
