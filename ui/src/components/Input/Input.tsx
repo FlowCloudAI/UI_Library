@@ -1,10 +1,15 @@
 // Input.tsx
 import './Input.css'
 import * as React from "react";
+import type {FcChangeHandler, FcChangeMeta, FcRadius, FcSize, FcStatus} from '../../types/common';
 
-type InputSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-type InputStatus = 'default' | 'error' | 'warning' | 'success';
-type InputRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+export type InputSize = FcSize;
+export type InputStatus = FcStatus;
+export type InputRadius = FcRadius;
+export type InputValueChangeMeta = FcChangeMeta<
+    React.ChangeEvent<HTMLInputElement> | React.MouseEvent<HTMLButtonElement>
+>;
+export type InputValueChangeHandler = FcChangeHandler<string, InputValueChangeMeta>;
 
 function isDevelopmentRuntime(): boolean {
     const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
@@ -12,7 +17,7 @@ function isDevelopmentRuntime(): boolean {
     return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
 }
 
-interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix' | 'onChange'> {
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix' | 'onChange'> {
     size?: InputSize;
     status?: InputStatus;
     /** 圆角大小，不传则使用默认值 md */
@@ -25,7 +30,7 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
     addonAfter?: React.ReactNode;
     helperText?: string;
     /** 推荐使用的值变更回调。 */
-    onValueChange?: (value: string) => void;
+    onValueChange?: InputValueChangeHandler;
     /** @deprecated 保留兼容，推荐改用 onValueChange。 */
     onChange?: (value: string) => void;
     /** 在数字输入框中显示可控的加减按钮，默认开启。 */
@@ -45,6 +50,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
                                                                          addonAfter,
                                                                          helperText,
                                                                          className = '',
+                                                                         style,
                                                                          type: initialType = 'text',
                                                                          value,
                                                                          defaultValue,
@@ -90,7 +96,19 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
         const fixed = numberScale > 0 ? rawValue.toFixed(numberScale) : String(Math.round(rawValue));
         return fixed.replace(/\.?0+$/, '');
     };
-    const handleNumberStep = (delta: number) => {
+
+    const emitValueChange = (
+        nextValue: string,
+        meta: InputValueChangeMeta,
+    ) => {
+        if (onValueChange) {
+            onValueChange(nextValue, meta);
+        } else {
+            onChange?.(nextValue);
+        }
+    };
+
+    const handleNumberStep = (delta: number, event: React.MouseEvent<HTMLButtonElement>) => {
         if (!showStepper || disabled) return;
         const parsedCurrent = Number.parseFloat(currentValueText);
         const baseValue = Number.isFinite(parsedCurrent) ? parsedCurrent : 0;
@@ -98,8 +116,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
         const normalizedNext = normalizeNumberValue(nextValue);
 
         if (!isControlled) setInternalValue(normalizedNext);
-        onValueChange?.(normalizedNext);
-        onChange?.(normalizedNext);
+        emitValueChange(normalizedNext, {source: 'click', event});
     };
 
     React.useEffect(() => {
@@ -110,15 +127,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!isControlled) setInternalValue(e.target.value);
-        onValueChange?.(e.target.value);
-        onChange?.(e.target.value);
+        emitValueChange(e.target.value, {source: 'input', event: e});
     };
 
-    const handleClear = () => {
+    const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
         if (!isControlled) setInternalValue('');
         onClear?.();
-        onValueChange?.('');
-        onChange?.('');
+        emitValueChange('', {source: 'click', event});
     };
 
     const togglePassword = () => {
@@ -155,7 +170,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
     );
 
     return (
-        <div className={classNames}>
+        <div className={classNames} style={style}>
             {addonBefore && (
                 <span className="fc-input__addon fc-input__addon--before">{addonBefore}</span>
             )}
@@ -184,7 +199,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
                             <button
                                 type="button"
                                 className="fc-input__stepper-btn"
-                                onClick={() => handleNumberStep(1)}
+                                onClick={(event) => handleNumberStep(1, event)}
                                 tabIndex={-1}
                                 aria-label="增加"
                             >
@@ -193,7 +208,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
                             <button
                                 type="button"
                                 className="fc-input__stepper-btn"
-                                onClick={() => handleNumberStep(-1)}
+                                onClick={(event) => handleNumberStep(-1, event)}
                                 tabIndex={-1}
                                 aria-label="减少"
                             >

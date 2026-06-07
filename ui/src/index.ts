@@ -40,6 +40,14 @@ export {TabBar} from './components/Bar/TabBar'
 export type {TabBarProps, TabItem} from './components/Bar/TabBar'
 
 export {Input} from './components/Input/Input'
+export type {
+    InputProps,
+    InputRadius,
+    InputSize,
+    InputStatus,
+    InputValueChangeHandler,
+    InputValueChangeMeta,
+} from './components/Input/Input'
 export {Slider} from './components/Slider/Slider'
 export {Select} from './components/Select/Select'
 export {TagItem} from './components/Tag/TagItem'
