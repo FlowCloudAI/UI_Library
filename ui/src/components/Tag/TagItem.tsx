@@ -1,5 +1,7 @@
 import "./TagItem.css";
 import {CSSProperties, useEffect, useLayoutEffect, useRef, useState} from "react";
+import type {FocusEvent, HTMLAttributes, KeyboardEvent, MouseEvent} from "react";
+import type {FcChangeHandler, FcChangeMeta} from '../../types/common';
 
 export interface TagSchema {
     id:        string;
@@ -11,9 +13,25 @@ export interface TagSchema {
 
 export type TagValue = number | string | boolean;
 
-export interface TagItemProps {
+export interface TagItemTokens {
+    background?:  string;
+    color?:       string;
+    borderColor?: string;
+}
+
+export interface TagValueChangeMeta extends FcChangeMeta<
+    MouseEvent<HTMLSpanElement> | FocusEvent<HTMLInputElement> | KeyboardEvent<HTMLInputElement>
+> {
+    schema: TagSchema;
+}
+
+export type TagValueChangeHandler = FcChangeHandler<TagValue, TagValueChangeMeta>;
+
+export interface TagItemProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'defaultValue' | 'onChange' | 'value'> {
     schema:    TagSchema;
     value?:    TagValue;
+    onValueChange?: TagValueChangeHandler;
+    /** @deprecated 推荐改用 onValueChange。 */
     onChange?: (value: TagValue) => void;
     onDelete?: () => void;
     /** show：展示态；edit：始终为编辑控件 */
@@ -26,23 +44,41 @@ export interface TagItemProps {
     editing?:          boolean;
     /** 编辑状态变化回调（提交或取消时触发） */
     onEditingChange?:  (editing: boolean) => void;
-    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    /** 深度样式覆盖，优先级高于旧颜色 props。 */
+    tokens?: Partial<TagItemTokens>;
+    /* ---- 兼容旧颜色 props；新用法推荐 tokens ---- */
+    /** @deprecated 推荐改用 tokens.background。 */
     background?:  string;
+    /** @deprecated 推荐改用 tokens.color。 */
     color?:       string;
+    /** @deprecated 推荐改用 tokens.borderColor。 */
     borderColor?: string;
+}
+
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
 }
 
 export function TagItem({
     schema,
     value,
+    onValueChange,
     onChange,
-                            onDelete,
+    onDelete,
     mode = "show",
     editing:          editingProp,
     onEditingChange,
+    tokens,
     background,
     color,
     borderColor,
+    className,
+    style,
+    onClick,
+    title,
+    ...props
 }: TagItemProps) {
     const isControlled = editingProp !== undefined;
     const [internalEditing, setInternalEditing] = useState(false);
@@ -57,6 +93,13 @@ export function TagItem({
     const inputRef = useRef<HTMLInputElement>(null);
     const measureRef = useRef<HTMLSpanElement>(null);
     const [inputWidth, setInputWidth] = useState<number | undefined>(undefined);
+    const warnedLegacyOnChangeRef = useRef(false);
+
+    useEffect(() => {
+        if (!onChange || warnedLegacyOnChangeRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacyOnChangeRef.current = true;
+        console.warn('[flowcloudai-ui][TagItem] onChange 已废弃，推荐改用 onValueChange。');
+    }, [onChange]);
 
     // value 从外部更新时同步 draft（仅非编辑态）
     useEffect(() => {
@@ -75,24 +118,56 @@ export function TagItem({
 
     // --- CSS 变量注入 ---
     const colorVars: Record<string, string | undefined> = {
-        "--tag-bg":     background,
-        "--tag-color":  color,
-        "--tag-border": borderColor,
+        "--tag-bg":     tokens?.background ?? background,
+        "--tag-color":  tokens?.color ?? color,
+        "--tag-border": tokens?.borderColor ?? borderColor,
     };
     const overrideStyle: CSSProperties = {};
     for (const [k, v] of Object.entries(colorVars)) {
         if (v !== undefined) (overrideStyle as any)[k] = v;
     }
+    const mergedStyle: CSSProperties = {...overrideStyle, ...style};
+
+    useEffect(() => {
+        const deprecatedColorPropNames = [
+            background !== undefined && 'background',
+            color !== undefined && 'color',
+            borderColor !== undefined && 'borderColor',
+        ].filter(Boolean) as string[];
+        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
+        console.warn(`[flowcloudai-ui][TagItem] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
+    }, [background, borderColor, color]);
+
+    const emitValueChange = (
+        nextValue: TagValue,
+        meta: Omit<TagValueChangeMeta, 'schema'>,
+    ) => {
+        if (onValueChange) {
+            onValueChange(nextValue, {...meta, schema});
+        } else {
+            onChange?.(nextValue);
+        }
+    };
+
+    const getClassName = (...parts: Array<string | false | undefined>) =>
+        [...parts, className].filter(Boolean).join(" ");
 
     // --- boolean：点击即切换 ---
     if (schema.type === "boolean") {
         const boolVal = value === true || value === "true";
+        const handleBooleanClick = (event: MouseEvent<HTMLSpanElement>) => {
+            onClick?.(event);
+            if (event.defaultPrevented) return;
+            emitValueChange(!boolVal, {source: 'click', event});
+        };
+
         return (
             <span
-                className="fc-tag-item fc-tag-item--boolean"
-                style={overrideStyle}
-                onClick={() => onChange?.(!boolVal)}
-                title="点击切换"
+                {...props}
+                className={getClassName("fc-tag-item", "fc-tag-item--boolean")}
+                style={mergedStyle}
+                onClick={handleBooleanClick}
+                title={title ?? "点击切换"}
             >
                 <span className="fc-tag-item__name">{schema.name}</span>
                 <span className="fc-tag-item__sep">·</span>
@@ -104,17 +179,20 @@ export function TagItem({
     }
 
     // --- 提交编辑 ---
-    const commit = () => {
+    const commit = (
+        source: TagValueChangeMeta['source'] = 'input',
+        event?: TagValueChangeMeta['event'],
+    ) => {
         if (schema.type === "number") {
             const n = parseFloat(draft);
             if (!isNaN(n)) {
                 const clamped =
                     schema.range_min != null && n < schema.range_min ? schema.range_min :
                     schema.range_max != null && n > schema.range_max ? schema.range_max : n;
-                onChange?.(clamped);
+                emitValueChange(clamped, {source, event});
             }
         } else {
-            onChange?.(draft);
+            emitValueChange(draft, {source, event});
         }
         if (mode !== "edit") setEditing(false);
     };
@@ -129,7 +207,13 @@ export function TagItem({
 
     if (isEditing) {
         return (
-            <span className="fc-tag-item fc-tag-item--editing" style={overrideStyle}>
+            <span
+                {...props}
+                className={getClassName("fc-tag-item", "fc-tag-item--editing")}
+                style={mergedStyle}
+                onClick={onClick}
+                title={title}
+            >
                 <span ref={measureRef} className="fc-tag-item__measure" aria-hidden="true"/>
                 <span className="fc-tag-item__name">{schema.name}</span>
                 <span className="fc-tag-item__sep">·</span>
@@ -143,9 +227,9 @@ export function TagItem({
                     max={schema.range_max ?? undefined}
                     autoFocus
                     onChange={e => setDraft(e.target.value)}
-                    onBlur={commit}
+                    onBlur={event => commit('input', event)}
                     onKeyDown={e => {
-                        if (e.key === "Enter")  { e.preventDefault(); commit(); }
+                        if (e.key === "Enter")  { e.preventDefault(); commit('keyboard', e); }
                         if (e.key === "Escape") { e.preventDefault(); cancel(); }
                     }}
                 />
@@ -165,7 +249,13 @@ export function TagItem({
 
     // --- 展示态（外观与编辑态一致，但不支持双击进入编辑） ---
     return (
-        <span className="fc-tag-item fc-tag-item--editing fc-tag-item--show" style={overrideStyle}>
+        <span
+            {...props}
+            className={getClassName("fc-tag-item", "fc-tag-item--editing", "fc-tag-item--show")}
+            style={mergedStyle}
+            onClick={onClick}
+            title={title}
+        >
             <span ref={measureRef} className="fc-tag-item__measure" aria-hidden="true"/>
             <span className="fc-tag-item__name">{schema.name}</span>
             <span className="fc-tag-item__sep">·</span>
