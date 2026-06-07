@@ -1,11 +1,23 @@
 import './Button.css'
 import * as React from "react";
+import type {FcRadius, FcSize} from '../../types/common'
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
-type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-type ButtonRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
+export type ButtonSize = FcSize;
+export type ButtonRadius = FcRadius;
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonTokens {
+    background?: string;
+    hoverBackground?: string;
+    activeBackground?: string;
+    color?: string;
+    hoverColor?: string;
+    activeColor?: string;
+    borderColor?: string;
+    hoverBorderColor?: string;
+}
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /** 按钮变体 */
     variant?: ButtonVariant;
     /** 尺寸 */
@@ -26,25 +38,33 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     iconLeft?: React.ReactNode;
     /** 右侧图标 */
     iconRight?: React.ReactNode;
+    /** 深度样式覆盖，优先级高于旧颜色 props。 */
+    tokens?: Partial<ButtonTokens>;
 
-    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
+    /* ---- 兼容旧颜色 props；新用法推荐 tokens ---- */
 
-    /** 默认背景色 */
+    /** @deprecated 推荐改用 tokens.background。 */
     background?: string;
-    /** hover 背景色 */
+    /** @deprecated 推荐改用 tokens.hoverBackground。 */
     hoverBackground?: string;
-    /** active 背景色 */
+    /** @deprecated 推荐改用 tokens.activeBackground。 */
     activeBackground?: string;
-    /** 默认文字色 */
+    /** @deprecated 推荐改用 tokens.color。 */
     color?: string;
-    /** hover 文字色 */
+    /** @deprecated 推荐改用 tokens.hoverColor。 */
     hoverColor?: string;
-    /** active 文字色 */
+    /** @deprecated 推荐改用 tokens.activeColor。 */
     activeColor?: string;
-    /** 默认边框色 */
+    /** @deprecated 推荐改用 tokens.borderColor。 */
     borderColor?: string;
-    /** hover 边框色 */
+    /** @deprecated 推荐改用 tokens.hoverBorderColor。 */
     hoverBorderColor?: string;
+}
+
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
 }
 
 export function Button({
@@ -67,22 +87,48 @@ export function Button({
                            activeColor,
                            borderColor,
                            hoverBorderColor,
+                           tokens,
                            className,
                            style,
                            children,
                            ...props
                        }: ButtonProps) {
 
+    const deprecatedColorPropNames = React.useMemo(() => [
+        background !== undefined && 'background',
+        hoverBackground !== undefined && 'hoverBackground',
+        activeBackground !== undefined && 'activeBackground',
+        color !== undefined && 'color',
+        hoverColor !== undefined && 'hoverColor',
+        activeColor !== undefined && 'activeColor',
+        borderColor !== undefined && 'borderColor',
+        hoverBorderColor !== undefined && 'hoverBorderColor',
+    ].filter(Boolean) as string[], [
+        activeBackground,
+        activeColor,
+        background,
+        borderColor,
+        color,
+        hoverBackground,
+        hoverBorderColor,
+        hoverColor,
+    ]);
+
+    React.useEffect(() => {
+        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
+        console.warn(`[flowcloudai-ui][Button] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
+    }, [deprecatedColorPropNames]);
+
     // 将颜色 props 映射到 CSS 变量，undefined 的不会出现在 style 中
     const colorVars: Record<string, string | undefined> = {
-        '--btn-bg': background,
-        '--btn-bg-hover': hoverBackground,
-        '--btn-bg-active': activeBackground,
-        '--btn-color': color,
-        '--btn-color-hover': hoverColor,
-        '--btn-color-active': activeColor,
-        '--btn-border': borderColor,
-        '--btn-border-hover': hoverBorderColor,
+        '--btn-bg': tokens?.background ?? background,
+        '--btn-bg-hover': tokens?.hoverBackground ?? hoverBackground,
+        '--btn-bg-active': tokens?.activeBackground ?? activeBackground,
+        '--btn-color': tokens?.color ?? color,
+        '--btn-color-hover': tokens?.hoverColor ?? hoverColor,
+        '--btn-color-active': tokens?.activeColor ?? activeColor,
+        '--btn-border': tokens?.borderColor ?? borderColor,
+        '--btn-border-hover': tokens?.hoverBorderColor ?? hoverBorderColor,
     };
 
     // 过滤掉 undefined，只保留用户实际传入的
@@ -131,7 +177,7 @@ export function Button({
 }
 
 // 按钮组组件
-interface ButtonGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ButtonGroupProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
 }
 
@@ -144,9 +190,11 @@ export function ButtonGroup({children, className, ...props}: ButtonGroupProps) {
 }
 
 // 按钮工具栏组件
-interface ButtonToolbarProps extends React.HTMLAttributes<HTMLDivElement> {
+export type ButtonToolbarAlign = 'left' | 'center' | 'right' | 'between';
+
+export interface ButtonToolbarProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
-    align?: 'left' | 'center' | 'right' | 'between';
+    align?: ButtonToolbarAlign;
 }
 
 export function ButtonToolbar({

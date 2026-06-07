@@ -1,8 +1,26 @@
 // src/index.ts
 export {ThemeProvider, useOptionalTheme, useTheme} from './ThemeProvider'
 export type {Theme} from './ThemeProvider'
+export type {
+    FcBaseProps,
+    FcChangeHandler,
+    FcChangeMeta,
+    FcRadius,
+    FcSize,
+    FcStatus,
+} from './types/common'
 
 export {Button, ButtonGroup, ButtonToolbar} from './components/Button/Button'
+export type {
+    ButtonGroupProps,
+    ButtonProps,
+    ButtonRadius,
+    ButtonSize,
+    ButtonTokens,
+    ButtonToolbarAlign,
+    ButtonToolbarProps,
+    ButtonVariant,
+} from './components/Button/Button'
 export {CheckButton} from './components/Button/CheckButton'
 export {RollingBox} from './components/Box/RollingBox'
 export {SideBar} from './components/Bar/SideBar'
