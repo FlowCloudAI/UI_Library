@@ -156,7 +156,12 @@ export type {
     ConversationTreeViewProps,
 } from './components/ConversationTreeView/ConversationTreeView'
 export {Timeline} from './components/Time/Time'
-export type {TimelineEvent} from './components/Time/Time'
+export type {
+    TimelineEvent,
+    TimelineProps,
+    TimelineSelectedKeyChangeHandler,
+    TimelineSelectedKeyChangeMeta,
+} from './components/Time/Time'
 export {TeraEditor} from './components/TeraEditor/TeraEditor'
 export type {
     TeraEditorDiagnostic,

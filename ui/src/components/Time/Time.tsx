@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {RollingBox} from '../Box/RollingBox';
+import type {FcChangeHandler, FcChangeMeta} from '../../types/common';
 import './Time.css';
 
 export interface TimelineEvent {
@@ -11,12 +12,23 @@ export interface TimelineEvent {
     parentId?: string;
 }
 
-interface TimelineProps {
+export type TimelineSelectedKeyChangeMeta = FcChangeMeta<React.MouseEvent<HTMLDivElement>>;
+export type TimelineSelectedKeyChangeHandler = FcChangeHandler<string | null, TimelineSelectedKeyChangeMeta>;
+
+export interface TimelineProps extends React.HTMLAttributes<HTMLDivElement> {
     events: TimelineEvent[];
     yearStart: number;
     yearEnd: number;
     syncId?: string;
+    /** 当前选中的事件 key（受控）。 */
+    selectedKey?: string | null;
+    /** 初始选中的事件 key（非受控）。 */
+    defaultSelectedKey?: string | null;
+    /** 推荐使用的选中项变更回调。 */
+    onSelectedKeyChange?: TimelineSelectedKeyChangeHandler;
+    /** @deprecated 保留兼容，推荐改用 selectedKey。 */
     selectedEventId?: string | null;
+    /** @deprecated 保留兼容，推荐改用 onSelectedKeyChange。 */
     onEventSelect?: (eventId: string | null) => void;
 }
 
@@ -38,6 +50,12 @@ const TRACK_BOTTOM_PADDING = 16;
 const syncGroups = new Map<string, Set<React.RefObject<HTMLDivElement | null>>>();
 const syncLocks = new WeakMap<React.RefObject<HTMLDivElement | null>, boolean>();
 
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
+
 function normalizeYearRange(yearStart: number, yearEnd: number): [number, number] {
     const safeStart = Number.isFinite(yearStart) ? yearStart : 0;
     const safeEnd = Number.isFinite(yearEnd) ? yearEnd : safeStart;
@@ -49,29 +67,50 @@ export function Timeline({
                              yearStart,
                              yearEnd,
                              syncId,
+                             selectedKey,
+                             defaultSelectedKey = null,
+                             onSelectedKeyChange,
                              selectedEventId,
-                             onEventSelect
+                             onEventSelect,
+                             className,
+                             style,
+                             ...props
                          }: TimelineProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStartX, setDragStartX] = useState(0);
     const [dragScrollLeft, setDragScrollLeft] = useState(0);
-    const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null);
+    const [internalSelectedId, setInternalSelectedId] = useState<string | null>(defaultSelectedKey);
     const [zoomLevel, setZoomLevel] = useState(1);
     const [viewportWidth, setViewportWidth] = useState(0);
     const zoomAnchorRef = useRef<{ offsetX: number; contentX: number; scaleRatio: number } | null>(null);
+    const warnedLegacySelectedEventIdRef = useRef(false);
+    const warnedLegacyOnEventSelectRef = useRef(false);
 
     useEffect(() => {
-        if (selectedEventId !== undefined) {
-            setInternalSelectedId(selectedEventId);
-            if (selectedEventId && scrollRef.current) {
-                const cardElement = document.getElementById(`event-card-${selectedEventId}`);
+        const controlledSelectedId = selectedKey !== undefined ? selectedKey : selectedEventId;
+        if (controlledSelectedId !== undefined) {
+            setInternalSelectedId(controlledSelectedId);
+            if (controlledSelectedId && scrollRef.current) {
+                const cardElement = document.getElementById(`event-card-${controlledSelectedId}`);
                 if (cardElement) {
                     cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }
         }
+    }, [selectedEventId, selectedKey]);
+
+    useEffect(() => {
+        if (selectedEventId === undefined || warnedLegacySelectedEventIdRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacySelectedEventIdRef.current = true;
+        console.warn('[flowcloudai-ui][Timeline] selectedEventId 已保留兼容，建议改用 selectedKey。');
     }, [selectedEventId]);
+
+    useEffect(() => {
+        if (!onEventSelect || warnedLegacyOnEventSelectRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacyOnEventSelectRef.current = true;
+        console.warn('[flowcloudai-ui][Timeline] onEventSelect 已保留兼容，建议改用 onSelectedKeyChange。');
+    }, [onEventSelect]);
 
     const [currentStart, currentEnd] = useMemo(
         () => normalizeYearRange(yearStart, yearEnd),
@@ -320,8 +359,16 @@ export function Timeline({
         };
     }, [syncId]);
 
-    const handleCardClick = (eventId: string) => {
-        if (onEventSelect) {
+    const currentSelectedId = selectedKey !== undefined
+        ? selectedKey
+        : selectedEventId !== undefined
+            ? selectedEventId
+            : internalSelectedId;
+
+    const handleCardClick = (eventId: string, event: React.MouseEvent<HTMLDivElement>) => {
+        if (onSelectedKeyChange) {
+            onSelectedKeyChange(eventId, {source: 'click', event});
+        } else if (onEventSelect) {
             onEventSelect(eventId);
         } else {
             setInternalSelectedId(eventId);
@@ -329,7 +376,11 @@ export function Timeline({
     };
 
     return (
-        <div className="timeline-flag">
+        <div
+            {...props}
+            className={['timeline-flag', className].filter(Boolean).join(' ')}
+            style={style}
+        >
             <RollingBox
                 className={`timeline-scroll-area ${isDragging ? 'dragging' : ''}`}
                 ref={scrollRef}
@@ -384,7 +435,7 @@ export function Timeline({
                     {processedEvents.map((e) => {
                         const flagBottom = e.y + FLAG_HEIGHT;
                         const lineHeight = axisY - flagBottom;
-                        const isSelected = (selectedEventId !== undefined ? selectedEventId : internalSelectedId) === e.id;
+                        const isSelected = currentSelectedId === e.id;
                         return (
                             <div
                                 key={e.id}
@@ -403,7 +454,7 @@ export function Timeline({
                                         minWidth: MIN_CARD_WIDTH,
                                         maxWidth: MAX_CARD_WIDTH
                                     }}
-                                    onClick={() => handleCardClick(e.id)}
+                                    onClick={(event) => handleCardClick(e.id, event)}
                                 >
                                     {/* 蓝色年份已删除 */}
                                     <h3 className="flag-title">{e.title}</h3>

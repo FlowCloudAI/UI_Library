@@ -162,8 +162,8 @@ const TimeDemo: React.FC = () => {
                             yearStart={timeRange.start}
                             yearEnd={timeRange.end}
                             syncId="demo-timeline-group"
-                            selectedEventId={selectedEventId}
-                            onEventSelect={setSelectedEventId}
+                            selectedKey={selectedEventId}
+                            onSelectedKeyChange={setSelectedEventId}
                         />
                     </div>
                 </div>
@@ -180,8 +180,8 @@ const TimeDemo: React.FC = () => {
                             yearStart={timeRange2.start}
                             yearEnd={timeRange2.end}
                             syncId="demo-timeline-group"
-                            selectedEventId={selectedEventId}
-                            onEventSelect={setSelectedEventId}
+                            selectedKey={selectedEventId}
+                            onSelectedKeyChange={setSelectedEventId}
                         />
                     </div>
                 </div>
