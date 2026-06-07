@@ -128,6 +128,7 @@ export type {
     ContextMenuTriggerEvent,
 } from './components/ContextMenu/ContextMenuContext'
 export {lazyLoad} from './components/LazyLoad/LazyLoad'
+export type {LazyLoadOptions} from './components/LazyLoad/LazyLoad'
 
 export {MarkdownEditor} from './components/MarkdownEditor/MarkdownEditor'
 export type {MarkdownEditorProps, MarkdownEditorRef} from './components/MarkdownEditor/MarkdownEditor'

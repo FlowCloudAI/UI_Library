@@ -1,6 +1,6 @@
 import { lazy, Suspense, ComponentType, ReactNode } from 'react';
 
-interface LazyLoadOptions {
+export interface LazyLoadOptions {
     fallback?: ReactNode;
     timeout?: number;
 }
