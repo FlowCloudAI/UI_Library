@@ -1,5 +1,6 @@
 import type * as Monaco from 'monaco-editor';
 import type React from 'react';
+import type {FcChangeHandler, FcChangeMeta} from '../../types/common';
 
 export type TeraEditorDiagnosticSeverity = 'error' | 'warning' | 'info' | 'hint';
 export type TeraEditorMonaco = typeof Monaco;
@@ -22,9 +23,15 @@ export interface TeraEditorRef {
     getMonacoInstance: () => TeraEditorMonaco | null;
 }
 
-export interface TeraEditorProps {
+export type TeraEditorValueChangeMeta = FcChangeMeta<unknown>;
+export type TeraEditorValueChangeHandler = FcChangeHandler<string, TeraEditorValueChangeMeta>;
+
+export interface TeraEditorProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
     value: string;
-    onChange: (value: string) => void;
+    /** 推荐使用的内容变更回调。 */
+    onValueChange?: TeraEditorValueChangeHandler;
+    /** @deprecated 保留兼容，推荐改用 onValueChange。 */
+    onChange?: (value: string) => void;
     height?: number | string;
     minHeight?: number;
     fontFamily?: string;

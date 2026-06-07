@@ -6,4 +6,6 @@ export type {
     TeraEditorMonaco,
     TeraEditorProps,
     TeraEditorRef,
+    TeraEditorValueChangeHandler,
+    TeraEditorValueChangeMeta,
 } from '../components/TeraEditor/types'

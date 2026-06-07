@@ -165,6 +165,8 @@ export type {
     TeraEditorMonaco,
     TeraEditorProps,
     TeraEditorRef,
+    TeraEditorValueChangeHandler,
+    TeraEditorValueChangeMeta,
 } from './components/TeraEditor/types'
 
 export {Tree} from './components/Tree/Tree'

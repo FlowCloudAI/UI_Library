@@ -49,6 +49,12 @@ function getThemeName(resolvedTheme: 'light' | 'dark') {
     return resolvedTheme === 'dark' ? TERA_EDITOR_DARK_THEME : TERA_EDITOR_LIGHT_THEME;
 }
 
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
+
 function applyMarkers(
     monaco: TeraEditorMonaco | null,
     editor: TeraEditorInstance | null,
@@ -69,6 +75,7 @@ function applyMarkers(
 
 export const TeraEditor = forwardRef<TeraEditorRef, TeraEditorProps>(function TeraEditor({
     value,
+    onValueChange,
     onChange,
     height,
     minHeight = 360,
@@ -84,13 +91,21 @@ export const TeraEditor = forwardRef<TeraEditorRef, TeraEditorProps>(function Te
     onDiagnosticsChange,
     showMinimap = false,
     wordWrap = 'on',
+    ...props
 }: TeraEditorProps, ref) {
     const {resolvedTheme} = useTheme();
     const editorRef = useRef<TeraEditorInstance | null>(null);
     const monacoRef = useRef<TeraEditorMonaco | null>(null);
     const validationRequestRef = useRef(0);
+    const warnedLegacyOnChangeRef = useRef(false);
     const [focused, setFocused] = useState(false);
     const [validateDiagnostics, setValidateDiagnostics] = useState<TeraEditorDiagnostic[]>([]);
+
+    useEffect(() => {
+        if (!onChange || warnedLegacyOnChangeRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacyOnChangeRef.current = true;
+        console.warn('[flowcloudai-ui][TeraEditor] onChange(value) 已保留兼容，建议改用 onValueChange。');
+    }, [onChange]);
 
     const builtInDiagnostics = useMemo(
         () => normalizeDiagnostics(validateTeraTemplate(value)),
@@ -166,9 +181,18 @@ export const TeraEditor = forwardRef<TeraEditorRef, TeraEditorProps>(function Te
         monaco.editor.setTheme(getThemeName(resolvedTheme));
     }, [mergedDiagnostics, resolvedTheme]);
 
-    const handleChange = useCallback((nextValue: string | undefined) => {
-        onChange(nextValue ?? '');
-    }, [onChange]);
+    const onValueChangeRef = useRef(onValueChange);
+    onValueChangeRef.current = onValueChange;
+    const onChangeRef = useRef(onChange);
+    onChangeRef.current = onChange;
+    const handleChange = useCallback((nextValue: string | undefined, event?: unknown) => {
+        const resolvedValue = nextValue ?? '';
+        if (onValueChangeRef.current) {
+            onValueChangeRef.current(resolvedValue, {source: 'input', event});
+        } else {
+            onChangeRef.current?.(resolvedValue);
+        }
+    }, []);
 
     const editorOptions = useMemo<MonacoEditorApi.IStandaloneEditorConstructionOptions>(() => ({
         automaticLayout: true,
@@ -212,7 +236,11 @@ export const TeraEditor = forwardRef<TeraEditorRef, TeraEditorProps>(function Te
     ].filter(Boolean).join(' ');
 
     return (
-        <div className={['fc-tera-editor', className].filter(Boolean).join(' ')} style={rootStyle}>
+        <div
+            {...props}
+            className={['fc-tera-editor', className].filter(Boolean).join(' ')}
+            style={rootStyle}
+        >
             <div className="fc-tera-editor__surface" style={surfaceStyle}>
                 {!value && !focused && placeholder && (
                     <div className="fc-tera-editor__placeholder">{placeholder}</div>
