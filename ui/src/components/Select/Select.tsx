@@ -2,21 +2,42 @@
 import './Select.css'
 import * as React from "react";
 import { useClickOutside } from '../../hooks/useClickOutside';
+import type {FcChangeHandler, FcChangeMeta, FcRadius} from '../../types/common';
 
-interface SelectOption {
+export interface SelectOption {
     value: string | number;
     label: string;
     disabled?: boolean;
     group?: string;
 }
 
-type SelectRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
+export type SelectValue = string | number | (string | number)[];
+export type SelectRadius = FcRadius;
 
-interface SelectProps {
+export interface SelectTokens {
+    triggerBackground?: string;
+    triggerBorderColor?: string;
+    selectedColor?: string;
+    selectedBackground?: string;
+    hoverBackground?: string;
+}
+
+export interface SelectValueChangeMeta extends FcChangeMeta<
+    React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>
+> {
+    option: SelectOption;
+    multiple: boolean;
+}
+
+export type SelectValueChangeHandler = FcChangeHandler<SelectValue, SelectValueChangeMeta>;
+
+export interface SelectProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange' | 'value'> {
     options: SelectOption[];
-    value?: string | number | (string | number)[];
-    defaultValue?: string | number | (string | number)[];
-    onChange?: (value: string | number | (string | number)[]) => void;
+    value?: SelectValue;
+    defaultValue?: SelectValue;
+    onValueChange?: SelectValueChangeHandler;
+    /** @deprecated 推荐改用 onValueChange。 */
+    onChange?: (value: SelectValue) => void;
     placeholder?: string;
     searchable?: boolean;
     multiple?: boolean;
@@ -28,24 +49,33 @@ interface SelectProps {
     virtualScroll?: boolean;
     virtualItemHeight?: number;
     maxHeight?: number;
+    /** 深度样式覆盖，优先级高于旧颜色 props。 */
+    tokens?: Partial<SelectTokens>;
 
-    /* ---- 颜色定制（传入即覆盖，不传走默认变体样式） ---- */
-    /** 触发器背景色 */
+    /* ---- 兼容旧颜色 props；新用法推荐 tokens ---- */
+    /** @deprecated 推荐改用 tokens.triggerBackground。 */
     triggerBackground?: string;
-    /** 触发器边框色 */
+    /** @deprecated 推荐改用 tokens.triggerBorderColor。 */
     triggerBorderColor?: string;
-    /** 已选项文字色 */
+    /** @deprecated 推荐改用 tokens.selectedColor。 */
     selectedColor?: string;
-    /** 已选项背景色 */
+    /** @deprecated 推荐改用 tokens.selectedBackground。 */
     selectedBackground?: string;
-    /** hover / 键盘高亮背景色 */
+    /** @deprecated 推荐改用 tokens.hoverBackground。 */
     hoverBackground?: string;
+}
+
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
 }
 
 export function Select({
                            options,
                            value: controlledValue,
                            defaultValue,
+                           onValueChange,
                            onChange,
                            placeholder = '请选择',
                            searchable = false,
@@ -62,13 +92,42 @@ export function Select({
                            selectedColor,
                            selectedBackground,
                            hoverBackground,
+                           tokens,
+                           onKeyDown,
+                           ...props
                        }: SelectProps) {
+    const warnedLegacyOnChangeRef = React.useRef(false);
+    React.useEffect(() => {
+        if (!onChange || warnedLegacyOnChangeRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacyOnChangeRef.current = true;
+        console.warn('[flowcloudai-ui][Select] onChange 已废弃，推荐改用 onValueChange。');
+    }, [onChange]);
+
+    const deprecatedColorPropNames = React.useMemo(() => [
+        triggerBackground !== undefined && 'triggerBackground',
+        triggerBorderColor !== undefined && 'triggerBorderColor',
+        selectedColor !== undefined && 'selectedColor',
+        selectedBackground !== undefined && 'selectedBackground',
+        hoverBackground !== undefined && 'hoverBackground',
+    ].filter(Boolean) as string[], [
+        hoverBackground,
+        selectedBackground,
+        selectedColor,
+        triggerBackground,
+        triggerBorderColor,
+    ]);
+
+    React.useEffect(() => {
+        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
+        console.warn(`[flowcloudai-ui][Select] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
+    }, [deprecatedColorPropNames]);
+
     const colorVars: Record<string, string | undefined> = {
-        '--select-trigger-bg':            triggerBackground,
-        '--select-trigger-border':        triggerBorderColor,
-        '--select-option-selected-color': selectedColor,
-        '--select-option-selected-bg':    selectedBackground,
-        '--select-option-hover-bg':       hoverBackground,
+        '--select-trigger-bg':            tokens?.triggerBackground ?? triggerBackground,
+        '--select-trigger-border':        tokens?.triggerBorderColor ?? triggerBorderColor,
+        '--select-option-selected-color': tokens?.selectedColor ?? selectedColor,
+        '--select-option-selected-bg':    tokens?.selectedBackground ?? selectedBackground,
+        '--select-option-hover-bg':       tokens?.hoverBackground ?? hoverBackground,
     };
 
     const overrideStyle: React.CSSProperties = {};
@@ -120,12 +179,26 @@ export function Select({
     const totalHeight = flatOptions.length * virtualItemHeight;
     const offsetY = startIndex * virtualItemHeight;
 
-    const handleSelect = (option: SelectOption) => {
+    const emitValueChange = (
+        nextValue: SelectValue,
+        meta: SelectValueChangeMeta,
+    ) => {
+        if (onValueChange) {
+            onValueChange(nextValue, meta);
+        } else {
+            onChange?.(nextValue);
+        }
+    };
+
+    const handleSelect = (
+        option: SelectOption,
+        meta: Omit<SelectValueChangeMeta, 'option' | 'multiple'>,
+    ) => {
         if (option.disabled) return;
 
-        let nextValue: any;
+        let nextValue: SelectValue;
         if (multiple) {
-            const arr = (currentValue as any[]) || [];
+            const arr = (currentValue as (string | number)[]) || [];
             const exists = arr.includes(option.value);
             nextValue = exists
                 ? arr.filter(v => v !== option.value)
@@ -136,7 +209,7 @@ export function Select({
         }
 
         if (!isControlled) setInternalValue(nextValue);
-        onChange?.(nextValue);
+        emitValueChange(nextValue, {...meta, option, multiple});
         if (!multiple) setSearchValue('');
     };
 
@@ -157,14 +230,18 @@ export function Select({
     // 点击外部关闭
     useClickOutside(containerRef, () => setIsOpen(false));
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        onKeyDown?.(e);
+        if (e.defaultPrevented) return;
         if (disabled) return;
         switch (e.key) {
             case 'Enter':
             case ' ':
                 e.preventDefault();
                 if (!isOpen) { setIsOpen(true); break; }
-                if (flatOptions[highlightedIndex]) handleSelect(flatOptions[highlightedIndex]);
+                if (flatOptions[highlightedIndex]) {
+                    handleSelect(flatOptions[highlightedIndex], {source: 'keyboard', event: e});
+                }
                 break;
             case 'ArrowDown':
                 e.preventDefault();
@@ -200,7 +277,13 @@ export function Select({
     ].filter(Boolean).join(' ');
 
     return (
-        <div ref={containerRef} className={classNames} style={mergedStyle} onKeyDown={handleKeyDown}>
+        <div
+            {...props}
+            ref={containerRef}
+            className={classNames}
+            style={mergedStyle}
+            onKeyDown={handleKeyDown}
+        >
             <div
                 className="fc-select__trigger"
                 onClick={() => !disabled && setIsOpen(!isOpen)}
@@ -266,7 +349,7 @@ export function Select({
                         option.disabled && 'fc-select__option--disabled',
                         highlighted && 'fc-select__option--highlighted'
                     ].filter(Boolean).join(' ')}
-                    onClick={() => handleSelect(option)}
+                    onClick={(event) => handleSelect(option, {source: 'click', event})}
                     onMouseEnter={() => setHighlightedIndex(actualIndex)}
                     style={{ height: virtualItemHeight }}
                 >

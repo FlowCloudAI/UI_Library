@@ -50,6 +50,15 @@ export type {
 } from './components/Input/Input'
 export {Slider} from './components/Slider/Slider'
 export {Select} from './components/Select/Select'
+export type {
+    SelectOption,
+    SelectProps,
+    SelectRadius,
+    SelectTokens,
+    SelectValue,
+    SelectValueChangeHandler,
+    SelectValueChangeMeta,
+} from './components/Select/Select'
 export {TagItem} from './components/Tag/TagItem'
 export type {TagItemProps, TagSchema, TagValue} from './components/Tag/TagItem'
 
