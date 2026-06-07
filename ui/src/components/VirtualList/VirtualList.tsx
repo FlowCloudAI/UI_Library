@@ -8,7 +8,7 @@ export interface VirtualListVisibleRange {
     endIndexExclusive: number;
 }
 
-export interface VirtualListProps<T = any> {
+export interface VirtualListProps<T = any> extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
     /** 数据源 */
     data: T[];
     /** 容器高度 */
@@ -52,7 +52,9 @@ export function VirtualList<T>({
                                    showScrollbar = true,
                                    onVisibleRangeChange,
                                    onScrollEnd,
-                                   style
+                                   style,
+                                   onScroll,
+                                   ...props
                                }: VirtualListProps<T>) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [scrollTop, setScrollTop] = useState(0);
@@ -62,6 +64,8 @@ export function VirtualList<T>({
     const totalHeight = data.length * itemHeight;
 
     const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        onScroll?.(e);
+
         const newScrollTop = e.currentTarget.scrollTop;
         setScrollTop(newScrollTop);
 
@@ -73,7 +77,7 @@ export function VirtualList<T>({
                 onScrollEnd();
             }
         }
-    }, [onScrollEnd]);
+    }, [onScroll, onScrollEnd]);
 
     // 计算真实视口范围（不含 overscan）
     const visibleRange = useMemo(() => {
@@ -134,6 +138,7 @@ export function VirtualList<T>({
 
     return (
         <div
+            {...props}
             ref={containerRef}
             className={classNames}
             style={{ height: `${height}px`, ...style }}
