@@ -1,19 +1,36 @@
 // DeleteDialog.tsx
-import { useState } from 'react'
+import React, { useState } from 'react'
 import type { CategoryTreeNode } from './flatToTree'
+import type { FcChangeMeta } from '../../types/common'
 
 export type DeleteMode = 'lift' | 'cascade'
+export type DeleteDialogCloseMeta = FcChangeMeta<React.MouseEvent<HTMLDivElement | HTMLButtonElement>>
+export type DeleteDialogCloseHandler = (meta?: DeleteDialogCloseMeta) => void
+export type DeleteDialogDeleteMeta = FcChangeMeta<React.MouseEvent<HTMLButtonElement>>
+export type DeleteDialogDeleteHandler = (
+    key: string,
+    mode: DeleteMode,
+    meta?: DeleteDialogDeleteMeta,
+) => Promise<void>
 
-interface DeleteDialogProps {
+export interface DeleteDialogProps extends React.HTMLAttributes<HTMLDivElement> {
     node: CategoryTreeNode | null
-    onClose: () => void
+    onClose: DeleteDialogCloseHandler
     /** 父组件处理数据库逻辑。mode='lift' → 将子节点及条目上移；mode='cascade' → 全部删除。 */
-    onDelete: (key: string, mode: DeleteMode) => Promise<void>
+    onDelete: DeleteDialogDeleteHandler
 }
 
 type Phase = 'choose' | 'confirm-cascade'
 
-export function DeleteDialog({ node, onClose, onDelete }: DeleteDialogProps) {
+export function DeleteDialog({
+    node,
+    onClose,
+    onDelete,
+    className = '',
+    style,
+    onMouseDown,
+    ...overlayProps
+}: DeleteDialogProps) {
     const [phase, setPhase] = useState<Phase>('choose')
     const [loading, setLoading] = useState(false)
 
@@ -24,35 +41,48 @@ export function DeleteDialog({ node, onClose, onDelete }: DeleteDialogProps) {
         setLoading(false)
     }
 
-    const handleClose = () => {
+    const handleClose = (meta?: DeleteDialogCloseMeta) => {
         reset()
-        onClose()
+        onClose(meta)
     }
 
-    const handleLift = async () => {
+    const handleOverlayMouseDown: React.MouseEventHandler<HTMLDivElement> = event => {
+        onMouseDown?.(event)
+        if (event.defaultPrevented) return
+        handleClose({ source: 'click', event })
+    }
+
+    const handleCancelClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        handleClose({ source: 'click', event })
+    }
+
+    const handleLift = async (event: React.MouseEvent<HTMLButtonElement>) => {
         setLoading(true)
         try {
-            await onDelete(node.key, 'lift')
-            reset()
-            onClose()
+            await onDelete(node.key, 'lift', { source: 'click', event })
+            handleClose({ source: 'programmatic' })
         } catch {
             setLoading(false)
         }
     }
 
-    const handleCascade = async () => {
+    const handleCascade = async (event: React.MouseEvent<HTMLButtonElement>) => {
         setLoading(true)
         try {
-            await onDelete(node.key, 'cascade')
-            reset()
-            onClose()
+            await onDelete(node.key, 'cascade', { source: 'click', event })
+            handleClose({ source: 'programmatic' })
         } catch {
             setLoading(false)
         }
     }
 
     return (
-        <div className="fc-dialog-overlay" onMouseDown={handleClose}>
+        <div
+            {...overlayProps}
+            className={['fc-dialog-overlay', className].filter(Boolean).join(' ')}
+            style={style}
+            onMouseDown={handleOverlayMouseDown}
+        >
             <div className="fc-dialog" onMouseDown={e => e.stopPropagation()}>
 
                 {phase === 'choose' && (
@@ -94,7 +124,7 @@ export function DeleteDialog({ node, onClose, onDelete }: DeleteDialogProps) {
                         </div>
 
                         <div className="fc-dialog__footer">
-                            <button className="fc-dialog__btn" onClick={handleClose} disabled={loading}>
+                            <button className="fc-dialog__btn" onClick={handleCancelClick} disabled={loading}>
                                 取消
                             </button>
                         </div>
