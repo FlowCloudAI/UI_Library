@@ -3,7 +3,9 @@ import './Card.css';
 
 const clampRatio = (value: number) => Math.min(0.8, Math.max(0.1, value));
 
-export interface CardProps {
+export type CardVariant = 'default' | 'bordered' | 'shadow' | 'outline';
+
+export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'title'> {
     image?: string;
     imageSlot?: ReactNode;
     imageHeight?: number | string;
@@ -11,7 +13,7 @@ export interface CardProps {
     description?: ReactNode;
     actions?: ReactNode;
     extraInfo?: ReactNode;
-    variant?: 'default' | 'bordered' | 'shadow' | 'outline';
+    variant?: CardVariant;
     hoverable?: boolean;
     disabled?: boolean;
     contentAreaRatio?: number;
@@ -22,7 +24,7 @@ export interface CardProps {
     tag?: ReactNode;
     className?: string;
     style?: React.CSSProperties;
-    onClick?: () => void;
+    onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
 export const Card = ({
@@ -45,6 +47,7 @@ export const Card = ({
     className = '',
     style,
     onClick,
+    ...props
 }: CardProps) => {
     const baseContentRatio = clampRatio(contentAreaRatio);
     const expandedContentRatio = clampRatio(Math.max(baseContentRatio, hoverContentAreaRatio));
@@ -61,10 +64,9 @@ export const Card = ({
     const actionsRef = useRef<HTMLDivElement>(null);
     const [descriptionLineClamp, setDescriptionLineClamp] = useState<number>(3);
 
-    const handleClick = () => {
-        if (!disabled && onClick) {
-            onClick();
-        }
+    const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (disabled) return;
+        onClick?.(event);
     };
 
     const classes = [
@@ -154,9 +156,11 @@ export const Card = ({
 
     return (
         <div
+            {...props}
             className={classes}
             style={mergedStyle}
             onClick={handleClick}
+            aria-disabled={disabled || undefined}
             data-has-media={hasMedia}
             data-expand-on-hover={shouldExpandOnHover}
         >

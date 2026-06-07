@@ -87,7 +87,7 @@ export type {
 export {Avatar} from './components/Avatar/Avatar'
 export type {AvatarProps, AvatarShape} from './components/Avatar/Avatar'
 export {Card} from './components/Card/Card'
-export type {CardProps} from './components/Card/Card'
+export type {CardProps, CardVariant} from './components/Card/Card'
 export {ListGroup, ListGroupItem} from './components/ListGroup/ListGroup'
 export type {ListGroupItemProps, ListGroupProps} from './components/ListGroup/ListGroup'
 export {VirtualList} from './components/VirtualList/VirtualList'
