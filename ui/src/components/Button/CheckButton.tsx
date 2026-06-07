@@ -1,48 +1,71 @@
 import './CheckButton.css'
 import * as React from 'react'
+import type {FcChangeHandler, FcChangeMeta, FcRadius, FcSize} from '../../types/common'
 
-type CheckButtonRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
+export type CheckButtonRadius = FcRadius
+export type CheckButtonSize = Extract<FcSize, 'sm' | 'md' | 'lg'>
+export type CheckButtonChangeMeta = FcChangeMeta<
+    React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>
+>
+export type CheckButtonChangeHandler = FcChangeHandler<boolean, CheckButtonChangeMeta>
 
-interface CheckButtonBase {
+export interface CheckButtonTokens {
+    trackBackground?: string
+    checkedTrackBackground?: string
+    thumbBackground?: string
+    thumbDotColor?: string
+    labelColor?: string
+}
+
+export interface CheckButtonBaseProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+    onCheckedChange?: CheckButtonChangeHandler
+    /** @deprecated 推荐改用 onCheckedChange。 */
     onChange?: (checked: boolean) => void
     disabled?: boolean
-    size?: 'sm' | 'md' | 'lg'
+    size?: CheckButtonSize
     /** 轨道圆角，默认 full（胶囊形） */
     radius?: CheckButtonRadius
     labelLeft?: string
     labelRight?: string
-    className?: string
-    style?: React.CSSProperties
+    /** 深度样式覆盖，优先级高于旧颜色 props。 */
+    tokens?: Partial<CheckButtonTokens>
 
-    /* ---- 颜色定制（传入即覆盖，不传走默认样式） ---- */
+    /* ---- 兼容旧颜色 props；新用法推荐 tokens ---- */
 
-    /** 未选中时轨道背景色 */
+    /** @deprecated 推荐改用 tokens.trackBackground。 */
     trackBackground?: string
-    /** 选中时轨道背景色 */
+    /** @deprecated 推荐改用 tokens.checkedTrackBackground。 */
     checkedTrackBackground?: string
-    /** 滑块背景色 */
+    /** @deprecated 推荐改用 tokens.thumbBackground。 */
     thumbBackground?: string
-    /** 滑块内部装饰色（选中时） */
+    /** @deprecated 推荐改用 tokens.thumbDotColor。 */
     thumbDotColor?: string
-    /** 标签文字色 */
+    /** @deprecated 推荐改用 tokens.labelColor。 */
     labelColor?: string
 }
 
-interface ControlledCheckButton extends CheckButtonBase {
+export interface ControlledCheckButtonProps extends CheckButtonBaseProps {
     checked: boolean
     defaultChecked?: never
 }
 
-interface UncontrolledCheckButton extends CheckButtonBase {
+export interface UncontrolledCheckButtonProps extends CheckButtonBaseProps {
     checked?: never
     defaultChecked?: boolean
 }
 
-type CheckButtonProps = ControlledCheckButton | UncontrolledCheckButton
+export type CheckButtonProps = ControlledCheckButtonProps | UncontrolledCheckButtonProps
+
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production')
+}
 
 export function CheckButton({
                                 checked: controlledChecked,
                                 defaultChecked = false,
+                                onCheckedChange,
                                 onChange,
                                 disabled = false,
                                 size = 'md',
@@ -56,31 +79,75 @@ export function CheckButton({
                                 labelColor,
                                 className = '',
                                 style,
+                                tokens,
+                                tabIndex,
+                                onClick,
+                                onKeyDown,
+                                ...props
                             }: CheckButtonProps) {
     const isControlled = controlledChecked !== undefined
     const [internalChecked, setInternalChecked] = React.useState(defaultChecked)
     const checked = isControlled ? controlledChecked : internalChecked
 
-    const toggle = () => {
+    React.useEffect(() => {
+        if (!onChange || !isDevelopmentRuntime()) return
+        console.warn('[flowcloudai-ui][CheckButton] onChange 已废弃，推荐改用 onCheckedChange。')
+    }, [onChange])
+
+    const deprecatedColorPropNames = React.useMemo(() => [
+        trackBackground !== undefined && 'trackBackground',
+        checkedTrackBackground !== undefined && 'checkedTrackBackground',
+        thumbBackground !== undefined && 'thumbBackground',
+        thumbDotColor !== undefined && 'thumbDotColor',
+        labelColor !== undefined && 'labelColor',
+    ].filter(Boolean) as string[], [
+        checkedTrackBackground,
+        labelColor,
+        thumbBackground,
+        thumbDotColor,
+        trackBackground,
+    ])
+
+    React.useEffect(() => {
+        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return
+        console.warn(`[flowcloudai-ui][CheckButton] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`)
+    }, [deprecatedColorPropNames])
+
+    const toggle = (
+        source: CheckButtonChangeMeta['source'],
+        event: CheckButtonChangeMeta['event'],
+    ) => {
         if (disabled) return
         const next = !checked
         if (!isControlled) setInternalChecked(next)
-        onChange?.(next)
+        if (onCheckedChange) {
+            onCheckedChange(next, {source, event})
+        } else {
+            onChange?.(next)
+        }
     }
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        onClick?.(e)
+        if (e.defaultPrevented) return
+        toggle('click', e)
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        onKeyDown?.(e)
+        if (e.defaultPrevented) return
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            toggle()
+            toggle('keyboard', e)
         }
     }
 
     const colorVars: Record<string, string | undefined> = {
-        '--check-track-bg': trackBackground,
-        '--check-track-bg-checked': checkedTrackBackground,
-        '--check-thumb-bg': thumbBackground,
-        '--check-thumb-dot-color': thumbDotColor,
-        '--check-label-color': labelColor,
+        '--check-track-bg': tokens?.trackBackground ?? trackBackground,
+        '--check-track-bg-checked': tokens?.checkedTrackBackground ?? checkedTrackBackground,
+        '--check-thumb-bg': tokens?.thumbBackground ?? thumbBackground,
+        '--check-thumb-dot-color': tokens?.thumbDotColor ?? thumbDotColor,
+        '--check-label-color': tokens?.labelColor ?? labelColor,
     }
 
     const overrideStyle: React.CSSProperties = {}
@@ -106,12 +173,14 @@ export function CheckButton({
 
     return (
         <div
+            {...props}
             className={cls}
             style={mergedStyle}
             role="switch"
             aria-checked={checked}
-            tabIndex={disabled ? -1 : 0}
-            onClick={toggle}
+            aria-disabled={disabled || undefined}
+            tabIndex={tabIndex ?? (disabled ? -1 : 0)}
+            onClick={handleClick}
             onKeyDown={handleKeyDown}
         >
             {labelLeft && <span className="fc-check__label">{labelLeft}</span>}

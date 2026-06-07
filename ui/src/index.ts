@@ -22,6 +22,17 @@ export type {
     ButtonVariant,
 } from './components/Button/Button'
 export {CheckButton} from './components/Button/CheckButton'
+export type {
+    CheckButtonBaseProps,
+    CheckButtonChangeHandler,
+    CheckButtonChangeMeta,
+    CheckButtonProps,
+    CheckButtonRadius,
+    CheckButtonSize,
+    CheckButtonTokens,
+    ControlledCheckButtonProps,
+    UncontrolledCheckButtonProps,
+} from './components/Button/CheckButton'
 export {RollingBox} from './components/Box/RollingBox'
 export {SideBar} from './components/Bar/SideBar'
 export type {SideBarAnchorState, SideBarItem, SideBarPlacement, SideBarProps} from './components/Bar/SideBar'
