@@ -189,7 +189,15 @@ export type {
     DeleteMode,
 } from './components/Tree/DeleteDialog'
 export {OrphanDialog} from './components/Tree/OrphanDialog'
-export type {OrphanResolution, OrphanResolutionMap} from './components/Tree/OrphanDialog'
+export type {
+    OrphanDialogCloseHandler,
+    OrphanDialogCloseMeta,
+    OrphanDialogProps,
+    OrphanDialogResolveHandler,
+    OrphanDialogResolveMeta,
+    OrphanResolution,
+    OrphanResolutionMap,
+} from './components/Tree/OrphanDialog'
 export {findNodeInfo, flatToTree, isDescendantOf} from './components/Tree/flatToTree'
 export type {CategoryTreeNode, FlatCategory, FlatToTreeResult} from './components/Tree/flatToTree'
 

@@ -8,20 +8,35 @@
 // onResolve 接收 { [nodeKey]: 'lift' | 'remove' } 映射表
 // 父组件负责执行数据库操作。
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import type { CategoryTreeNode } from './flatToTree'
+import type { FcChangeMeta } from '../../types/common'
 
 export type OrphanResolution = 'lift' | 'remove'
 export type OrphanResolutionMap = Record<string, OrphanResolution>
+export type OrphanDialogCloseMeta = FcChangeMeta<React.MouseEvent<HTMLButtonElement>>
+export type OrphanDialogCloseHandler = (meta?: OrphanDialogCloseMeta) => void
+export type OrphanDialogResolveMeta = FcChangeMeta<React.MouseEvent<HTMLButtonElement>>
+export type OrphanDialogResolveHandler = (
+    resolutions: OrphanResolutionMap,
+    meta?: OrphanDialogResolveMeta,
+) => void
 
-interface OrphanDialogProps {
+export interface OrphanDialogProps extends React.HTMLAttributes<HTMLDivElement> {
     orphans: CategoryTreeNode[]
-    onResolve: (resolutions: OrphanResolutionMap) => void
+    onResolve: OrphanDialogResolveHandler
     /** 关闭而不处理 — 孤立节点将被静默从树中排除。 */
-    onClose: () => void
+    onClose: OrphanDialogCloseHandler
 }
 
-export function OrphanDialog({ orphans, onResolve, onClose }: OrphanDialogProps) {
+export function OrphanDialog({
+    orphans,
+    onResolve,
+    onClose,
+    className = '',
+    style,
+    ...overlayProps
+}: OrphanDialogProps) {
     const [resolutions, setResolutions] = useState<OrphanResolutionMap>(() =>
         Object.fromEntries(orphans.map(o => [o.key, 'lift' as OrphanResolution]))
     )
@@ -32,7 +47,11 @@ export function OrphanDialog({ orphans, onResolve, onClose }: OrphanDialogProps)
         setResolutions(prev => ({ ...prev, [key]: val }))
 
     return (
-        <div className="fc-dialog-overlay">
+        <div
+            {...overlayProps}
+            className={['fc-dialog-overlay', className].filter(Boolean).join(' ')}
+            style={style}
+        >
             <div className="fc-dialog fc-dialog--wide">
                 <div className="fc-dialog__header">
                     <span className="fc-dialog__icon">🔍</span>
@@ -78,12 +97,12 @@ export function OrphanDialog({ orphans, onResolve, onClose }: OrphanDialogProps)
                 </div>
 
                 <div className="fc-dialog__footer">
-                    <button className="fc-dialog__btn" onClick={onClose}>
+                    <button className="fc-dialog__btn" onClick={event => onClose({ source: 'click', event })}>
                         暂时忽略
                     </button>
                     <button
                         className="fc-dialog__btn fc-dialog__btn--primary"
-                        onClick={() => onResolve(resolutions)}
+                        onClick={event => onResolve(resolutions, { source: 'click', event })}
                     >
                         确认处理
                     </button>
