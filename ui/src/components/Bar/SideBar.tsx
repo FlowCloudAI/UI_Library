@@ -1,6 +1,7 @@
 // src/components/SideBar/SideBar.tsx
 import './SideBar.css';
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useEffect, useRef } from 'react';
+import type { FcChangeHandler, FcChangeMeta } from '../../types/common';
 
 /* ========== 类型定义 ========== */
 
@@ -19,8 +20,18 @@ export interface SideBarItem {
 
 export type SideBarPlacement = 'left' | 'right';
 export type SideBarAnchorState = 'collapse' | 'normal';
+export type SideBarSelectedKeyChangeMeta = FcChangeMeta<React.MouseEvent<HTMLElement>>;
+export type SideBarSelectedKeyChangeHandler = FcChangeHandler<string, SideBarSelectedKeyChangeMeta>;
+export type SideBarCollapsedChangeMeta = FcChangeMeta<React.MouseEvent<HTMLButtonElement>>;
+export type SideBarCollapsedChangeHandler = FcChangeHandler<boolean, SideBarCollapsedChangeMeta>;
 
-export interface SideBarProps {
+function isDevelopmentRuntime(): boolean {
+    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
+
+export interface SideBarProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onSelect'> {
     /** 菜单项列表（受控） */
     items: SideBarItem[];
     /** 底部固定菜单项（如设置、退出），始终显示在侧边栏底部 */
@@ -41,10 +52,14 @@ export interface SideBarProps {
 
     /* ---- 回调 ---- */
 
-    /** 选中项变更 */
-    onSelect: (key: string) => void;
-    /** 折叠状态变更 */
-    onCollapse: (collapsed: boolean) => void;
+    /** 推荐使用的选中项变更回调。 */
+    onSelectedKeyChange?: SideBarSelectedKeyChangeHandler;
+    /** @deprecated 保留兼容，推荐改用 onSelectedKeyChange。 */
+    onSelect?: (key: string) => void;
+    /** 推荐使用的折叠状态变更回调。 */
+    onCollapsedChange?: SideBarCollapsedChangeHandler;
+    /** @deprecated 保留兼容，推荐改用 onCollapsedChange。 */
+    onCollapse?: (collapsed: boolean) => void;
 
     /* ---- 样式定制 ---- */
 
@@ -57,8 +72,6 @@ export interface SideBarProps {
      * --sidebar-item-selected-color 选中文字色
      * --sidebar-item-selected-bg    选中背景色
      */
-    className?: string;
-    style?: React.CSSProperties;
 }
 
 /* ========== 子组件：单个菜单项 ========== */
@@ -66,7 +79,7 @@ export interface SideBarProps {
 interface SideBarItemViewProps {
     item: SideBarItem;
     isSelected: boolean;
-    onClick: (key: string) => void;
+    onClick: (key: string, event: React.MouseEvent<HTMLElement>) => void;
 }
 
 const SideBarItemView = memo<SideBarItemViewProps>(({ item, isSelected, onClick }) => {
@@ -90,7 +103,7 @@ const SideBarItemView = memo<SideBarItemViewProps>(({ item, isSelected, onClick 
                     event.stopPropagation();
                     return;
                 }
-                onClick(item.key);
+                onClick(item.key, event);
             }}
             {...linkProps}
         >
@@ -115,14 +128,38 @@ export const SideBar = memo<SideBarProps>(({
                                                width = 240,
                                                collapsedWidth = 64,
                                                placement = 'left',
+                                               onSelectedKeyChange,
                                                onSelect,
+                                               onCollapsedChange,
                                                onCollapse,
                                                className = '',
                                                style,
+                                               ...props
                                            }) => {
+    const warnedLegacySelectRef = useRef(false);
+    const warnedLegacyCollapseRef = useRef(false);
+
+    useEffect(() => {
+        if (!onSelect || warnedLegacySelectRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacySelectRef.current = true;
+        console.warn('[flowcloudai-ui][SideBar] onSelect(key) 已保留兼容，建议改用 onSelectedKeyChange。');
+    }, [onSelect]);
+
+    useEffect(() => {
+        if (!onCollapse || warnedLegacyCollapseRef.current || !isDevelopmentRuntime()) return;
+        warnedLegacyCollapseRef.current = true;
+        console.warn('[flowcloudai-ui][SideBar] onCollapse(collapsed) 已保留兼容，建议改用 onCollapsedChange。');
+    }, [onCollapse]);
+
     const handleClick = useCallback(
-        (key: string) => onSelect(key),
-        [onSelect],
+        (key: string, event: React.MouseEvent<HTMLElement>) => {
+            if (onSelectedKeyChange) {
+                onSelectedKeyChange(key, { source: 'click', event });
+            } else {
+                onSelect?.(key);
+            }
+        },
+        [onSelectedKeyChange, onSelect],
     );
 
     const isAnchored = anchorState !== undefined;
@@ -131,8 +168,15 @@ export const SideBar = memo<SideBarProps>(({
         : collapsed;
 
     const toggleCollapse = useCallback(
-        () => onCollapse(!isCollapsed),
-        [isCollapsed, onCollapse],
+        (event: React.MouseEvent<HTMLButtonElement>) => {
+            const nextCollapsed = !isCollapsed;
+            if (onCollapsedChange) {
+                onCollapsedChange(nextCollapsed, { source: 'click', event });
+            } else {
+                onCollapse?.(nextCollapsed);
+            }
+        },
+        [isCollapsed, onCollapsedChange, onCollapse],
     );
 
     const rootClasses = [
@@ -153,7 +197,7 @@ export const SideBar = memo<SideBarProps>(({
     } as React.CSSProperties;
 
     return (
-        <aside className={rootClasses} style={rootStyle}>
+        <aside {...props} className={rootClasses} style={rootStyle}>
             {!isAnchored && (
                 <div className="fc-sidebar__header">
                     <button

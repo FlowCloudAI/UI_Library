@@ -42,7 +42,16 @@ export type {
     ThumbSize,
 } from './components/Box/RollingBox'
 export {SideBar} from './components/Bar/SideBar'
-export type {SideBarAnchorState, SideBarItem, SideBarPlacement, SideBarProps} from './components/Bar/SideBar'
+export type {
+    SideBarAnchorState,
+    SideBarCollapsedChangeHandler,
+    SideBarCollapsedChangeMeta,
+    SideBarItem,
+    SideBarPlacement,
+    SideBarProps,
+    SideBarSelectedKeyChangeHandler,
+    SideBarSelectedKeyChangeMeta,
+} from './components/Bar/SideBar'
 export {TabBar} from './components/Bar/TabBar'
 export type {TabBarProps, TabItem} from './components/Bar/TabBar'
 
