@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import './ConversationTreeView.css';
+import type {FcChangeHandler, FcChangeMeta} from '../../types/common';
 
 // ========================================
 // 类型定义（对应 Rust ConversationNode）
@@ -21,11 +22,25 @@ export interface ConversationNode {
   timestamp: string;
 }
 
-export interface ConversationTreeViewProps {
+export type ConversationTreeSelectedNodeChangeMeta = FcChangeMeta<React.MouseEvent<HTMLDivElement>>;
+export type ConversationTreeSelectedNodeChangeHandler = FcChangeHandler<number, ConversationTreeSelectedNodeChangeMeta>;
+
+function isDevelopmentRuntime(): boolean {
+  const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
+  const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+  return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
+}
+
+export interface ConversationTreeViewProps extends React.HTMLAttributes<HTMLDivElement> {
   nodes: ConversationNode[];
-  head: number | null;
-  onCheckout: (nodeId: number) => void;
-  className?: string;
+  /** 当前选中的节点 ID（受控）。 */
+  selectedNodeId?: number | null;
+  /** @deprecated 保留兼容，推荐改用 selectedNodeId。 */
+  head?: number | null;
+  /** 推荐使用的选中节点变更回调。 */
+  onSelectedNodeChange?: ConversationTreeSelectedNodeChangeHandler;
+  /** @deprecated 保留兼容，推荐改用 onSelectedNodeChange。 */
+  onCheckout?: (nodeId: number) => void;
 }
 
 // ========================================
@@ -77,12 +92,42 @@ function contentPreview(node: TreeNode): string {
 
 export const ConversationTreeView: React.FC<ConversationTreeViewProps> = ({
   nodes,
+  selectedNodeId,
   head,
+  onSelectedNodeChange,
   onCheckout,
   className = '',
+  style,
+  ...props
 }) => {
+  const currentHead = selectedNodeId !== undefined ? selectedNodeId : head ?? null;
   const tree = useMemo(() => buildTree(nodes), [nodes]);
-  const activePath = useMemo(() => pathToRoot(tree, head), [tree, head]);
+  const activePath = useMemo(() => pathToRoot(tree, currentHead), [tree, currentHead]);
+  const warnedLegacyHeadRef = useRef(false);
+  const warnedLegacyCheckoutRef = useRef(false);
+
+  useEffect(() => {
+    if (head === undefined || warnedLegacyHeadRef.current || !isDevelopmentRuntime()) return;
+    warnedLegacyHeadRef.current = true;
+    console.warn('[flowcloudai-ui][ConversationTreeView] head 已保留兼容，建议改用 selectedNodeId。');
+  }, [head]);
+
+  useEffect(() => {
+    if (!onCheckout || warnedLegacyCheckoutRef.current || !isDevelopmentRuntime()) return;
+    warnedLegacyCheckoutRef.current = true;
+    console.warn('[flowcloudai-ui][ConversationTreeView] onCheckout(nodeId) 已保留兼容，建议改用 onSelectedNodeChange。');
+  }, [onCheckout]);
+
+  const emitSelectedNodeChange = useCallback(
+    (nodeId: number, event: React.MouseEvent<HTMLDivElement>) => {
+      if (onSelectedNodeChange) {
+        onSelectedNodeChange(nodeId, {source: 'click', event});
+      } else {
+        onCheckout?.(nodeId);
+      }
+    },
+    [onSelectedNodeChange, onCheckout],
+  );
 
   // 构建映射：节点 ID → 它在兄弟中的索引（用于分支计数）
   const branchInfo = useMemo(() => {
@@ -101,11 +146,11 @@ export const ConversationTreeView: React.FC<ConversationTreeViewProps> = ({
   }, [tree]);
 
   if (nodes.length === 0) {
-    return <div className={`fc-conv-tree ${className}`}>暂无对话历史</div>;
+    return <div {...props} className={`fc-conv-tree ${className}`} style={style}>暂无对话历史</div>;
   }
 
   return (
-    <div className={`fc-conv-tree ${className}`}>
+    <div {...props} className={`fc-conv-tree ${className}`} style={style}>
       <div className="fc-conv-tree__header">对话分支</div>
       <div className="fc-conv-tree__list">
         {activePath.map((nodeId) => {
@@ -113,7 +158,7 @@ export const ConversationTreeView: React.FC<ConversationTreeViewProps> = ({
           if (!node) return null;
 
           const branch = branchInfo.get(nodeId);
-          const isHead = nodeId === head;
+          const isHead = nodeId === currentHead;
           const isUser = node.message.role === 'user';
           const isAssistant = node.message.role === 'assistant';
 
@@ -122,7 +167,7 @@ export const ConversationTreeView: React.FC<ConversationTreeViewProps> = ({
               {/* 当前路径上的节点 */}
               <div
                 className={`fc-conv-tree__item${isHead ? ' fc-conv-tree__item--head' : ''}${isUser ? ' fc-conv-tree__item--user' : ''}${isAssistant ? ' fc-conv-tree__item--assistant' : ''}`}
-                onClick={() => onCheckout(nodeId)}
+                onClick={(event) => emitSelectedNodeChange(nodeId, event)}
                 title={contentPreview(node)}
               >
                 <span className="fc-conv-tree__role">
@@ -143,7 +188,7 @@ export const ConversationTreeView: React.FC<ConversationTreeViewProps> = ({
                       <div
                         key={siblingId}
                         className={`fc-conv-tree__branch${isActiveBranch ? ' fc-conv-tree__branch--active' : ''}`}
-                        onClick={() => onCheckout(siblingId)}
+                        onClick={(event) => emitSelectedNodeChange(siblingId, event)}
                       >
                         <span className="fc-conv-tree__branch-idx">{idx + 1}/{branch.total}</span>
                         <span className="fc-conv-tree__branch-preview">

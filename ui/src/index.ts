@@ -142,6 +142,8 @@ export {ConversationTreeView} from './components/ConversationTreeView/Conversati
 export type {
     ConversationNode,
     ConversationNodeMessage,
+    ConversationTreeSelectedNodeChangeHandler,
+    ConversationTreeSelectedNodeChangeMeta,
     ConversationTreeViewProps,
 } from './components/ConversationTreeView/ConversationTreeView'
 export {Timeline} from './components/Time/Time'

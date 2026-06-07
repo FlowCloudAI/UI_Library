@@ -2,5 +2,7 @@ export {ConversationTreeView} from '../components/ConversationTreeView/Conversat
 export type {
     ConversationNode,
     ConversationNodeMessage,
+    ConversationTreeSelectedNodeChangeHandler,
+    ConversationTreeSelectedNodeChangeMeta,
     ConversationTreeViewProps,
 } from '../components/ConversationTreeView/ConversationTreeView'
