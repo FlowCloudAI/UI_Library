@@ -10,8 +10,6 @@
     align-items: center;
     justify-content: center;
     background: var(--fc-color-bg-overlay);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
     z-index: var(--fc-z-modal);
 }
 
