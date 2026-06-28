@@ -37,6 +37,7 @@ export function TreeDemo() {
     const [searchValue, setSearchValue] = useState('')
     const [indentSize, setIndentSize] = useState(20)
     const [indentationLine, setIndentationLine] = useState(true)
+    const [hideRoot, setHideRoot] = useState(false)
     const [actionDisplayMode, setActionDisplayMode] = useState<'auto' | 'inline' | 'overflow'>('auto')
     const [customColors, setCustomColors] = useState(true)
     const [deleteTarget, setDeleteTarget] = useState<CategoryTreeNode | null>(null)
@@ -70,7 +71,11 @@ export function TreeDemo() {
         rows.map(r => ({id: r.id, parent_id: r.parent_id, name: r.name, sort_order: r.sort_order}))
     )
 
-    const rootKeys = useMemo(() => roots.map((node: { key: any }) => node.key), [roots])
+    const rootKeys = useMemo(() => roots.map((node: CategoryTreeNode) => node.key), [roots])
+    const topVisibleKeys = useMemo(
+        () => hideRoot ? roots.flatMap(node => node.children.map(child => child.key)) : rootKeys,
+        [hideRoot, rootKeys, roots]
+    )
     const customColorTokens = useMemo<TreeTokens | undefined>(() => {
         if (!customColors) return undefined
         return {
@@ -337,6 +342,14 @@ export function TreeDemo() {
                     />
                     缩进线
                 </label>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12}}>
+                    <input
+                        type="checkbox"
+                        checked={hideRoot}
+                        onChange={e => setHideRoot(e.target.checked)}
+                    />
+                    隐藏根节点
+                </label>
                 <label style={{display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12}}>
                     动作模式
                     <select
@@ -356,7 +369,7 @@ export function TreeDemo() {
                     </select>
                 </label>
                 <button
-                    onClick={() => setExpandedKeys(rootKeys)}
+                    onClick={() => setExpandedKeys(topVisibleKeys)}
                     style={demoButtonStyle}
                 >
                     展开顶层
@@ -415,6 +428,7 @@ export function TreeDemo() {
                             return !(source.raw.parent_id === null && target.raw.parent_id !== null);
 
                         }}
+                        hideRoot={hideRoot}
                         indentSize={indentSize}
                         indentationLine={indentationLine}
                         actionDisplayMode={actionDisplayMode}

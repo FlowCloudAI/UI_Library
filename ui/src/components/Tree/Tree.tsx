@@ -735,6 +735,8 @@ export interface TreeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
     canRename?: (node: CategoryTreeNode) => boolean
     canDelete?: (node: CategoryTreeNode) => boolean
     canCreate?: (node: CategoryTreeNode | null) => boolean
+    /** 隐藏第 0 层根节点，直接把根节点的子级作为顶层显示。 */
+    hideRoot?: boolean
     /** 是否显示缩进引导线 */
     indentationLine?: boolean
     indentSize?: number
@@ -777,6 +779,7 @@ export function Tree({
                          canRename,
                          canDelete,
                          canCreate,
+                         hideRoot = false,
                          indentationLine = false,
                          indentSize = 20,
                          actionDisplayMode = 'auto',
@@ -1128,9 +1131,13 @@ export function Tree({
             }
         }
 
-        visit(displayData, 0)
+        if (hideRoot) {
+            for (const node of displayData) visit(node.children, 0)
+        } else {
+            visit(displayData, 0)
+        }
         return rows
-    }, [currentExpandedKeys, displayData])
+    }, [currentExpandedKeys, displayData, hideRoot])
 
     const renderRows = useMemo<TreeRenderRow[]>(() => {
         return visibleRows.map(row => ({
