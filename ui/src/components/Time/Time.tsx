@@ -432,7 +432,7 @@ export function Timeline({
                         );
                     })}
 
-                    {processedEvents.map((e) => {
+                    {processedEvents.map((e, index) => {
                         const flagBottom = e.y + FLAG_HEIGHT;
                         const lineHeight = axisY - flagBottom;
                         const isSelected = currentSelectedId === e.id;
@@ -443,7 +443,8 @@ export function Timeline({
                                 style={{
                                     position: 'absolute',
                                     left: LEFT_OFFSET + e.startX,
-                                    top: e.y
+                                    top: e.y,
+                                    zIndex: processedEvents.length - index + 10
                                 }}
                             >
                                 <div
