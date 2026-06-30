@@ -8,6 +8,13 @@
     --fc-card-overlay-start-opacity: 0;
     --fc-card-overlay-mid-opacity: 0.46;
     --fc-card-overlay-end-opacity: 0.92;
+    --fc-card-overlay-rise: 3rem;
+    --fc-card-overlay-background: linear-gradient(
+        180deg,
+        rgba(8, 12, 20, var(--fc-card-overlay-start-opacity)) 0%,
+        rgba(8, 12, 20, var(--fc-card-overlay-mid-opacity)) 34%,
+        rgba(8, 12, 20, var(--fc-card-overlay-end-opacity)) 100%
+    );
     --fc-card-content-height: calc(var(--fc-card-media-height) * var(--fc-card-current-ratio));
     --fc-card-content-motion: 0.1s ease;
 
@@ -41,6 +48,21 @@
 
 .fc-card[data-has-media="true"] {
     background-color: var(--fc-color-bg-tertiary);
+}
+
+.fc-card[data-has-media="true"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(var(--fc-card-content-height) + var(--fc-card-overlay-rise));
+    z-index: 1;
+    pointer-events: none;
+    background: var(--fc-card-overlay-background);
+    transition:
+        height var(--fc-card-content-motion),
+        background var(--fc-card-content-motion);
 }
 
 .fc-card[data-has-media="false"] {
@@ -102,7 +124,7 @@
     bottom: 0;
     height: var(--fc-card-content-height);
     padding: var(--fc-space-lg);
-    z-index: 1;
+    z-index: 2;
     color: #fff;
     overflow: hidden;
     transition:
@@ -110,18 +132,14 @@
         padding var(--fc-card-content-motion),
         background var(--fc-card-content-motion),
         gap var(--fc-card-content-motion);
-    background: linear-gradient(
-        180deg,
-        rgba(8, 12, 20, var(--fc-card-overlay-start-opacity)) 0%,
-        rgba(8, 12, 20, var(--fc-card-overlay-mid-opacity)) 34%,
-        rgba(8, 12, 20, var(--fc-card-overlay-end-opacity)) 100%
-    );
+    background: none;
 }
 
 .fc-card[data-has-media="false"] .fc-card__content {
     position: relative;
     min-height: var(--fc-card-media-height);
     width: 100%;
+    background: var(--fc-card-overlay-background);
 }
 
 .fc-card[data-expand-on-hover="true"]:hover .fc-card__content {
@@ -132,7 +150,7 @@
     position: absolute;
     top: var(--fc-space-md);
     left: var(--fc-space-md);
-    z-index: 2;
+    z-index: 3;
     max-width: calc(100% - (var(--fc-space-md) * 2));
 }
 
