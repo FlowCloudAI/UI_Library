@@ -169,6 +169,9 @@
     --fc-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
     --fc-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.10), 0 4px 8px rgba(0, 0, 0, 0.06);
 
+    /* ---------- 效果 ---------- */
+    --fc-effect-glass-blur: blur(var(--fc-space-xs));
+
     /* ---------- 过渡 ---------- */
     --fc-transition: 150ms ease;
     --fc-transition-slow: 250ms ease;
@@ -246,6 +249,8 @@ body {
     --fc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
     --fc-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
     --fc-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4);
+
+    --fc-effect-glass-blur: blur(var(--fc-space-xs));
 }
 
 /* ========== 补充样式 ========== */
