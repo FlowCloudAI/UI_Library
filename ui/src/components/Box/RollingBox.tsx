@@ -1,6 +1,6 @@
-// RollingBox.tsx
 import './RollingBox.css';
 import * as React from 'react';
+import {useCustomRollThumb} from './useCustomRollThumb';
 
 export type ShowThumb = 'auto' | 'hide' | 'show';
 export type ThumbSize = 'thin' | 'normal' | 'thick';
@@ -36,6 +36,8 @@ export interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
     /** 返回 true 时由外部接管本次滚轮事件，RollingBox 不再处理 */
     interceptWheel?: (event: WheelEvent, container: HTMLDivElement) => boolean;
+    /** 自绘滚动条（隐藏原生滚动条，仅 axis="y"）；--roll-inset-top/bottom 可避开覆盖层。 */
+    customThumb?: boolean;
     /** 深度样式覆盖，优先级高于旧颜色 props。 */
     tokens?: Partial<RollingBoxTokens>;
 
@@ -60,6 +62,7 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
                                                                                                     showTrack = false,
                                                                                                     children,
                                                                                                     interceptWheel,
+                                                                                                    customThumb = false,
                                                                                                     className,
                                                                                                     thumbColor,
                                                                                                     thumbHoverColor,
@@ -87,6 +90,7 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
     const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style };
 
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const contentRef = React.useRef<HTMLDivElement>(null);
     const [isScrolling, setIsScrolling] = React.useState(false);
     const scrollTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const animationFrameRef = React.useRef<number | null>(null);
@@ -140,8 +144,25 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
         ref.current = node;
     }, [ref]);
 
+    const useCustomThumb = customThumb && resolvedAxis === 'y' && showThumb !== 'hide';
+    const {
+        thumbAnchorRef,
+        trackRef,
+        thumbRef,
+        updateThumb,
+        handleTrackPointerDown,
+        handleThumbPointerDown,
+        handleThumbPointerMove,
+        handleThumbPointerUp,
+    } = useCustomRollThumb({
+        enabled: useCustomThumb,
+        containerRef,
+        contentRef,
+    });
+
     const handleScroll = React.useCallback((event: React.UIEvent<HTMLDivElement>) => {
         onScroll?.(event);
+        if (useCustomThumb) updateThumb();
         if (showThumb !== 'auto') return;
 
         setIsScrolling(true);
@@ -153,7 +174,7 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
         scrollTimeoutRef.current = setTimeout(() => {
             setIsScrolling(false);
         }, 1000);
-    }, [onScroll, showThumb]);
+    }, [onScroll, showThumb, updateThumb, useCustomThumb]);
 
     React.useEffect(() => {
         return () => {
@@ -237,6 +258,7 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
         `fc-roll--size-${thumbSize}`,
         `fc-roll--${resolvedDirection}`,
         showTrack && 'fc-roll--track',
+        useCustomThumb && 'fc-roll--custom-thumb',
         isScrolling && 'fc-roll--scrolling',
         className,
     ].filter(Boolean).join(' ');
@@ -249,7 +271,26 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
             style={mergedStyle}
             onScroll={handleScroll}
         >
-            <div className="fc-roll__content">
+            {useCustomThumb && (
+                <div ref={thumbAnchorRef} className="fc-roll__thumb-anchor" aria-hidden="true">
+                    <div
+                        ref={trackRef}
+                        className="fc-roll__track"
+                        onPointerDown={handleTrackPointerDown}
+                    >
+                        <div
+                            ref={thumbRef}
+                            className="fc-roll__thumb"
+                            onPointerDown={handleThumbPointerDown}
+                            onPointerMove={handleThumbPointerMove}
+                            onPointerUp={handleThumbPointerUp}
+                            onPointerCancel={handleThumbPointerUp}
+                            onLostPointerCapture={handleThumbPointerUp}
+                        />
+                    </div>
+                </div>
+            )}
+            <div ref={contentRef} className="fc-roll__content">
                 {children}
             </div>
         </div>

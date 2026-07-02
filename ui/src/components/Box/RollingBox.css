@@ -99,6 +99,49 @@
     --roll-thumb: var(--roll-thumb-active);
 }
 
+/* ---------- 自绘滚动条（customThumb，仅纵向） ---------- */
+.fc-roll--custom-thumb {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.fc-roll--custom-thumb::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.fc-roll__thumb-anchor {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 3;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.fc-roll__track {
+    position: absolute;
+    top: var(--roll-inset-top, 0px);
+    right: 2px;
+    width: calc(var(--roll-size) - 4px);
+    min-width: 4px;
+    border-radius: var(--fc-radius-full);
+    background: var(--roll-track);
+    pointer-events: auto;
+}
+
+.fc-roll__thumb {
+    width: 100%;
+    border-radius: var(--fc-radius-full);
+    background: var(--roll-thumb);
+    transition: background 0.15s ease;
+    touch-action: none;
+    will-change: transform;
+}
+
 /* ---------- 显示轨道 ---------- */
 .fc-roll--track {
     --roll-track: var(--fc-color-scrollbar-track);
