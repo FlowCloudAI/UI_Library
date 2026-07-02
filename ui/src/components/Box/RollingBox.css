@@ -101,12 +101,12 @@
 }
 
 /* ---------- 自绘滚动条（customThumb，仅纵向） ---------- */
-.fc-roll--custom-thumb {
+.fc-roll.fc-roll--custom-thumb {
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
 
-.fc-roll--custom-thumb::-webkit-scrollbar {
+.fc-roll.fc-roll--custom-thumb.fc-roll--custom-thumb::-webkit-scrollbar {
     width: 0;
     height: 0;
 }
