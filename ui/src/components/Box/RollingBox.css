@@ -8,9 +8,10 @@
     --roll-thumb-active: var(--fc-color-scrollbar-thumb-active);
     --roll-track: transparent;
     --roll-size: 10px;
+    --roll-thumb-slot-width: calc(var(--roll-size) + 4px);
     --roll-thumb-width: calc(var(--roll-size) - 4px);
     --roll-thumb-hover-width: calc(var(--roll-size) - 2px);
-    --roll-thumb-active-width: var(--roll-size);
+    --roll-thumb-active-width: var(--roll-thumb-hover-width);
 
     position: relative;
     width: 100%;
@@ -128,8 +129,8 @@
     position: absolute;
     top: var(--roll-inset-top, 0px);
     right: 0;
-    width: var(--roll-size);
-    min-width: var(--roll-size);
+    width: var(--roll-thumb-slot-width);
+    min-width: var(--roll-thumb-slot-width);
     border-radius: var(--fc-radius-full);
     background: var(--roll-track);
     pointer-events: auto;
@@ -138,7 +139,7 @@
 .fc-roll__thumb {
     width: var(--roll-thumb-width);
     margin-left: auto;
-    margin-right: calc((var(--roll-size) - var(--roll-thumb-width)) / 2);
+    margin-right: calc((var(--roll-thumb-slot-width) - var(--roll-thumb-width)) / 2);
     border-radius: var(--fc-radius-full);
     background: var(--roll-thumb);
     transition: background 0.15s ease, margin-right 0.15s ease, width 0.15s ease;
@@ -148,14 +149,14 @@
 
 .fc-roll__thumb:hover {
     width: var(--roll-thumb-hover-width);
-    margin-right: calc((var(--roll-size) - var(--roll-thumb-hover-width)) / 2);
+    margin-right: calc((var(--roll-thumb-slot-width) - var(--roll-thumb-hover-width)) / 2);
     background: var(--roll-thumb-hover);
 }
 
 .fc-roll__thumb:active,
 .fc-roll__thumb.is-active {
     width: var(--roll-thumb-active-width);
-    margin-right: calc((var(--roll-size) - var(--roll-thumb-active-width)) / 2);
+    margin-right: calc((var(--roll-thumb-slot-width) - var(--roll-thumb-active-width)) / 2);
     background: var(--roll-thumb-active);
 }
 
