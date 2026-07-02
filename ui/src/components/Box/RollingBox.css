@@ -5,7 +5,7 @@
     /* 组件级变量 */
     --roll-thumb: transparent;
     --roll-thumb-hover: var(--fc-color-scrollbar-thumb-hover);
-    --roll-thumb-active: var(--fc-color-scrollbar-thumb-active);
+    --roll-thumb-active: var(--roll-thumb-hover);
     --roll-track: transparent;
     --roll-size: 10px;
     --roll-thumb-slot-width: calc(var(--roll-size) + 4px);
@@ -77,11 +77,11 @@
 
 /* ---------- 显示模式：show ---------- */
 .fc-roll--thumb-show {
-    --roll-thumb: var(--fc-color-scrollbar-thumb-hover);
+    --roll-thumb: var(--fc-color-scrollbar-thumb-active);
 }
 
 .fc-roll--thumb-show:hover {
-    --roll-thumb: var(--fc-color-scrollbar-thumb-active);
+    --roll-thumb: var(--roll-thumb-hover);
 }
 
 /* ---------- 显示模式：hide ---------- */
