@@ -161,6 +161,7 @@ export function useCustomRollThumb({
         event.preventDefault();
         event.stopPropagation();
         event.currentTarget.setPointerCapture(event.pointerId);
+        event.currentTarget.classList.add('is-active');
         dragRef.current = {
             pointerId: event.pointerId,
             startY: event.clientY,
@@ -182,6 +183,7 @@ export function useCustomRollThumb({
         if (dragRef.current?.pointerId === event.pointerId) {
             dragRef.current = null;
         }
+        event.currentTarget.classList.remove('is-active');
     }, []);
 
     const handleTrackPointerDown = React.useCallback((event: React.PointerEvent<HTMLDivElement>) => {

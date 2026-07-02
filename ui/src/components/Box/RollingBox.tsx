@@ -7,10 +7,10 @@ export type ThumbSize = 'thin' | 'normal' | 'thick';
 export type RollingAxis = 'x' | 'y' | 'both' | 'none';
 
 export interface RollingBoxTokens {
-    thumbColor?: string;
-    thumbHoverColor?: string;
+    thumbColor?: string; thumbHoverColor?: string;
     thumbActiveColor?: string;
     trackColor?: string;
+    thumbWidth?: string; thumbHoverWidth?: string; thumbActiveWidth?: string;
 }
 
 function isDevelopmentRuntime(): boolean {
@@ -78,6 +78,7 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
         '--roll-thumb-hover':  tokens?.thumbHoverColor ?? thumbHoverColor,
         '--roll-thumb-active': tokens?.thumbActiveColor ?? thumbActiveColor,
         '--roll-track':        tokens?.trackColor ?? trackColor,
+        '--roll-thumb-width': tokens?.thumbWidth, '--roll-thumb-hover-width': tokens?.thumbHoverWidth, '--roll-thumb-active-width': tokens?.thumbActiveWidth,
     };
 
     const overrideStyle: React.CSSProperties = {};
