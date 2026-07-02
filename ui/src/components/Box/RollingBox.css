@@ -19,6 +19,7 @@
 
 /* ---------- 内容包装 ---------- */
 .fc-roll__content {
+    box-sizing: border-box;
     min-width: 100%;
     min-height: 100%;
 }
@@ -111,15 +112,12 @@
 }
 
 .fc-roll__thumb-anchor {
-    position: absolute;
+    position: sticky;
     top: 0;
-    right: 0;
     z-index: 3;
-    width: 0;
     height: 0;
     overflow: visible;
     pointer-events: none;
-    will-change: transform;
 }
 
 .fc-roll__track {
