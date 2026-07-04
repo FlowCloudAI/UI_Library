@@ -1095,12 +1095,6 @@
   display: flex;
   gap: 0.125rem;
   margin-top: 0.25rem;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.message-box-item:hover .message-box-actions,
-.message-box-item:focus-within .message-box-actions {
   opacity: 1;
 }
 
