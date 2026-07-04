@@ -36,10 +36,10 @@ export interface ToolCallInfo {
 
 export type MessageBoxBlock =
     | { id?: string; type: 'reasoning'; content: string; seconds?: number; streaming?: boolean }
-    | { id?: string; type: 'tool'; tool: ToolCallInfo; detail?: 'simple' | 'verbose' }
-    | { id?: string; type: 'tool_use'; tools: ToolCallInfo[]; detail?: 'simple' | 'verbose' }
-    | { id?: string; type: 'content'; content: string; markdown?: boolean; streaming?: boolean }
-    | { id?: string; type: 'children'; children: React.ReactNode };
+    | { id?: string; type: 'tool'; tool: ToolCallInfo; detail?: 'simple' | 'verbose'; seconds?: number }
+    | { id?: string; type: 'tool_use'; tools: ToolCallInfo[]; detail?: 'simple' | 'verbose'; seconds?: number }
+    | { id?: string; type: 'content'; content: string; markdown?: boolean; streaming?: boolean; seconds?: number }
+    | { id?: string; type: 'children'; children: React.ReactNode; seconds?: number };
 
 export type MessageBoxContextDisplay = 'full' | 'compact';
 
@@ -492,7 +492,7 @@ const summarizeProcessContext = (blocks: MessageBoxBlock[]) => {
     let workSeconds = 0;
 
     for (const block of blocks) {
-        if (block.type === 'reasoning' && block.seconds !== undefined) {
+        if (block.seconds !== undefined) {
             workSeconds += Math.max(0, block.seconds);
         }
         if (block.type === 'tool') {
