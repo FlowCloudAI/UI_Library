@@ -211,16 +211,14 @@ const ReasoningSection: React.FC<{
   reasoning: string;
   reasoningSeconds?: number;
   reasoningStreaming: boolean;
-}> = ({reasoning, reasoningStreaming, reasoningSeconds}) => {
+}> = ({reasoning, reasoningStreaming}) => {
   const [expanded, setExpanded] = useState(reasoningStreaming);
 
   useEffect(() => {
     if (reasoningStreaming) setExpanded(true);
   }, [reasoningStreaming]);
 
-  const label = reasoningStreaming
-      ? `思考中${reasoningSeconds !== undefined ? `（${reasoningSeconds}s）` : '…'}`
-      : `已深度思考${reasoningSeconds !== undefined ? `（${reasoningSeconds}s）` : ''}`;
+  const label = reasoningStreaming ? '正在思考' : '已思考';
 
   return (
       <div className="message-box-reasoning">
@@ -252,12 +250,12 @@ const ReasoningSection: React.FC<{
 
 const getToolStatusText = (tool: ToolCallInfo): string => {
   if (tool.result === undefined) {
-      return '调用中…';
+      return '正在调用';
   }
   if (tool.isError) {
-      return '失败';
+      return '调用失败';
   }
-    return '已完成';
+    return '调用完成';
 };
 
 // ========================================
@@ -274,7 +272,6 @@ const ToolCallItem: React.FC<{
   if (detail === 'simple') {
     return (
         <div className={`message-box-tool-item${tool.isError ? ' message-box-tool-item--error' : ''}`}>
-            <span className="message-box-tool-label">调用工具</span>
           <span className="message-box-tool-name">{tool.name}</span>
             <span className="message-box-tool-status-text">{getToolStatusText(tool)}</span>
         </div>
@@ -290,7 +287,6 @@ const ToolCallItem: React.FC<{
             style={hasDetail ? undefined : {cursor: 'default'}}
             type="button"
         >
-            <span className="message-box-tool-label">调用工具</span>
           <span className="message-box-tool-name">{tool.name}</span>
             <span className="message-box-tool-status-text">{getToolStatusText(tool)}</span>
           {hasDetail && <span className={`message-box-tool-chevron${expanded ? ' expanded' : ''}`}/>}
@@ -339,15 +335,16 @@ const ToolUseSection: React.FC<{
     const errorCount = tools.filter(t => t.isError).length;
     const name = tools[0].name;
     const homogeneous = tools.every(t => t.name === name);
+    const displayName = homogeneous ? name : '多个工具';
     const count = tools.length;
 
     let statusText: string;
     if (hasCalling) {
-        statusText = '调用中…';
+        statusText = '正在调用';
     } else if (errorCount > 0) {
-        statusText = `${errorCount} 失败`;
+        statusText = '调用失败';
     } else {
-        statusText = '已完成';
+        statusText = '调用完成';
     }
 
     return (
@@ -357,8 +354,7 @@ const ToolUseSection: React.FC<{
                 onClick={() => setExpanded(v => !v)}
                 type="button"
             >
-                <span className="message-box-tool-label">调用工具</span>
-                {homogeneous && <span className="message-box-tool-name">{name}</span>}
+                <span className="message-box-tool-name">{displayName}</span>
                 <span className="message-box-tool-count">×{count}</span>
                 <span className="message-box-tool-status-text">{statusText}</span>
                 <span className={`message-box-tool-use-chevron${expanded ? ' expanded' : ''}`}/>
@@ -538,6 +534,7 @@ const ProcessContextSection: React.FC<{
                 type="button"
             >
                 <span className="message-box-process-label">{summary.label}</span>
+                <span className={`message-box-process-chevron${expanded ? ' expanded' : ''}`}/>
                 {summary.errorToolCount > 0 && (
                     <span className="message-box-process-warning">
                         包含 {summary.errorToolCount} 个失败工具
@@ -548,7 +545,6 @@ const ProcessContextSection: React.FC<{
                         可能包含中间结论
                     </span>
                 )}
-                <span className={`message-box-process-chevron${expanded ? ' expanded' : ''}`}/>
             </button>
             {expanded && (
                 <div className="message-box-process-content">
