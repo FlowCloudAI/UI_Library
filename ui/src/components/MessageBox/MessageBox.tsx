@@ -227,10 +227,6 @@ const ReasoningSection: React.FC<{
             onClick={() => setExpanded(v => !v)}
             type="button"
         >
-          {reasoningStreaming
-              ? <span className="message-box-reasoning-spinner"/>
-              : <span className="message-box-reasoning-brain">◎</span>
-          }
           <span className="message-box-reasoning-label">{label}</span>
           <span className={`message-box-reasoning-chevron${expanded ? ' expanded' : ''}`}/>
         </button>
