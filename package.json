@@ -1,6 +1,7 @@
 {
   "name": "flowcloudai-ui",
   "version": "1.0.0",
+  "license": "MIT",
   "description": "",
   "private": true,
   "scripts": {
