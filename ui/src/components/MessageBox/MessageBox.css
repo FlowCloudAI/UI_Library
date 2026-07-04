@@ -337,17 +337,30 @@
 }
 
 .message-box-markdown table {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   width: 100%;
-  margin: 0.5em 0;
+  margin: 0.2rem 0;
+  overflow: hidden;
+  border: 1px solid var(--fc-color-border, #D0D0D0);
+  border-radius: var(--fc-radius-md, 0.5rem);
   font-size: 0.875em;
 }
 
 .message-box-markdown th,
 .message-box-markdown td {
-  border: 1px solid var(--fc-color-border, #D0D0D0);
+  border-right: 1px solid var(--fc-color-border, #D0D0D0);
+  border-bottom: 1px solid var(--fc-color-border, #D0D0D0);
   padding: 0.35em 0.65em;
   text-align: left;
+}
+
+.message-box-markdown tr > :last-child {
+  border-right: 0;
+}
+
+.message-box-markdown tr:last-child > * {
+  border-bottom: 0;
 }
 
 .message-box-markdown th {
@@ -388,6 +401,10 @@
 
 .message-box-item--user .message-box-markdown th {
   background: rgba(255, 255, 255, 0.15);
+}
+
+.message-box-item--user .message-box-markdown table {
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .message-box-item--user .message-box-markdown th,

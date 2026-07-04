@@ -1,6 +1,97 @@
 import {useEffect, useRef, useState} from 'react'
 import {MessageBox, type MessageBoxBlock} from 'flowcloudai-ui/MessageBox'
 
+const markdownSamples = [
+    {
+        id: 'md-text',
+        content: [
+            '# 一级标题',
+            '## 二级标题',
+            '### 三级标题',
+            '',
+            '普通段落包含 **加粗**、*斜体*、***粗斜体***、~~删除线~~、`行内代码`。',
+            '这一行后面有两个空格  ',
+            '下一行用于检查软换行和段落间距。',
+            '',
+            '---',
+            '',
+            'HTML 会按安全文本处理：<mark>不会直接当作真实标签执行</mark>。',
+        ].join('\n'),
+    },
+    {
+        id: 'md-lists',
+        content: [
+            '## 列表、任务和引用',
+            '',
+            '- 无序列表 A',
+            '- 无序列表 B',
+            '  - 嵌套项目 B-1',
+            '  - 嵌套项目 B-2',
+            '',
+            '1. 有序列表第一项',
+            '2. 有序列表第二项',
+            '   1. 嵌套编号',
+            '',
+            '- [x] 已完成任务',
+            '- [ ] 待完成任务',
+            '',
+            '> 一级引用',
+            '> > 嵌套引用',
+            '> ',
+            '> 引用里也可以有 **强调** 和 `代码`。',
+        ].join('\n'),
+    },
+    {
+        id: 'md-table',
+        content: [
+            '## 表格',
+            '',
+            '| 语法 | 状态 | 说明 |',
+            '| --- | :---: | ---: |',
+            '| 标题 | 通过 | 左对齐 |',
+            '| 表格 | 通过 | 右对齐 |',
+            '| `inline code` | 通过 | 12 |',
+        ].join('\n'),
+    },
+    {
+        id: 'md-code',
+        content: [
+            '## 代码块',
+            '',
+            '```tsx',
+            'import {MessageBox} from "flowcloudai-ui/MessageBox"',
+            '',
+            'export function Preview() {',
+            '    return <MessageBox role="assistant" markdown content="**你好**" />',
+            '}',
+            '```',
+            '',
+            '```json',
+            '{',
+            '  "markdown": true,',
+            '  "formats": ["table", "code", "footnote"]',
+            '}',
+            '```',
+        ].join('\n'),
+    },
+    {
+        id: 'md-links',
+        content: [
+            '## 链接、图片和脚注',
+            '',
+            '[普通链接](https://example.com)',
+            '',
+            '<https://example.com/autolink>',
+            '',
+            '![占位图](https://placehold.co/320x120/png?text=FlowCloudAI)',
+            '',
+            '这句话带有脚注。[^note]',
+            '',
+            '[^note]: 这是 GFM 脚注内容，用于检查脚注样式。',
+        ].join('\n'),
+    },
+]
+
 export default function MessageBoxDemo() {
     const [messages] = useState<Array<{
         id: string
@@ -409,6 +500,19 @@ const items = Array.from({ length: 100000 }, (_, i) => ({
                                 role={message.role}
                                 content={message.content}
                                 markdown={message.markdown}
+                            />
+                        ))}
+
+                        <MessageBox
+                            role="user"
+                            content="展示 Markdown 渲染覆盖样例"
+                        />
+                        {markdownSamples.map((sample) => (
+                            <MessageBox
+                                key={sample.id}
+                                role="assistant"
+                                content={sample.content}
+                                markdown
                             />
                         ))}
 
