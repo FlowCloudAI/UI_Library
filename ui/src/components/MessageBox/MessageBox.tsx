@@ -473,7 +473,7 @@ const splitCompactBlocks = (blocks: MessageBoxBlock[]) => {
 
     const contextBlocks = blocks.slice(0, answerStart);
     const answerBlocks = blocks.slice(answerStart);
-    if (contextBlocks.length === 0 || answerBlocks.length === 0) return null;
+    if (contextBlocks.length <= 1 || answerBlocks.length === 0) return null;
 
     return {
         contextBlocks,
@@ -482,36 +482,37 @@ const splitCompactBlocks = (blocks: MessageBoxBlock[]) => {
     };
 };
 
+const formatWorkDuration = (seconds: number) => {
+    const totalSeconds = Math.max(0, Math.floor(seconds));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const restSeconds = totalSeconds % 60;
+    const parts = [];
+
+    if (hours > 0) parts.push(`${hours}h`);
+    if (hours > 0 || minutes > 0) parts.push(`${minutes}m`);
+    parts.push(`${restSeconds}s`);
+    return parts.join(' ');
+};
+
 const summarizeProcessContext = (blocks: MessageBoxBlock[]) => {
-    let reasoningCount = 0;
-    let contentCount = 0;
-    let childrenCount = 0;
-    let toolCount = 0;
     let errorToolCount = 0;
+    let workSeconds = 0;
 
     for (const block of blocks) {
-        if (block.type === 'reasoning') reasoningCount += 1;
-        if (block.type === 'content' && block.content.trim()) contentCount += 1;
-        if (block.type === 'children') childrenCount += 1;
+        if (block.type === 'reasoning' && block.seconds !== undefined) {
+            workSeconds += Math.max(0, block.seconds);
+        }
         if (block.type === 'tool') {
-            toolCount += 1;
             if (block.tool.isError) errorToolCount += 1;
         }
         if (block.type === 'tool_use') {
-            toolCount += block.tools.length;
             errorToolCount += block.tools.filter(tool => tool.isError).length;
         }
     }
 
-    const parts = [
-        reasoningCount > 0 && `${reasoningCount} 条思考`,
-        toolCount > 0 && `${toolCount} 次工具调用`,
-        contentCount > 0 && `${contentCount} 段过程说明`,
-        childrenCount > 0 && `${childrenCount} 段附加内容`,
-    ].filter(Boolean);
-
     return {
-        label: parts.length > 0 ? `已收起 ${parts.join('、')}` : '已收起过程上下文',
+        label: `已工作 ${formatWorkDuration(workSeconds)}`,
         errorToolCount,
     };
 };
