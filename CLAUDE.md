@@ -112,7 +112,6 @@ Components in `ui/src/components/`:
 - **Select** — Dropdown select
 - **Tree** — Hierarchical tree view with drag-and-drop (includes DeleteDialog, OrphanDialog helpers)
 - **ListGroup** — Vertical list of items
-- **VirtualList** — High-performance scrolling list (for large data)
 - **Card** — Content container
 - **Alert** — Alert notifications (context-based)
 - **LazyLoad** — Lazy-loads content on scroll

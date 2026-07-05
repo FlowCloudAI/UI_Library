@@ -105,9 +105,6 @@ export {Card} from './components/Card/Card'
 export type {CardProps, CardVariant} from './components/Card/Card'
 export {ListGroup, ListGroupItem} from './components/ListGroup/ListGroup'
 export type {ListGroupItemProps, ListGroupProps} from './components/ListGroup/ListGroup'
-export {VirtualList} from './components/VirtualList/VirtualList'
-export type {VirtualListProps, VirtualListVisibleRange} from './components/VirtualList/VirtualList'
-
 export {AlertProvider, useAlert} from './components/Alert/AlertContext'
 export type {
     AlertMode,

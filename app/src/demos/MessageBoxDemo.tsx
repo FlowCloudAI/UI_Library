@@ -127,21 +127,24 @@ export default function MessageBoxDemo() {
 ## 简单示例
 
 \`\`\`tsx
-import { VirtualList } from 'flowcloudai-ui/VirtualList'
+import { FixedSizeList } from 'react-window'
 
 const items = Array.from({ length: 100000 }, (_, i) => ({
   id: i,
   label: \`Item \${i}\`
 }))
 
-<VirtualList
-  items={items}
-  itemHeight={40}
-  renderItem={(item) => <div>{item.label}</div>}
-/>
+<FixedSizeList
+  height={320}
+  itemCount={items.length}
+  itemSize={40}
+  width="100%"
+>
+  {({ index, style }) => <div style={style}>{items[index].label}</div>}
+</FixedSizeList>
 \`\`\`
 
-> 💡 本组件库已内置 \`VirtualList\` 组件，开箱即用。`
+> 💡 大列表建议优先使用成熟虚拟滚动库；组件库内的虚拟列表仅供 Tree 内部使用。`
         },
     ])
 

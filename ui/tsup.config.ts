@@ -25,7 +25,6 @@ const componentEntries = {
     ThemeProvider: 'src/entries/ThemeProvider.ts',
     Timeline: 'src/entries/Timeline.ts',
     Tree: 'src/entries/Tree.ts',
-    VirtualList: 'src/entries/VirtualList.ts',
 };
 
 export default defineConfig({

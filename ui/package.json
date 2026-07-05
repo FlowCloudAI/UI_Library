@@ -111,10 +111,6 @@
       "types": "./dist/Tree.d.ts",
       "import": "./dist/Tree.js"
     },
-    "./VirtualList": {
-      "types": "./dist/VirtualList.d.ts",
-      "import": "./dist/VirtualList.js"
-    },
     "./Alert/style": "./dist/Alert.css",
     "./Button/style": "./dist/Button.css",
     "./Card/style": "./dist/Card.css",
@@ -136,7 +132,6 @@
     "./TeraEditor/style": "./dist/TeraEditor.css",
     "./Timeline/style": "./dist/Timeline.css",
     "./Tree/style": "./dist/Tree.css",
-    "./VirtualList/style": "./dist/VirtualList.css",
     "./style": "./dist/index.css"
   },
   "scripts": {

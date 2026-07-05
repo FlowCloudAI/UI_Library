@@ -34,7 +34,6 @@ const flowcloudaiUiEntries = [
     'ThemeProvider',
     'Timeline',
     'Tree',
-    'VirtualList',
 ]
 
 const flowcloudaiUiStyleEntries: Record<string, string> = {

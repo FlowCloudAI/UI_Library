@@ -12,7 +12,6 @@ import { SelectDemo }         from './demos/SelectDemo'
 import { TagItemDemo }        from './demos/TagItemDemo'
 import { RollingBoxDemo }     from './demos/RollingBoxDemo'
 import { ListGroupDemo }      from './demos/ListGroupDemo'
-import { VirtualListDemo }    from './demos/VirtualListDemo'
 import { CardDemo }           from './demos/CardDemo'
 import { MarkdownEditorDemo } from './demos/MarkdownEditorDemo'
 import { TabBarDemo }         from './demos/TabBarDemo'
@@ -51,7 +50,6 @@ const NAV_GROUPS: NavGroup[] = [
         label: '展示', items: [
             { key: 'RollingBox',  label: 'RollingBox' },
             { key: 'ListGroup',   label: 'ListGroup' },
-            { key: 'VirtualList', label: 'VirtualList' },
             { key: 'Card',        label: 'Card' },
             { key: 'Markdown',    label: 'MarkdownEditor' },
             { key: 'TeraEditor',  label: 'TeraEditor' },
@@ -89,7 +87,6 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     TagItem:     TagItemDemo,
     RollingBox:  RollingBoxDemo,
     ListGroup:   ListGroupDemo,
-    VirtualList: VirtualListDemo,
     Card:        CardDemo,
     Markdown:    MarkdownEditorDemo,
     TeraEditor:  TeraEditorDemo,
