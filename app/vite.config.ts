@@ -32,7 +32,6 @@ const flowcloudaiUiEntries = [
     'TagItem',
     'TeraEditor',
     'ThemeProvider',
-    'Timeline',
     'Tree',
 ]
 

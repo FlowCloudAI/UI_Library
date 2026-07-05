@@ -87,7 +87,6 @@ const lineBaselines = new Set([
     'ui/src/components/Tree/Tree.tsx',
     'ui/src/components/MessageBox/MessageBox.tsx',
     'ui/src/components/Bar/TabBar.tsx',
-    'ui/src/components/Time/Time.tsx',
     'ui/src/components/MarkdownEditor/MarkdownEditor.tsx',
     'ui/src/components/Slider/Slider.tsx',
     'ui/src/components/Select/Select.tsx',

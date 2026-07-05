@@ -23,7 +23,6 @@ const componentEntries = {
     TagItem: 'src/entries/TagItem.ts',
     TeraEditor: 'src/entries/TeraEditor.ts',
     ThemeProvider: 'src/entries/ThemeProvider.ts',
-    Timeline: 'src/entries/Timeline.ts',
     Tree: 'src/entries/Tree.ts',
 };
 

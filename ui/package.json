@@ -103,10 +103,6 @@
       "types": "./dist/ThemeProvider.d.ts",
       "import": "./dist/ThemeProvider.js"
     },
-    "./Timeline": {
-      "types": "./dist/Timeline.d.ts",
-      "import": "./dist/Timeline.js"
-    },
     "./Tree": {
       "types": "./dist/Tree.d.ts",
       "import": "./dist/Tree.js"
@@ -130,7 +126,6 @@
     "./TabBar/style": "./dist/TabBar.css",
     "./TagItem/style": "./dist/TagItem.css",
     "./TeraEditor/style": "./dist/TeraEditor.css",
-    "./Timeline/style": "./dist/Timeline.css",
     "./Tree/style": "./dist/Tree.css",
     "./style": "./dist/index.css"
   },
