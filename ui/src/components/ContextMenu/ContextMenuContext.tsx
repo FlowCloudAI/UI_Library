@@ -81,14 +81,19 @@ export function ContextMenuProvider({
 
     const hide = () => setMenu(s => ({ ...s, visible: false }));
 
-    /* 点击外部 / Escape 关闭 */
+    /* 点击外部 / Escape / 滚轮关闭 */
     useClickOutside(menuRef, hide, menu.visible);
 
     useEffect(() => {
         if (!menu.visible || !isBrowser) return;
         const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") hide(); };
+        const onWheel = () => hide();
         window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
+        window.addEventListener("wheel", onWheel, {passive: true});
+        return () => {
+            window.removeEventListener("keydown", onKeyDown);
+            window.removeEventListener("wheel", onWheel);
+        };
     }, [isBrowser, menu.visible]);
 
     const deprecatedColorPropNames = useMemo(() => [
