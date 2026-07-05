@@ -12,7 +12,6 @@ const buildTarget =
 
 const flowcloudaiUiEntries = [
     'Alert',
-    'Avatar',
     'Button',
     'Card',
     'CheckButton',

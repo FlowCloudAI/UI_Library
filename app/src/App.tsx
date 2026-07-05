@@ -11,7 +11,6 @@ import { SliderDemo }         from './demos/SliderDemo'
 import { SelectDemo }         from './demos/SelectDemo'
 import { TagItemDemo }        from './demos/TagItemDemo'
 import { RollingBoxDemo }     from './demos/RollingBoxDemo'
-import { AvatarDemo }         from './demos/AvatarDemo'
 import { ListGroupDemo }      from './demos/ListGroupDemo'
 import { VirtualListDemo }    from './demos/VirtualListDemo'
 import { CardDemo }           from './demos/CardDemo'
@@ -51,7 +50,6 @@ const NAV_GROUPS: NavGroup[] = [
     {
         label: '展示', items: [
             { key: 'RollingBox',  label: 'RollingBox' },
-            { key: 'Avatar',      label: 'Avatar' },
             { key: 'ListGroup',   label: 'ListGroup' },
             { key: 'VirtualList', label: 'VirtualList' },
             { key: 'Card',        label: 'Card' },
@@ -90,7 +88,6 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Select:      SelectDemo,
     TagItem:     TagItemDemo,
     RollingBox:  RollingBoxDemo,
-    Avatar:      AvatarDemo,
     ListGroup:   ListGroupDemo,
     VirtualList: VirtualListDemo,
     Card:        CardDemo,

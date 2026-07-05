@@ -101,8 +101,6 @@ export type {
     TagValueChangeMeta,
 } from './components/Tag/TagItem'
 
-export {Avatar} from './components/Avatar/Avatar'
-export type {AvatarProps, AvatarShape} from './components/Avatar/Avatar'
 export {Card} from './components/Card/Card'
 export type {CardProps, CardVariant} from './components/Card/Card'
 export {ListGroup, ListGroupItem} from './components/ListGroup/ListGroup'

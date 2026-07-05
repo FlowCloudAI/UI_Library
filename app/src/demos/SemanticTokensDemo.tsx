@@ -16,7 +16,6 @@ import {
     UploadCloud,
     Zap,
 } from 'lucide-react'
-import { Avatar } from 'flowcloudai-ui/Avatar'
 import { Button } from 'flowcloudai-ui/Button'
 import { CheckButton } from 'flowcloudai-ui/CheckButton'
 import { Input } from 'flowcloudai-ui/Input'
@@ -179,7 +178,6 @@ export function SemanticTokensDemo() {
                             aria-label="设置"
                             iconLeft={<Settings size={16} />}
                         />
-                        <Avatar size={32} bordered alt="当前用户" />
                     </header>
 
                     <main className="semantic-demo__content">

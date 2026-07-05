@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { Avatar } from 'flowcloudai-ui/Avatar'
 import { VirtualList, type VirtualListVisibleRange } from 'flowcloudai-ui/VirtualList'
 
 export function VirtualListDemo() {
@@ -44,7 +43,11 @@ export function VirtualListDemo() {
                                     borderBottom: '1px solid var(--fc-color-border-light)',
                                     display: 'flex', alignItems: 'center', gap: 12,
                                 }}>
-                                    <Avatar src={item.avatar} size="sm"/>
+                                    <img
+                                        src={item.avatar}
+                                        alt=""
+                                        style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
+                                    />
                                     <div>
                                         <div style={{ fontWeight: 'bold', color: 'var(--fc-color-text)' }}>{item.title}</div>
                                         <div style={{ fontSize: 12, color: 'var(--fc-color-text-secondary)' }}>{item.description}</div>

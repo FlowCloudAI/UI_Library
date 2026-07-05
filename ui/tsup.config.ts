@@ -3,7 +3,6 @@ import {defineConfig} from "tsup";
 
 const componentEntries = {
     Alert: 'src/entries/Alert.ts',
-    Avatar: 'src/entries/Avatar.ts',
     Button: 'src/entries/Button.ts',
     Card: 'src/entries/Card.ts',
     CheckButton: 'src/entries/CheckButton.ts',

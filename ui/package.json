@@ -23,10 +23,6 @@
       "types": "./dist/Alert.d.ts",
       "import": "./dist/Alert.js"
     },
-    "./Avatar": {
-      "types": "./dist/Avatar.d.ts",
-      "import": "./dist/Avatar.js"
-    },
     "./Button": {
       "types": "./dist/Button.d.ts",
       "import": "./dist/Button.js"
@@ -120,7 +116,6 @@
       "import": "./dist/VirtualList.js"
     },
     "./Alert/style": "./dist/Alert.css",
-    "./Avatar/style": "./dist/Avatar.css",
     "./Button/style": "./dist/Button.css",
     "./Card/style": "./dist/Card.css",
     "./CheckButton/style": "./dist/CheckButton.css",
