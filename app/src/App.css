@@ -91,7 +91,7 @@
 }
 
 .app-content-title {
-    font-size: 20px;
+    font-size: var(--fc-font-size-title-sm);
     font-weight: 600;
     color: var(--fc-color-text);
     margin: 0 0 28px;
