@@ -84,7 +84,7 @@ export function SideBarDemo() {
             </div>
             <div className="demo-section">
                 <h4>锚定状态（隐藏展开/折叠按钮）</h4>
-                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--fc-space-lg)'}}>
                     <div style={{...demoWrap, height: 320}}>
                         <SideBar
                             items={menuItems}

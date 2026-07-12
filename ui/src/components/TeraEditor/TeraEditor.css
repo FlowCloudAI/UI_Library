@@ -20,7 +20,7 @@
     --fc-tera-editor-line-height: 22px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--fc-space-sm);
     width: 100%;
 }
 
@@ -56,7 +56,7 @@
     align-items: center;
     justify-content: space-between;
     min-height: 28px;
-    padding: 0 4px;
+    padding: 0 var(--fc-space-xs);
     color: var(--fc-tera-editor-status-text);
     font-family: var(--fc-tera-editor-font-family);
     font-size: var(--fc-font-size-sm);
@@ -72,7 +72,7 @@
     content: '';
     width: 8px;
     height: 8px;
-    border-radius: 999px;
+    border-radius: var(--fc-radius-full);
     background: var(--fc-tera-editor-status-success);
 }
 

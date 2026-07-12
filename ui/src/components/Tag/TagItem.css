@@ -15,12 +15,12 @@
     gap:         6px;
     min-height:  28px;
     padding:     4px 10px;
-    border-radius: 999px;
+    border-radius: var(--fc-radius-full);
     border:      1px solid var(--tag-border);
     background:  var(--tag-bg);
     color:       var(--tag-color);
     font-size:   var(--fc-font-size-sm);
-    font-weight: 500;
+    font-weight: var(--fc-font-weight-medium);
     line-height: 1.2;
     font-family: var(--fc-font-family), serif;
     user-select: none;
@@ -121,7 +121,7 @@
     height: 18px;
     padding: 0;
     border: none;
-    border-radius: 999px;
+    border-radius: var(--fc-radius-full);
     background: transparent;
     color: var(--fc-color-text-tertiary);
     font-size: var(--fc-font-size-caption);

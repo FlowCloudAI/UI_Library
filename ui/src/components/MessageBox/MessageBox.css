@@ -78,8 +78,8 @@
 .message-box-bubble {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem; /* 12 像素 16 像素 */
+  gap: var(--fc-space-sm);
+  padding: var(--fc-space-md) var(--fc-space-lg); /* 12 像素 16 像素 */
   border-radius: var(--fc-radius-lg, 0.75rem);
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -252,7 +252,7 @@
   opacity: 0;
   transition: opacity 0.15s;
   white-space: nowrap;
-  line-height: 1.6;
+  line-height: var(--fc-line-height-normal);
 }
 
 .message-box-code-block:hover .message-box-code-copy {
@@ -340,7 +340,7 @@
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
-  margin: 0.5rem 0;
+  margin: var(--fc-space-sm) 0;
   overflow: hidden;
   border: 1px solid var(--fc-color-border, #D0D0D0);
   border-radius: var(--fc-radius-md, 0.5rem);
@@ -552,8 +552,8 @@
    ======================================== */
 
 .message-box-item-children {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
+  margin-top: var(--fc-space-sm);
+  padding-top: var(--fc-space-sm);
   border-top: 1px solid var(--fc-color-border-light, #E0E0E0);
 }
 
@@ -571,7 +571,7 @@
 /* rolePlaying 模式下，assistant 气泡改为和 user 一样按内容收缩 */
 .message-box-item--assistant .message-box-role-frame .message-box-bubble {
   background: var(--fc-color-bg-secondary, #F5F5F5);
-  padding: 0.75rem 1rem;
+  padding: var(--fc-space-md) var(--fc-space-lg);
   border-radius: var(--fc-radius-lg, 0.75rem);
   display: inline-flex;
   width: fit-content;
@@ -669,7 +669,7 @@
   font-size: var(--fc-font-size-sm);
   color: var(--fc-color-text-secondary, #5F5F5F);
   font-style: italic;
-  line-height: 1.6;
+  line-height: var(--fc-line-height-normal);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -681,7 +681,7 @@
 .message-box-tools {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--fc-space-xs);
 }
 
 .message-box-tool-item {
@@ -692,7 +692,7 @@
   align-self: flex-start;
   font-size: var(--fc-font-size-sm);
   color: var(--fc-color-text-secondary, #5F5F5F);
-  padding: 0.25rem 0.5rem;
+  padding: var(--fc-space-xs) var(--fc-space-sm);
   border-radius: var(--fc-radius-md, 0.5rem);
   background: transparent;
   white-space: normal;
@@ -785,7 +785,7 @@
 .message-box-tool-badge {
   font-size: var(--fc-font-size-xs);
   padding: 0.1em 0.4em;
-  border-radius: 0.25rem;
+  border-radius: var(--fc-radius-sm);
   background: #dc2626;
   color: #fff;
   flex-shrink: 0;
@@ -829,7 +829,7 @@
   letter-spacing: 0.06em;
   color: var(--fc-color-text-secondary, #5F5F5F);
   opacity: 0.65;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--fc-space-xs);
 }
 
 .message-box-tool-pre {
@@ -923,9 +923,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  padding-left: 0.25rem;
+  padding-left: var(--fc-space-xs);
   border-left: 2px solid rgba(0, 0, 0, 0.08);
-  margin-left: 0.5rem;
+  margin-left: var(--fc-space-sm);
 }
 
 /* 暗色主题 */
@@ -974,7 +974,7 @@
   gap: 0.375rem;
   width: 100%;
   min-height: 1.75rem;
-  padding: 0.25rem 0;
+  padding: var(--fc-space-xs) 0;
   background: transparent;
   border: none;
   color: inherit;
@@ -1027,8 +1027,8 @@
 .message-box-process-content {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding-left: 0.75rem;
+  gap: var(--fc-space-sm);
+  padding-left: var(--fc-space-md);
   border-left: 2px solid var(--fc-color-border-light, #E0E0E0);
 }
 
@@ -1070,7 +1070,7 @@
 .message-box-actions {
   display: flex;
   gap: 0.125rem;
-  margin-top: 0.25rem;
+  margin-top: var(--fc-space-xs);
   opacity: 1;
 }
 

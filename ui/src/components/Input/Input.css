@@ -53,8 +53,8 @@
 .fc-input--xs .fc-input__field {
     font-size: var(--fc-font-size-xs);
     padding: 0 var(--fc-space-sm);
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding-top: var(--fc-space-xs);
+    padding-bottom: var(--fc-space-xs);
 }
 
 .fc-input--sm .fc-input__wrapper { height: 2rem; }
@@ -67,8 +67,8 @@
 .fc-input--md .fc-input__wrapper { height: 2.5rem; }
 .fc-input--md .fc-input__field {
     font-size: var(--fc-font-size-md);
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+    padding-top: var(--fc-space-sm);
+    padding-bottom: var(--fc-space-sm);
 }
 
 .fc-input--lg .fc-input__wrapper { height: 3rem; }
@@ -81,8 +81,8 @@
 .fc-input--xl .fc-input__wrapper { height: 3.5rem; }
 .fc-input--xl .fc-input__field {
     font-size: var(--fc-font-size-xl);
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
+    padding-top: var(--fc-space-md);
+    padding-bottom: var(--fc-space-md);
 }
 
 /* 状态样式 */

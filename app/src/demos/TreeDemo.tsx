@@ -220,7 +220,7 @@ export function TreeDemo() {
     }
 
     const renderTreeTitle = (node: CategoryTreeNode, state: TreeNodeRenderState) => (
-        <span style={{display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0}}>
+        <span style={{display: 'inline-flex', alignItems: 'center', gap: 'var(--fc-space-sm)', minWidth: 0}}>
             <span style={{
                 width: 8,
                 height: 8,
@@ -298,16 +298,16 @@ export function TreeDemo() {
             <h4>分类树（拖拽排序 / 重命名 / 增删）</h4>
             <div style={{
                 display: 'flex',
-                gap: 12,
+                gap: 'var(--fc-space-md)',
                 flexWrap: 'wrap',
                 alignItems: 'center',
                 marginBottom: 12,
-                padding: 12,
+                padding: 'var(--fc-space-md)',
                 border: '1px solid var(--fc-color-border, #e2e8f0)',
                 borderRadius: 8,
                 background: 'var(--fc-color-bg-secondary, #f8fafc)',
             }}>
-                <label style={{display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12}}>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 'var(--fc-space-sm)', fontSize: 12}}>
                     外部搜索
                     <input
                         value={searchValue}
@@ -323,7 +323,7 @@ export function TreeDemo() {
                         }}
                     />
                 </label>
-                <label style={{display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12}}>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 'var(--fc-space-sm)', fontSize: 12}}>
                     缩进
                     <input
                         type="range"
@@ -350,7 +350,7 @@ export function TreeDemo() {
                     />
                     隐藏根节点
                 </label>
-                <label style={{display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12}}>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 'var(--fc-space-sm)', fontSize: 12}}>
                     动作模式
                     <select
                         value={actionDisplayMode}
@@ -482,13 +482,13 @@ export function TreeDemo() {
                     minWidth: 0,
                     minHeight: 0,
                     overflow: 'auto',
-                    padding: '12px 16px',
+                    padding: 'var(--fc-space-md) var(--fc-space-lg)',
                     fontSize: 13,
                     borderLeft: 'none',
                 }}>
                     <div style={{
                         marginBottom: 12,
-                        padding: 12,
+                        padding: 'var(--fc-space-md)',
                         border: '1px solid var(--fc-color-border, #e2e8f0)',
                         borderRadius: 8,
                         background: 'var(--fc-color-bg-secondary, #f8fafc)',
@@ -519,7 +519,7 @@ export function TreeDemo() {
                     )}
                     {log.map((entry, i) => (
                         <div key={i} style={{
-                            padding: '4px 0',
+                            padding: 'var(--fc-space-xs) 0',
                             borderBottom: '1px solid var(--fc-color-border, #f1f5f9)',
                             color: i === 0 ? 'var(--fc-color-text)' : '#94a3b8',
                             fontSize: 12,

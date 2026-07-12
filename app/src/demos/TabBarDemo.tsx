@@ -35,7 +35,7 @@ export function TabBarDemo() {
             <div className="demo-section">
                 <h4>attached（贴合）</h4>
                 <TabBar items={BASE_TABS} activeKey={activeKey} variant="attached" onChange={setActiveKey}/>
-                <div style={{ padding: '8px 12px', fontSize: 13, color: 'var(--fc-color-text-secondary)' }}>当前：{activeKey}</div>
+                <div style={{ padding: 'var(--fc-space-sm) var(--fc-space-md)', fontSize: 13, color: 'var(--fc-color-text-secondary)' }}>当前：{activeKey}</div>
             </div>
             <div className="demo-section">
                 <h4>floating（悬浮）</h4>
@@ -58,7 +58,7 @@ export function TabBarDemo() {
                     tauriDragRegion
                     onChange={setActiveKey} onClose={handleClose} onAdd={handleAdd} onReorder={setTabs}
                 />
-                <div style={{ padding: '8px 12px', fontSize: 13, color: 'var(--fc-color-text-secondary)' }}>当前：{activeKey}</div>
+                <div style={{ padding: 'var(--fc-space-sm) var(--fc-space-md)', fontSize: 13, color: 'var(--fc-color-text-secondary)' }}>当前：{activeKey}</div>
             </div>
             <div className="demo-section">
                 <h4>自定义颜色</h4>

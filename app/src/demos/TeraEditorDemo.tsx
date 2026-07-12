@@ -87,7 +87,7 @@ export function TeraEditorDemo() {
                 提供 HTML + Tera 高亮、基础语法检查，以及外部 diagnostics / validate 扩展能力。
             </p>
 
-            <div className="demo-row" style={{ marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
+            <div className="demo-row" style={{ marginBottom: 12, gap: 'var(--fc-space-md)', flexWrap: 'wrap' }}>
                 <ButtonGroup>
                     <Button size="sm" onClick={() => setValue(NORMAL_TEMPLATE)}>
                         加载正常模板

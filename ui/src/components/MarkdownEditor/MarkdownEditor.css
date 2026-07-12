@@ -68,7 +68,7 @@
 .fc-md-wrap .w-md-editor-toolbar {
     background:    var(--md-toolbar-bg) !important;
     border-bottom: 1px solid var(--md-border) !important;
-    padding:       4px 8px !important;
+    padding:       var(--fc-space-xs) var(--fc-space-sm) !important;
 }
 
 .fc-md-wrap .w-md-editor-toolbar ul > li > button {
