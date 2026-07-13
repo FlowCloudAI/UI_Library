@@ -1,6 +1,9 @@
 import './Slider.css'
 import * as React from 'react'
 import type {FcChangeHandler, FcChangeMeta} from '../../types/common'
+import {isDevelopmentRuntime} from '../../utils/runtime'
+import {buildCssVars} from '../../utils/cssVars'
+import {useDeprecatedPropWarning} from '../../hooks/useDeprecatedPropWarning'
 
 export type SliderValue = number | [number, number]
 export type SliderOrientation = 'horizontal' | 'vertical'
@@ -22,12 +25,6 @@ export interface SliderValueChangeMeta extends FcChangeMeta<
 }
 
 export type SliderValueChangeHandler = FcChangeHandler<SliderValue, SliderValueChangeMeta>
-
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production')
-}
 
 function warnSlider(message: string): void {
     if (isDevelopmentRuntime()) {
@@ -185,51 +182,31 @@ export function Slider({
         console.warn('[flowcloudai-ui][Slider] onChange 已废弃，推荐改用 onValueChange。')
     }, [onChange])
 
-    const deprecatedColorPropNames = React.useMemo(() => [
-        trackBackground !== undefined && 'trackBackground',
-        fillBackground !== undefined && 'fillBackground',
-        thumbBackground !== undefined && 'thumbBackground',
-        thumbBorderColor !== undefined && 'thumbBorderColor',
-        markDotColor !== undefined && 'markDotColor',
-        markLabelColor !== undefined && 'markLabelColor',
-        tooltipBackground !== undefined && 'tooltipBackground',
-        tooltipColor !== undefined && 'tooltipColor',
-    ].filter(Boolean) as string[], [
+    useDeprecatedPropWarning('Slider', {
+        trackBackground,
         fillBackground,
-        markDotColor,
-        markLabelColor,
         thumbBackground,
         thumbBorderColor,
+        markDotColor,
+        markLabelColor,
         tooltipBackground,
         tooltipColor,
-        trackBackground,
-    ])
-
-    React.useEffect(() => {
-        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return
-        console.warn(`[flowcloudai-ui][Slider] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`)
-    }, [deprecatedColorPropNames])
+    })
 
     // 将 props 映射为 CSS 变量，过滤 undefined
-    const colorVars: Record<string, string | undefined> = {
-        '--slider-track-bg':      tokens?.trackBackground ?? trackBackground,
-        '--slider-fill-bg':       tokens?.fillBackground ?? fillBackground,
-        '--slider-thumb-bg':      tokens?.thumbBackground ?? thumbBackground,
-        '--slider-thumb-border':  tokens?.thumbBorderColor ?? thumbBorderColor,
-        '--slider-mark-dot-bg':   tokens?.markDotColor ?? markDotColor,
-        '--slider-mark-label-color': tokens?.markLabelColor ?? markLabelColor,
-        '--slider-tooltip-bg':    tokens?.tooltipBackground ?? tooltipBackground,
-        '--slider-tooltip-color': tokens?.tooltipColor ?? tooltipColor,
+    const mergedStyle: React.CSSProperties = {
+        ...buildCssVars({
+            '--slider-track-bg':      tokens?.trackBackground ?? trackBackground,
+            '--slider-fill-bg':       tokens?.fillBackground ?? fillBackground,
+            '--slider-thumb-bg':      tokens?.thumbBackground ?? thumbBackground,
+            '--slider-thumb-border':  tokens?.thumbBorderColor ?? thumbBorderColor,
+            '--slider-mark-dot-bg':   tokens?.markDotColor ?? markDotColor,
+            '--slider-mark-label-color': tokens?.markLabelColor ?? markLabelColor,
+            '--slider-tooltip-bg':    tokens?.tooltipBackground ?? tooltipBackground,
+            '--slider-tooltip-color': tokens?.tooltipColor ?? tooltipColor,
+        }),
+        ...style,
     }
-
-    const overrideStyle: React.CSSProperties = {}
-    for (const [key, value] of Object.entries(colorVars)) {
-        if (value !== undefined) {
-            (overrideStyle as Record<string, string>)[key] = value
-        }
-    }
-
-    const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style }
 
     const getPercent = (val: number) =>
         Math.max(0, Math.min(100, ((val - safeMin) / (safeMax - safeMin)) * 100))

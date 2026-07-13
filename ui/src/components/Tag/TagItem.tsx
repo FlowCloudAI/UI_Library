@@ -2,6 +2,9 @@ import "./TagItem.css";
 import {CSSProperties, useEffect, useLayoutEffect, useRef, useState} from "react";
 import type {FocusEvent, HTMLAttributes, KeyboardEvent, MouseEvent} from "react";
 import type {FcChangeHandler, FcChangeMeta} from '../../types/common';
+import {isDevelopmentRuntime} from '../../utils/runtime';
+import {buildCssVars} from '../../utils/cssVars';
+import {useDeprecatedPropWarning} from '../../hooks/useDeprecatedPropWarning';
 
 export interface TagSchema {
     id:        string;
@@ -53,12 +56,6 @@ export interface TagItemProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'def
     color?:       string;
     /** @deprecated 推荐改用 tokens.borderColor。 */
     borderColor?: string;
-}
-
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
 }
 
 export function TagItem({
@@ -117,26 +114,16 @@ export function TagItem({
     }, [activeEditing, draft, mode, value]);
 
     // --- CSS 变量注入 ---
-    const colorVars: Record<string, string | undefined> = {
-        "--tag-bg":     tokens?.background ?? background,
-        "--tag-color":  tokens?.color ?? color,
-        "--tag-border": tokens?.borderColor ?? borderColor,
+    const mergedStyle: CSSProperties = {
+        ...buildCssVars({
+            "--tag-bg":     tokens?.background ?? background,
+            "--tag-color":  tokens?.color ?? color,
+            "--tag-border": tokens?.borderColor ?? borderColor,
+        }),
+        ...style,
     };
-    const overrideStyle: CSSProperties = {};
-    for (const [k, v] of Object.entries(colorVars)) {
-        if (v !== undefined) (overrideStyle as any)[k] = v;
-    }
-    const mergedStyle: CSSProperties = {...overrideStyle, ...style};
 
-    useEffect(() => {
-        const deprecatedColorPropNames = [
-            background !== undefined && 'background',
-            color !== undefined && 'color',
-            borderColor !== undefined && 'borderColor',
-        ].filter(Boolean) as string[];
-        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
-        console.warn(`[flowcloudai-ui][TagItem] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
-    }, [background, borderColor, color]);
+    useDeprecatedPropWarning('TagItem', {background, color, borderColor});
 
     const emitValueChange = (
         nextValue: TagValue,

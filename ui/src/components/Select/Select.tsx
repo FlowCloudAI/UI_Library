@@ -2,6 +2,9 @@
 import './Select.css'
 import * as React from "react";
 import { useClickOutside } from '../../hooks/useClickOutside';
+import {isDevelopmentRuntime} from '../../utils/runtime';
+import {buildCssVars} from '../../utils/cssVars';
+import {useDeprecatedPropWarning} from '../../hooks/useDeprecatedPropWarning';
 import type {FcChangeHandler, FcChangeMeta, FcRadius} from '../../types/common';
 
 export interface SelectOption {
@@ -65,12 +68,6 @@ export interface SelectProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 
     hoverBackground?: string;
 }
 
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
-}
-
 export function Select({
                            options,
                            value: controlledValue,
@@ -103,41 +100,24 @@ export function Select({
         console.warn('[flowcloudai-ui][Select] onChange 已废弃，推荐改用 onValueChange。');
     }, [onChange]);
 
-    const deprecatedColorPropNames = React.useMemo(() => [
-        triggerBackground !== undefined && 'triggerBackground',
-        triggerBorderColor !== undefined && 'triggerBorderColor',
-        selectedColor !== undefined && 'selectedColor',
-        selectedBackground !== undefined && 'selectedBackground',
-        hoverBackground !== undefined && 'hoverBackground',
-    ].filter(Boolean) as string[], [
-        hoverBackground,
-        selectedBackground,
-        selectedColor,
+    useDeprecatedPropWarning('Select', {
         triggerBackground,
         triggerBorderColor,
-    ]);
+        selectedColor,
+        selectedBackground,
+        hoverBackground,
+    });
 
-    React.useEffect(() => {
-        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
-        console.warn(`[flowcloudai-ui][Select] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
-    }, [deprecatedColorPropNames]);
-
-    const colorVars: Record<string, string | undefined> = {
-        '--select-trigger-bg':            tokens?.triggerBackground ?? triggerBackground,
-        '--select-trigger-border':        tokens?.triggerBorderColor ?? triggerBorderColor,
-        '--select-option-selected-color': tokens?.selectedColor ?? selectedColor,
-        '--select-option-selected-bg':    tokens?.selectedBackground ?? selectedBackground,
-        '--select-option-hover-bg':       tokens?.hoverBackground ?? hoverBackground,
+    const mergedStyle: React.CSSProperties = {
+        ...buildCssVars({
+            '--select-trigger-bg':            tokens?.triggerBackground ?? triggerBackground,
+            '--select-trigger-border':        tokens?.triggerBorderColor ?? triggerBorderColor,
+            '--select-option-selected-color': tokens?.selectedColor ?? selectedColor,
+            '--select-option-selected-bg':    tokens?.selectedBackground ?? selectedBackground,
+            '--select-option-hover-bg':       tokens?.hoverBackground ?? hoverBackground,
+        }),
+        ...style,
     };
-
-    const overrideStyle: React.CSSProperties = {};
-    for (const [key, value] of Object.entries(colorVars)) {
-        if (value !== undefined) {
-            (overrideStyle as any)[key] = value;
-        }
-    }
-
-    const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style };
 
     const [isOpen, setIsOpen] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState('');

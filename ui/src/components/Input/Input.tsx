@@ -2,6 +2,7 @@
 import './Input.css'
 import * as React from "react";
 import type {FcChangeHandler, FcChangeMeta, FcRadius, FcSize, FcStatus} from '../../types/common';
+import {isDevelopmentRuntime} from '../../utils/runtime';
 
 export type InputSize = FcSize;
 export type InputStatus = FcStatus;
@@ -10,12 +11,6 @@ export type InputValueChangeMeta = FcChangeMeta<
     React.ChangeEvent<HTMLInputElement> | React.MouseEvent<HTMLButtonElement>
 >;
 export type InputValueChangeHandler = FcChangeHandler<string, InputValueChangeMeta>;
-
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
-}
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix' | 'onChange'> {
     size?: InputSize;

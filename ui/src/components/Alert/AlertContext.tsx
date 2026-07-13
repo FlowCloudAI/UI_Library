@@ -2,6 +2,8 @@ import "./AlertContext.css"
 import {createContext, CSSProperties, HTMLAttributes, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import {RollingBox} from "../Box/RollingBox";
 import {Button} from "../Button/Button";
+import {buildCssVars} from "../../utils/cssVars";
+import {useDeprecatedPropWarning} from "../../hooks/useDeprecatedPropWarning";
 
 export type AlertType = "success" | "error" | "warning" | "info";
 export type AlertMode = "alert" | "confirm" | "toast" | "nonInvasive";
@@ -65,12 +67,6 @@ const ICONS: Record<AlertType, ReactNode> = {
         </svg>
     ),
 };
-
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
-}
 
 export interface AlertProviderProps extends HTMLAttributes<HTMLDivElement> {
     children: ReactNode;
@@ -174,21 +170,12 @@ export function AlertProvider({
         return () => clearTimeout(timer);
     }, [alert]);
 
-    const deprecatedColorPropNames = useMemo(() => [
-        background !== undefined && 'background',
-        borderColor !== undefined && 'borderColor',
-    ].filter((name): name is string => Boolean(name)), [background, borderColor]);
+    useDeprecatedPropWarning('AlertProvider', {background, borderColor});
 
-    useEffect(() => {
-        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
-        console.warn(`[flowcloudai-ui][AlertProvider] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
-    }, [deprecatedColorPropNames]);
-
-    const overrideStyle: CSSProperties = {};
-    const resolvedBackground = tokens?.background ?? background;
-    const resolvedBorderColor = tokens?.borderColor ?? borderColor;
-    if (resolvedBackground !== undefined)  (overrideStyle as any)["--alert-bg"]     = resolvedBackground;
-    if (resolvedBorderColor !== undefined) (overrideStyle as any)["--alert-border"] = resolvedBorderColor;
+    const overrideStyle: CSSProperties = buildCssVars({
+        "--alert-bg": tokens?.background ?? background,
+        "--alert-border": tokens?.borderColor ?? borderColor,
+    });
 
     const isNonInvasive = alert?.mode === "nonInvasive";
     const overlayClassName = [

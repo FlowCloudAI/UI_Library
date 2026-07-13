@@ -13,6 +13,7 @@ import type {editor as MonacoEditorApi} from 'monaco-editor';
 import {useTheme} from '../../ThemeProvider';
 import {TERA_EDITOR_DARK_THEME, TERA_EDITOR_LIGHT_THEME, TERA_HTML_LANGUAGE_ID, ensureTeraMonacoLanguage} from './teraLanguage';
 import {validateTeraTemplate} from './teraValidation';
+import {isDevelopmentRuntime} from '../../utils/runtime';
 import type {
     TeraEditorDiagnostic,
     TeraEditorInstance,
@@ -47,12 +48,6 @@ function toMarkerSeverity(monaco: TeraEditorMonaco, severity: TeraEditorDiagnost
 
 function getThemeName(resolvedTheme: 'light' | 'dark') {
     return resolvedTheme === 'dark' ? TERA_EDITOR_DARK_THEME : TERA_EDITOR_LIGHT_THEME;
-}
-
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
 }
 
 function applyMarkers(

@@ -1,6 +1,9 @@
 import './RollingBox.css';
 import * as React from 'react';
 import {useCustomRollThumb} from './useCustomRollThumb';
+import {isDevelopmentRuntime} from '../../utils/runtime';
+import {buildCssVars} from '../../utils/cssVars';
+import {useDeprecatedPropWarning} from '../../hooks/useDeprecatedPropWarning';
 
 export type ShowThumb = 'auto' | 'hide' | 'show';
 export type ThumbSize = 'thin' | 'normal' | 'thick';
@@ -11,12 +14,6 @@ export interface RollingBoxTokens {
     thumbActiveColor?: string;
     trackColor?: string;
     thumbWidth?: string; thumbHoverWidth?: string; thumbActiveWidth?: string;
-}
-
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
 }
 
 export interface RollingBoxProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -73,22 +70,18 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
                                                                                                     onScroll,
                                                                                                     ...props
                                                                                                 }: RollingBoxProps, ref) {
-    const colorVars: Record<string, string | undefined> = {
-        '--roll-thumb':        tokens?.thumbColor ?? thumbColor,
-        '--roll-thumb-hover':  tokens?.thumbHoverColor ?? thumbHoverColor,
-        '--roll-thumb-active': tokens?.thumbActiveColor ?? thumbActiveColor,
-        '--roll-track':        tokens?.trackColor ?? trackColor,
-        '--roll-thumb-width': tokens?.thumbWidth, '--roll-thumb-hover-width': tokens?.thumbHoverWidth, '--roll-thumb-active-width': tokens?.thumbActiveWidth,
+    const mergedStyle: React.CSSProperties = {
+        ...buildCssVars({
+            '--roll-thumb':        tokens?.thumbColor ?? thumbColor,
+            '--roll-thumb-hover':  tokens?.thumbHoverColor ?? thumbHoverColor,
+            '--roll-thumb-active': tokens?.thumbActiveColor ?? thumbActiveColor,
+            '--roll-track':        tokens?.trackColor ?? trackColor,
+            '--roll-thumb-width': tokens?.thumbWidth,
+            '--roll-thumb-hover-width': tokens?.thumbHoverWidth,
+            '--roll-thumb-active-width': tokens?.thumbActiveWidth,
+        }),
+        ...style,
     };
-
-    const overrideStyle: React.CSSProperties = {};
-    for (const [key, value] of Object.entries(colorVars)) {
-        if (value !== undefined) {
-            (overrideStyle as any)[key] = value;
-        }
-    }
-
-    const mergedStyle: React.CSSProperties = { ...overrideStyle, ...style };
 
     const containerRef = React.useRef<HTMLDivElement>(null);
     const contentRef = React.useRef<HTMLDivElement>(null);
@@ -113,22 +106,12 @@ export const RollingBox = React.forwardRef<HTMLDivElement, RollingBoxProps>(func
         console.warn('[flowcloudai-ui][RollingBox] horizontal/vertical 已保留兼容，建议改用 axis。');
     }, [axis, horizontal, vertical]);
 
-    const deprecatedColorPropNames = React.useMemo(() => [
-        thumbColor !== undefined && 'thumbColor',
-        thumbHoverColor !== undefined && 'thumbHoverColor',
-        thumbActiveColor !== undefined && 'thumbActiveColor',
-        trackColor !== undefined && 'trackColor',
-    ].filter(Boolean) as string[], [
-        thumbActiveColor,
+    useDeprecatedPropWarning('RollingBox', {
         thumbColor,
         thumbHoverColor,
+        thumbActiveColor,
         trackColor,
-    ]);
-
-    React.useEffect(() => {
-        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
-        console.warn(`[flowcloudai-ui][RollingBox] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
-    }, [deprecatedColorPropNames]);
+    });
 
     const setContainerRef = React.useCallback((node: HTMLDivElement | null) => {
         containerRef.current = node;

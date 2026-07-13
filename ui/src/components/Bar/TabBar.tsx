@@ -2,6 +2,9 @@
 import React, {useRef, useCallback, memo, useEffect, useMemo, useState} from 'react';
 import './TabBar.css';
 import type {FcChangeHandler, FcChangeMeta, FcRadius} from '../../types/common';
+import {isDevelopmentRuntime} from '../../utils/runtime';
+import {buildCssVars} from '../../utils/cssVars';
+import {useDeprecatedPropWarning} from '../../hooks/useDeprecatedPropWarning';
 import {
     DndContext,
     closestCenter,
@@ -73,12 +76,6 @@ export interface TabBarTokens {
     tabActiveColor?: string;
     tabActiveBackground?: string;
     activeIndicatorColor?: string;
-}
-
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
 }
 
 export interface TabBarProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
@@ -332,42 +329,18 @@ export const TabBar = memo<TabBarProps>(({
 }) => {
     const currentSelectedKey = selectedKey ?? activeKey ?? '';
 
-    const deprecatedColorPropNames = useMemo(() => [
-        background !== undefined && 'background',
-        tabColor !== undefined && 'tabColor',
-        tabHoverColor !== undefined && 'tabHoverColor',
-        tabHoverBackground !== undefined && 'tabHoverBackground',
-        tabActiveColor !== undefined && 'tabActiveColor',
-        tabActiveBackground !== undefined && 'tabActiveBackground',
-        activeIndicatorColor !== undefined && 'activeIndicatorColor',
-    ].filter((name): name is string => Boolean(name)), [
-        background,
-        tabColor,
-        tabHoverColor,
-        tabHoverBackground,
-        tabActiveColor,
-        tabActiveBackground,
-        activeIndicatorColor,
-    ]);
-
-    const colorVars: Record<string, string | undefined> = {
-        '--tab-bar-bg': tokens?.background ?? background,
-        '--tab-color': tokens?.tabColor ?? tabColor,
-        '--tab-hover-color': tokens?.tabHoverColor ?? tabHoverColor,
-        '--tab-hover-bg': tokens?.tabHoverBackground ?? tabHoverBackground,
-        '--tab-active-color': tokens?.tabActiveColor ?? tabActiveColor,
-        '--tab-active-bg': tokens?.tabActiveBackground ?? tabActiveBackground,
-        '--tab-active-indicator': tokens?.activeIndicatorColor ?? activeIndicatorColor,
+    const mergedStyle: React.CSSProperties = {
+        ...buildCssVars({
+            '--tab-bar-bg': tokens?.background ?? background,
+            '--tab-color': tokens?.tabColor ?? tabColor,
+            '--tab-hover-color': tokens?.tabHoverColor ?? tabHoverColor,
+            '--tab-hover-bg': tokens?.tabHoverBackground ?? tabHoverBackground,
+            '--tab-active-color': tokens?.tabActiveColor ?? tabActiveColor,
+            '--tab-active-bg': tokens?.tabActiveBackground ?? tabActiveBackground,
+            '--tab-active-indicator': tokens?.activeIndicatorColor ?? activeIndicatorColor,
+        }),
+        ...style,
     };
-
-    const overrideStyle: React.CSSProperties = {};
-    for (const [key, value] of Object.entries(colorVars)) {
-        if (value !== undefined) {
-            (overrideStyle as any)[key] = value;
-        }
-    }
-
-    const mergedStyle: React.CSSProperties = {...overrideStyle, ...style};
     const navRef = useRef<HTMLDivElement>(null);
     const dragRegionRestoreFrameRef = useRef<number | null>(null);
     const boundModifier = useContainerBoundModifier(navRef);
@@ -391,10 +364,15 @@ export const TabBar = memo<TabBarProps>(({
         console.warn('[flowcloudai-ui][TabBar] onChange(activeKey) 已保留兼容，建议改用 onSelectedKeyChange。');
     }, [onChange]);
 
-    useEffect(() => {
-        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
-        console.warn(`[flowcloudai-ui][TabBar] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
-    }, [deprecatedColorPropNames]);
+    useDeprecatedPropWarning('TabBar', {
+        background,
+        tabColor,
+        tabHoverColor,
+        tabHoverBackground,
+        tabActiveColor,
+        tabActiveBackground,
+        activeIndicatorColor,
+    });
 
     // 新增 tab 时自动滚动到末尾
     const prevItemsLengthRef = useRef(items.length);

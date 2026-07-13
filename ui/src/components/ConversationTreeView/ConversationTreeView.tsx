@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import './ConversationTreeView.css';
 import type {FcChangeHandler, FcChangeMeta} from '../../types/common';
+import {isDevelopmentRuntime} from '../../utils/runtime';
 
 // ========================================
 // 类型定义（对应 Rust ConversationNode）
@@ -24,12 +25,6 @@ export interface ConversationNode {
 
 export type ConversationTreeSelectedNodeChangeMeta = FcChangeMeta<React.MouseEvent<HTMLDivElement>>;
 export type ConversationTreeSelectedNodeChangeHandler = FcChangeHandler<number, ConversationTreeSelectedNodeChangeMeta>;
-
-function isDevelopmentRuntime(): boolean {
-  const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-  const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-  return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
-}
 
 export interface ConversationTreeViewProps extends React.HTMLAttributes<HTMLDivElement> {
   nodes: ConversationNode[];

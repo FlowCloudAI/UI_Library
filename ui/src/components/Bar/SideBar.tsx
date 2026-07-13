@@ -2,6 +2,7 @@
 import './SideBar.css';
 import React, { memo, useCallback, useEffect, useRef } from 'react';
 import type { FcChangeHandler, FcChangeMeta } from '../../types/common';
+import { isDevelopmentRuntime } from '../../utils/runtime';
 
 /* ========== 类型定义 ========== */
 
@@ -24,12 +25,6 @@ export type SideBarSelectedKeyChangeMeta = FcChangeMeta<React.MouseEvent<HTMLEle
 export type SideBarSelectedKeyChangeHandler = FcChangeHandler<string, SideBarSelectedKeyChangeMeta>;
 export type SideBarCollapsedChangeMeta = FcChangeMeta<React.MouseEvent<HTMLButtonElement>>;
 export type SideBarCollapsedChangeHandler = FcChangeHandler<boolean, SideBarCollapsedChangeMeta>;
-
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
-}
 
 export interface SideBarProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onSelect'> {
     /** 菜单项列表（受控） */

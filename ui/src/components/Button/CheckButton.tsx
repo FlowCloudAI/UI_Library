@@ -1,6 +1,9 @@
 import './CheckButton.css'
 import * as React from 'react'
 import type {FcChangeHandler, FcChangeMeta, FcRadius, FcSize} from '../../types/common'
+import {isDevelopmentRuntime} from '../../utils/runtime'
+import {buildCssVars} from '../../utils/cssVars'
+import {useDeprecatedPropWarning} from '../../hooks/useDeprecatedPropWarning'
 
 export type CheckButtonRadius = FcRadius
 export type CheckButtonSize = Extract<FcSize, 'sm' | 'md' | 'lg'>
@@ -56,12 +59,6 @@ export interface UncontrolledCheckButtonProps extends CheckButtonBaseProps {
 
 export type CheckButtonProps = ControlledCheckButtonProps | UncontrolledCheckButtonProps
 
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production')
-}
-
 export function CheckButton({
                                 checked: controlledChecked,
                                 defaultChecked = false,
@@ -94,24 +91,13 @@ export function CheckButton({
         console.warn('[flowcloudai-ui][CheckButton] onChange 已废弃，推荐改用 onCheckedChange。')
     }, [onChange])
 
-    const deprecatedColorPropNames = React.useMemo(() => [
-        trackBackground !== undefined && 'trackBackground',
-        checkedTrackBackground !== undefined && 'checkedTrackBackground',
-        thumbBackground !== undefined && 'thumbBackground',
-        thumbDotColor !== undefined && 'thumbDotColor',
-        labelColor !== undefined && 'labelColor',
-    ].filter(Boolean) as string[], [
+    useDeprecatedPropWarning('CheckButton', {
+        trackBackground,
         checkedTrackBackground,
-        labelColor,
         thumbBackground,
         thumbDotColor,
-        trackBackground,
-    ])
-
-    React.useEffect(() => {
-        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return
-        console.warn(`[flowcloudai-ui][CheckButton] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`)
-    }, [deprecatedColorPropNames])
+        labelColor,
+    })
 
     const toggle = (
         source: CheckButtonChangeMeta['source'],
@@ -142,23 +128,14 @@ export function CheckButton({
         }
     }
 
-    const colorVars: Record<string, string | undefined> = {
-        '--check-track-bg': tokens?.trackBackground ?? trackBackground,
-        '--check-track-bg-checked': tokens?.checkedTrackBackground ?? checkedTrackBackground,
-        '--check-thumb-bg': tokens?.thumbBackground ?? thumbBackground,
-        '--check-thumb-dot-color': tokens?.thumbDotColor ?? thumbDotColor,
-        '--check-label-color': tokens?.labelColor ?? labelColor,
-    }
-
-    const overrideStyle: React.CSSProperties = {}
-    for (const [key, value] of Object.entries(colorVars)) {
-        if (value !== undefined) {
-            (overrideStyle as any)[key] = value
-        }
-    }
-
     const mergedStyle: React.CSSProperties = {
-        ...overrideStyle,
+        ...buildCssVars({
+            '--check-track-bg': tokens?.trackBackground ?? trackBackground,
+            '--check-track-bg-checked': tokens?.checkedTrackBackground ?? checkedTrackBackground,
+            '--check-thumb-bg': tokens?.thumbBackground ?? thumbBackground,
+            '--check-thumb-dot-color': tokens?.thumbDotColor ?? thumbDotColor,
+            '--check-label-color': tokens?.labelColor ?? labelColor,
+        }),
         ...style,
     }
 

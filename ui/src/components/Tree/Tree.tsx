@@ -27,6 +27,7 @@ import { VirtualList, type VirtualListVisibleRange } from '../VirtualList/Virtua
 import type {FcChangeHandler, FcChangeMeta} from '../../types/common'
 
 import { CategoryTreeNode } from './flatToTree'
+import { isDevelopmentRuntime } from '../../utils/runtime'
 import './Tree.css'
 
 export type DropPosition = 'before' | 'after' | 'into'
@@ -694,12 +695,6 @@ function TreeNodeItem({ row }: TreeNodeItemProps) {
 }
 
 // ── 树 ──────────────────────────────────────────────────────────────────────
-
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production')
-}
 
 export interface TreeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
     treeData: CategoryTreeNode[]

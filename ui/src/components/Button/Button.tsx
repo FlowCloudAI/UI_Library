@@ -1,6 +1,8 @@
 import './Button.css'
 import * as React from "react";
 import type {FcRadius, FcSize} from '../../types/common'
+import {buildCssVars} from '../../utils/cssVars'
+import {useDeprecatedPropWarning} from '../../hooks/useDeprecatedPropWarning'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
 export type ButtonSize = FcSize;
@@ -61,12 +63,6 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
     hoverBorderColor?: string;
 }
 
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
-}
-
 export function Button({
                            variant = 'primary',
                            size = 'md',
@@ -94,53 +90,29 @@ export function Button({
                            ...props
                        }: ButtonProps) {
 
-    const deprecatedColorPropNames = React.useMemo(() => [
-        background !== undefined && 'background',
-        hoverBackground !== undefined && 'hoverBackground',
-        activeBackground !== undefined && 'activeBackground',
-        color !== undefined && 'color',
-        hoverColor !== undefined && 'hoverColor',
-        activeColor !== undefined && 'activeColor',
-        borderColor !== undefined && 'borderColor',
-        hoverBorderColor !== undefined && 'hoverBorderColor',
-    ].filter(Boolean) as string[], [
-        activeBackground,
-        activeColor,
+    useDeprecatedPropWarning('Button', {
         background,
-        borderColor,
-        color,
         hoverBackground,
-        hoverBorderColor,
+        activeBackground,
+        color,
         hoverColor,
-    ]);
+        activeColor,
+        borderColor,
+        hoverBorderColor,
+    });
 
-    React.useEffect(() => {
-        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
-        console.warn(`[flowcloudai-ui][Button] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
-    }, [deprecatedColorPropNames]);
-
-    // 将颜色 props 映射到 CSS 变量，undefined 的不会出现在 style 中
-    const colorVars: Record<string, string | undefined> = {
-        '--btn-bg': tokens?.background ?? background,
-        '--btn-bg-hover': tokens?.hoverBackground ?? hoverBackground,
-        '--btn-bg-active': tokens?.activeBackground ?? activeBackground,
-        '--btn-color': tokens?.color ?? color,
-        '--btn-color-hover': tokens?.hoverColor ?? hoverColor,
-        '--btn-color-active': tokens?.activeColor ?? activeColor,
-        '--btn-border': tokens?.borderColor ?? borderColor,
-        '--btn-border-hover': tokens?.hoverBorderColor ?? hoverBorderColor,
-    };
-
-    // 过滤掉 undefined，只保留用户实际传入的
-    const overrideStyle: React.CSSProperties = {};
-    for (const [key, value] of Object.entries(colorVars)) {
-        if (value !== undefined) {
-            (overrideStyle as any)[key] = value;
-        }
-    }
-
+    // 将颜色 props 映射为 CSS 变量（undefined 自动过滤，保留默认样式）
     const mergedStyle: React.CSSProperties = {
-        ...overrideStyle,
+        ...buildCssVars({
+            '--btn-bg': tokens?.background ?? background,
+            '--btn-bg-hover': tokens?.hoverBackground ?? hoverBackground,
+            '--btn-bg-active': tokens?.activeBackground ?? activeBackground,
+            '--btn-color': tokens?.color ?? color,
+            '--btn-color-hover': tokens?.hoverColor ?? hoverColor,
+            '--btn-color-active': tokens?.activeColor ?? activeColor,
+            '--btn-border': tokens?.borderColor ?? borderColor,
+            '--btn-border-hover': tokens?.hoverBorderColor ?? hoverBorderColor,
+        }),
         ...style,
     };
 
