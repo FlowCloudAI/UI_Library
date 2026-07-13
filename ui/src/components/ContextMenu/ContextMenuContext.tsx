@@ -1,6 +1,8 @@
 import "./ContextMenuContext.css";
-import {createContext, CSSProperties, HTMLAttributes, ReactNode, useContext, useEffect, useMemo, useRef, useState} from "react";
+import {createContext, CSSProperties, HTMLAttributes, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import { useClickOutside } from '../../hooks/useClickOutside';
+import { useDeprecatedPropWarning } from '../../hooks/useDeprecatedPropWarning';
+import { buildCssVars } from '../../utils/cssVars';
 
 /* ---- 菜单项类型 ---- */
 export type ContextMenuDivider = { type: "divider" };
@@ -37,12 +39,6 @@ const ContextMenuContext = createContext<{
 });
 
 /* ---- Provider Props ---- */
-function isDevelopmentRuntime(): boolean {
-    const metaEnv = (import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } }).env;
-    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-    return metaEnv?.DEV === true || (metaEnv?.PROD !== true && nodeEnv !== undefined && nodeEnv !== 'production');
-}
-
 export interface ContextMenuProviderProps extends HTMLAttributes<HTMLUListElement> {
     children: ReactNode;
     /** 深度样式覆盖，优先级高于旧颜色 props。 */
@@ -73,11 +69,11 @@ export function ContextMenuProvider({
     });
     const menuRef = useRef<HTMLUListElement>(null);
 
-    const showContextMenu = (e: ContextMenuTriggerEvent, items: ContextMenuItem[]) => {
+    const showContextMenu = useCallback((e: ContextMenuTriggerEvent, items: ContextMenuItem[]) => {
         e.preventDefault();
         e.stopPropagation();
         setMenu({ visible: true, x: e.clientX, y: e.clientY, items });
-    };
+    }, []);
 
     const hide = () => setMenu(s => ({ ...s, visible: false }));
 
@@ -96,16 +92,7 @@ export function ContextMenuProvider({
         };
     }, [isBrowser, menu.visible]);
 
-    const deprecatedColorPropNames = useMemo(() => [
-        background !== undefined && 'background',
-        borderColor !== undefined && 'borderColor',
-        hoverBackground !== undefined && 'hoverBackground',
-    ].filter((name): name is string => Boolean(name)), [background, borderColor, hoverBackground]);
-
-    useEffect(() => {
-        if (deprecatedColorPropNames.length === 0 || !isDevelopmentRuntime()) return;
-        console.warn(`[flowcloudai-ui][ContextMenuProvider] ${deprecatedColorPropNames.join('/')} 已废弃，推荐改用 tokens。`);
-    }, [deprecatedColorPropNames]);
+    useDeprecatedPropWarning('ContextMenuProvider', {background, borderColor, hoverBackground});
 
     /* 防止菜单超出视口 */
     const getPosition = (): CSSProperties => {
@@ -125,20 +112,21 @@ export function ContextMenuProvider({
     };
 
     /* CSS 变量注入 */
-    const colorVars: Record<string, string | undefined> = {
-        "--ctx-bg":            tokens?.background ?? background,
-        "--ctx-border":        tokens?.borderColor ?? borderColor,
-        "--ctx-item-hover-bg": tokens?.hoverBackground ?? hoverBackground,
+    const menuStyle: CSSProperties = {
+        ...(menu.visible ? getPosition() : {}),
+        ...buildCssVars({
+            "--ctx-bg":            tokens?.background ?? background,
+            "--ctx-border":        tokens?.borderColor ?? borderColor,
+            "--ctx-item-hover-bg": tokens?.hoverBackground ?? hoverBackground,
+        }),
+        ...style,
     };
-    const overrideStyle: CSSProperties = { ...(menu.visible ? getPosition() : {}) };
-    for (const [k, v] of Object.entries(colorVars)) {
-        if (v !== undefined) (overrideStyle as any)[k] = v;
-    }
-    const menuStyle: CSSProperties = {...overrideStyle, ...style};
     const menuClassName = ['fc-context-menu', className].filter(Boolean).join(' ');
 
+    const contextValue = useMemo(() => ({ showContextMenu }), [showContextMenu]);
+
     return (
-        <ContextMenuContext.Provider value={{ showContextMenu }}>
+        <ContextMenuContext.Provider value={contextValue}>
             {children}
             {menu.visible && (
                 <ul

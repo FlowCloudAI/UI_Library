@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react'
-import {createContext, useContext, useEffect, useState} from 'react'
+import {createContext, useContext, useEffect, useMemo, useState} from 'react'
 
 export type Theme = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
@@ -59,8 +59,13 @@ export function ThemeProvider({children, defaultTheme = 'system', target, onThem
         return () => mq.removeEventListener('change', handler)
     }, [theme])
 
+    const contextValue = useMemo<ThemeContextValue>(
+        () => ({ theme, resolvedTheme, setTheme }),
+        [theme, resolvedTheme],
+    )
+
     return (
-        <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+        <ThemeContext.Provider value={contextValue}>
             {children}
         </ThemeContext.Provider>
     )
