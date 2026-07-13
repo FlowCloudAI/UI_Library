@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import Markdown from 'react-markdown';
+import React, {memo, useEffect, useState} from 'react';
+import Markdown, {type Components} from 'react-markdown';
 import {PrismLight as SyntaxHighlighter} from 'react-syntax-highlighter';
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash.js';
 import c from 'react-syntax-highlighter/dist/esm/languages/prism/c.js';
@@ -404,6 +404,12 @@ const IconPlay = () => <svg {...sz}>
 
 const markdownRemarkPlugins = [remarkGfm, remarkBreaks];
 
+// 静态渲染组件映射 —— 提到模块级，避免每次渲染新建对象身份而打断 react-markdown 的记忆化
+const markdownComponents: Components = {
+    pre: ({children}) => <>{children}</>,
+    code: CodeBlock,
+};
+
 const stopToolbarEvent = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -555,7 +561,7 @@ const ProcessContextSection: React.FC<{
 // 主组件：MessageBox
 // ========================================
 
-export const MessageBox: React.FC<MessageBoxProps> = ({
+export const MessageBox = memo(function MessageBox({
   role,
                                                         content = '',
   streaming = false,
@@ -582,7 +588,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
                                                         onRegenerate,
                                                         onPlay,
                                                         ...props
-}) => {
+}: MessageBoxProps) {
   const [contentCopied, setContentCopied] = useState(false);
 
   const getRoleClass = () => {
@@ -656,10 +662,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
                 {block.markdown ? (
                     <>
                       <div className="message-box-markdown">
-                        <Markdown remarkPlugins={markdownRemarkPlugins} components={{
-                          pre: ({children}) => <>{children}</>,
-                          code: CodeBlock
-                        }}>
+                        <Markdown remarkPlugins={markdownRemarkPlugins} components={markdownComponents}>
                           {block.content}
                         </Markdown>
                       </div>
@@ -739,10 +742,7 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
               {markdown ? (
                   <>
                     <div className="message-box-markdown">
-                      <Markdown remarkPlugins={markdownRemarkPlugins} components={{
-                        pre: ({children}) => <>{children}</>,
-                        code: CodeBlock
-                      }}>{content}</Markdown>
+                      <Markdown remarkPlugins={markdownRemarkPlugins} components={markdownComponents}>{content}</Markdown>
                     </div>
                     {streaming && <Cursor/>}
                   </>
@@ -868,6 +868,6 @@ export const MessageBox: React.FC<MessageBoxProps> = ({
         </div>
     </div>
   );
-};
+});
 
 MessageBox.displayName = 'MessageBox';
