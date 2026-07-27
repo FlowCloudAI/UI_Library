@@ -1,6 +1,13 @@
 // src/index.ts
 export {ThemeProvider, useOptionalTheme, useTheme} from './ThemeProvider'
-export type {ResolvedTheme, Theme, ThemeAppliedHandler, ThemeContextValue, ThemeProviderProps} from './ThemeProvider'
+export type {
+    Density,
+    ResolvedTheme,
+    Theme,
+    ThemeAppliedHandler,
+    ThemeContextValue,
+    ThemeProviderProps,
+} from './ThemeProvider'
 export type {
     FcBaseProps,
     FcChangeHandler,
@@ -166,6 +173,7 @@ export {Tree} from './components/Tree/Tree'
 export type {
     DropPosition,
     TreeActionDisplayMode,
+    TreeDragActivation,
     TreeActionItem,
     TreeColorTokens,
     TreeTokens,

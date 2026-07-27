@@ -199,6 +199,7 @@
 .fc-tab-bar--floating .fc-tab-bar__nav-wrap {
     gap: var(--fc-space-xs, 4px);
     align-items: center;
+    padding: 5px;
 }
 
 .fc-tab-bar--floating .fc-tab-bar__tab {

@@ -359,13 +359,15 @@
 }
 
 .fc-tree__title {
-    display: inline-block;
+    display: block;
+    width: 100%;
     max-width: 100%;
     font-size: var(--fc-font-size-md);
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
     cursor: pointer;
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 20px), transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black calc(100% - 20px), transparent 100%);
 }
 
 /* ── 行内编辑 ─────────────────────────────────────────────────────────────── */
@@ -492,4 +494,51 @@
 [data-theme='dark'] .fc-tree__search-input,
 [data-theme='dark'] .fc-tree__edit-input {
     background: var(--fc-color-bg-secondary);
+}
+
+/* ── 触屏适配 ──────────────────────────────────────────────────────────────── */
+
+/*
+ * 长按拖拽模式下整行是拖拽源。留 pan-y 让激活前的纵向滚动照常走浏览器，
+ * 激活后由 TouchSensor 在非 passive 的 touchmove 上 preventDefault 接管；
+ * 若在这里写 touch-action: none，列表就彻底滚不动了。
+ *
+ * 该模式不渲染拖拽手柄，网格必须同步减一列：.fc-tree__item 的四列是
+ * 「手柄 | 展开箭头 | 标题 | 操作」，少一个子元素而列数不变的话，
+ * 后面三者会整体左移一列——标题落进 16px 的手柄列被压没，选中背景与箭头一起错位。
+ * 缩进线的起点同理，要减去手柄列宽与它右侧的 column-gap。
+ */
+.fc-tree__item--long-press {
+    touch-action: pan-y;
+    grid-template-columns: 16px minmax(0, 1fr) auto;
+    --fc-tree-indent-line-start: calc(36px + var(--fc-space-sm) - 16px - var(--fc-space-sm));
+}
+
+/*
+ * 触控密度下没有 hover 可用：手柄与行内操作按钮若维持「悬停才显形」，
+ * 在触屏上等于不存在——操作入口既看不见，pointer-events 还是 none。
+ * 这里必须提权覆盖上面的 hover 规则，故用属性选择器前缀而不是改 token。
+ */
+[data-fc-density="touch"] .fc-tree__actions {
+    width: var(--fc-tree-actions-width, 74px);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+[data-fc-density="touch"] .fc-tree__drag-handle {
+    opacity: 1;
+}
+
+/*
+ * 22×22 的操作按钮在手指下点不中，但行高只有 44，放大按钮会把行撑变形；
+ * 与 TagItem 的删除按钮同一套做法：视觉尺寸不动，用不可见热区外扩。
+ */
+.fc-tree__action {
+    position: relative;
+}
+
+.fc-tree__action::after {
+    content: '';
+    position: absolute;
+    inset: calc(-1 * var(--fc-control-tap-expand, 0px));
 }

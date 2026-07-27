@@ -39,6 +39,7 @@ export function TreeDemo() {
     const [indentationLine, setIndentationLine] = useState(true)
     const [hideRoot, setHideRoot] = useState(false)
     const [actionDisplayMode, setActionDisplayMode] = useState<'auto' | 'inline' | 'overflow'>('auto')
+    const [dragActivation, setDragActivation] = useState<'handle' | 'long-press'>('handle')
     const [customColors, setCustomColors] = useState(true)
     const [deleteTarget, setDeleteTarget] = useState<CategoryTreeNode | null>(null)
     const [visibleRows, setVisibleRows] = useState<TreeVisibleRow[]>([])
@@ -368,6 +369,23 @@ export function TreeDemo() {
                         <option value="overflow">overflow</option>
                     </select>
                 </label>
+                <label style={{display: 'inline-flex', alignItems: 'center', gap: 'var(--fc-space-sm)', fontSize: 12}}>
+                    拖拽发起
+                    <select
+                        value={dragActivation}
+                        onChange={e => setDragActivation(e.target.value as 'handle' | 'long-press')}
+                        style={{
+                            padding: '6px 8px',
+                            borderRadius: 6,
+                            border: '1px solid var(--fc-color-border, #cbd5e1)',
+                            background: 'var(--fc-color-bg, #fff)',
+                            color: 'var(--fc-color-text, #0f172a)',
+                        }}
+                    >
+                        <option value="handle">handle（手柄）</option>
+                        <option value="long-press">long-press（长按整行）</option>
+                    </select>
+                </label>
                 <button
                     onClick={() => setExpandedKeys(topVisibleKeys)}
                     style={demoButtonStyle}
@@ -432,6 +450,7 @@ export function TreeDemo() {
                         indentSize={indentSize}
                         indentationLine={indentationLine}
                         actionDisplayMode={actionDisplayMode}
+                        dragActivation={dragActivation}
                         actionCollapseThreshold={240}
                         tokens={customColorTokens}
                         onSelectedKeyChange={(key) => {

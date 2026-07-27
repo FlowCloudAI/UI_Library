@@ -4,10 +4,20 @@ import {createContext, useContext, useEffect, useMemo, useState} from 'react'
 export type Theme = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
+/**
+ * 控件密度。`touch` 把输入框/按钮/下拉项的高度抬到触控目标下限（44 像素），
+ * 具体数值见 style/index.css 的 `--fc-control-*`。
+ *
+ * 刻意做成显式开关而非媒体查询：密度取决于应用自己的 formFactor 判定，
+ * 不取决于窗口宽度或指针类型（桌面端窄窗口、触屏笔记本都会误命中）。
+ */
+export type Density = 'comfortable' | 'touch'
+
 export interface ThemeContextValue {
     theme: Theme
     resolvedTheme: ResolvedTheme
     setTheme: (theme: Theme) => void
+    density: Density
 }
 
 export type ThemeAppliedHandler = (resolvedTheme: ResolvedTheme) => void
@@ -15,6 +25,8 @@ export type ThemeAppliedHandler = (resolvedTheme: ResolvedTheme) => void
 export interface ThemeProviderProps {
     children: ReactNode
     defaultTheme?: Theme
+    /** 控件密度，默认 `comfortable`（桌面）。移动端传 `touch`。 */
+    density?: Density
     target?: HTMLElement
     onThemeApplied?: ThemeAppliedHandler
 }
@@ -37,7 +49,13 @@ function getSystemTheme(): ResolvedTheme {
         : 'light'
 }
 
-export function ThemeProvider({children, defaultTheme = 'system', target, onThemeApplied}: ThemeProviderProps) {
+export function ThemeProvider({
+    children,
+    defaultTheme = 'system',
+    density = 'comfortable',
+    target,
+    onThemeApplied,
+}: ThemeProviderProps) {
     const [theme, setTheme] = useState<Theme>(defaultTheme)
     const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme)
 
@@ -50,6 +68,16 @@ export function ThemeProvider({children, defaultTheme = 'system', target, onThem
         onThemeApplied?.(resolvedTheme)
     }, [resolvedTheme, target, onThemeApplied])
 
+    // 同步 data-fc-density；舒适密度不写属性，保持 DOM 干净且等价于「无覆盖」
+    useEffect(() => {
+        const el = target ?? document.documentElement
+        if (density === 'comfortable') {
+            el.removeAttribute('data-fc-density')
+            return
+        }
+        el.setAttribute('data-fc-density', density)
+    }, [density, target])
+
     // 监听系统主题变化
     useEffect(() => {
         if (theme !== 'system') return
@@ -60,8 +88,8 @@ export function ThemeProvider({children, defaultTheme = 'system', target, onThem
     }, [theme])
 
     const contextValue = useMemo<ThemeContextValue>(
-        () => ({ theme, resolvedTheme, setTheme }),
-        [theme, resolvedTheme],
+        () => ({ theme, resolvedTheme, setTheme, density }),
+        [theme, resolvedTheme, density],
     )
 
     return (

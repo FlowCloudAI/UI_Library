@@ -183,6 +183,43 @@
     --fc-z-modal: 300;
     --fc-z-toast: 400;
     --fc-z-tooltip: 500;
+
+    /*
+     * ---------- 控件密度 ----------
+     * 这里只定义「值」，不新增选择器：组件里写 height/min-height: var(--fc-control-*)，
+     * 触控密度靠 [data-fc-density="touch"] 覆盖变量本身。这样调用方那句
+     * `.xxx .fc-input__wrapper { height: 3.25rem }` 的优先级不受影响，应用层永远压得住库。
+     * 若改成 `[data-fc-density] .fc-input--md .fc-input__wrapper {...}` 就会反过来
+     * 盖掉调用方的刻意取值——那是这套 token 存在的意义所在，别改。
+     *
+     * 默认值 = 舒适密度，逐条对齐现有硬编码尺寸，桌面端零视觉变化。
+     */
+    --fc-control-height-xs: 1.75rem; /* 28 像素 */
+    --fc-control-height-sm: 2rem; /* 32 像素 */
+    --fc-control-height-md: 2.5rem; /* 40 像素 */
+    --fc-control-height-lg: 3rem; /* 48 像素 */
+    --fc-control-height-xl: 3.5rem; /* 56 像素 */
+    /* 可点控件的最小高度下限。舒适密度不干预，尺寸仍由 padding 决定。 */
+    --fc-control-tap-min: auto;
+    /* 图标类小按钮向外扩展的透明热区半径，用于在不改变视觉尺寸的前提下补足可点面积。 */
+    --fc-control-tap-expand: 0px;
+}
+
+/*
+ * ===== 触控密度 =====
+ * 由 <ThemeProvider density="touch"> 写到 data-fc-density 上，不用媒体查询：
+ * `max-width` 会被桌面端窄窗口误命中，`pointer: coarse` 会被触屏笔记本误命中，
+ * 而两者都和应用自己的 formFactor 判定对不齐（浏览器预览下 ?ff=mobile 跑在宽窗口里，
+ * 媒体查询不触发 → 这套尺寸在预览里根本验不了）。密度是应用说了算的，不是屏幕说了算。
+ */
+[data-fc-density="touch"] {
+    --fc-control-height-xs: 2rem; /* 32 像素 */
+    --fc-control-height-sm: 2.5rem; /* 40 像素 */
+    --fc-control-height-md: 2.75rem; /* 44 像素 */
+    --fc-control-height-lg: 3rem; /* 48 像素 */
+    --fc-control-height-xl: 3.5rem; /* 56 像素 */
+    --fc-control-tap-min: 2.75rem; /* 44 像素，触控目标下限 */
+    --fc-control-tap-expand: 0.5rem;
 }
 
 body {
@@ -312,4 +349,57 @@ body {
     outline: 2px solid var(--fc-color-border-focus, #378ADD);
     outline-offset: 2px;
     border-radius: var(--fc-radius-sm, 4px);
+}
+
+/* 原生复选框：统一跟随 FC 语义令牌，避免暗色主题出现固定白底 */
+input[type='checkbox'] {
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    flex-shrink: 0;
+    border: 1px solid var(--fc-color-border);
+    border-radius: var(--fc-radius-xs);
+    background-color: var(--fc-color-bg);
+    color: var(--fc-color-text-on-primary);
+    cursor: pointer;
+    transition: background-color var(--fc-transition), border-color var(--fc-transition);
+}
+
+input[type='checkbox']::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.3rem;
+    border: solid currentColor;
+    border-width: 0 0 1.5px 1.5px;
+    transform: translateY(-0.05rem) rotate(-45deg) scale(0);
+    transition: transform var(--fc-transition-fast);
+}
+
+input[type='checkbox']:hover:not(:disabled) {
+    border-color: var(--fc-color-border-hover);
+}
+
+input[type='checkbox']:checked {
+    border-color: var(--fc-color-primary);
+    background-color: var(--fc-color-primary);
+}
+
+input[type='checkbox']:checked::before {
+    transform: translateY(-0.05rem) rotate(-45deg) scale(1);
+}
+
+input[type='checkbox']:disabled {
+    border-color: var(--fc-color-border-light);
+    background-color: var(--fc-color-bg-tertiary);
+    color: var(--fc-color-text-disabled);
+    cursor: not-allowed;
+}
+
+@media (forced-colors: active) {
+    input[type='checkbox'] {
+        appearance: auto;
+    }
 }

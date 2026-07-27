@@ -48,8 +48,9 @@
     height: 0;
 }
 
-/* 尺寸 - 调整 padding 使内容区与 wrapper 高度严格对齐 */
-.fc-input--xs .fc-input__wrapper { height: 1.75rem; }
+/* 尺寸 - 调整 padding 使内容区与 wrapper 高度严格对齐。
+   高度走 --fc-control-height-*（见 style/index.css），触控密度下整体抬高。 */
+.fc-input--xs .fc-input__wrapper { height: var(--fc-control-height-xs, 1.75rem); }
 .fc-input--xs .fc-input__field {
     font-size: var(--fc-font-size-xs);
     padding: 0 var(--fc-space-sm);
@@ -57,28 +58,28 @@
     padding-bottom: var(--fc-space-xs);
 }
 
-.fc-input--sm .fc-input__wrapper { height: 2rem; }
+.fc-input--sm .fc-input__wrapper { height: var(--fc-control-height-sm, 2rem); }
 .fc-input--sm .fc-input__field {
     font-size: var(--fc-font-size-sm);
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
 }
 
-.fc-input--md .fc-input__wrapper { height: 2.5rem; }
+.fc-input--md .fc-input__wrapper { height: var(--fc-control-height-md, 2.5rem); }
 .fc-input--md .fc-input__field {
     font-size: var(--fc-font-size-md);
     padding-top: var(--fc-space-sm);
     padding-bottom: var(--fc-space-sm);
 }
 
-.fc-input--lg .fc-input__wrapper { height: 3rem; }
+.fc-input--lg .fc-input__wrapper { height: var(--fc-control-height-lg, 3rem); }
 .fc-input--lg .fc-input__field {
     font-size: var(--fc-font-size-lg);
     padding-top: 0.625rem;
     padding-bottom: 0.625rem;
 }
 
-.fc-input--xl .fc-input__wrapper { height: 3.5rem; }
+.fc-input--xl .fc-input__wrapper { height: var(--fc-control-height-xl, 3.5rem); }
 .fc-input--xl .fc-input__field {
     font-size: var(--fc-font-size-xl);
     padding-top: var(--fc-space-md);
@@ -145,6 +146,7 @@
 .fc-input__actions {
     display: flex;
     align-items: center;
+    align-self: stretch;
     gap: var(--fc-space-xs);
     margin-right: var(--fc-space-sm);
 }
@@ -173,38 +175,51 @@
 .fc-input__stepper {
     display: flex;
     flex-direction: column;
-    border-left: 1px solid var(--fc-color-border-light);
-    margin-right: var(--fc-space-xs);
-    height: 100%;
+    align-self: stretch;
+    width: 1.25rem;
+    margin: 4px 0;
+    gap: 2px;
 }
 
 .fc-input__stepper-btn {
-    width: 1rem;
-    height: 50%;
+    flex: 1 1 0;
+    width: 100%;
+    min-height: 0;
     padding: 0;
     border: none;
+    border-radius: var(--fc-radius-xs);
     background: transparent;
     color: var(--fc-color-text-tertiary);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--fc-font-size-icon-md);
+    font-size: 0;
     line-height: 1;
     transition: color var(--fc-transition), background var(--fc-transition);
 }
 
+.fc-input__stepper-btn::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.375rem;
+    background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M6 1c.28 0 .55.12.74.33l4.05 4.5c.57.63.12 1.64-.74 1.64h-8.1c-.86 0-1.31-1.01-.74-1.64l4.05-4.5C5.45 1.12 5.72 1 6 1Z'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M6 1c.28 0 .55.12.74.33l4.05 4.5c.57.63.12 1.64-.74 1.64h-8.1c-.86 0-1.31-1.01-.74-1.64l4.05-4.5C5.45 1.12 5.72 1 6 1Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.fc-input__stepper-btn:last-child::before {
+    transform: rotate(180deg);
+}
+
 .fc-input__stepper-btn:hover {
-    color: var(--fc-color-text);
-    background: var(--fc-color-bg-tertiary);
+    color: var(--fc-color-primary);
+    background: var(--fc-color-primary-subtle);
 }
 
 .fc-input__stepper-btn:active {
-    background: var(--fc-color-bg-secondary);
-}
-
-.fc-input__stepper-btn + .fc-input__stepper-btn {
-    border-top: 1px solid var(--fc-color-border-light);
+    color: var(--fc-color-primary-active);
+    background: var(--fc-color-bg-tertiary);
 }
 
 .fc-input--disabled .fc-input__stepper-btn {

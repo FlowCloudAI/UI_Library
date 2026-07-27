@@ -89,7 +89,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
     };
     const normalizeNumberValue = (rawValue: number): string => {
         const fixed = numberScale > 0 ? rawValue.toFixed(numberScale) : String(Math.round(rawValue));
-        return fixed.replace(/\.?0+$/, '');
+        return numberScale > 0 ? fixed.replace(/\.?0+$/, '') : fixed;
     };
 
     const emitValueChange = (

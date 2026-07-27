@@ -16,13 +16,16 @@ import {
     DragEndEvent,
     DragMoveEvent,
     DragStartEvent,
+    MouseSensor,
     PointerSensor,
+    TouchSensor,
     useDraggable,
     useDroppable,
     useSensor,
     useSensors,
 } from '@dnd-kit/core'
 import { useContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenuContext'
+import { useOptionalTheme } from '../../ThemeProvider'
 import { VirtualList, type VirtualListVisibleRange } from '../VirtualList/VirtualList'
 import type {FcChangeHandler, FcChangeMeta} from '../../types/common'
 
@@ -32,6 +35,31 @@ import './Tree.css'
 
 export type DropPosition = 'before' | 'after' | 'into'
 export type TreeActionDisplayMode = 'auto' | 'inline' | 'overflow'
+
+/**
+ * 拖拽的发起方式。
+ *
+ * - `handle`（默认，指针设备）：只有悬停显形的 `⠿` 手柄能发起拖拽，位移 8 像素即激活。
+ *   行本身不是拖拽源，所以列表滚动与拖拽天然不冲突。
+ * - `long-press`（触屏）：手柄在没有 hover 的设备上既看不见也点不着，故改为长按行内任意处发起。
+ *   激活前的位移会取消长按，纵向滚动照常；激活由 dnd-kit 的 delay 约束负责，
+ *   不需要调用方自己做方向锁和点击抑制。
+ */
+export type TreeDragActivation = 'handle' | 'long-press'
+
+/**
+ * 长按激活的时长与容差。与 app_main 移动端原有手写实现取同一组值
+ * （`CATEGORY_REORDER_LONG_PRESS_MS` / `CATEGORY_REORDER_MOVE_TOLERANCE`），
+ * 避免换实现后手感变化被误读成 bug。
+ */
+const LONG_PRESS_DELAY_MS = 430
+const LONG_PRESS_TOLERANCE_PX = 12
+
+/* 提到模块级：useSensor 的 memo 依赖里有 options，写成行内字面量会每帧重建 sensors 数组。 */
+const DRAG_DISTANCE_CONSTRAINT = {activationConstraint: {distance: 8}} as const
+const LONG_PRESS_CONSTRAINT = {
+    activationConstraint: {delay: LONG_PRESS_DELAY_MS, tolerance: LONG_PRESS_TOLERANCE_PX},
+} as const
 
 export interface TreeVisibleRow {
     key: string
@@ -138,6 +166,7 @@ interface DragVisualStore {
 
 interface TreeOptionsValue {
     indentSize: number
+    dragActivation: TreeDragActivation
     actionDisplayMode: TreeActionDisplayMode
     actionCollapseThreshold: number
     actionViewportWidth: number | null
@@ -559,6 +588,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
 
     const titleContent = options.renderTitle?.(node, renderState) ?? node.title
     const Slot = options.dragEnabled ? DndSlot : PlainSlot
+    const longPressDrag = options.dragActivation === 'long-press'
 
     return (
         <Slot nodeKey={node.key} disabled={isEditing || !canDragNode}>
@@ -572,6 +602,7 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                             'fc-tree__item',
                             isSelected               && 'fc-tree__item--selected',
                             isDragSource              && 'fc-tree__item--drag-source',
+                            longPressDrag             && 'fc-tree__item--long-press',
                             dropPosition === 'into'   && 'fc-tree__item--drop-into',
                             dropPosition === 'before'  && 'fc-tree__item--drop-before',
                             dropPosition === 'after'   && 'fc-tree__item--drop-after',
@@ -580,21 +611,25 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                             paddingLeft: dropPosition === 'into' ? indent + 8 : indent,
                             '--fc-indent': `${indent}px`,
                         } as React.CSSProperties}
+                        /* 长按模式下整行是拖拽源；手柄模式下拖拽 listeners 挂在下面的手柄上。 */
+                        {...(longPressDrag && canDragNode ? handleProps : {})}
                         onClick={handleItemClick}
                         onContextMenu={isEditing || contextMenuItems.length === 0 ? undefined : openNodeMenu}
                     >
                         <span className="fc-tree__indent-lines" aria-hidden="true" />
 
-                        {/* 拖拽手柄 */}
-                        <span
-                            className={[
-                                'fc-tree__drag-handle',
-                                !canDragNode && 'fc-tree__drag-handle--disabled',
-                            ].filter(Boolean).join(' ')}
-                            title={canDragNode ? '拖拽移动' : undefined}
-                            {...(canDragNode ? handleProps : {})}
-                            onMouseDown={e => e.stopPropagation()}
-                        >⠿</span>
+                        {/* 拖拽手柄：长按模式下整行可拖，手柄是多余的视觉噪音，直接不渲染 */}
+                        {!longPressDrag && (
+                            <span
+                                className={[
+                                    'fc-tree__drag-handle',
+                                    !canDragNode && 'fc-tree__drag-handle--disabled',
+                                ].filter(Boolean).join(' ')}
+                                title={canDragNode ? '拖拽移动' : undefined}
+                                {...(canDragNode ? handleProps : {})}
+                                onMouseDown={e => e.stopPropagation()}
+                            >⠿</span>
+                        )}
 
                         {/* 展开/折叠 */}
                         <span
@@ -603,6 +638,9 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                                 !hasChildren && 'fc-tree__switcher--hidden',
                                 isExpanded   && 'fc-tree__switcher--open',
                             ].filter(Boolean).join(' ')}
+                            /* 长按模式下行是拖拽源：不拦住 pointerdown 的话，
+                               按住展开箭头满 430ms 会变成拖整行。 */
+                            onPointerDown={e => e.stopPropagation()}
                             onClick={handleSwitcherClick}
                         >
                             {hasChildren ? '▶' : ''}
@@ -639,6 +677,8 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                                 'fc-tree__actions',
                                 compactActions && 'fc-tree__actions--compact',
                             ].filter(Boolean).join(' ')}
+                                  /* 同展开箭头：长按操作按钮不应该变成拖整行。 */
+                                  onPointerDown={e => e.stopPropagation()}
                                   style={{
                                       '--fc-tree-actions-width': compactActions
                                           ? '22px'
@@ -735,6 +775,8 @@ export interface TreeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
     /** 是否显示缩进引导线 */
     indentationLine?: boolean
     indentSize?: number
+    /** 拖拽发起方式，默认 `handle`；触屏端传 `long-press`。 */
+    dragActivation?: TreeDragActivation
     actionDisplayMode?: TreeActionDisplayMode
     actionCollapseThreshold?: number
     tokens?: TreeTokens
@@ -742,6 +784,11 @@ export interface TreeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
     colorTokens?: TreeColorTokens
     /** 列表视口显式高度覆盖；未传时默认填充父容器剩余空间 */
     scrollHeight?: string | number
+    /**
+     * 行高（像素）。虚拟列表的 itemHeight 与 CSS 行高共用这一个值，两者必须一致，
+     * 所以行高只能从这里给，不能靠 CSS 覆盖。
+     * 不传时按 ThemeProvider 的密度取默认值：`touch` 为 44（触控目标下限），否则 34。
+     */
     virtualRowHeight?: number
     virtualOverscan?: number
     /** 折叠/展开动画时长（秒），默认 0.12 */
@@ -777,12 +824,13 @@ export function Tree({
                          hideRoot = false,
                          indentationLine = false,
                          indentSize = 20,
+                         dragActivation = 'handle',
                          actionDisplayMode = 'auto',
                          actionCollapseThreshold = 208,
                          tokens,
                          colorTokens,
                          scrollHeight,
-                         virtualRowHeight = 34,
+                         virtualRowHeight,
                          virtualOverscan = 8,
                          className = '',
                          style,
@@ -898,8 +946,30 @@ export function Tree({
         return () => observer.disconnect()
     }, [])
 
+    /*
+     * 长按模式必须用 TouchSensor，不能沿用 PointerSensor：
+     * PointerSensor 只对 `pointermove` 调 preventDefault，而触屏的滚动是由 `touchmove` 驱动的，
+     * 挡 pointermove 拦不住页面滚——拖拽激活后手指一动，节点跟手的同时列表也在滚。
+     * TouchSensor 监听 `touchmove`（非 passive，且带 iOS Safari 的强制生效 workaround），
+     * 才能在激活后真正接管手势。指针设备那一路交给 MouseSensor：
+     * 它由 `mousedown` 驱动，触屏只在 touchend 之后才补发兼容鼠标事件，不会和长按抢。
+     *
+     * delay + tolerance 的语义正是原移动端手写的那套：按住不动满 430ms 才激活，
+     * 期间位移超过 12 像素判为滚动并取消——方向锁和点击抑制都不用自己再写一遍。
+     */
+    // 三个 useSensor 必须无条件调用（Hook 顺序），再按模式挑；useSensors 会滤掉 null，
+    // 传固定长度的两个参数也能让它的依赖数组长度稳定。
+    /* 行高跟随密度：触控下 34 像素的行既点不准也和 44 的控件对不齐。 */
+    const density = useOptionalTheme()?.density
+    const resolvedRowHeight = virtualRowHeight ?? (density === 'touch' ? 44 : 34)
+
+    const pointerSensor = useSensor(PointerSensor, DRAG_DISTANCE_CONSTRAINT)
+    const mouseSensor = useSensor(MouseSensor, DRAG_DISTANCE_CONSTRAINT)
+    const touchSensor = useSensor(TouchSensor, LONG_PRESS_CONSTRAINT)
+    const longPressDrag = dragActivation === 'long-press'
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+        longPressDrag ? mouseSensor : pointerSensor,
+        longPressDrag ? touchSensor : null,
     )
 
     // ── 操作（稳定 — 依赖很少变化）────────────────────────────────
@@ -1234,6 +1304,7 @@ export function Tree({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- boolean flags track defined/undefined transitions only
     const optionsValue = useMemo<TreeOptionsValue>(() => ({
         indentSize,
+        dragActivation,
         actionDisplayMode,
         actionCollapseThreshold,
         actionViewportWidth: treeWidth,
@@ -1251,6 +1322,7 @@ export function Tree({
         collapseDuration,
     }), [
         indentSize,
+        dragActivation,
         actionDisplayMode,
         actionCollapseThreshold,
         treeWidth,
@@ -1278,11 +1350,11 @@ export function Tree({
         if (resolvedTokens?.actionHoverBg) nextStyle['--fc-tree-action-hover-bg'] = resolvedTokens.actionHoverBg
         if (resolvedTokens?.dropIndicator) nextStyle['--fc-tree-drop-indicator'] = resolvedTokens.dropIndicator
         nextStyle['--fc-tree-indent-size'] = `${indentSize}px`
-        nextStyle['--fc-tree-row-height'] = `${virtualRowHeight}px`
+        nextStyle['--fc-tree-row-height'] = `${resolvedRowHeight}px`
         nextStyle['--fc-tree-row-transition'] = `${collapseDuration}s ease-out`
 
         return nextStyle as React.CSSProperties
-    }, [collapseDuration, indentSize, resolvedTokens, virtualRowHeight])
+    }, [collapseDuration, indentSize, resolvedTokens, resolvedRowHeight])
     const mergedTreeStyle = useMemo<React.CSSProperties>(() => ({
         ...treeStyle,
         ...style,
@@ -1337,7 +1409,7 @@ export function Tree({
                         <VirtualList
                             data={renderRows}
                             height={listViewportHeight}
-                            itemHeight={virtualRowHeight}
+                            itemHeight={resolvedRowHeight}
                             renderItem={renderVirtualRow}
                             getKey={getVirtualRowKey}
                             overscan={virtualOverscan}

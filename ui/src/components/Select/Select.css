@@ -17,6 +17,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* 触控目标下限；舒适密度下为 auto，实际高度仍由 padding 撑出。 */
+    min-height: var(--fc-control-tap-min, auto);
     padding: var(--fc-space-md) var(--fc-space-lg);
     background: var(--select-trigger-bg);
     border: 1px solid var(--select-trigger-border);
@@ -116,6 +118,8 @@
     display: flex;
     align-items: center;
     gap: var(--fc-space-sm);
+    /* 选项行同样受触控下限约束，否则触控密度下触发器够大、下拉项仍点不中。 */
+    min-height: var(--fc-control-tap-min, auto);
     padding: var(--fc-space-sm) var(--fc-space-lg);
     cursor: pointer;
     transition: background var(--fc-transition);

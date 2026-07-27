@@ -18,6 +18,12 @@
     align-items: center;
     justify-content: center;
     gap: var(--fc-space-sm, 8px);
+    /*
+     * 触控目标下限：舒适密度下为 auto（尺寸完全由 padding 决定，桌面端不受影响），
+     * 触控密度下抬到 44 像素。放在基类而不是各 size 变体上，是因为下限对所有尺寸同义；
+     * 页面若刻意要更矮/更高的按钮，自己的选择器优先级更高，照旧生效。
+     */
+    min-height: var(--fc-control-tap-min, auto);
     padding: var(--fc-space-md, 12px) var(--fc-space-lg, 16px);
     font-family: var(--fc-font-family, system-ui), serif;
     font-size: var(--fc-font-size-md, 16px);
