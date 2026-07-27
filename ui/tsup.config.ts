@@ -12,7 +12,6 @@ const componentEntries = {
     Input: 'src/entries/Input.ts',
     LazyLoad: 'src/entries/LazyLoad.ts',
     ListGroup: 'src/entries/ListGroup.ts',
-    MarkdownEditor: 'src/entries/MarkdownEditor.ts',
     MessageBox: 'src/entries/MessageBox.ts',
     OrphanDialog: 'src/entries/OrphanDialog.ts',
     RollingBox: 'src/entries/RollingBox.ts',

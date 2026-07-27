@@ -13,7 +13,6 @@ import { TagItemDemo }        from './demos/TagItemDemo'
 import { RollingBoxDemo }     from './demos/RollingBoxDemo'
 import { ListGroupDemo }      from './demos/ListGroupDemo'
 import { CardDemo }           from './demos/CardDemo'
-import { MarkdownEditorDemo } from './demos/MarkdownEditorDemo'
 import { TabBarDemo }         from './demos/TabBarDemo'
 import { SideBarDemo }        from './demos/SideBarDemo'
 import { ContextMenuDemo }    from './demos/ContextMenuDemo'
@@ -50,7 +49,6 @@ const NAV_GROUPS: NavGroup[] = [
             { key: 'RollingBox',  label: 'RollingBox' },
             { key: 'ListGroup',   label: 'ListGroup' },
             { key: 'Card',        label: 'Card' },
-            { key: 'Markdown',    label: 'MarkdownEditor' },
             { key: 'TeraEditor',  label: 'TeraEditor' },
         ],
     },
@@ -86,7 +84,6 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     RollingBox:  RollingBoxDemo,
     ListGroup:   ListGroupDemo,
     Card:        CardDemo,
-    Markdown:    MarkdownEditorDemo,
     TeraEditor:  TeraEditorDemo,
     TabBar:      TabBarDemo,
     SideBar:     SideBarDemo,

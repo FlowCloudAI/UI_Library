@@ -88,7 +88,6 @@ npx eslint . --max-warnings 0
 
 - **React 19** — Modern React with hooks
 - **@dnd-kit/core** — Drag-and-drop for Tree and other components
-- **@uiw/react-md-editor** — Markdown editor component (used in MarkdownEditor)
 - **Vite 8** — Fast dev server and build tool
 - **tsup 8** — Zero-config library bundler (ESM + CJS)
 - **TypeScript ~5.9** — Type safety across library and app
@@ -120,7 +119,6 @@ Components in `ui/src/components/`:
 - **SideBar** — Side navigation panel
 - **RollingBox** — Animated box component
 - **TagItem** — Tag/label display
-- **MarkdownEditor** — Markdown content editor
 - **ContextMenu** — Context menu (right-click menu, context-based)
 
 Each component should have:

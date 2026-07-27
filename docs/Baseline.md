@@ -7,7 +7,7 @@
 1. 迁移方式采用“新增统一 API + 旧 API 标记废弃”的兼容路线，不做一次性破坏性修改。
 2. `TabBar` 接受从 `activeKey/onChange` 迁移到 `selectedKey/onSelectedKeyChange`，旧 API 保留兼容。
 3. 深度样式覆盖统一命名为 `tokens`；旧的直接颜色 props 与 `colorTokens` 保留兼容。
-4. `MarkdownEditor`、`TeraEditor` 保持 controlled-only，不新增 uncontrolled 模型；可新增 `onValueChange` 作为统一命名别名。
+4. `TeraEditor` 保持 controlled-only，不新增 uncontrolled 模型；可新增 `onValueChange` 作为统一命名别名。
 
 ## 2. 公共原则
 
@@ -132,7 +132,7 @@ export type ButtonVariant =
 2. 已存在的 `onSelect` 保留，但新文档推荐 `onSelectedKeyChange` 或领域语义更强的事件名。
 3. `TabBar` 新增 `selectedKey/onSelectedKeyChange`，保留 `activeKey/onChange`。
 4. `Tree` 保留 `onSelect`，新增 `onSelectedKeyChange`；`expandedKeys/onExpandedKeysChange` 已符合基线。
-5. `MarkdownEditor`、`TeraEditor` 保持 `value/onChange` 兼容，新增 `onValueChange` 作为推荐写法，不新增 `defaultValue`。
+5. `TeraEditor` 保持 `value/onChange` 兼容，新增 `onValueChange` 作为推荐写法，不新增 `defaultValue`。
 
 ## 7. 回调签名基线
 
@@ -253,7 +253,7 @@ export interface XxxProps {
 
 ### 9.4 编辑器与 AI 展示组件
 
-范围：`MarkdownEditor`、`TeraEditor`、`MessageBox`。
+范围：`TeraEditor`、`MessageBox`。
 
 目标：
 

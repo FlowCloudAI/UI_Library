@@ -21,7 +21,6 @@ const flowcloudaiUiEntries = [
     'Input',
     'LazyLoad',
     'ListGroup',
-    'MarkdownEditor',
     'MessageBox',
     'OrphanDialog',
     'RollingBox',
