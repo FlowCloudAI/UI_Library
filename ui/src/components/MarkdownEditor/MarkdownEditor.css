@@ -97,6 +97,15 @@
     color: inherit !important;
 }
 
+/* ---------- FlowCloudAI 双链 ---------- */
+.fc-md-wrap .w-md-editor-text-pre .token.wiki-link {
+    color: var(--md-primary) !important;
+}
+
+.fc-md-wrap .w-md-editor-text-pre .token.wiki-link > .token.punctuation {
+    color: var(--md-text-muted) !important;
+}
+
 /* ---------- 双栏切换按钮 ---------- */
 .fc-md-split-btn {
     border-radius: var(--fc-radius-md, 8px) !important;

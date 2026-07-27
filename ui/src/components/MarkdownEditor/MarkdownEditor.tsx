@@ -2,11 +2,15 @@ import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useLayou
 import "./MarkdownEditor.css";
 import type {ICommand, MDEditorProps, RefMDEditor} from "@uiw/react-md-editor";
 import MDEditor, {commands} from "@uiw/react-md-editor";
+import {refractor} from "refractor/all";
 import {useOptionalTheme} from "../../ThemeProvider";
 import type {FcChangeHandler, FcChangeMeta} from "../../types/common";
 import {isDevelopmentRuntime} from "../../utils/runtime";
 import {buildCssVars} from "../../utils/cssVars";
 import {useDeprecatedPropWarning} from "../../hooks/useDeprecatedPropWarning";
+import {registerWikiLinkSyntax} from "./markdownSyntax";
+
+registerWikiLinkSyntax(refractor);
 
 export type MarkdownPreviewOptions = MDEditorProps["previewOptions"];
 export type MarkdownPreviewRenderer = NonNullable<MDEditorProps["components"]>["preview"];
