@@ -8,7 +8,10 @@
 .fc-slider--horizontal {
     width: 100%;
     height: 2rem;
+    display: flex;
+    align-items: center;
     padding: var(--fc-space-sm) 0;
+    box-sizing: border-box;
 }
 
 .fc-slider--vertical {
