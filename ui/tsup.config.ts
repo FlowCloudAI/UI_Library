@@ -19,7 +19,6 @@ const componentEntries = {
     SideBar: 'src/entries/SideBar.ts',
     Slider: 'src/entries/Slider.ts',
     TabBar: 'src/entries/TabBar.ts',
-    TagItem: 'src/entries/TagItem.ts',
     TeraEditor: 'src/entries/TeraEditor.ts',
     ThemeProvider: 'src/entries/ThemeProvider.ts',
     Tree: 'src/entries/Tree.ts',

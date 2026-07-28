@@ -90,10 +90,6 @@
       "types": "./dist/TabBar.d.ts",
       "import": "./dist/TabBar.js"
     },
-    "./TagItem": {
-      "types": "./dist/TagItem.d.ts",
-      "import": "./dist/TagItem.js"
-    },
     "./TeraEditor": {
       "types": "./dist/TeraEditor.d.ts",
       "import": "./dist/TeraEditor.js"
@@ -122,7 +118,6 @@
     "./SideBar/style": "./dist/SideBar.css",
     "./Slider/style": "./dist/Slider.css",
     "./TabBar/style": "./dist/TabBar.css",
-    "./TagItem/style": "./dist/TagItem.css",
     "./TeraEditor/style": "./dist/TeraEditor.css",
     "./Tree/style": "./dist/Tree.css",
     "./style": "./dist/index.css"

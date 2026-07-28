@@ -9,7 +9,6 @@ import { AlertDemo }          from './demos/AlertDemo'
 import { InputDemo }          from './demos/InputDemo'
 import { SliderDemo }         from './demos/SliderDemo'
 import { SelectDemo }         from './demos/SelectDemo'
-import { TagItemDemo }        from './demos/TagItemDemo'
 import { RollingBoxDemo }     from './demos/RollingBoxDemo'
 import { ListGroupDemo }      from './demos/ListGroupDemo'
 import { CardDemo }           from './demos/CardDemo'
@@ -41,7 +40,6 @@ const NAV_GROUPS: NavGroup[] = [
             { key: 'Input',   label: 'Input' },
             { key: 'Slider',  label: 'Slider' },
             { key: 'Select',  label: 'Select' },
-            { key: 'TagItem', label: 'TagItem' },
         ],
     },
     {
@@ -80,7 +78,6 @@ const DEMO_COMPONENTS: Record<string, ComponentType> = {
     Input:       InputDemo,
     Slider:      SliderDemo,
     Select:      SelectDemo,
-    TagItem:     TagItemDemo,
     RollingBox:  RollingBoxDemo,
     ListGroup:   ListGroupDemo,
     Card:        CardDemo,

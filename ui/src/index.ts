@@ -98,16 +98,6 @@ export type {
     SelectValueChangeHandler,
     SelectValueChangeMeta,
 } from './components/Select/Select'
-export {TagItem} from './components/Tag/TagItem'
-export type {
-    TagItemProps,
-    TagItemTokens,
-    TagSchema,
-    TagValue,
-    TagValueChangeHandler,
-    TagValueChangeMeta,
-} from './components/Tag/TagItem'
-
 export {Card} from './components/Card/Card'
 export type {CardProps, CardVariant} from './components/Card/Card'
 export {ListGroup, ListGroupItem} from './components/ListGroup/ListGroup'

@@ -118,7 +118,6 @@ Components in `ui/src/components/`:
 - **TabBar** — Tab navigation
 - **SideBar** — Side navigation panel
 - **RollingBox** — Animated box component
-- **TagItem** — Tag/label display
 - **ContextMenu** — Context menu (right-click menu, context-based)
 
 Each component should have:
