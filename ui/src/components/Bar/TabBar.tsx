@@ -134,6 +134,10 @@ export interface TabBarProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 
      * 该空白归 nav-outer 所有，因此始终是 tauriDragRegion 的有效命中区域 ——
      * `adaptive` 收缩到撑满后留白会归零，无边框窗口会连带丢失拖拽入口，用它兜底。
      * 仅对 `fit` / `adaptive` 生效（`fill` 下导航区本就撑满，没有可预留的空间）。
+     *
+     * 值直接进 `calc(100% - …)`，因此可用函数式长度让预留量随容器自适应：
+     * `min(96px, 12%)` 在宽容器下等同 96px，窄容器下按比例收窄，避免定值在窄窗口
+     * 吃掉过多标签区。百分比相对导航区内容宽度解析。
      * @default "0px"
      */
     dragGutter?: string;
