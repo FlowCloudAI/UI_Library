@@ -126,3 +126,48 @@
     flex-direction: column;
     gap: var(--fc-space-2xl);
 }
+
+/* ===== TabBar 宽度策略对照专用探针 =====
+   给 TabBar 的两层容器上不同底色，用来肉眼区分「右侧留白归谁」：
+   绿色 = nav-outer（带 data-tauri-drag-region，可拖窗口），
+   紫色 = nav-wrap（滚动容器，没有该属性，拖不动窗口）。 */
+.tabbar-probe .fc-tab-bar__nav-outer {
+    background: rgba(16, 185, 129, 0.22);
+}
+
+.tabbar-probe .fc-tab-bar__nav-wrap {
+    background: rgba(129, 99, 241, 0.22);
+}
+
+.tabbar-probe-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fc-space-md);
+    align-items: center;
+    font-size: 12px;
+    color: var(--fc-color-text-secondary);
+}
+
+.tabbar-probe-legend i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 5px;
+    border-radius: 2px;
+    vertical-align: -1px;
+}
+
+.tabbar-probe-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fc-space-md);
+    margin-top: 4px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--fc-color-text-secondary);
+}
+
+.tabbar-probe-meta b {
+    font-weight: 600;
+    color: var(--fc-color-text);
+}
