@@ -135,9 +135,9 @@ export interface TabBarProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 
      * `adaptive` 收缩到撑满后留白会归零，无边框窗口会连带丢失拖拽入口，用它兜底。
      * 仅对 `fit` / `adaptive` 生效（`fill` 下导航区本就撑满，没有可预留的空间）。
      *
-     * 值直接进 `calc(100% - …)`，因此可用函数式长度让预留量随容器自适应：
+     * 值作为 nav-outer 的 padding-right 参与计算，因此可用函数式长度让预留量随容器自适应：
      * `min(96px, 12%)` 在宽容器下等同 96px，窄容器下按比例收窄，避免定值在窄窗口
-     * 吃掉过多标签区。百分比相对导航区内容宽度解析。
+     * 吃掉过多标签区。百分比按 padding 的规则相对 TabBar 根节点宽度解析。
      * @default "0px"
      */
     dragGutter?: string;
@@ -361,10 +361,13 @@ export const TabBar = memo<TabBarProps>(({
             '--tab-active-color': tokens?.tabActiveColor ?? tabActiveColor,
             '--tab-active-bg': tokens?.tabActiveBackground ?? tabActiveBackground,
             '--tab-active-indicator': tokens?.activeIndicatorColor ?? activeIndicatorColor,
+            // 挂在根节点靠继承下发到 nav-outer：预留空白由 nav-outer 的 padding-right 承担
+            '--tab-bar-drag-gutter': dragGutter,
         }),
         ...style,
     };
     const navRef = useRef<HTMLDivElement>(null);
+    const navOuterRef = useRef<HTMLDivElement>(null);
     const dragRegionRestoreFrameRef = useRef<number | null>(null);
     const boundModifier = useContainerBoundModifier(navRef);
     const [isPressingTab, setIsPressingTab] = useState(false);
@@ -410,18 +413,50 @@ export const TabBar = memo<TabBarProps>(({
         requestAnimationFrame(() => { nav.scrollLeft = nav.scrollWidth; });
     }, [items.length]);
 
-    // 鼠标滚轮垂直滚动转为水平滚动（原生 overflow-x: auto 不自动处理 deltaY）
+    // 鼠标滚轮垂直滚动转为水平滚动（原生 overflow-x: auto 不自动处理 deltaY）。
+    // 监听挂在 nav-outer 而非滚动容器本身：添加按钮已移出 nav-wrap，
+    // 挂在 nav-wrap 上会导致滚轮划过按钮时不滚动。
     useEffect(() => {
-        const nav = navRef.current;
-        if (!nav) return;
+        const outer = navOuterRef.current;
+        if (!outer) return;
         const handleWheel = (e: WheelEvent) => {
-            if (e.deltaY === 0) return;
+            const nav = navRef.current;
+            if (!nav || e.deltaY === 0) return;
             e.preventDefault();
             nav.scrollLeft += Number(e.deltaY);
         };
-        nav.addEventListener('wheel', handleWheel, {passive: false});
-        return () => nav.removeEventListener('wheel', handleWheel);
+        outer.addEventListener('wheel', handleWheel, {passive: false});
+        return () => outer.removeEventListener('wheel', handleWheel);
     }, []);
+
+    // 两侧淡出只在该方向真的还有内容可滚时才启用，否则未溢出时也会把首尾标签啃掉一块。
+    const [fadeEdges, setFadeEdges] = useState('');
+    const syncFadeEdges = useCallback(() => {
+        const nav = navRef.current;
+        if (!nav) return;
+        const maxScroll = nav.scrollWidth - nav.clientWidth;
+        const next = [
+            nav.scrollLeft > 1 && 'head',
+            maxScroll - nav.scrollLeft > 1 && 'tail',
+        ].filter(Boolean).join(' ');
+        setFadeEdges(prev => (prev === next ? prev : next));
+    }, []);
+
+    useEffect(() => {
+        const nav = navRef.current;
+        if (!nav) return;
+        nav.addEventListener('scroll', syncFadeEdges, {passive: true});
+        const observer = new ResizeObserver(syncFadeEdges);
+        observer.observe(nav);
+        return () => {
+            nav.removeEventListener('scroll', syncFadeEdges);
+            observer.disconnect();
+        };
+    }, [syncFadeEdges]);
+
+    // 标签增删或标题变长会改变 scrollWidth 却不一定改变 nav-wrap 自身尺寸
+    // （fill 恒满宽；fit/adaptive 顶到上限后也不再变），此时 ResizeObserver 不触发，需补一次同步。
+    useEffect(syncFadeEdges, [displayItems, syncFadeEdges]);
 
     const clearTabPressState = useCallback(() => {
         setIsPressingTab(false);
@@ -551,11 +586,10 @@ export const TabBar = memo<TabBarProps>(({
         className,
     ].filter(Boolean).join(' ');
 
-    // Tab 宽度上下限与右侧预留空白通过 CSS 变量传入，宽度策略由根节点 class 控制
+    // Tab 宽度上下限通过 CSS 变量传入，宽度策略由根节点 class 控制
     const navWrapStyle = {
         '--tab-min-width': minTabWidth,
         '--tab-max-width': maxTabWidth,
-        ...(dragGutter ? {'--tab-bar-drag-gutter': dragGutter} : null),
     } as React.CSSProperties;
 
     const enableDragRegion = tauriDragRegion && !isPressingTab && !isSorting && !isRefreshingDragRegion;
@@ -586,8 +620,13 @@ export const TabBar = memo<TabBarProps>(({
 
     return (
         <div {...props} className={rootClasses} style={mergedStyle} role="tablist" {...dragRegion}>
-            <div className="fc-tab-bar__nav-outer" {...dragRegion}>
-                <div className="fc-tab-bar__nav-wrap" ref={navRef} style={navWrapStyle}>
+            <div className="fc-tab-bar__nav-outer" ref={navOuterRef} {...dragRegion}>
+                <div
+                    className="fc-tab-bar__nav-wrap"
+                    ref={navRef}
+                    style={navWrapStyle}
+                    data-fade={fadeEdges || undefined}
+                >
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
@@ -603,18 +642,20 @@ export const TabBar = memo<TabBarProps>(({
                             {tabItems}
                         </SortableContext>
                     </DndContext>
-                    {addable && (
-                        <div
-                            className="fc-tab-bar__add-btn"
-                            onClick={onAdd}
-                            onMouseDown={tauriDragRegion ? (e) => e.stopPropagation() : undefined}
-                            role="button"
-                            aria-label="添加标签"
-                        >
-                            {renderAddButton ? renderAddButton() : '+'}
-                        </div>
-                    )}
                 </div>
+                {/* 刻意放在 nav-wrap 之外：留在滚动容器里会被淡出 mask 一起吃掉，
+                    且标签会滚到它下面（旧实现靠不透明底色遮挡，底色透明时失效）。 */}
+                {addable && (
+                    <div
+                        className="fc-tab-bar__add-btn"
+                        onClick={onAdd}
+                        onMouseDown={tauriDragRegion ? (e) => e.stopPropagation() : undefined}
+                        role="button"
+                        aria-label="添加标签"
+                    >
+                        {renderAddButton ? renderAddButton() : '+'}
+                    </div>
+                )}
             </div>
         </div>
     );
