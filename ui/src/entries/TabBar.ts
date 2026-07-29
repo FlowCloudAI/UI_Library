@@ -4,6 +4,7 @@ export type {
     TabBarRadius,
     TabBarSelectedKeyChangeHandler,
     TabBarSelectedKeyChangeMeta,
+    TabBarSizing,
     TabBarTokens,
     TabBarVariant,
     TabItem,

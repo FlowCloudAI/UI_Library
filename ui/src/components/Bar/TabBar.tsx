@@ -62,6 +62,7 @@ export interface TabItem {
 }
 
 export type TabBarVariant = 'attached' | 'floating';
+export type TabBarSizing = 'fill' | 'fit' | 'adaptive';
 export type TabBarRadius = FcRadius;
 export type TabBarSelectedKeyChangeMeta = FcChangeMeta<
     React.MouseEvent<HTMLDivElement> | {active: {id: React.Key}}
@@ -117,12 +118,26 @@ export interface TabBarProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 
      */
     maxTabWidth?: string;
     /**
-     * 控制 Tab 是否自动填充容器宽度。
-     * - true: Tab 会自动拉伸填满导航栏（默认行为）
-     * - false: 导航区按内容宽度收缩，Tab 只占内容宽度，剩余空间留白
-     * 当 tauriDragRegion 为 true 且 fillWidth 为 false 时，空白区域可作为窗口拖拽区。
-     * @default true
+     * Tab 宽度策略。
+     * - `fill`: Tab 均分并撑满导航栏，宽度钳在 [minTabWidth, maxTabWidth]
+     * - `fit`: 导航区按内容宽度收缩，Tab 只占内容宽度，不伸不缩
+     * - `adaptive`: 浏览器式三段行为 —— 空间富裕时维持 maxTabWidth，
+     *   空间不足时平滑收缩，触底 minTabWidth 后转为横向滚动
+     *
+     * `fit` 与 `adaptive` 下导航区按内容收缩，右侧留白归 nav-outer，
+     * 配合 tauriDragRegion 可作为窗口拖拽区；`fill` 下留白被导航区占满，拖拽区失效。
+     * @default 'fill'
      */
+    tabSizing?: TabBarSizing;
+    /**
+     * 在导航区右侧永久预留的空白宽度，支持任意 CSS 长度值（如 "96px"）。
+     * 该空白归 nav-outer 所有，因此始终是 tauriDragRegion 的有效命中区域 ——
+     * `adaptive` 收缩到撑满后留白会归零，无边框窗口会连带丢失拖拽入口，用它兜底。
+     * 仅对 `fit` / `adaptive` 生效（`fill` 下导航区本就撑满，没有可预留的空间）。
+     * @default "0px"
+     */
+    dragGutter?: string;
+    /** @deprecated 保留兼容，推荐改用 tabSizing（true → `fill`，false → `fit`）。 */
     fillWidth?: boolean;
 
     /* ---- 回调 ---- */
@@ -302,7 +317,9 @@ export const TabBar = memo<TabBarProps>(({
     draggable = false,
     minTabWidth = '80px',
     maxTabWidth = '200px',
-    fillWidth = true,
+    tabSizing,
+    dragGutter,
+    fillWidth,
     onSelectedKeyChange,
     onChange,
     onClose,
@@ -328,6 +345,8 @@ export const TabBar = memo<TabBarProps>(({
     ...props
 }) => {
     const currentSelectedKey = selectedKey ?? activeKey ?? '';
+    // tabSizing 优先；未传时回落到旧的布尔语义，保持 fillWidth 未传 = fill 的历史默认
+    const resolvedSizing: TabBarSizing = tabSizing ?? (fillWidth === false ? 'fit' : 'fill');
 
     const mergedStyle: React.CSSProperties = {
         ...buildCssVars({
@@ -373,6 +392,8 @@ export const TabBar = memo<TabBarProps>(({
         tabActiveBackground,
         activeIndicatorColor,
     });
+
+    useDeprecatedPropWarning('TabBar', {fillWidth}, '已保留兼容，推荐改用 tabSizing。');
 
     // 新增 tab 时自动滚动到末尾
     const prevItemsLengthRef = useRef(items.length);
@@ -521,15 +542,16 @@ export const TabBar = memo<TabBarProps>(({
         'fc-tab-bar',
         `fc-tab-bar--${variant}`,
         `fc-tab-bar--radius-${radius}`,
-        fillWidth ? 'fc-tab-bar--fill' : 'fc-tab-bar--fit',
+        `fc-tab-bar--${resolvedSizing}`,
         tabRadius && `fc-tab-bar--tab-radius-${tabRadius}`,
         className,
     ].filter(Boolean).join(' ');
 
-    // Tab 宽度上下限通过 CSS 变量传入，fill/fit 模式由根节点 class 控制
+    // Tab 宽度上下限与右侧预留空白通过 CSS 变量传入，宽度策略由根节点 class 控制
     const navWrapStyle = {
         '--tab-min-width': minTabWidth,
         '--tab-max-width': maxTabWidth,
+        ...(dragGutter ? {'--tab-bar-drag-gutter': dragGutter} : null),
     } as React.CSSProperties;
 
     const enableDragRegion = tauriDragRegion && !isPressingTab && !isSorting && !isRefreshingDragRegion;

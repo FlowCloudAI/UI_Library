@@ -100,10 +100,18 @@
     display: none; /* Chrome / Safari / WebKit 浏览器 */
 }
 
-.fc-tab-bar--fit .fc-tab-bar__nav-wrap {
+/* fit / adaptive 共用「导航区按内容收缩」的外层布局。
+   这一点不只是视觉：导航区收缩后，右侧留白归 nav-outer 所有，
+   而 Tauri 的 drag.js 只读 e.target 自身的 data-tauri-drag-region（不走 closest），
+   留白必须落在带该属性的元素上，窗口拖拽才生效。 */
+.fc-tab-bar--fit .fc-tab-bar__nav-wrap,
+.fc-tab-bar--adaptive .fc-tab-bar__nav-wrap {
     flex: 0 1 auto;
     width: max-content;
-    max-width: 100%;
+    /* --tab-bar-drag-gutter 在右侧永久预留一条归 nav-outer 的空白：
+       adaptive 收缩到撑满导航区后留白会归零，无边框窗口会因此丢失拖拽入口。
+       扣减发生在可用宽度上（W → W-gutter），三个阶段整体左移，仍然连续。 */
+    max-width: calc(100% - var(--tab-bar-drag-gutter, 0px));
 }
 
 /* ========== 标签页（基础） ========== */
@@ -133,6 +141,16 @@
 
 .fc-tab-bar--fit .fc-tab-bar__tab {
     flex: 0 0 auto;
+}
+
+/* adaptive：以 --tab-max-width 为基准宽、允许收缩到 --tab-min-width。
+   三个阶段（维持最大宽 → 平滑收缩 → 触底滚动）由 flex 求解器一次算出，
+   拐点落在 n=可用宽/max 与 n=可用宽/min，是同一连续函数的两个折点，不存在宽度突变。
+   注意：宽度是 flex 求解出的 used value，computed value 恒为 --tab-max-width，
+   因此 transition 不会生效——收缩过程没有动画，需要动画只能由外部量算显式宽度。 */
+.fc-tab-bar--adaptive .fc-tab-bar__tab {
+    flex: 0 1 auto;
+    width: var(--tab-max-width, 200px);
 }
 
 .fc-tab-bar__tab:hover:not(.fc-tab-bar__tab--disabled):not(.fc-tab-bar__tab--dragging):not(.fc-tab-bar__tab--active) {
