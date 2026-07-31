@@ -60,7 +60,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
                                                                          ...props
                                                                      }, ref) => {
     const [type, setType] = React.useState(initialType);
-    const [internalValue, setInternalValue] = React.useState(defaultValue || '');
+    const [internalValue, setInternalValue] = React.useState(defaultValue ?? '');
+    const inputRef = React.useRef<HTMLInputElement>(null);
+    React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
     const warnedLegacyOnChangeRef = React.useRef(false);
     const isControlled = value !== undefined;
     const currentValue = isControlled ? value : internalValue;
@@ -105,12 +107,17 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
 
     const handleNumberStep = (delta: number, event: React.MouseEvent<HTMLButtonElement>) => {
         if (!showStepper || disabled) return;
-        const parsedCurrent = Number.parseFloat(currentValueText);
+        const parsedCurrent = Number.parseFloat(
+            isControlled ? currentValueText : inputRef.current?.value ?? currentValueText
+        );
         const baseValue = Number.isFinite(parsedCurrent) ? parsedCurrent : 0;
         const nextValue = clampNumberValue(baseValue + delta * numberStep);
         const normalizedNext = normalizeNumberValue(nextValue);
 
-        if (!isControlled) setInternalValue(normalizedNext);
+        if (!isControlled) {
+            setInternalValue(normalizedNext);
+            if (inputRef.current) inputRef.current.value = normalizedNext;
+        }
         emitValueChange(normalizedNext, {source: 'click', event});
     };
 
@@ -126,7 +133,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
     };
 
     const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
-        if (!isControlled) setInternalValue('');
+        if (!isControlled) {
+            setInternalValue('');
+            if (inputRef.current) inputRef.current.value = '';
+        }
         onClear?.();
         emitValueChange('', {source: 'click', event});
     };
@@ -154,9 +164,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
 
     const input = (
         <input
-            ref={ref}
+            ref={inputRef}
             type={type}
-            value={currentValue}
+            value={isControlled ? currentValue : undefined}
+            defaultValue={isControlled ? undefined : defaultValue}
             onChange={handleChange}
             disabled={disabled}
             className="fc-input__field"
