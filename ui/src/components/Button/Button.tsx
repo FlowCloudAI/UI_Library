@@ -24,7 +24,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
     variant?: ButtonVariant;
     /** 尺寸 */
     size?: ButtonSize;
-    /** 圆角大小，不传则跟随 size 默认值 */
+    /** 圆角大小；full 为胶囊形，并保证横向内边距不小于纵向内边距的两倍。 */
     radius?: ButtonRadius;
     /** 是否禁用 */
     disabled?: boolean;

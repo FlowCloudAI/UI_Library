@@ -35,6 +35,12 @@ npm run install:local
 - 统一 `--fc-*` 设计 token 与主题语义。  
 - 示例工程用于接入方式、兼容性与视觉回归。  
 
+## Capsule 按钮设计规范
+
+- 使用 `Button radius="full"` 表达 capsule，不在业务样式中单独模拟胶囊圆角。
+- 横向内边距必须不小于纵向内边距的两倍；组件按尺寸提供 `xs 4/8px`、`sm 8/16px`、`md 12/24px`、`lg 16/32px`、`xl 24/48px`（纵向/横向）。业务样式不得将横向内边距压低到该比例以下。
+- Capsule 只定义形状，可与 `primary`、`outline`、`ghost` 等视觉变体组合；圆形按钮和纯图标按钮继续使用 `circle` / `iconOnly`，不套用 capsule 留白规则。
+
 ## 技术栈
 
 - React 19、TypeScript、Vite、tsup
@@ -55,4 +61,4 @@ lib_ui/
 - PR 建议补充 `npm run lint` 与 `cd ui && npm run build` 结果。  
 - 提交时注明公共 API 变更、影响面和迁移建议。  
 
-文档同步时间：2026-06-08 13:20:10 +08:00
+文档同步时间：2026-08-02 17:32:23 +08:00

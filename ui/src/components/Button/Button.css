@@ -215,6 +215,27 @@
 .fc-btn--radius-xl   { --btn-radius: var(--fc-radius-xl, 16px); }
 .fc-btn--radius-full { --btn-radius: var(--fc-radius-full, 9999px); }
 
+/* 胶囊按钮的横向留白至少为纵向留白的两倍，避免只改圆角后显得拥挤。 */
+.fc-btn--radius-full.fc-btn--xs:not(.fc-btn--square):not(.fc-btn--circle):not(.fc-btn--icon-only) {
+    padding-inline: max(var(--fc-space-sm, 8px), calc(var(--fc-space-xs, 4px) * 2));
+}
+
+.fc-btn--radius-full.fc-btn--sm:not(.fc-btn--square):not(.fc-btn--circle):not(.fc-btn--icon-only) {
+    padding-inline: max(var(--fc-space-md, 12px), calc(var(--fc-space-sm, 8px) * 2));
+}
+
+.fc-btn--radius-full.fc-btn--md:not(.fc-btn--square):not(.fc-btn--circle):not(.fc-btn--icon-only) {
+    padding-inline: max(var(--fc-space-lg, 16px), calc(var(--fc-space-md, 12px) * 2));
+}
+
+.fc-btn--radius-full.fc-btn--lg:not(.fc-btn--square):not(.fc-btn--circle):not(.fc-btn--icon-only) {
+    padding-inline: max(var(--fc-space-xl, 24px), calc(var(--fc-space-lg, 16px) * 2));
+}
+
+.fc-btn--radius-full.fc-btn--xl:not(.fc-btn--square):not(.fc-btn--circle):not(.fc-btn--icon-only) {
+    padding-inline: max(var(--fc-space-2xl, 32px), calc(var(--fc-space-xl, 20px) * 2));
+}
+
 /* ---------- 形状与宽度 ---------- */
 .fc-btn--square,
 .fc-btn--circle,
