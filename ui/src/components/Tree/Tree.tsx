@@ -56,6 +56,17 @@ const LONG_PRESS_DELAY_MS = 430
 const LONG_PRESS_TOLERANCE_PX = 12
 
 /* 提到模块级：useSensor 的 memo 依赖里有 options，写成行内字面量会每帧重建 sensors 数组。 */
+/*
+ * 拖拽结束后屏蔽 click 的时长。
+ *
+ * dnd-kit 自己有一层：激活后在 document 捕获阶段挂 click→stopPropagation，
+ * 但它在 detach() 之后只留 50ms 就摘掉监听。安卓 WebView（实测 Chrome 143 / Android 16）
+ * 在 touchend 之后约 61ms 才补发 click——正好晚 11ms 落在窗口外，于是长按松手后
+ * 点击照常穿透到行上，表现为「长按分类直接把分类打开了」。
+ * 这里再补一层，窗口取得比补发延迟宽裕得多；350ms 沿用 app_main 移动端原有的取值。
+ */
+const DRAG_TAIL_CLICK_SUPPRESS_MS = 350
+
 const DRAG_DISTANCE_CONSTRAINT = {activationConstraint: {distance: 8}} as const
 const LONG_PRESS_CONSTRAINT = {
     activationConstraint: {delay: LONG_PRESS_DELAY_MS, tolerance: LONG_PRESS_TOLERANCE_PX},
@@ -140,6 +151,8 @@ export type TreeActionItem =
 // ── Context（拆分：稳定 actions / 高频拖拽状态 / 选项）─────
 
 interface TreeActionsValue {
+    /** 刚结束一次拖拽（含取消）→ 紧随其后的 click 是手势尾巴，不是用户点击。 */
+    isDragTailClick: () => boolean
     toggleExpand: (key: string) => void
     expandSubtree: (node: CategoryTreeNode) => void
     collapseSubtree: (node: CategoryTreeNode) => void
@@ -568,6 +581,8 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
     }, [compactActions, nodeActions])
 
     const handleItemClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+        // 拖拽尾巴补发的 click 不是用户的点击意图；放过去会在长按松手后误选中该节点。
+        if (actions.isDragTailClick()) return
         if (!isSelected) {
             actions.select(node.key, {source: 'click', event})
             return
@@ -585,6 +600,17 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
         actions.select(node.key, {source: 'click', event: e})
         showContextMenu(e as unknown as MouseEvent, contextMenuItems)
     }, [actions, contextMenuItems, node.key, showContextMenu])
+
+    /*
+     * 长按模式下「长按」就是拖拽手势本身，浏览器发出的 contextmenu 只是它的副作用，
+     * 不能再拿来当节点菜单入口——实测安卓 WebView 在按下后约 400ms 就发 contextmenu，
+     * 比 dnd-kit 的 430ms 激活还早 30ms，于是 openNodeMenu 里的 actions.select 先跑，
+     * 长按变成「选中该节点」（在移动端表现为直接跳进该分类、抽屉关闭），拖拽永远轮不上。
+     * 触屏上的菜单入口是常显的行内操作按钮，不依赖这个事件。
+     */
+    const suppressContextMenu = useCallback((e: React.MouseEvent) => {
+        e.preventDefault()
+    }, [])
 
     const titleContent = options.renderTitle?.(node, renderState) ?? node.title
     const Slot = options.dragEnabled ? DndSlot : PlainSlot
@@ -614,7 +640,9 @@ const TreeNodeItemCore = memo(function TreeNodeItemCore({
                         /* 长按模式下整行是拖拽源；手柄模式下拖拽 listeners 挂在下面的手柄上。 */
                         {...(longPressDrag && canDragNode ? handleProps : {})}
                         onClick={handleItemClick}
-                        onContextMenu={isEditing || contextMenuItems.length === 0 ? undefined : openNodeMenu}
+                        onContextMenu={longPressDrag
+                            ? suppressContextMenu
+                            : (isEditing || contextMenuItems.length === 0 ? undefined : openNodeMenu)}
                     >
                         <span className="fc-tree__indent-lines" aria-hidden="true" />
 
@@ -777,6 +805,14 @@ export interface TreeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
     indentSize?: number
     /** 拖拽发起方式，默认 `handle`；触屏端传 `long-press`。 */
     dragActivation?: TreeDragActivation
+    /**
+     * 拖拽开始 / 结束（含取消）时回调。
+     *
+     * 存在的理由：长按拖拽期间，宿主上层往往还挂着别的手势（如移动端的侧边抽屉横滑），
+     * 而那类手势通常只在 touchstart 时判定要不要接管，事后无法反悔。宿主拿到这个信号后，
+     * 可以在拖拽进行期间让自己的手势逐帧让开，避免「拖节点的同时抽屉也在滑」。
+     */
+    onDragStateChange?: (dragging: boolean) => void
     actionDisplayMode?: TreeActionDisplayMode
     actionCollapseThreshold?: number
     tokens?: TreeTokens
@@ -825,6 +861,7 @@ export function Tree({
                          indentationLine = false,
                          indentSize = 20,
                          dragActivation = 'handle',
+                         onDragStateChange,
                          actionDisplayMode = 'auto',
                          actionCollapseThreshold = 208,
                          tokens,
@@ -862,6 +899,11 @@ export function Tree({
 
     const dropRef     = useRef<{ key: string | null; pos: DropPosition | null }>({ key: null, pos: null })
     const pointerYRef = useRef(0)
+    /* 上一次拖拽结束的时刻，用于甄别紧随其后那次补发的 click（见 DRAG_TAIL_CLICK_SUPPRESS_MS）。 */
+    const dragEndedAtRef = useRef(0)
+    /* 与其它函数 prop 一样用 ref 包一层：调用方不必为它套 useCallback。 */
+    const onDragStateChangeRef = useRef(onDragStateChange)
+    onDragStateChangeRef.current = onDragStateChange
     const dragEnabled = Boolean(onMove)
     const renameEnabled = Boolean(onRename)
     const deleteEnabled = Boolean(onDeleteRequest)
@@ -1095,6 +1137,7 @@ export function Tree({
     const handleDragStart = useCallback(({ active }: DragStartEvent) => {
         dropRef.current = { key: null, pos: null }
         dragVisualStore.setState({ dropTargetKey: null, dropPosition: null, dragKey: active.id as string })
+        onDragStateChangeRef.current?.(true)
     }, [dragVisualStore])
 
     const handleDragMove = useCallback(({ over, active }: DragMoveEvent) => {
@@ -1145,14 +1188,18 @@ export function Tree({
     const handleDragEnd = useCallback(({ active }: DragEndEvent) => {
         const { key: target, pos: position } = dropRef.current
         dropRef.current = { key: null, pos: null }
+        dragEndedAtRef.current = performance.now()
         dragVisualStore.setState({ dropTargetKey: null, dropPosition: null, dragKey: null })
+        onDragStateChangeRef.current?.(false)
         if (!target || !position || active.id === target) return
         onMove?.(active.id as string, target, position)
     }, [dragVisualStore, onMove])
 
     const handleDragCancel = useCallback(() => {
         dropRef.current = { key: null, pos: null }
+        dragEndedAtRef.current = performance.now()
         dragVisualStore.setState({ dropTargetKey: null, dropPosition: null, dragKey: null })
+        onDragStateChangeRef.current?.(false)
     }, [dragVisualStore])
 
     // ── 搜索（memo 化）────────────────────────────────────────────────────
@@ -1288,9 +1335,15 @@ export function Tree({
 
     // ── Context 值（分别 memo 化）─────────────────────────────────
 
+    const isDragTailClick = useCallback(
+        () => performance.now() - dragEndedAtRef.current < DRAG_TAIL_CLICK_SUPPRESS_MS,
+        [],
+    )
+
     const actionsValue = useMemo<TreeActionsValue>(() => ({
+        isDragTailClick,
         toggleExpand, expandSubtree, collapseSubtree, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete,
-    }), [toggleExpand, expandSubtree, collapseSubtree, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete])
+    }), [isDragTailClick, toggleExpand, expandSubtree, collapseSubtree, select, startEdit, commitEdit, cancelEdit, requestCreate, requestDelete])
 
     // 函数 props 的稳定 ref 包装 — 调用者无需对这些使用 useCallback/useMemo。
     // optionsValue 仅在 prop 在 defined ↔ undefined 之间转换时重建。
