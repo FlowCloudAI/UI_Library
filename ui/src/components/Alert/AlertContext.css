@@ -123,3 +123,23 @@
 .fc-alert--nonInvasive .fc-alert__msg {
     margin-bottom: 0;
 }
+
+@media (max-width: 42rem) {
+    .fc-alert-overlay--non-invasive {
+        box-sizing: border-box;
+        padding-inline: var(--fc-space-lg);
+    }
+
+    .fc-alert-overlay--non-invasive .fc-alert--nonInvasive {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        max-width: 18rem;
+        padding: var(--fc-space-md);
+        touch-action: none;
+    }
+
+    .fc-alert--nonInvasive .fc-alert__header {
+        margin-bottom: var(--fc-space-sm);
+    }
+}

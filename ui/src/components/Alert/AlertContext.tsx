@@ -1,5 +1,5 @@
 import "./AlertContext.css"
-import {createContext, CSSProperties, HTMLAttributes, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
+import {createContext, CSSProperties, HTMLAttributes, ReactNode, TouchEvent as ReactTouchEvent, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import {RollingBox} from "../Box/RollingBox";
 import {Button} from "../Button/Button";
 import {buildCssVars} from "../../utils/cssVars";
@@ -24,6 +24,7 @@ export type AlertProps = {
 };
 
 const DEFAULT_AUTO_DISMISS_DURATION_MS = 1500;
+const NON_INVASIVE_SWIPE_DISMISS_DISTANCE_PX = 32;
 
 type QueuedAlert = Omit<AlertProps, "visible" | "choice"> & {
     resolve: (res: string) => void;
@@ -97,6 +98,7 @@ export function AlertProvider({
     const activeRejectRef = useRef<((reason?: unknown) => void) | null>(null);
     const queueRef = useRef<QueuedAlert[]>([]);
     const nextAlertIdRef = useRef(1);
+    const swipeStartYRef = useRef<number | null>(null);
 
     const openAlert = useCallback((request: QueuedAlert) => {
         const active: AlertProps = {
@@ -178,6 +180,22 @@ export function AlertProvider({
     });
 
     const isNonInvasive = alert?.mode === "nonInvasive";
+    const handleSwipeStart = useCallback((event: ReactTouchEvent<HTMLDivElement>) => {
+        if (!isNonInvasive) return;
+        swipeStartYRef.current = event.touches[0]?.clientY ?? null;
+    }, [isNonInvasive]);
+    const handleSwipeEnd = useCallback((event: ReactTouchEvent<HTMLDivElement>) => {
+        const startY = swipeStartYRef.current;
+        const endY = event.changedTouches[0]?.clientY;
+        swipeStartYRef.current = null;
+        if (!isNonInvasive || startY === null || endY === undefined) return;
+        if (startY - endY >= NON_INVASIVE_SWIPE_DISMISS_DISTANCE_PX) {
+            alert?.choice("swipe");
+        }
+    }, [alert, isNonInvasive]);
+    const handleSwipeCancel = useCallback(() => {
+        swipeStartYRef.current = null;
+    }, []);
     const overlayClassName = [
         'fc-alert-overlay',
         isNonInvasive && "fc-alert-overlay--non-invasive",
@@ -200,6 +218,9 @@ export function AlertProvider({
                     <div
                         className={`fc-alert fc-alert--${alert.type} fc-alert--${alert.mode}`}
                         style={overrideStyle}
+                        onTouchStart={handleSwipeStart}
+                        onTouchEnd={handleSwipeEnd}
+                        onTouchCancel={handleSwipeCancel}
                     >
                         <div className="fc-alert__header">
                             {ICONS[alert.type]}
