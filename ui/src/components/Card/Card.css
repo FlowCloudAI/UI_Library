@@ -1,4 +1,4 @@
-/* src/components/Card/Card.css */
+/* Card 的布局与视觉状态；媒体遮罩高度由实际内容测量结果驱动。 */
 
 .fc-card {
     --fc-card-content-ratio: 0.36;
@@ -16,6 +16,7 @@
         rgba(8, 12, 20, var(--fc-card-overlay-end-opacity)) 100%
     );
     --fc-card-content-height: calc(var(--fc-card-media-height) * var(--fc-card-current-ratio));
+    --fc-card-overlay-content-height: var(--fc-card-content-height);
     --fc-card-content-motion: 0.1s ease;
 
     display: flex;
@@ -56,7 +57,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: calc(var(--fc-card-content-height) + var(--fc-card-overlay-rise));
+    height: calc(var(--fc-card-overlay-content-height) + var(--fc-card-overlay-rise));
     z-index: 1;
     pointer-events: none;
     background: var(--fc-card-overlay-background);

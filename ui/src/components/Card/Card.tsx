@@ -1,3 +1,4 @@
+/** 通用卡片：统一媒体、内容、遮罩与交互状态，业务层只负责提供展示内容。 */
 import React, { ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import './Card.css';
 
@@ -107,18 +108,40 @@ export const Card = ({
 
     useLayoutEffect(() => {
         const contentElement = contentRef.current;
-        const descriptionElement = descriptionRef.current;
+        const cardElement = contentElement?.parentElement;
 
-        if (!contentElement || !descriptionElement || !description) {
+        if (!contentElement || !cardElement) {
             return;
         }
 
         const measure = () => {
             const contentStyle = window.getComputedStyle(contentElement);
-            const descriptionStyle = window.getComputedStyle(descriptionElement);
             const contentPadding =
                 parseFloat(contentStyle.paddingTop || '0') + parseFloat(contentStyle.paddingBottom || '0');
             const gap = parseFloat(contentStyle.rowGap || contentStyle.gap || '0');
+            const contentBlocks = [
+                titleRef.current,
+                descriptionRef.current,
+                extraInfoRef.current,
+                actionsRef.current,
+            ].filter((element): element is HTMLDivElement => element !== null);
+            const measuredContentHeight = contentBlocks.reduce(
+                (height, element) => height + element.offsetHeight,
+                contentPadding + gap * Math.max(0, contentBlocks.length - 1),
+            );
+            const overlayContentHeight = `${Math.ceil(Math.min(contentElement.clientHeight, measuredContentHeight))}px`;
+
+            if (
+                hasMedia
+                && cardElement.style.getPropertyValue('--fc-card-overlay-content-height') !== overlayContentHeight
+            ) {
+                cardElement.style.setProperty('--fc-card-overlay-content-height', overlayContentHeight);
+            }
+
+            const descriptionElement = descriptionRef.current;
+            if (!descriptionElement || !description) return;
+
+            const descriptionStyle = window.getComputedStyle(descriptionElement);
             const titleHeight = titleRef.current?.offsetHeight ?? 0;
             const extraInfoHeight = extraInfoRef.current?.offsetHeight ?? 0;
             const actionsHeight = actionsRef.current?.offsetHeight ?? 0;
@@ -144,7 +167,7 @@ export const Card = ({
         });
 
         resizeObserver.observe(contentElement);
-        resizeObserver.observe(descriptionElement);
+        if (descriptionRef.current) resizeObserver.observe(descriptionRef.current);
         if (titleRef.current) resizeObserver.observe(titleRef.current);
         if (extraInfoRef.current) resizeObserver.observe(extraInfoRef.current);
         if (actionsRef.current) resizeObserver.observe(actionsRef.current);
@@ -152,7 +175,7 @@ export const Card = ({
         return () => {
             resizeObserver.disconnect();
         };
-    }, [title, description, extraInfo, actions, shouldExpandOnHover]);
+    }, [title, description, extraInfo, actions, shouldExpandOnHover, hasMedia]);
 
     return (
         <div
