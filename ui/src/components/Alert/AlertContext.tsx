@@ -141,6 +141,14 @@ export function AlertProvider({
                     ? DEFAULT_AUTO_DISMISS_DURATION_MS
                     : undefined
             );
+            const duplicate = [activeAlertRef.current, ...queueRef.current].some(item =>
+                item?.msg === msg
+                && item.type === type
+                && item.mode === mode
+                && item.duration === resolvedDuration
+            );
+            // 重复确认不能复用首个 Promise，否则一次“确定”会放行所有点击处理器。
+            if (duplicate) { resolve("ignored"); return; }
             const request: QueuedAlert = {
                 id: nextAlertIdRef.current++,
                 msg,
