@@ -10,7 +10,8 @@
     align-items: center;
     justify-content: center;
     background: var(--fc-color-bg-overlay);
-    z-index: var(--fc-z-modal);
+    /* 确认框与提示必须高于业务浮层，避免操作被隐藏在当前面板下方。 */
+    z-index: var(--fc-z-toast);
 }
 
 /* ---------- 弹窗容器 ---------- */
