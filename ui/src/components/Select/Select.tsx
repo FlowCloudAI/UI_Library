@@ -6,6 +6,7 @@ import {isDevelopmentRuntime} from '../../utils/runtime';
 import {buildCssVars} from '../../utils/cssVars';
 import {useDeprecatedPropWarning} from '../../hooks/useDeprecatedPropWarning';
 import type {FcChangeHandler, FcChangeMeta, FcRadius} from '../../types/common';
+import {shouldSelectDropUp} from './selectPosition';
 
 export interface SelectOption {
     value: string | number;
@@ -120,10 +121,12 @@ export function Select({
     };
 
     const [isOpen, setIsOpen] = React.useState(false);
+    const [dropUp, setDropUp] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState('');
     const [highlightedIndex, setHighlightedIndex] = React.useState(0);
     const containerRef = React.useRef<HTMLDivElement>(null);
     const listRef = React.useRef<HTMLDivElement>(null);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
 
     const isControlled = controlledValue !== undefined;
     const [internalValue, setInternalValue] = React.useState<any>(
@@ -149,6 +152,32 @@ export function Select({
     const flatOptions = React.useMemo(() => {
         return Object.values(groupedOptions).flat();
     }, [groupedOptions]);
+
+    React.useLayoutEffect(() => {
+        if (!isOpen || !containerRef.current || !dropdownRef.current) {
+            setDropUp(false);
+            return;
+        }
+
+        const trigger = containerRef.current.querySelector<HTMLElement>('.fc-select__trigger');
+        if (!trigger) return;
+
+        const triggerRect = trigger.getBoundingClientRect();
+        const dropdownHeight = dropdownRef.current.getBoundingClientRect().height;
+        let clipTop = 0;
+        let clipBottom = window.innerHeight;
+
+        for (let parent = containerRef.current.parentElement; parent; parent = parent.parentElement) {
+            if (!/(auto|scroll|hidden|clip)/.test(getComputedStyle(parent).overflowY)) continue;
+            const rect = parent.getBoundingClientRect();
+            clipTop = Math.max(clipTop, rect.top);
+            clipBottom = Math.min(clipBottom, rect.bottom);
+        }
+
+        const spaceBelow = clipBottom - triggerRect.bottom;
+        const spaceAbove = triggerRect.top - clipTop;
+        setDropUp(shouldSelectDropUp(dropdownHeight, spaceBelow, spaceAbove));
+    }, [isOpen, flatOptions.length]);
 
     // 虚拟滚动计算
     const [scrollTop, setScrollTop] = React.useState(0);
@@ -250,6 +279,7 @@ export function Select({
     const classNames = [
         'fc-select',
         isOpen && 'fc-select--open',
+        dropUp && 'fc-select--drop-up',
         multiple && 'fc-select--multiple',
         disabled && 'fc-select--disabled',
         radius && `fc-select--radius-${radius}`,
@@ -279,7 +309,7 @@ export function Select({
             </div>
 
             {isOpen && (
-                <div className="fc-select__dropdown">
+                <div ref={dropdownRef} className="fc-select__dropdown">
                     {searchable && (
                         <div className="fc-select__search">
                             <input

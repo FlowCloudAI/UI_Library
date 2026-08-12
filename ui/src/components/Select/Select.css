@@ -70,6 +70,13 @@
     overflow: hidden;
 }
 
+.fc-select--drop-up .fc-select__dropdown {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: var(--fc-space-xs);
+}
+
 /* ---------- 圆角变体 ---------- */
 .fc-select--radius-none { --select-radius: 0px; }
 .fc-select--radius-sm   { --select-radius: var(--fc-radius-sm, 4px); }
