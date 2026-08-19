@@ -35,6 +35,17 @@ npm run install:local
 - 组件 API 与导出保持语义稳定，优先保证向后兼容。  
 - 样式优先使用 `flowcloudai-ui` 的 `--fc-*` token 与统一设计变量。  
 - 禁止跨仓库直接引用 `ui/src` 内部源码，必须走包级 API。  
+- **`app/` 示例也必须从 `flowcloudai-ui` 包导入，不能写 `../../ui/src`。** Provider（`ThemeProvider` / `AlertProvider` / `ContextMenuProvider`）与对应 hook 必须来自同一个模块实例，走相对路径会拿到第二份实例，运行时报 `useTheme must be used within <ThemeProvider>` 这类 context 不匹配错误。
+
+## 新增组件流程
+
+1. 建 `ui/src/components/<Name>/<Name>.tsx`。
+2. 在 `ui/src/index.ts` 导出——这是包的唯一公开入口。
+3. 在 `app/src/demos/<Name>Demo.tsx` 建演示。
+
+样式不注入到组件里：`tsup` 单独产出 `dist/index.css`，接入方必须显式 `import 'flowcloudai-ui/style'`。改样式时记得这条对接入方是破坏性的。
+
+`app/` 通过 `install-local` 链接本地 `ui/`，`npm run install:local` 之后编辑 `ui/src/` 即时生效，不需要手工 link。
 
 ## 目录结构与模块职责
 
