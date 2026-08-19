@@ -7,7 +7,6 @@
 | 状态 | 含义 |
 | --- | --- |
 | `现行` | 当前有效，可直接作为判断依据 |
-| `排障` | 问题分析纪要，结论可参考但不随代码更新 |
 | `归档` | 已发布版本的变更记录，只用于追溯 |
 
 ## 文档
@@ -18,9 +17,16 @@
 | [Baseline.md](Baseline.md) | 现行 | 2026-07-27 | 组件公共 API 基线规范。迁移方式是「新增统一 API + 旧 API 标记废弃」的兼容路线，不做一次性破坏性重构 |
 | [TeraEditor.md](TeraEditor.md) | 现行 | 2026-05-13 | `TeraEditor` 组件：基于 Monaco 的单模板 Tera 编辑器，含 HTML + Tera 高亮与外部增强校验接口 |
 | [TODO_ChatTree.md](TODO_ChatTree.md) | 现行 | 2026-05-21 | 对话分支切换的剩余集成工作。核心库与组件库的基础设施已完成，**剩余工作全在 App 层**（Tauri 桥接 + React 状态 + UI 装配） |
-| [alert_provider_stability.md](alert_provider_stability.md) | 排障 | 2026-05-20 | `AlertProvider` 把弹窗状态放在 Provider 内部 state，每次 `showAlert` 都触发整树重渲染；`showAlert` 与 Context value 每次渲染都重建 |
 | [0.2.3.md](0.2.3.md) | 归档 | 2026-05-21 | `flowcloudai-ui@0.2.3` 变更说明：Tree 系列、VirtualList、输入与滑块、RollingBox、Alert、TeraEditor、MarkdownEditor |
 | [0.2.0.md](0.2.0.md) | 归档 | 2026-05-21 | `flowcloudai-ui@0.2.0` 变更说明：一批新增对外能力与兼容性修正 |
+
+## 开发记录（在工作区 `docs/devlog/`）
+
+问题排查记录统一收在工作区根仓库，**不在本仓**——单独 clone `lib_ui` 看不到。索引 `docs/devlog/README.md`。
+
+| 原文件 | 现位置 |
+| --- | --- |
+| `docs/alert_provider_stability.md` | `docs/devlog/2026-05-20-alert-provider-整树重渲染.md`（状态：**未解决**，只有根治建议） |
 
 ## 不在本目录的规范
 
