@@ -6,6 +6,9 @@
     --select-option-selected-color:  var(--fc-color-primary);
     --select-option-selected-bg:     var(--fc-color-primary-subtle);
     --select-option-hover-bg:        var(--fc-color-bg-secondary);
+    /* 触发器属于表单控件，菜单属于浮层，两者不能共用 capsule 圆角。 */
+    --select-trigger-radius:          var(--fc-radius-md);
+    --select-dropdown-radius:         var(--fc-radius-md);
 
     position: relative;
     display: inline-block;
@@ -22,7 +25,7 @@
     padding: var(--fc-space-md) var(--fc-space-lg);
     background: var(--select-trigger-bg);
     border: 1px solid var(--select-trigger-border);
-    border-radius: var(--select-radius, var(--fc-radius-md));
+    border-radius: var(--select-trigger-radius);
     cursor: pointer;
     transition: border-color var(--fc-transition), box-shadow var(--fc-transition);
 }
@@ -64,7 +67,7 @@
     margin-top: var(--fc-space-xs);
     background: var(--fc-color-bg-elevated);
     border: 1px solid var(--fc-color-border);
-    border-radius: var(--select-radius, var(--fc-radius-md));
+    border-radius: var(--select-dropdown-radius);
     box-shadow: var(--fc-shadow-lg);
     z-index: var(--fc-z-dropdown);
     overflow: hidden;
@@ -78,12 +81,12 @@
 }
 
 /* ---------- 圆角变体 ---------- */
-.fc-select--radius-none { --select-radius: 0px; }
-.fc-select--radius-sm   { --select-radius: var(--fc-radius-sm, 4px); }
-.fc-select--radius-md   { --select-radius: var(--fc-radius-md, 8px); }
-.fc-select--radius-lg   { --select-radius: var(--fc-radius-lg, 12px); }
-.fc-select--radius-xl   { --select-radius: var(--fc-radius-xl, 16px); }
-.fc-select--radius-full { --select-radius: var(--fc-radius-full, 9999px); }
+.fc-select--radius-none { --select-trigger-radius: 0px; }
+.fc-select--radius-sm   { --select-trigger-radius: var(--fc-radius-sm, 4px); }
+.fc-select--radius-md   { --select-trigger-radius: var(--fc-radius-md, 8px); }
+.fc-select--radius-lg   { --select-trigger-radius: var(--fc-radius-lg, 12px); }
+.fc-select--radius-xl   { --select-trigger-radius: var(--fc-radius-xl, 16px); }
+.fc-select--radius-full { --select-trigger-radius: var(--fc-radius-full, 9999px); }
 
 /* 搜索 */
 .fc-select__search {

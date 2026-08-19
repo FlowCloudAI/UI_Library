@@ -46,7 +46,7 @@ export interface SelectProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 
     searchable?: boolean;
     multiple?: boolean;
     disabled?: boolean;
-    /** 圆角大小，触发器和下拉框同步改变 */
+    /** 触发器圆角；下拉菜单作为独立浮层，保持标准面板圆角。 */
     radius?: SelectRadius;
     className?: string;
     style?: React.CSSProperties;
