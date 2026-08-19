@@ -83,6 +83,9 @@ export function ThemeProvider({
         if (theme !== 'system') return
         const mq = window.matchMedia('(prefers-color-scheme: dark)')
         const handler = () => setSystemTheme(mq.matches ? 'dark' : 'light')
+        // 手动主题期间系统外观可能已经变化；切回 system 时必须立刻重采样，
+        // 不能只等待下一次 change，否则会继续使用挂载时的旧值。
+        handler()
         mq.addEventListener('change', handler)
         return () => mq.removeEventListener('change', handler)
     }, [theme])
