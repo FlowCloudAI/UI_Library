@@ -5,6 +5,12 @@
 `lib_ui` 是 FlowCloudAI 的共享组件仓库，维护 `flowcloudai-ui` 组件包与接入示例。
 它负责跨 `app_main` 与 `site_flowcloudai` 的 UI 一致性与设计 token 能力沉淀。
 
+## 文档入口
+
+本仓库文档索引：`lib_ui/docs/README.md`。索引带状态标记（`现行` / `排障` / `归档` / `失效`），先看状态再决定要不要读。组件公开 API 全文目前在根仓库 `docs/UI.md`，索引里有指向。
+
+跨子项目文档在工作区根 `docs/README.md`。
+
 ## 构建 / 运行 / 测试 / lint
 
 ```bash
@@ -59,4 +65,4 @@ lib_ui/
 - `app` 与 `ui` 目录更新可能影响 `npm run install:local` 联调结果。  
 - token 与样式语义变更需同步文档和接入仓库回归。  
 
-文档同步时间：2026-06-08 13:20:10 +08:00
+文档同步时间：2026-08-19 19:53:42 +08:00
