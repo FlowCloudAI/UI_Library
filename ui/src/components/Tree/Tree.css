@@ -518,9 +518,20 @@
  * 触控密度下没有 hover 可用：手柄与行内操作按钮若维持「悬停才显形」，
  * 在触屏上等于不存在——操作入口既看不见，pointer-events 还是 none。
  * 这里必须提权覆盖上面的 hover 规则，故用属性选择器前缀而不是改 token。
+ *
+ * 宽度取 auto 而不是 --fc-tree-actions-width：后者按每项 24px 估算，而按钮的实际宽度
+ * 由平台决定——安卓 WebView（实测 Chrome 143 / Android 16）对 <button> 强制 48×48
+ * 最小触控区，作者样式表里写 min-width 也压不回去（只有内联样式能改）。于是 48px 的按钮
+ * 被塞进 24px 且 overflow:hidden、右对齐的容器，左半边连同最左那个点一起被裁掉。
+ * 触屏没有「悬停展开」动画要放，宽度按内容取即可。
+ *
+ * 必须连 :hover / :focus-within 一起覆盖：安卓上点过的行会残留 hover 态，
+ * 而那两条选择器是 (0,3,0)，只加 [data-fc-density] 前缀的 (0,2,0) 压不住它们。
  */
-[data-fc-density="touch"] .fc-tree__actions {
-    width: var(--fc-tree-actions-width, 74px);
+[data-fc-density="touch"] .fc-tree__actions,
+[data-fc-density="touch"] .fc-tree__item:hover .fc-tree__actions,
+[data-fc-density="touch"] .fc-tree__item:focus-within .fc-tree__actions {
+    width: auto;
     opacity: 1;
     pointer-events: auto;
 }
