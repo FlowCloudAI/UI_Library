@@ -444,14 +444,23 @@
     transition: background var(--fc-transition), color var(--fc-transition);
 }
 
-.fc-tree__action:hover {
-    background: var(--fc-tree-action-hover-bg);
-    color: var(--fc-tree-text);
-}
+/*
+ * 悬停反馈只给真的有指针的设备。
+ *
+ * 触屏上 :hover 是「粘」的：点完按钮后这一颗会一直保持悬停背景，直到用户去点别处——
+ * 表现为行内的「⋯」被涂上一块灰底赖着不走，看起来像选中态。触屏本来也没有悬停语义，
+ * 按下反馈由 :active 承担即可。
+ */
+@media (hover: hover) {
+    .fc-tree__action:hover {
+        background: var(--fc-tree-action-hover-bg);
+        color: var(--fc-tree-text);
+    }
 
-.fc-tree__action--danger:hover {
-    background: color-mix(in srgb, var(--fc-tree-danger) 15%, transparent);
-    color: var(--fc-tree-danger);
+    .fc-tree__action--danger:hover {
+        background: color-mix(in srgb, var(--fc-tree-danger) 15%, transparent);
+        color: var(--fc-tree-danger);
+    }
 }
 
 .fc-tree__action:disabled {
