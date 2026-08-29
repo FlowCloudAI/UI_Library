@@ -170,16 +170,25 @@
     user-select: none;
 }
 
-.fc-tree__item:hover {
-    background: var(--fc-tree-bg-hover);
-}
-
 .fc-tree__item--selected {
     background: var(--fc-tree-bg-selected);
 }
 
-.fc-tree__item--selected:hover {
-    background: var(--fc-tree-bg-selected);
+/*
+ * 行的悬停反馈同样只给真有指针的设备，理由见上面 .fc-tree__action 那段。
+ *
+ * 行这一条更隐蔽：--fc-tree-bg-hover 默认几乎等于列表底色，粘滞 hover 看不出来，
+ * 于是长期没人发现。一旦接入方把这一档换成可见颜色（移动端分类抽屉就这么做了，
+ * 用来标记菜单宿主行），点过的行就会一直亮着，看起来像被选中或像菜单开着。
+ */
+@media (hover: hover) {
+    .fc-tree__item:hover {
+        background: var(--fc-tree-bg-hover);
+    }
+
+    .fc-tree__item--selected:hover {
+        background: var(--fc-tree-bg-selected);
+    }
 }
 
 .fc-tree__item--drag-source {
