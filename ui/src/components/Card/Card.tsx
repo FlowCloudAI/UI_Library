@@ -1,8 +1,23 @@
 /** 通用卡片：统一媒体、内容、遮罩与交互状态，业务层只负责提供展示内容。 */
-import React, { ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import React, { ReactNode, useLayoutEffect, useRef } from 'react';
 import './Card.css';
 
 const clampRatio = (value: number) => Math.min(0.8, Math.max(0.1, value));
+
+/**
+ * 把实测行数写进描述块。
+ *
+ * 一行都放不下时整块隐藏——裁掉半行比不显示更难看。用行内 `display` 而不是卸载节点：
+ * 卸载要经过 React state，而这个判定发生在 layout effect 里，会在首帧前多逼出一轮渲染。
+ */
+const setDescriptionLines = (element: HTMLElement, lines: number) => {
+    if (lines <= 0) {
+        element.style.display = 'none';
+        return;
+    }
+    element.style.display = '';
+    element.style.webkitLineClamp = String(lines);
+};
 
 export type CardVariant = 'default' | 'bordered' | 'shadow' | 'outline';
 
@@ -63,7 +78,6 @@ export const Card = ({
     const descriptionRef = useRef<HTMLDivElement>(null);
     const extraInfoRef = useRef<HTMLDivElement>(null);
     const actionsRef = useRef<HTMLDivElement>(null);
-    const [descriptionLineClamp, setDescriptionLineClamp] = useState<number>(3);
 
     const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
         if (disabled) return;
@@ -106,6 +120,17 @@ export const Card = ({
         );
     };
 
+    /*
+     * 遮罩高度与描述行数都依赖实测尺寸，但两者都不该走 React state：
+     * 在 layout effect 里 setState 会在首帧绘制前多逼出一轮 render + layout，每张卡各一次。
+     * 这里改成直接写行内样式——落点与原来的 style={{ WebkitLineClamp }} 完全相同，
+     * 因此业务侧那些 `.pe-entry-card .fc-card__description { -webkit-line-clamp: 2 }`
+     * 仍然像原来一样被行内值压住，级联关系一个字没变。
+     *
+     * 尺寸来源分两段：挂载时同步量一次（保证首帧就是终值，不闪），
+     * 之后交给 ResizeObserver——它的回调自带 borderBoxSize，不必再回读 offsetHeight，
+     * 也就不会在每次尺寸变化时强制同步布局。
+     */
     useLayoutEffect(() => {
         const contentElement = contentRef.current;
         const cardElement = contentElement?.parentElement;
@@ -114,22 +139,23 @@ export const Card = ({
             return;
         }
 
-        const measure = () => {
+        const apply = (measuredInnerHeight: number | null, blockHeight: (element: HTMLElement) => number) => {
             const contentStyle = window.getComputedStyle(contentElement);
             const contentPadding =
                 parseFloat(contentStyle.paddingTop || '0') + parseFloat(contentStyle.paddingBottom || '0');
             const gap = parseFloat(contentStyle.rowGap || contentStyle.gap || '0');
-            const contentBlocks = [
-                titleRef.current,
-                descriptionRef.current,
-                extraInfoRef.current,
-                actionsRef.current,
-            ].filter((element): element is HTMLDivElement => element !== null);
+            // 挂载那一次没有观察器数据，就地读一次 clientHeight（含内边距）扣掉内边距，与 contentRect 同义。
+            const contentInnerHeight = measuredInnerHeight ?? contentElement.clientHeight - contentPadding;
+            // 高度为 0 的块不参与间距计数：描述被隐藏时 flex 也不会为它留 gap。
+            const contentBlocks = [titleRef.current, descriptionRef.current, extraInfoRef.current, actionsRef.current]
+                .filter((element): element is HTMLDivElement => element !== null)
+                .map((element) => [element, blockHeight(element)] as const)
+                .filter(([, height]) => height > 0);
             const measuredContentHeight = contentBlocks.reduce(
-                (height, element) => height + element.offsetHeight,
+                (height, [, blockSize]) => height + blockSize,
                 contentPadding + gap * Math.max(0, contentBlocks.length - 1),
             );
-            const overlayContentHeight = `${Math.ceil(Math.min(contentElement.clientHeight, measuredContentHeight))}px`;
+            const overlayContentHeight = `${Math.ceil(Math.min(contentInnerHeight + contentPadding, measuredContentHeight))}px`;
 
             if (
                 hasMedia
@@ -142,28 +168,42 @@ export const Card = ({
             if (!descriptionElement || !description) return;
 
             const descriptionStyle = window.getComputedStyle(descriptionElement);
-            const titleHeight = titleRef.current?.offsetHeight ?? 0;
-            const extraInfoHeight = extraInfoRef.current?.offsetHeight ?? 0;
-            const actionsHeight = actionsRef.current?.offsetHeight ?? 0;
+            const titleHeight = titleRef.current ? blockHeight(titleRef.current) : 0;
+            const extraInfoHeight = extraInfoRef.current ? blockHeight(extraInfoRef.current) : 0;
+            const actionsHeight = actionsRef.current ? blockHeight(actionsRef.current) : 0;
             const baseBlocks = [title, extraInfo, actions].filter(Boolean).length;
             const gapCount = baseBlocks > 0 ? baseBlocks : 0;
-            const reservedHeight =
-                contentPadding + titleHeight + extraInfoHeight + actionsHeight + gap * gapCount;
-            const availableDescriptionHeight = Math.max(0, contentElement.clientHeight - reservedHeight);
+            const reservedHeight = titleHeight + extraInfoHeight + actionsHeight + gap * gapCount;
+            const availableDescriptionHeight = Math.max(0, contentInnerHeight - reservedHeight);
             const lineHeight = parseFloat(descriptionStyle.lineHeight || '0');
 
             if (!lineHeight || Number.isNaN(lineHeight)) {
-                setDescriptionLineClamp(3);
+                setDescriptionLines(descriptionElement, 3);
                 return;
             }
 
-            setDescriptionLineClamp(Math.max(0, Math.floor(availableDescriptionHeight / lineHeight)));
+            setDescriptionLines(descriptionElement, Math.floor(availableDescriptionHeight / lineHeight));
         };
 
-        measure();
+        apply(null, (element) => element.offsetHeight);
 
-        const resizeObserver = new ResizeObserver(() => {
-            measure();
+        const observedSizes = new WeakMap<Element, number>();
+        let contentInnerHeight: number | null = null;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                if (entry.target === contentElement) {
+                    // contentRect 是内容盒，正好等于 clientHeight 扣掉内边距。
+                    contentInnerHeight = entry.contentRect.height;
+                    continue;
+                }
+                // 取整到与 offsetHeight 同义：borderBoxSize 是小数，直接用会让遮罩高度比原来多 1px。
+                observedSizes.set(
+                    entry.target,
+                    Math.round(entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height),
+                );
+            }
+            apply(contentInnerHeight, (element) => observedSizes.get(element) ?? element.offsetHeight);
         });
 
         resizeObserver.observe(contentElement);
@@ -200,12 +240,8 @@ export const Card = ({
 
             <div className="fc-card__content" ref={contentRef}>
                 {title && <div className="fc-card__title" ref={titleRef}>{title}</div>}
-                {description && descriptionLineClamp > 0 && (
-                    <div
-                        className="fc-card__description"
-                        ref={descriptionRef}
-                        style={{ WebkitLineClamp: descriptionLineClamp }}
-                    >
+                {description && (
+                    <div className="fc-card__description" ref={descriptionRef}>
                         {description}
                     </div>
                 )}
